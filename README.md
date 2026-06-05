@@ -8,7 +8,7 @@ Kyle Jones (82804451) <br>
 Eojin Lee (25508730) 
 
 ## Project Description
-*Summary goes here...*
+Truck driving management system designed to streamline the logistics of cargo transport through auction-based marketplace. Our platform allows companies to post freight requirements that drivers can accept through a bidding system.
 
 ## Milestone 1
-*Link to PDF document here...*
+[Milestone 1 PDF Document](/M1_Document.pdf)
