@@ -1,5 +1,9 @@
-# Load Link
-A CPSC455 project by **Team #5: The Fantastic Five** <br>
+<h1>
+  <img src="frontend/public/favicon.svg" width="36" valign="middle"/>
+  &nbsp; Load Link
+</h1>
+
+**By Team #5: The Fantastic Five**
 ## Meet the Team
 Alexandar Lackovic (74213307) <br>
 Wendy Tso (34159368) <br>
