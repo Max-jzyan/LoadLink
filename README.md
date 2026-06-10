@@ -1,5 +1,5 @@
 <h1>
-  <img src="frontend/public/favicon.svg" width="36" valign="middle"/>
+  <img src="frontend/public/favicon.svg" width="36" color="#1c9cf0" valign="middle"/>
   &nbsp; Load Link
 </h1>
 

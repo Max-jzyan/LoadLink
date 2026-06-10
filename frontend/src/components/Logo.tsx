@@ -3,7 +3,7 @@ interface LogoProps {
   className?: string
   color?: string
 }
-const Logo = ({ size = 32, className, color }: LogoProps) => {
+const Logo = ({ size = 32, className, color = '#1c9cf0' }: LogoProps) => {
   return (
     <svg
       viewBox="24 24 52 52"
