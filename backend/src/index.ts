@@ -18,8 +18,10 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-// Routes -> add as we create
-// app.use('/api/nmame', nameRouter)
+import loadRouter from './routes/loadRoutes'
+
+// Routes
+app.use('/api', loadRouter)
 
 // MongoDB
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://mongo:27017/loadlink'
