@@ -3,9 +3,6 @@ import { BID_STATUSES } from '../enums'
 
 const BidSchema = new Schema(
   {
-    // -----------------------------
-    // RELATIONSHIPS
-    // -----------------------------
     loadId: {
       type: Types.ObjectId,
       ref: 'Load',
@@ -27,16 +24,12 @@ const BidSchema = new Schema(
       index: true,
     },
 
-    // -----------------------------
-    // BID DETAILS
-    // -----------------------------
     amount: {
       type: Number,
       required: true,
       min: 1,
     },
 
-    // UI shows: Best, Pending, Outbid, Below Auto-accept, Accepted
     status: {
       type: String,
       enum: BID_STATUSES,
@@ -47,14 +40,6 @@ const BidSchema = new Schema(
     acceptedAt: {
       type: Date,
       default: null,
-    },
-
-    // -----------------------------
-    // METADATA
-    // -----------------------------
-    createdAt: {
-      type: Date,
-      default: Date.now,
     },
   },
   { timestamps: true }

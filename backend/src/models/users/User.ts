@@ -1,5 +1,4 @@
-import { Schema, model, InferSchemaType, Types } from 'mongoose'
-import { USER_ROLES } from '../enums'
+import { Schema, model, InferSchemaType } from 'mongoose'
 
 const UserSchema = new Schema(
   {
@@ -10,31 +9,14 @@ const UserSchema = new Schema(
       index: true,
     },
 
-    role: {
-      type: String,
-      enum: USER_ROLES,
-      required: true,
-    },
-
-    // Shared basic identity info
-    name: { type: String, required: true },
-    email: { type: String, required: true, index: true },
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, trim: true, lowercase: true, index: true },
     phone: { type: String, default: '' },
-
-    // Role-specific profile references
-    driverProfileId: {
-      type: Types.ObjectId,
-      ref: 'DriverProfile',
-      default: null,
-    },
-
-    companyProfileId: {
-      type: Types.ObjectId,
-      ref: 'CompanyProfile',
-      default: null,
-    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    discriminatorKey: 'role',
+  }
 )
 
 export type User = InferSchemaType<typeof UserSchema>

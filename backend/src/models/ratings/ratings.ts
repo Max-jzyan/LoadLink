@@ -1,6 +1,5 @@
-import { Schema, Types } from "mongoose";
+import { Schema, Types } from 'mongoose'
 
-/** Per‑category ratings */
 export const RatingCategoriesSchema = new Schema(
   {
     timeliness: { type: Number, default: 0, min: 0, max: 5 },
@@ -10,9 +9,8 @@ export const RatingCategoriesSchema = new Schema(
     documentationAccuracy: { type: Number, default: 0, min: 0, max: 5 },
   },
   { _id: false }
-);
+)
 
-/** Aggregated rating summary */
 export const RatingSummarySchema = new Schema(
   {
     average: { type: Number, default: 0, min: 0, max: 5 },
@@ -21,20 +19,19 @@ export const RatingSummarySchema = new Schema(
     lastUpdatedAt: { type: Date, default: null },
   },
   { _id: false }
-);
+)
 
-/** TypeScript types */
 export type RatingCategories = {
-  timeliness: number;
-  communication: number;
-  reliability: number;
-  professionalism: number;
-  documentationAccuracy: number;
-};
+  timeliness: number
+  communication: number
+  reliability: number
+  professionalism: number
+  documentationAccuracy: number
+}
 
 export type RatingSummary = {
-  average: number;
-  totalReviews: number;
-  categories: RatingCategories;
-  lastUpdatedAt: Date | null;
-};
+  average: number
+  totalReviews: number
+  categories: RatingCategories
+  lastUpdatedAt: Date | null
+}

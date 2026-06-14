@@ -1,6 +1,8 @@
-// models/users/DriverProfile.ts
-import { InferSchemaType, Schema, Types, model } from 'mongoose'
+// models/users/Driver.ts
+import { InferSchemaType, Schema, Types } from 'mongoose'
 import { RatingSummarySchema } from '../ratings/ratings'
+import { USER_ROLES } from '../enums'
+import { UserModel } from './User'
 
 const PricingPreferencesSchema = new Schema(
   {
@@ -20,54 +22,25 @@ const NotificationPreferencesSchema = new Schema(
   { _id: false }
 )
 
-/**
- * DriverProfile schema
- *
- * Stores driver-specific profile data. Keep this focused on business data
- * so the top-level User document can remain lightweight.
- */
-const DriverProfileSchema = new Schema(
-  {
-    userId: { type: Types.ObjectId, ref: 'User', required: true, index: true },
+const DriverSchema = new Schema({
+  trucks: [{ type: Types.ObjectId, ref: 'Truck', index: true }],
+  certifications: [{ type: String, trim: true }],
 
-    // Convenience copy of basic identity fields for quick reads
-    name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, trim: true, lowercase: true, index: true },
-    phone: { type: String, default: '' },
+  availableForLoads: { type: Boolean, default: true },
+  pricingPreferences: { type: PricingPreferencesSchema, default: () => ({}) },
+  notificationPreferences: { type: NotificationPreferencesSchema, default: () => ({}) },
 
-    // Fleet and certifications
-    trucks: [{ type: Types.ObjectId, ref: 'Truck', index: true }],
-    certifications: [{ type: String, trim: true }],
+  ratingSummary: { type: RatingSummarySchema, default: () => ({}) },
 
-    // Availability and preferences
-    availableForLoads: { type: Boolean, default: true },
-    pricingPreferences: { type: PricingPreferencesSchema, default: () => ({}) },
-    notificationPreferences: { type: NotificationPreferencesSchema, default: () => ({}) },
+  blockedUsers: [{ type: Types.ObjectId, ref: 'Blocklist' }],
 
-    // Ratings and performance
-    ratingSummary: { type: RatingSummarySchema, default: () => ({}) },
+  completedLoadsCount: { type: Number, default: 0, min: 0 },
+  lastActiveAt: { type: Date, default: null },
+})
 
-    // References to other collections
-    documents: [{ type: Types.ObjectId, ref: 'Document' }],
-    blockedUsers: [{ type: Types.ObjectId, ref: 'Blocklist' }],
-
-    // Optional quick stats for dashboards
-    completedLoadsCount: { type: Number, default: 0, min: 0 },
-    lastActiveAt: { type: Date, default: null },
-  },
-  { timestamps: true }
-)
-
-/**
- * Indexes and virtuals
- */
-DriverProfileSchema.index({ userId: 1 }, { unique: true })
-DriverProfileSchema.virtual('trucksCount').get(function (this: any) {
+DriverSchema.virtual('trucksCount').get(function (this: any) {
   return Array.isArray(this.trucks) ? this.trucks.length : 0
 })
 
-/**
- * Export types and model
- */
-export type DriverProfile = InferSchemaType<typeof DriverProfileSchema>
-export const DriverProfileModel = model('DriverProfile', DriverProfileSchema)
+export type Driver = InferSchemaType<typeof DriverSchema>
+export const DriverModel = UserModel.discriminator('Driver', DriverSchema, USER_ROLES.DRIVER)

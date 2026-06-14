@@ -26,6 +26,7 @@ export const USER_ROLES = {
 
 export const BID_STATUSES = {
   Draft: 'draft',
+  Pending: 'pending',
   Submitted: 'submitted',
   Withdrawn: 'withdrawn',
   Rejected: 'rejected',
