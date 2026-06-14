@@ -30,3 +30,7 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+
+.github*
+.project-context*
+Agents.md
