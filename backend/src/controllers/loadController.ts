@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import { StatusCodes } from 'http-status-codes'
 import { LoadModel } from '../models/loads/Load'
 import { LOAD_STATUSES } from '../models/enums'
 
@@ -16,11 +17,11 @@ export const getLoad = async (req: Request, res: Response, next: NextFunction) =
       .populate('auctionId')
 
     if (!load) {
-      res.status(404).json({ message: 'Load not found' })
+      res.status(StatusCodes.NOT_FOUND).json({ message: 'Load not found' })
       return
     }
 
-    res.json(load)
+    res.status(StatusCodes.OK).json(load)
   } catch (err) {
     next(err)
   }
@@ -40,7 +41,7 @@ export const createLoad = async (req: Request, res: Response, next: NextFunction
       createdBy: companyId,
     })
 
-    res.status(201).json(load)
+    res.status(StatusCodes.CREATED).json(load)
   } catch (err) {
     next(err)
   }
@@ -60,11 +61,11 @@ export const updateLoad = async (req: Request, res: Response, next: NextFunction
     })
 
     if (!load) {
-      res.status(404).json({ message: 'Load not found' })
+      res.status(StatusCodes.NOT_FOUND).json({ message: 'Load not found' })
       return
     }
 
-    res.json(load)
+    res.status(StatusCodes.OK).json(load)
   } catch (err) {
     next(err)
   }
@@ -82,7 +83,7 @@ export const listCompanyLoads = async (req: Request, res: Response, next: NextFu
       .sort({ createdAt: -1 })
       .populate('assignedDriverId')
 
-    res.json(loads)
+    res.status(StatusCodes.OK).json(loads)
   } catch (err) {
     next(err)
   }
@@ -104,11 +105,9 @@ export const listAvailableLoads = async (req: Request, res: Response, next: Next
       filter.status = LOAD_STATUSES.AuctionLive
     }
 
-    const loads = await LoadModel.find(filter)
-      .sort({ createdAt: -1 })
-      .populate('companyId')
+    const loads = await LoadModel.find(filter).sort({ createdAt: -1 }).populate('companyId')
 
-    res.json(loads)
+    res.status(StatusCodes.OK).json(loads)
   } catch (err) {
     next(err)
   }

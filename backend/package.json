@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "seed": "ts-node --transpile-only src/scripts/seed/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "jest",
@@ -24,6 +25,7 @@
     "express": "^5.2.1",
     "firebase-admin": "^14.0.0",
     "helmet": "^8.2.0",
+    "http-status-codes": "^2.3.0",
     "mongoose": "^9.7.0",
     "pdf-lib": "^1.17.1"
   },

@@ -34,6 +34,16 @@ export const BID_STATUSES = {
   Expired: 'expired',
 } as const
 
+export const AUCTION_STATUSES = {
+  Active: 'live',
+  Closed: 'closed',
+  Cancelled: 'cancelled',
+} as const
+
+export const CURRENCIES = {
+  CAD: 'CAD',
+} as const
+
 // Derived helpers
 export const TRUCK_TYPE_VALUES = Object.values(TRUCK_TYPES)
 export type TruckType = (typeof TRUCK_TYPE_VALUES)[number]
@@ -46,3 +56,9 @@ export type UserRole = (typeof USER_ROLE_VALUES)[number]
 
 export const BID_STATUS_VALUES = Object.values(BID_STATUSES)
 export type BidStatus = (typeof BID_STATUS_VALUES)[number]
+
+export const AUCTION_STATUS_VALUES = Object.values(AUCTION_STATUSES)
+export type AuctionStatus = (typeof AUCTION_STATUS_VALUES)[number]
+
+export const CURRENCY_VALUES = Object.values(CURRENCIES)
+export type Currency = (typeof CURRENCY_VALUES)[number]

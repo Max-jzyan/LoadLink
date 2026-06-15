@@ -1,0 +1,174 @@
+import { isValidObjectId } from 'mongoose'
+import { StatusCodes } from 'http-status-codes'
+import { BidModel } from '../models/loads/Bid'
+import { AuctionModel } from '../models/loads/Auction'
+import { LoadModel } from '../models/loads/Load'
+import '../models/users/Driver'
+import { AUCTION_STATUSES, BID_STATUSES, LOAD_STATUSES } from '../models/enums'
+import { emitBidsUpdate, emitPriceUpdate } from '../events/auctionEvents'
+import { ApiError } from '../utils/ApiError'
+import { MS_PER_MINUTE, RATE_CONFIRMATION_URL_BASE } from '../constants/auction'
+
+const assertValidId = (id: string, label: string) => {
+  if (!isValidObjectId(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, `Invalid ${label}`)
+  }
+}
+
+const findAuctionOrThrow = async (loadId: string) => {
+  const auction = await AuctionModel.findOne({ loadId })
+  if (!auction) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Auction not found for load')
+  }
+  return auction
+}
+
+/**
+ * Build the current bids snapshot for a load (tolerant: returns null if no auction).
+ * Bids are sorted best-first (lowest amount in this reverse auction) and the driver is
+ * populated so each bid carries the driver's name, firebaseUid and rating.
+ */
+const buildBidsPayload = async (loadId: string) => {
+  const auction = await AuctionModel.findOne({ loadId })
+  if (!auction) return null
+
+  const bids = await BidModel.find({ loadId }).sort({ amount: 1 }).populate('driverId')
+
+  return {
+    loadId,
+    bids,
+    loadEventType: auction.status,
+  }
+}
+
+/** Build the current price snapshot for a load (tolerant: returns null if no auction). */
+const buildPricePayload = async (loadId: string) => {
+  const auction = await AuctionModel.findOne({ loadId })
+  if (!auction) return null
+
+  return {
+    loadId,
+    currentPrice: auction.currentPrice,
+    currency: auction.currency,
+    loadEventType: auction.status,
+    updatedAt: auction.lastPriceUpdateAt,
+  }
+}
+
+/** Push fresh bids + price snapshots to any open SSE streams for a load. */
+const emitBidsAndPrice = async (loadId: string) => {
+  const bidsPayload = await buildBidsPayload(loadId)
+  if (bidsPayload) emitBidsUpdate(loadId, bidsPayload)
+
+  const pricePayload = await buildPricePayload(loadId)
+  if (pricePayload) emitPriceUpdate(loadId, pricePayload)
+}
+
+/** Initial bids snapshot for an SSE stream. Validates id + auction existence. */
+export const getBidsSnapshot = async (loadId: string) => {
+  assertValidId(loadId, 'loadId')
+  const snapshot = await buildBidsPayload(loadId)
+  if (!snapshot) throw new ApiError(StatusCodes.NOT_FOUND, 'Auction not found for load')
+  return snapshot
+}
+
+/** Initial price snapshot for an SSE stream. Validates id + auction existence. */
+export const getPriceSnapshot = async (loadId: string) => {
+  assertValidId(loadId, 'loadId')
+  const snapshot = await buildPricePayload(loadId)
+  if (!snapshot) throw new ApiError(StatusCodes.NOT_FOUND, 'Auction not found for load')
+  return snapshot
+}
+
+/**
+ * Accept a bid: close the auction, book the load, and award it to the bidding driver.
+ * Pushes updates to any open bids/price streams. Returns the accept result.
+ */
+export const acceptBid = async (loadId: string, bidId: string) => {
+  assertValidId(loadId, 'loadId')
+  assertValidId(bidId, 'bidId')
+
+  const auction = await findAuctionOrThrow(loadId)
+  if (auction.status !== AUCTION_STATUSES.Active) {
+    throw new ApiError(StatusCodes.CONFLICT, `Auction is not live (status: ${auction.status})`)
+  }
+
+  const bid = await BidModel.findById(bidId)
+  if (!bid || bid.loadId.toString() !== loadId) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Bid not found for this load')
+  }
+
+  bid.status = BID_STATUSES.Accepted
+  bid.acceptedAt = new Date()
+  await bid.save()
+
+  auction.status = AUCTION_STATUSES.Closed
+  auction.claimedByDriverId = bid.driverId
+  auction.autoAcceptedBidId = bid._id
+  await auction.save()
+
+  await LoadModel.findByIdAndUpdate(loadId, {
+    status: LOAD_STATUSES.Booked,
+    assignedDriverId: bid.driverId,
+  })
+
+  await emitBidsAndPrice(loadId)
+
+  return {
+    loadId,
+    finalPayout: bid.amount,
+    // TODO: generate a real rate-confirmation PDF and upload to S3.
+    rateConfirmationUrl: `${RATE_CONFIRMATION_URL_BASE}/rc_${bidId}.pdf`,
+  }
+}
+
+interface UpdateAuctionChanges {
+  extendByMinutes?: number
+  newPriceCeiling?: number
+  autoAcceptTolerancePercentage?: number
+}
+
+/** Update editable auction fields: deadline extension, price ceiling, auto-accept tolerance. */
+export const updateAuction = async (loadId: string, changes: UpdateAuctionChanges) => {
+  assertValidId(loadId, 'loadId')
+
+  const auction = await findAuctionOrThrow(loadId)
+  if (auction.status !== AUCTION_STATUSES.Active) {
+    throw new ApiError(StatusCodes.CONFLICT, `Auction is not live (status: ${auction.status})`)
+  }
+
+  const { extendByMinutes, newPriceCeiling, autoAcceptTolerancePercentage } = changes
+
+  if (typeof extendByMinutes === 'number') {
+    auction.expiresAt = new Date(auction.expiresAt.getTime() + extendByMinutes * MS_PER_MINUTE)
+  }
+  if (typeof newPriceCeiling === 'number') {
+    auction.capPrice = newPriceCeiling
+  }
+  if (typeof autoAcceptTolerancePercentage === 'number') {
+    auction.autoAcceptPercent = autoAcceptTolerancePercentage
+  }
+
+  await auction.save()
+
+  return {
+    loadId,
+    newExpiresAt: auction.expiresAt,
+    priceCeiling: auction.capPrice,
+    autoAcceptToleranceThreshold: auction.capPrice * (1 + auction.autoAcceptPercent / 100),
+  }
+}
+
+/** Cancel the ongoing auction and remove (cancel) the load. */
+export const cancelAuction = async (loadId: string) => {
+  assertValidId(loadId, 'loadId')
+
+  const auction = await findAuctionOrThrow(loadId)
+
+  auction.status = AUCTION_STATUSES.Cancelled
+  await auction.save()
+
+  await LoadModel.findByIdAndUpdate(loadId, { status: LOAD_STATUSES.Cancelled })
+
+  await emitBidsAndPrice(loadId)
+}

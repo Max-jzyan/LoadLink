@@ -22,7 +22,7 @@ export const loadApi = api.injectEndpoints({
     // GET /api/loads/:loadId — fetch single load
     getLoad: build.query<Load, string>({
       query: (loadId) => `loads/${loadId}`,
-      providesTags: (result, error, loadId) => [{ type: LoadTag.Load, id: loadId }],
+      providesTags: (_result, _error, loadId) => [{ type: LoadTag.Load, id: loadId }],
     }),
 
     // GET /api/company/:companyId/loads — list company loads
@@ -57,7 +57,7 @@ export const loadApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (result, error, { loadId }) => [
+      invalidatesTags: (_result, _error, { loadId }) => [
         { type: LoadTag.Load, id: loadId },
         { type: LoadTag.Load, id: LoadTagId.List },
         { type: LoadTag.Load, id: LoadTagId.CompanyList },

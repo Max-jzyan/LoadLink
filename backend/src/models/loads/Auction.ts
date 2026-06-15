@@ -1,4 +1,5 @@
 import { Schema, model, InferSchemaType, Types } from 'mongoose'
+import { AUCTION_STATUSES, AUCTION_STATUS_VALUES, CURRENCIES, CURRENCY_VALUES } from '../enums'
 
 const AuctionSchema = new Schema(
   {
@@ -26,12 +27,13 @@ const AuctionSchema = new Schema(
     priceCreepIntervalHours: { type: Number, required: true }, // e.g., every 1 hour
 
     currentPrice: { type: Number, required: true },
+    currency: { type: String, enum: CURRENCY_VALUES, default: CURRENCIES.CAD },
     expiresAt: { type: Date, required: true },
 
     status: {
       type: String,
-      enum: ['live', 'closed', 'cancelled'],
-      default: 'live',
+      enum: AUCTION_STATUS_VALUES,
+      default: AUCTION_STATUSES.Active,
     },
 
     claimedByDriverId: {

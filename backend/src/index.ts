@@ -19,9 +19,15 @@ app.get('/api/health', (_req, res) => {
 })
 
 import loadRouter from './routes/loadRoutes'
+import auctionRouter from './routes/auctionRoutes'
+import { errorHandler } from './middleware/errorHandler'
 
 // Routes
 app.use('/api', loadRouter)
+app.use('/api', auctionRouter)
+
+// Central error handler
+app.use(errorHandler)
 
 // MongoDB
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://mongo:27017/loadlink'
