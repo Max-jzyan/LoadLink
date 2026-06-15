@@ -29,7 +29,6 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-
       <SidebarContent>
         <SidebarGroup>
           {getNavItems('main').map((item) => (
@@ -44,7 +43,6 @@ export function AppSidebar() {
           ))}
         </SidebarGroup>
       </SidebarContent>
-
       <SidebarFooter>
         <SidebarMenu>
           {getNavItems('bottom').map((item) => (
@@ -57,7 +55,6 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link to={RoutePath.Logout}>

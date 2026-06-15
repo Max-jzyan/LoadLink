@@ -1,16 +1,18 @@
 import {
-  LayoutDashboard,
   ClipboardList,
-  MapPin,
-  Truck,
-  Settings,
   HelpCircle,
+  LayoutDashboard,
   LogOut,
+  MapPin,
+  Settings,
+  Truck,
   type LucideIcon,
 } from 'lucide-react'
 
 export const RoutePath = {
   Dashboard: '/', // TODO: Fix this. Login will likely go here.
+  Test: '/test',
+  DriverLoads: '/driverLoads',
   Loads: '/loads',
   Map: '/map',
   Fleet: '/fleet',
@@ -30,6 +32,8 @@ interface RouteMeta {
 
 export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
   [RoutePath.Dashboard]: { label: 'Dashboard', icon: LayoutDashboard, navGroup: 'main' },
+  [RoutePath.Test]: { label: 'Test', icon: LayoutDashboard, navGroup: 'main' },
+  [RoutePath.DriverLoads]: { label: 'DriverLoads', icon: ClipboardList, navGroup: 'main' },
   [RoutePath.Loads]: { label: 'Loads', icon: ClipboardList, navGroup: 'main' },
   [RoutePath.Map]: { label: 'Map', icon: MapPin, navGroup: 'main' },
   [RoutePath.Fleet]: { label: 'My Fleet', icon: Truck, navGroup: 'main' },
@@ -37,7 +41,6 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
   [RoutePath.Help]: { label: 'Help', icon: HelpCircle, navGroup: 'bottom' },
   [RoutePath.Logout]: { label: 'Logout', icon: LogOut, navGroup: null },
 }
-
 
 /** Get label for any path (used by breadcrumbs). Falls back to Title Case of the segment. */
 export const getRouteLabel = (path: string): string => {
@@ -51,12 +54,12 @@ export const getRouteLabel = (path: string): string => {
   if (ROUTE_CONFIG[('/' + segment) as RoutePath]) {
     return ROUTE_CONFIG[('/' + segment) as RoutePath].label
   }
-  
+
   // Fallback: convert camelCase / kebab-case → Title Case
   return segment
-    .replace(/([a-z])([A-Z])/g, '$1 $2')   // camelCase → "camel Case"
-    .replace(/-/g, ' ')                       // kebab-case → space separated
-    .replace(/\b\w/g, c => c.toUpperCase())   // Capitalize each word
+    .replace(/([a-z])([A-Z])/g, '$1 $2') // camelCase → "camel Case"
+    .replace(/-/g, ' ') // kebab-case → space separated
+    .replace(/\b\w/g, (c) => c.toUpperCase()) // Capitalize each word
 }
 
 /** Sidebar items filtered by nav group. */

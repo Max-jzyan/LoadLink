@@ -52,9 +52,7 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* content area */}
-      <div className="flex flex-1">
-        {children}
-      </div>
+      <div className="flex flex-1">{children}</div>
     </div>
   )
 }
