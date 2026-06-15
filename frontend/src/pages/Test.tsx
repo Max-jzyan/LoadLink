@@ -237,9 +237,7 @@ export default function DriverLoads() {
               action={<Button size="sm">Bid Now</Button>}
               content={
                 <div className="space-y-1 text-sm">
-                  <p className="text-orange-600 font-medium">
-                    ⚠ This card is missing a title.
-                  </p>
+                  <p className="text-orange-600 font-medium">⚠ This card is missing a title.</p>
                   <p>
                     <span className="font-medium">Current Price:</span> $1,200.00
                   </p>
@@ -332,9 +330,7 @@ export default function DriverLoads() {
               action={<Button size="sm">Claim Load</Button>}
               content={
                 <div className="space-y-1 text-sm">
-                  <p className="text-orange-600 font-medium">
-                    ⚠ This card is missing a footer.
-                  </p>
+                  <p className="text-orange-600 font-medium">⚠ This card is missing a footer.</p>
                   <p>
                     <span className="font-medium">Current Price:</span> $2,800.00
                   </p>
@@ -415,9 +411,7 @@ export default function DriverLoads() {
               action={<Button size="sm">Claim Load</Button>}
               content={
                 <div className="space-y-1 text-sm">
-                  <p className="text-orange-600 font-medium">
-                    ⚠ This card is missing a footer.
-                  </p>
+                  <p className="text-orange-600 font-medium">⚠ This card is missing a footer.</p>
                   <p>
                     <span className="font-medium">Current Price:</span> $1,100.00
                   </p>
@@ -474,9 +468,7 @@ export default function DriverLoads() {
               action={<Button size="sm">Claim Load</Button>}
               content={
                 <div className="space-y-1 text-sm">
-                  <p className="text-orange-600 font-medium">
-                    ⚠ This card is missing a footer.
-                  </p>
+                  <p className="text-orange-600 font-medium">⚠ This card is missing a footer.</p>
                   <p>
                     <span className="font-medium">Current Price:</span> $1,350.00
                   </p>
