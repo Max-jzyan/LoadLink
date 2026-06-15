@@ -9,28 +9,10 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
 import { Link } from 'react-router-dom'
-import {
-  LayoutDashboard,
-  ClipboardList,
-  MapPin,
-  Truck,
-  Settings,
-  HelpCircle,
-  LogOut,
-} from 'lucide-react'
 import Logo from '@/components/Logo'
+import { getNavItems, ROUTE_CONFIG, RoutePath } from '@/config/routes'
 
-const mainNavItems = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'Loads', url: '/loads', icon: ClipboardList },
-  { title: 'Map', url: '/map', icon: MapPin },
-  { title: 'My Fleet', url: '/fleet', icon: Truck },
-]
-
-const bottomNavItems = [
-  { title: 'Settings', url: '/settings', icon: Settings },
-  { title: 'Help', url: '/help', icon: HelpCircle },
-]
+const LogoutIcon = ROUTE_CONFIG[RoutePath.Logout].icon
 
 export function AppSidebar() {
   return (
@@ -39,7 +21,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link to="/">
+              <Link to={RoutePath.Dashboard}>
                 <Logo size={24} />
                 <span className="font-semibold text-base">LoadLink</span>
               </Link>
@@ -47,37 +29,40 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
         <SidebarGroup>
-          {mainNavItems.map((item) => (
-            <SidebarMenuItem key={item.title}>
+          {getNavItems('main').map((item) => (
+            <SidebarMenuItem key={item.path}>
               <SidebarMenuButton asChild>
-                <Link to={item.url}>
+                <Link to={item.path}>
                   <item.icon />
-                  <span>{item.title}</span>
+                  <span>{item.label}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
         </SidebarGroup>
       </SidebarContent>
+
       <SidebarFooter>
         <SidebarMenu>
-          {bottomNavItems.map((item) => (
-            <SidebarMenuItem key={item.title}>
+          {getNavItems('bottom').map((item) => (
+            <SidebarMenuItem key={item.path}>
               <SidebarMenuButton asChild>
-                <Link to={item.url}>
+                <Link to={item.path}>
                   <item.icon />
-                  <span>{item.title}</span>
+                  <span>{item.label}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
+
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link to="/logout">
-                <LogOut />
-                <span>Logout</span>
+              <Link to={RoutePath.Logout}>
+                <LogoutIcon />
+                <span>{ROUTE_CONFIG[RoutePath.Logout].label}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

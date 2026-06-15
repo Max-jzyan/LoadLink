@@ -1,12 +1,8 @@
 import * as React from "react"
 
-// TODO: This can be changed
+
 const MOBILE_BREAKPOINT = 768
 
-/*
-* This automatically closes the sideNav when faced with a smaller screen size (@MOBILE_BREAKPOINT)
-* Essentially it removes the side nav button, where clicking (tapping) outside of the sideNav will close it
-*/
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
 
