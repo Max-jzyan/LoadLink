@@ -211,7 +211,10 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
                 <div>
                   <DatePicker
                     label="Pickup Date"
-                    onDateTimeChange={(v) => setValue('pickupTime', v, { shouldValidate: true })}
+                    onDateTimeChange={(v) => {
+                      setValue('pickupTime', v, { shouldValidate: true })
+                      trigger('dropoffTime')
+                    }}
                   />
                   <FieldError message={errors.pickupTime?.message} />
                 </div>
