@@ -1,0 +1,164 @@
+// inspiration from https://stackblitz.com/edit/shadcn-combobox-example?file=components%2FCombobox.tsx
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import { cn } from '@/lib/utils'
+import { useAutocompleteAddressQuery } from '@/services/locationSlices/geocoding'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Button } from '@/components/ui/button'
+import { FieldDescription, FieldLabel } from '@/components/ui/field'
+
+const savedAddresses: AddressOption[] = [
+  {
+    value: '1234 main st, Vancouver, bc v5k 0a1',
+    label: 'pickup point 1 - 1234 main st, Vancouver, bc v5k 0a1',
+  },
+  {
+    value: '5678 elm st, Langley, bc v1m 2n3',
+    label: 'pickup point 2 - 5678 elm st, Langley, bc v1m 2n3',
+  },
+  {
+    value: '9101 oak st, Toronto, on m4b 1c2',
+    label: 'dropoff point 1 - 9101 oak st, Toronto, on m4b 1c2',
+  },
+  {
+    value: '1213 pine st, Montreal, qc h2x 3y4',
+    label: 'dropoff point 2 - 1213 pine st, Montreal, qc h2x 3y4',
+  },
+]
+
+export interface AddressOption {
+  value: string
+  label: string
+}
+
+export interface AddressFieldProps {
+  disabled?: boolean
+  placeholder?: string
+  className?: string
+  label?: string
+  description?: string
+}
+
+export function AddressField({
+  disabled,
+  placeholder,
+  className,
+  label,
+  description,
+}: AddressFieldProps) {
+  const [address, setAddress] = useState<string>('')
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedQuery(query), 400)
+    return () => clearTimeout(id)
+  }, [query])
+
+  const { data: geocodeResults = [] } = useAutocompleteAddressQuery(debouncedQuery, {
+    skip: debouncedQuery.length < 6,
+  })
+
+  const suggestions: AddressOption[] = geocodeResults.map((r) => ({
+    value: r.formatted,
+    label: r.formatted,
+  }))
+
+  const options = [
+    ...savedAddresses,
+    ...suggestions.filter((s) => !savedAddresses.some((saved) => saved.value === s.value)),
+  ]
+  const selected = options.find((option) => option.value === address)
+
+  const handleSelect = (value: string) => {
+    setAddress(value)
+    setOpen(false)
+  }
+
+  return (
+    <div className={cn('flex flex-col', className)}>
+      {label && <FieldLabel className="mb-1">{label}</FieldLabel>}
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            disabled={disabled ?? false}
+            aria-expanded={open}
+            className="w-full font-normal"
+          >
+            {selected && selected.value.length > 0 ? (
+              <div className="truncate mr-auto">
+                {options.find((item) => item.value === selected.value)?.label}
+              </div>
+            ) : (
+              <div className="text-muted-foreground mr-auto">{placeholder ?? 'Select'}</div>
+            )}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+          <Command>
+            <CommandInput
+              placeholder="Choose from saved or enter new address..."
+              value={query}
+              onValueChange={(value: string) => setQuery(value)}
+              onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                }
+              }}
+            />
+            <CommandEmpty>No results found.</CommandEmpty>
+
+            <CommandList>
+              <CommandGroup className="overflow-y-auto">
+                {options.map((option) => (
+                  <CommandItem
+                    key={option.label}
+                    tabIndex={0}
+                    value={option.label}
+                    onSelect={() => {
+                      console.log('onSelect')
+                      handleSelect(option.value)
+                    }}
+                    onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
+                      if (event.key === 'Enter') {
+                        event.stopPropagation()
+                        handleSelect(option.value)
+                      }
+                    }}
+                    className={cn(
+                      'cursor-pointer',
+                      'focus:!bg-accent hover:!bg-accent aria-selected:bg-transparent'
+                    )}
+                  >
+                    <Check
+                      className={cn(
+                        'mr-2 h-4 w-4 min-h-4 min-w-4',
+                        selected?.value === option.value ? 'opacity-100' : 'opacity-0'
+                      )}
+                    />
+                    {option.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {description && <FieldDescription>{description}</FieldDescription>}
+    </div>
+  )
+}

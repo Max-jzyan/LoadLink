@@ -2,7 +2,11 @@ import Col from '@/components/layout/Col'
 import DynamicCard from '@/components/layout/DynamicCard'
 import LayoutGrid from '@/components/layout/LayoutGrid'
 import Row from '@/components/layout/Row'
+import { AddressField } from '@/components/shared/AddressField'
+import { DatePicker } from '@/components/shared/DatePicker'
+import { PriceInput } from '@/components/shared/PriceInput'
 import { Button } from '@/components/ui/button'
+import { PriceInputVariant } from '@/types/enums'
 
 export default function DriverLoads() {
   return (
@@ -226,6 +230,53 @@ export default function DriverLoads() {
                 </div>
               }
             />
+          </Col>
+        </Row>
+
+        {/* === Component Preview === */}
+        <Row size={8}>
+          <Col size={8}>
+            <div className="h-full rounded-lg p-6 flex flex-col gap-4 bg-card">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                PriceInput — amount
+              </p>
+              <PriceInput label="Min Price" variant={PriceInputVariant.AMOUNT} placeholder="0.00" />
+            </div>
+          </Col>
+          <Col size={8}>
+            <div className="h-full rounded-lg p-6 flex flex-col gap-4 bg-muted">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                PriceInput — escalation
+              </p>
+              <PriceInput
+                label="Hourly Escalation Rate"
+                variant={PriceInputVariant.ESCALATION}
+                placeholder="0.00"
+              />
+            </div>
+          </Col>
+        </Row>
+        <Row size={8}>
+          <Col size={8}>
+            <div className="h-full rounded-lg p-6 flex flex-col gap-4 bg-accent">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                DatePicker
+              </p>
+              <DatePicker label="Pickup Date" />
+            </div>
+          </Col>
+          <Col size={8}>
+            <div className="h-full rounded-lg p-6 flex flex-col gap-4 bg-sidebar">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                AddressField
+              </p>
+              <AddressField
+                disabled={false}
+                placeholder="Enter address..."
+                description="Enter your pickup address"
+                label="Pickup Address"
+              />
+            </div>
           </Col>
         </Row>
       </LayoutGrid>

@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input'
 import { InputGroup, InputGroupAddon } from '@/components/ui/input-group'
 import { PriceInputVariant } from '@/types/enums'
 import { cn } from '@/lib/utils'
-import { Field, FieldDescription, FieldLabel } from './field'
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 
 interface PriceInputProps extends React.ComponentProps<typeof Input> {
   label: string
