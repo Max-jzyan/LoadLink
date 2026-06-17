@@ -1,7 +1,7 @@
 import type { LatLngBoundsExpression, LatLngExpression } from 'leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
 
 // Fix default Leaflet icon issue with bundlers
@@ -11,6 +11,38 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
+
+// Watches the `dark` class on <html> and returns a bool
+function useDarkMode(): boolean {
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'))
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'))
+    })
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
+    return () => observer.disconnect()
+  }, [])
+
+  return isDark
+}
+
+const TILES = {
+  light: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  },
+  // radnom map I found that matches, can change
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  },
+} as const
 
 /** A small factory that creates a coloured circle divIcon */
 function createColoredIcon(color: string) {
@@ -42,6 +74,9 @@ type DriverMapProps = {
 
 // This is mostly just a test
 export function DriverMap({ routes, height = '500px', selectedRouteId }: DriverMapProps) {
+  const isDark = useDarkMode()
+  const tile = isDark ? TILES.dark : TILES.light
+
   return (
     <div style={{ height }}>
       <MapContainer
@@ -49,8 +84,13 @@ export function DriverMap({ routes, height = '500px', selectedRouteId }: DriverM
         zoom={5}
         style={{ height: '100%', width: '100%' }}
       >
-        {/* This is an open source API */}
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
+        {/* key forces remount when tile variant changes */}
+        <TileLayer
+          key={isDark ? 'dark' : 'light'}
+          url={tile.url}
+          attribution={tile.attribution}
+          maxZoom={19}
+        />
 
         <FlyToRoute routes={routes} selectedRouteId={selectedRouteId} />
 

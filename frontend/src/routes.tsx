@@ -1,18 +1,18 @@
-import { Routes, Route } from 'react-router-dom'
+import { Navigate, Routes, Route } from 'react-router-dom'
 import { RoutePath } from '@/config/routes'
 import Dashboard from '@/pages/Dashboard'
 import Loads from '@/pages/Loads'
 import MapPage from '@/pages/Map'
-import DriverLoads from './pages/DriverLoads'
+import DriverLoads from '@/pages/DriverLoads'
 import Test from './pages/Test'
-import DriverAuction from './pages/DriverAuction'
-import Auth from './pages/Auth'
-import PostLoad from './pages/PostLoad'
+import DriverAuction from '@/pages/DriverAuction'
+import Auth from '@/pages/Auth'
+import PostLoad from '@/pages/PostLoad'
 
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path={RoutePath.Auth} element={<Auth />} />
+      <Route path="/" element={<Navigate to={RoutePath.Dashboard} replace />} />
       <Route path={RoutePath.Dashboard} element={<Dashboard />} />
       <Route path={RoutePath.Test} element={<Test />} />
       <Route path={RoutePath.DriverLoads} element={<DriverLoads />} />

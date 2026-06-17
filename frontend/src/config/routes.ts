@@ -9,11 +9,11 @@ import {
   Truck,
   type LucideIcon,
 } from 'lucide-react'
+import type { UserRole } from '@/hooks/useRole'
 
 export const RoutePath = {
-  Dashboard: '/', // TODO: Fix this. Login will likely go here.
-  Auth: '/auth',
   Test: '/test',
+  Dashboard: '/dashboard',
   DriverLoads: '/driverLoads',
   DriverAuctions: '/driverAuctions',
   Loads: '/loads',
@@ -27,11 +27,13 @@ export const RoutePath = {
 
 export type RoutePath = (typeof RoutePath)[keyof typeof RoutePath]
 
-interface RouteMeta {
+export interface RouteMeta {
   label: string
   icon: LucideIcon
   /** Where this item appears in the nav. null = not in any nav group. */
   navGroup: 'main' | 'bottom' | null
+  // Which roles can see this nav item, where undefined = visible to all roles
+  roles?: UserRole[]
 }
 
 export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
@@ -68,7 +70,9 @@ export const getRouteLabel = (path: string): string => {
 }
 
 /** Sidebar items filtered by nav group. */
-export const getNavItems = (group: 'main' | 'bottom') =>
+// TODO: connect the optional role based filtering to the sidebars -> hardcoded right now (DRIVER_NAV adn COMPANT_NAV)
+export const getNavItems = (group: 'main' | 'bottom', role?: UserRole) =>
   (Object.entries(ROUTE_CONFIG) as [RoutePath, RouteMeta][])
     .filter(([, meta]) => meta.navGroup === group)
+    .filter(([, meta]) => !meta.roles || !role || meta.roles.includes(role))
     .map(([path, meta]) => ({ path, ...meta }))

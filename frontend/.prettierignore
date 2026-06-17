@@ -3,3 +3,4 @@ dist
 .next
 public
 *.lock
+src/components/ui

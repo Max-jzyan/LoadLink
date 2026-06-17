@@ -25,9 +25,9 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
         })
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
+    <div className="flex h-full flex-col">
       {/* Full-width breadcrumb bar */}
-      <div className="flex w-full items-center gap-4 border-b bg-background px-6 py-3">
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
         <Breadcrumb>
           <BreadcrumbList>
             {breadcrumbItems.map((item, index) => {
@@ -49,10 +49,10 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
             })}
           </BreadcrumbList>
         </Breadcrumb>
-      </div>
+      </header>
 
-      {/* content area */}
-      <div className="flex flex-1">{children}</div>
+      {/* content scrolls internally so the outer page never gets a scrollbar */}
+      <div className="flex flex-1 overflow-y-auto p-6">{children}</div>
     </div>
   )
 }
