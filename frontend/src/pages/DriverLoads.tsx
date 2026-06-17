@@ -42,27 +42,25 @@ export default function DriverLoads() {
     <LayoutGrid>
       <Row size={1}>
         <Col size={16}>
-          <DynamicCard title="Toolbar" content={'Content will go here... eventually'} />
+          <DynamicCard title="Toolbar">Content will go here... eventually</DynamicCard>
         </Col>
       </Row>
       <Row size={2}>
         <Col size={4}>
-          <DynamicCard
-            title="My Loads"
-            content={availableLoads.length ? availableLoads.length : <p>0</p>}
-          />
+          <DynamicCard title="My Loads">
+            {availableLoads.length ? availableLoads.length : <p>0</p>}
+          </DynamicCard>
         </Col>
         <Col size={4}>
-          <DynamicCard
-            title="Current Loads in Transit"
-            content={loadsInTransit.length ? loadsInTransit.length : <p>0</p>}
-          />
+          <DynamicCard title="Current Loads in Transit">
+            {loadsInTransit.length ? loadsInTransit.length : <p>0</p>}
+          </DynamicCard>
         </Col>
         <Col size={4}>
-          <DynamicCard title="Active Bids" content={activeBids.length} />
+          <DynamicCard title="Active Bids">{activeBids.length}</DynamicCard>
         </Col>
         <Col size={4}>
-          <DynamicCard title="Completed Loads" content={completedLoads.length} />
+          <DynamicCard title="Completed Loads">{completedLoads.length}</DynamicCard>
         </Col>
       </Row>
       <Row size={7}>
@@ -76,10 +74,9 @@ export default function DriverLoads() {
       </Row>
       <Row size={8}>
         <Col size={16}>
-          <DynamicCard
-            title="Map"
-            content={<DriverMap routes={routes} selectedRouteId={selectedRouteId} />}
-          />
+          <DynamicCard title="Map">
+            <DriverMap routes={routes} selectedRouteId={selectedRouteId} />
+          </DynamicCard>
         </Col>
       </Row>
     </LayoutGrid>

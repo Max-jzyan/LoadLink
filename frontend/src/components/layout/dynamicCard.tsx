@@ -12,18 +12,18 @@ interface DriverCardProps {
   title?: string
   description?: string
   action?: React.ReactNode
-  content?: React.ReactNode
   footer?: React.ReactNode
   size?: 'default' | 'sm'
+  children?: React.ReactNode
 }
 
 export default function DynamicCard({
   title,
   description,
   action,
-  content,
   footer,
   size = 'default',
+  children,
 }: DriverCardProps) {
   return (
     <Card className="mx-auto w-full" size={size}>
@@ -34,7 +34,7 @@ export default function DynamicCard({
           {action && <CardAction>{action}</CardAction>}
         </CardHeader>
       )}
-      {content && <CardContent>{content}</CardContent>}
+      {children && <CardContent>{children}</CardContent>}
       {footer && <CardFooter>{footer}</CardFooter>}
     </Card>
   )
