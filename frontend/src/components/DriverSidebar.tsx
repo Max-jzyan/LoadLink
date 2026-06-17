@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { LayoutDashboard, ClipboardList, MapPin } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, MapPin, Gavel } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -20,6 +20,7 @@ const DRIVER_NAV = [
   { path: RoutePath.DriverLoads, label: 'My Loads', icon: ClipboardList },
   { path: RoutePath.Map, label: 'Map', icon: MapPin },
   { path: RoutePath.Test, label: 'Test', icon: MapPin },
+  { path: RoutePath.DriverAuctions, label: 'Auctions', icon: Gavel },
 ]
 
 export function DriverSidebar() {

@@ -6,7 +6,6 @@ import MapPage from '@/pages/Map'
 import DriverLoads from '@/pages/DriverLoads'
 import Test from './pages/Test'
 import DriverAuction from '@/pages/DriverAuction'
-import Auth from '@/pages/Auth'
 import PostLoad from '@/pages/PostLoad'
 
 export default function AppRoutes() {
