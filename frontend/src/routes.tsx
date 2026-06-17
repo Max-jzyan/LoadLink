@@ -7,7 +7,7 @@ import DriverLoads from './pages/DriverLoads'
 import Test from './pages/Test'
 import DriverAuction from './pages/DriverAuction'
 import Auth from './pages/Auth'
-
+import PostLoad from './pages/PostLoad'
 
 export default function AppRoutes() {
   return (
@@ -18,6 +18,7 @@ export default function AppRoutes() {
       <Route path={RoutePath.DriverLoads} element={<DriverLoads />} />
       <Route path={RoutePath.DriverAuctions} element={<DriverAuction />} />
       <Route path={RoutePath.Loads} element={<Loads />} />
+      <Route path={RoutePath.PostLoad} element={<PostLoad />} />
       <Route path={RoutePath.Map} element={<MapPage />} />
     </Routes>
   )

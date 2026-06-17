@@ -17,6 +17,7 @@ export const RoutePath = {
   DriverLoads: '/driverLoads',
   DriverAuctions: '/driverAuctions',
   Loads: '/loads',
+  PostLoad: '/loads/post',
   Map: '/map',
   Fleet: '/fleet',
   Settings: '/settings',
@@ -37,14 +38,13 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
   [RoutePath.Dashboard]: { label: 'Dashboard', icon: LayoutDashboard, navGroup: 'main' },
   [RoutePath.Test]: { label: 'Test', icon: LayoutDashboard, navGroup: 'main' },
   [RoutePath.DriverLoads]: { label: 'DriverLoads', icon: ClipboardList, navGroup: 'main' },
-  [RoutePath.DriverAuctions]: { label: 'DriverAuctions', icon: LayoutList, navGroup: 'main'},
+  [RoutePath.DriverAuctions]: { label: 'DriverAuctions', icon: LayoutList, navGroup: 'main' },
   [RoutePath.Loads]: { label: 'Loads', icon: ClipboardList, navGroup: 'main' },
   [RoutePath.Map]: { label: 'Map', icon: MapPin, navGroup: 'main' },
   [RoutePath.Fleet]: { label: 'My Fleet', icon: Truck, navGroup: 'main' },
   [RoutePath.Settings]: { label: 'Settings', icon: Settings, navGroup: 'bottom' },
   [RoutePath.Help]: { label: 'Help', icon: HelpCircle, navGroup: 'bottom' },
   [RoutePath.Logout]: { label: 'Logout', icon: LogOut, navGroup: null },
-  
 }
 
 /** Get label for any path (used by breadcrumbs). Falls back to Title Case of the segment. */
