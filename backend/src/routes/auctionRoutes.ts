@@ -1,10 +1,12 @@
 import { Router } from 'express'
 import {
+  acceptBid,
+  cancelAuction,
+  claimLoad,
+  placeBid,
   streamBids,
   streamPrice,
-  acceptBid,
   updateAuction,
-  cancelAuction,
 } from '../controllers/auctionController'
 
 const router = Router()
@@ -15,4 +17,9 @@ router.patch('/auctions/:loadId/bids/:bidId', acceptBid)
 router.patch('/auctions/:loadId', updateAuction)
 router.delete('/auctions/:loadId', cancelAuction)
 
+// Auction actions (driver-initiated)
+router.post('/auctions/:loadId/bids', placeBid)
+router.post('/auctions/:loadId/claim', claimLoad)
+
 export default router
+

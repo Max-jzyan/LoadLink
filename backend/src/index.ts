@@ -20,11 +20,13 @@ app.get('/api/health', (_req, res) => {
 
 import loadRouter from './routes/loadRoutes'
 import auctionRouter from './routes/auctionRoutes'
+import driverRouter from './routes/driverRoutes'
 import { errorHandler } from './middleware/errorHandler'
 
 // Routes
 app.use('/api', loadRouter)
 app.use('/api', auctionRouter)
+app.use('/api', driverRouter)
 
 // Central error handler
 app.use(errorHandler)
