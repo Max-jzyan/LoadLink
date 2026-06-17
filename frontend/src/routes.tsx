@@ -5,10 +5,12 @@ import Loads from '@/pages/Loads'
 import MapPage from '@/pages/Map'
 import DriverLoads from './pages/DriverLoads'
 import Test from './pages/Test'
+import Auth from './pages/Auth'
 
 export default function AppRoutes() {
   return (
     <Routes>
+      <Route path={RoutePath.Auth} element={<Auth />} />
       <Route path={RoutePath.Dashboard} element={<Dashboard />} />
       <Route path={RoutePath.Test} element={<Test />} />
       <Route path={RoutePath.DriverLoads} element={<DriverLoads />} />

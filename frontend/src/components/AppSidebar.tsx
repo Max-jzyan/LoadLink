@@ -8,13 +8,21 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Logo from '@/components/Logo'
 import { getNavItems, ROUTE_CONFIG, RoutePath } from '@/config/routes'
+import { logoutUser } from '@/services/authSlice'
 
 const LogoutIcon = ROUTE_CONFIG[RoutePath.Logout].icon
 
 export function AppSidebar() {
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await logoutUser()
+    navigate(RoutePath.Auth)
+  }
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -56,11 +64,9 @@ export function AppSidebar() {
             </SidebarMenuItem>
           ))}
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to={RoutePath.Logout}>
-                <LogoutIcon />
-                <span>{ROUTE_CONFIG[RoutePath.Logout].label}</span>
-              </Link>
+            <SidebarMenuButton onClick={handleLogout}>
+              <LogoutIcon />
+              <span>{ROUTE_CONFIG[RoutePath.Logout].label}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

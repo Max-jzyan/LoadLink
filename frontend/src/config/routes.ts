@@ -11,6 +11,7 @@ import {
 
 export const RoutePath = {
   Dashboard: '/', // TODO: Fix this. Login will likely go here.
+  Auth: '/auth',
   Test: '/test',
   DriverLoads: '/driverLoads',
   Loads: '/loads',

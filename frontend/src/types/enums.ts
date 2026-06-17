@@ -4,3 +4,11 @@ export const PriceInputVariant = {
 } as const
 
 export type PriceInputVariant = (typeof PriceInputVariant)[keyof typeof PriceInputVariant]
+
+export const USER_ROLES = {
+  DRIVER: 'driver',
+  COMPANY: 'company',
+  ADMIN: 'admin',
+} as const
+
+export type USER_ROLES = (typeof USER_ROLES)[keyof typeof USER_ROLES]
