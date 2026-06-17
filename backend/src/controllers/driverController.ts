@@ -109,8 +109,10 @@ export const listDriverTrucks = async (req: Request, res: Response, next: NextFu
     const driverId = req.params.driverId as string
     assertValidId(driverId, 'driverId')
 
-    const trucks = await TruckModel.find({ ownerDriverId: new Types.ObjectId(driverId) })
-      .sort({ isPrimary: -1, createdAt: -1 })
+    const trucks = await TruckModel.find({ ownerDriverId: new Types.ObjectId(driverId) }).sort({
+      isPrimary: -1,
+      createdAt: -1,
+    })
 
     res.status(StatusCodes.OK).json(trucks)
   } catch (err) {

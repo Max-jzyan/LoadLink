@@ -22,4 +22,3 @@ router.post('/auctions/:loadId/bids', placeBid)
 router.post('/auctions/:loadId/claim', claimLoad)
 
 export default router
-

@@ -1,69 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
 import { StatusCodes } from 'http-status-codes'
-import { isValidObjectId, Types } from 'mongoose'
 import { initSSE, sendSSE, startSSEKeepAlive } from '../utils/sse'
 import { onBidsUpdate, onPriceUpdate } from '../events/auctionEvents'
-import { emitBidsUpdate, emitPriceUpdate } from '../events/auctionEvents'
-import { BidModel } from '../models/loads/Bid'
-import { AuctionModel } from '../models/loads/Auction'
-import { LoadModel } from '../models/loads/Load'
-import { AUCTION_STATUSES, BID_STATUSES, LOAD_STATUSES } from '../models/enums'
-import { ApiError } from '../utils/ApiError'
 import * as auctionService from '../services/auctionService'
-
-// ── helpers ──────────────────────────────────────────────────────────────
-
-const assertValidId = (id: string, label: string) => {
-  if (!isValidObjectId(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, `Invalid ${label}`)
-  }
-}
-
-const findAuctionOrThrow = async (loadId: string) => {
-  const auction = await AuctionModel.findOne({ loadId: new Types.ObjectId(loadId) })
-  if (!auction) {
-    throw new ApiError(StatusCodes.NOT_FOUND, 'Auction not found for load')
-  }
-  return auction
-}
-
-const buildBidsPayload = async (loadId: string) => {
-  const auction = await AuctionModel.findOne({ loadId: new Types.ObjectId(loadId) })
-  if (!auction) return null
-
-  const bids = await BidModel.find({ loadId: new Types.ObjectId(loadId) })
-    .sort({ amount: 1 })
-    .populate('driverId')
-
-  return {
-    loadId,
-    bids,
-    loadEventType: auction.status,
-  }
-}
-
-const buildPricePayload = async (loadId: string) => {
-  const auction = await AuctionModel.findOne({ loadId: new Types.ObjectId(loadId) })
-  if (!auction) return null
-
-  return {
-    loadId,
-    currentPrice: auction.currentPrice,
-    currency: auction.currency,
-    loadEventType: auction.status,
-    updatedAt: auction.lastPriceUpdateAt,
-  }
-}
-
-const emitBidsAndPrice = async (loadId: string) => {
-  const bidsPayload = await buildBidsPayload(loadId)
-  if (bidsPayload) emitBidsUpdate(loadId, bidsPayload)
-
-  const pricePayload = await buildPricePayload(loadId)
-  if (pricePayload) emitPriceUpdate(loadId, pricePayload)
-}
-
-// ── endpoints ────────────────────────────────────────────────────────────
 
 /**
  * POST /api/auctions/:loadId/bids
@@ -74,30 +13,7 @@ export const placeBid = async (req: Request, res: Response, next: NextFunction) 
   try {
     const loadId = req.params.loadId as string
     const { driverId, amount } = req.body
-
-    assertValidId(loadId, 'loadId')
-    assertValidId(driverId, 'driverId')
-
-    if (!amount || amount < 1) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Bid amount must be at least 1')
-    }
-
-    const auction = await findAuctionOrThrow(loadId)
-    if (auction.status !== AUCTION_STATUSES.Active) {
-      throw new ApiError(StatusCodes.CONFLICT, `Auction is not live (status: ${auction.status})`)
-    }
-
-    const bid = await BidModel.create({
-      loadId: new Types.ObjectId(loadId),
-      auctionId: auction._id,
-      driverId: new Types.ObjectId(driverId),
-      amount,
-      status: BID_STATUSES.Submitted,
-    })
-
-    await bid.populate('driverId')
-    await emitBidsAndPrice(loadId)
-
+    const bid = await auctionService.placeBid(loadId, driverId, amount)
     res.status(StatusCodes.CREATED).json(bid)
   } catch (err) {
     next(err)
@@ -113,44 +29,8 @@ export const claimLoad = async (req: Request, res: Response, next: NextFunction)
   try {
     const loadId = req.params.loadId as string
     const { driverId } = req.body
-
-    assertValidId(loadId, 'loadId')
-    assertValidId(driverId, 'driverId')
-
-    const auction = await findAuctionOrThrow(loadId)
-    if (auction.status !== AUCTION_STATUSES.Active) {
-      throw new ApiError(StatusCodes.CONFLICT, `Auction is not live (status: ${auction.status})`)
-    }
-
-    // Create a bid at the current price (mark accepted immediately)
-    const bid = await BidModel.create({
-      loadId: new Types.ObjectId(loadId),
-      auctionId: auction._id,
-      driverId: new Types.ObjectId(driverId),
-      amount: auction.currentPrice,
-      status: BID_STATUSES.Accepted,
-      acceptedAt: new Date(),
-    })
-
-    // Close the auction
-    auction.status = AUCTION_STATUSES.Closed
-    auction.claimedByDriverId = new Types.ObjectId(driverId)
-    auction.autoAcceptedBidId = bid._id as Types.ObjectId
-    await auction.save()
-
-    // Assign the load to the driver
-    await LoadModel.findByIdAndUpdate(new Types.ObjectId(loadId), {
-      status: LOAD_STATUSES.Booked,
-      assignedDriverId: new Types.ObjectId(driverId),
-    })
-
-    await emitBidsAndPrice(loadId)
-
-    res.status(StatusCodes.OK).json({
-      loadId,
-      finalPayout: auction.currentPrice,
-      rateConfirmationUrl: `/api/rate-confirmation/rc_${bid._id}.pdf`,
-    })
+    const result = await auctionService.claimLoad(loadId, driverId)
+    res.status(StatusCodes.OK).json(result)
   } catch (err) {
     next(err)
   }

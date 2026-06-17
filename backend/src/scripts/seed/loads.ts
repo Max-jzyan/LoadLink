@@ -256,7 +256,7 @@ export async function seedLoads({
 
   const loads = await Promise.all(
     mockLoads.map((m) => {
-      const driverId = m.driverKey ? driverMap[m.driverKey] ?? null : null
+      const driverId = m.driverKey ? (driverMap[m.driverKey] ?? null) : null
       const companyId = companyMap[m.companyAlias]
 
       return LoadModel.create({

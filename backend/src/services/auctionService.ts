@@ -122,6 +122,71 @@ export const acceptBid = async (loadId: string, bidId: string) => {
   }
 }
 
+/** Driver places a bid on a live auction. Returns the populated bid. */
+export const placeBid = async (loadId: string, driverId: string, amount: number) => {
+  assertValidId(loadId, 'loadId')
+  assertValidId(driverId, 'driverId')
+  if (typeof amount !== 'number' || amount < 1) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Bid amount must be at least 1')
+  }
+
+  const auction = await findAuctionOrThrow(loadId)
+  if (auction.status !== AUCTION_STATUSES.Active) {
+    throw new ApiError(StatusCodes.CONFLICT, `Auction is not live (status: ${auction.status})`)
+  }
+
+  const bid = await BidModel.create({
+    loadId,
+    auctionId: auction._id,
+    driverId,
+    amount,
+    status: BID_STATUSES.Submitted,
+  })
+
+  await bid.populate('driverId')
+  await emitBidsAndPrice(loadId)
+  return bid
+}
+
+/** Driver instantly claims a live auction at its current price. Closes + books the load. */
+export const claimLoad = async (loadId: string, driverId: string) => {
+  assertValidId(loadId, 'loadId')
+  assertValidId(driverId, 'driverId')
+
+  const auction = await findAuctionOrThrow(loadId)
+  if (auction.status !== AUCTION_STATUSES.Active) {
+    throw new ApiError(StatusCodes.CONFLICT, `Auction is not live (status: ${auction.status})`)
+  }
+
+  const bid = await BidModel.create({
+    loadId,
+    auctionId: auction._id,
+    driverId,
+    amount: auction.currentPrice,
+    status: BID_STATUSES.Accepted,
+    acceptedAt: new Date(),
+  })
+
+  auction.status = AUCTION_STATUSES.Closed
+  auction.claimedByDriverId = bid.driverId
+  auction.autoAcceptedBidId = bid._id
+  await auction.save()
+
+  await LoadModel.findByIdAndUpdate(loadId, {
+    status: LOAD_STATUSES.Booked,
+    assignedDriverId: bid.driverId,
+  })
+
+  await emitBidsAndPrice(loadId)
+
+  return {
+    loadId,
+    finalPayout: auction.currentPrice,
+    // TODO: generate a real rate-confirmation PDF and upload to S3.
+    rateConfirmationUrl: `${RATE_CONFIRMATION_URL_BASE}/rc_${bid._id}.pdf`,
+  }
+}
+
 interface UpdateAuctionChanges {
   extendByMinutes?: number
   newPriceCeiling?: number

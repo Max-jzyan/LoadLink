@@ -7,7 +7,9 @@ import { LOAD_STATUSES } from '../../models/enums'
  * Seed the auctions collection: create an auction for each load that has
  * an `auction_live` status.
  */
-export async function seedAuctions(loads: Array<{ _id: Types.ObjectId; companyId: Types.ObjectId; status: string }>) {
+export async function seedAuctions(
+  loads: Array<{ _id: Types.ObjectId; companyId: Types.ObjectId; status: string }>
+) {
   await AuctionModel.deleteMany({})
 
   const auctionLoads = loads.filter((l) => l.status === LOAD_STATUSES.AuctionLive)
