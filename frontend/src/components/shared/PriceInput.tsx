@@ -9,6 +9,7 @@ interface PriceInputProps extends React.ComponentProps<typeof Input> {
   label: string
   variant: PriceInputVariant
   description?: string
+  inputGroupClassName?: string
 }
 
 function PriceInput({
@@ -17,16 +18,17 @@ function PriceInput({
   variant,
   description,
   placeholder,
+  inputGroupClassName,
   ...props
 }: PriceInputProps) {
   return (
     <Field className="max-w-sm">
       <FieldLabel>{label}</FieldLabel>
 
-      <InputGroup>
+      <InputGroup className={inputGroupClassName}>
         <InputGroupAddon
           align="inline-start"
-          className={cn('bg-transparent text-muted-foreground')}
+          className={cn('bg-transparent text-muted-foreground px-3')}
         >
           $
         </InputGroupAddon>
@@ -34,7 +36,7 @@ function PriceInput({
           type="number"
           step="0.01"
           min="0"
-          className={cn('rounded-none')}
+          className={cn(className, 'rounded-none border-0')}
           placeholder={placeholder}
           {...props}
         />

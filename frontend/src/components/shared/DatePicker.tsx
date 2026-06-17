@@ -12,11 +12,32 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 
 interface DatePickerProps {
   label?: string
+  onDateTimeChange?: (isoString: string) => void
 }
 
-export function DatePicker({ label }: DatePickerProps) {
+export function DatePicker({ label, onDateTimeChange }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
   const [date, setDate] = React.useState<Date | undefined>(undefined)
+  const [time, setTime] = React.useState('10:30:00')
+
+  const emit = (nextDate: Date | undefined, nextTime: string) => {
+    if (!nextDate || !onDateTimeChange) return
+    const [h, m, s] = nextTime.split(':').map(Number)
+    const dt = new Date(nextDate)
+    dt.setHours(h, m, s ?? 0, 0)
+    onDateTimeChange(dt.toISOString())
+  }
+
+  const handleDateSelect = (d: Date | undefined) => {
+    setDate(d)
+    setOpen(false)
+    emit(d, time)
+  }
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTime(e.target.value)
+    emit(date, e.target.value)
+  }
 
   return (
     <FieldGroup className="mx-auto max-w-xs flex-row">
@@ -27,7 +48,7 @@ export function DatePicker({ label }: DatePickerProps) {
             <Button
               variant="outline"
               id="date-picker-optional"
-              className="w-32 justify-between font-normal border-input"
+              className="w-32 justify-between font-normal"
             >
               {date ? format(date, 'PPP') : 'Select date'}
               <ChevronDownIcon />
@@ -39,10 +60,7 @@ export function DatePicker({ label }: DatePickerProps) {
               selected={date}
               captionLayout="dropdown"
               defaultMonth={date}
-              onSelect={(date) => {
-                setDate(date)
-                setOpen(false)
-              }}
+              onSelect={handleDateSelect}
             />
           </PopoverContent>
         </Popover>
@@ -53,8 +71,9 @@ export function DatePicker({ label }: DatePickerProps) {
           type="time"
           id="time-picker-optional"
           step="1"
-          defaultValue="10:30:00"
-          className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+          value={time}
+          onChange={handleTimeChange}
+          className="appearance-none bg-background border-border [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
         />
       </Field>
     </FieldGroup>

@@ -19,24 +19,34 @@ const savedAddresses: AddressOption[] = [
   {
     value: '1234 main st, Vancouver, bc v5k 0a1',
     label: 'pickup point 1 - 1234 main st, Vancouver, bc v5k 0a1',
+    lat: 49.2827,
+    lon: -123.1207,
   },
   {
     value: '5678 elm st, Langley, bc v1m 2n3',
     label: 'pickup point 2 - 5678 elm st, Langley, bc v1m 2n3',
+    lat: 49.1044,
+    lon: -122.6604,
   },
   {
     value: '9101 oak st, Toronto, on m4b 1c2',
     label: 'dropoff point 1 - 9101 oak st, Toronto, on m4b 1c2',
+    lat: 43.6532,
+    lon: -79.3832,
   },
   {
     value: '1213 pine st, Montreal, qc h2x 3y4',
     label: 'dropoff point 2 - 1213 pine st, Montreal, qc h2x 3y4',
+    lat: 45.5017,
+    lon: -73.5673,
   },
 ]
 
 export interface AddressOption {
   value: string
   label: string
+  lat?: number
+  lon?: number
 }
 
 export interface AddressFieldProps {
@@ -45,6 +55,8 @@ export interface AddressFieldProps {
   className?: string
   label?: string
   description?: string
+  onValueChange?: (value: string) => void
+  onSelect?: (option: AddressOption) => void
 }
 
 export function AddressField({
@@ -53,6 +65,8 @@ export function AddressField({
   className,
   label,
   description,
+  onValueChange,
+  onSelect,
 }: AddressFieldProps) {
   const [address, setAddress] = useState<string>('')
   const [open, setOpen] = useState(false)
@@ -71,6 +85,8 @@ export function AddressField({
   const suggestions: AddressOption[] = geocodeResults.map((r) => ({
     value: r.formatted,
     label: r.formatted,
+    lat: r.lat,
+    lon: r.lon,
   }))
 
   const options = [
@@ -82,6 +98,9 @@ export function AddressField({
   const handleSelect = (value: string) => {
     setAddress(value)
     setOpen(false)
+    onValueChange?.(value)
+    const option = options.find((o) => o.value === value)
+    if (option) onSelect?.(option)
   }
 
   return (
@@ -95,10 +114,10 @@ export function AddressField({
             role="combobox"
             disabled={disabled ?? false}
             aria-expanded={open}
-            className="w-full font-normal"
+            className="w-full font-normal overflow-hidden"
           >
             {selected && selected.value.length > 0 ? (
-              <div className="truncate mr-auto">
+              <div className="truncate mr-auto min-w-0">
                 {options.find((item) => item.value === selected.value)?.label}
               </div>
             ) : (
