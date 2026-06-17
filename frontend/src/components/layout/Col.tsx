@@ -11,11 +11,11 @@
  * Vertical distribution is handled by the `size` prop on parent Row components.
  */
 interface ColProps {
-  size: number
+  size?: number
   children: React.ReactNode
 }
 
-export default function Col({ size, children }: ColProps) {
+export default function Col({ size = 16, children }: ColProps) {
   return (
     <div className="p-2 max-w" style={{ flex: size }}>
       {children}

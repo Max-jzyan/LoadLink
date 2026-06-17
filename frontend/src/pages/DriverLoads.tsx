@@ -7,6 +7,7 @@ import LayoutGrid from '@/components/layout/LayoutGrid'
 import Row from '@/components/layout/Row'
 import { useListDriverBidsQuery, useListDriverLoadsQuery } from '@/services/driverApi/driverSlice'
 
+// TODO: Update with auth @Alex
 const PLACEHOLDER_DRIVER_ID = '6a30df19f9e53fd472dd8954'
 
 export default function DriverLoads() {

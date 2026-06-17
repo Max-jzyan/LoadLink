@@ -12,11 +12,11 @@
  * which use a 16-unit grid (col sizes should sum to 16 for a full-width row).
  */
 interface RowProps {
-  size: number
+  size?: number
   children: React.ReactNode
 }
 
-export default function Row({ size, children }: RowProps) {
+export default function Row({ size = 16, children }: RowProps) {
   return (
     <div className="flex max-h" style={{ flex: size }}>
       {children}
