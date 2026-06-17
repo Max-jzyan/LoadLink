@@ -2,6 +2,21 @@ import { Types } from 'mongoose'
 import { LoadModel } from '../../models/loads/Load'
 import { LOAD_STATUSES, TRUCK_TYPES } from '../../models/enums'
 
+// Static load ids 101-111 (index-aligned with mockLoads below) so reseeding never changes them.
+const LOAD_IDS = [
+  new Types.ObjectId('000000000000000000000101'),
+  new Types.ObjectId('000000000000000000000102'),
+  new Types.ObjectId('000000000000000000000103'),
+  new Types.ObjectId('000000000000000000000104'),
+  new Types.ObjectId('000000000000000000000105'),
+  new Types.ObjectId('000000000000000000000106'),
+  new Types.ObjectId('000000000000000000000107'),
+  new Types.ObjectId('000000000000000000000108'),
+  new Types.ObjectId('000000000000000000000109'),
+  new Types.ObjectId('000000000000000000000110'),
+  new Types.ObjectId('000000000000000000000111'),
+]
+
 type TruckTypeValue = (typeof TRUCK_TYPES)[keyof typeof TRUCK_TYPES]
 type LoadStatusValue = (typeof LOAD_STATUSES)[keyof typeof LOAD_STATUSES]
 
@@ -255,11 +270,12 @@ export async function seedLoads({
   }
 
   const loads = await Promise.all(
-    mockLoads.map((m) => {
+    mockLoads.map((m, index) => {
       const driverId = m.driverKey ? (driverMap[m.driverKey] ?? null) : null
       const companyId = companyMap[m.companyAlias]
 
       return LoadModel.create({
+        _id: LOAD_IDS[index],
         companyId,
         createdBy: companyId,
         assignedDriverId: driverId,
