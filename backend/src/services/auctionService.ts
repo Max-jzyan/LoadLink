@@ -64,7 +64,55 @@ const emitBidsAndPrice = async (loadId: string) => {
   if (pricePayload) emitPriceUpdate(loadId, pricePayload)
 }
 
-/** Initial bids snapshot for an SSE stream. Validates id + auction existence. */
+interface CreateAuctionData {
+  startPrice: number
+  capPrice: number
+  priceCreepAmount: number
+  autoAcceptPercent?: number
+  hoursBeforeDropoff?: number
+}
+
+export const createAuction = async (loadId: string, data: CreateAuctionData) => {
+  assertValidId(loadId, 'loadId')
+
+  const load = await LoadModel.findById(loadId)
+  if (!load) throw new ApiError(StatusCodes.NOT_FOUND, 'Load not found')
+
+  const existing = await AuctionModel.findOne({ loadId })
+  if (existing) throw new ApiError(StatusCodes.CONFLICT, 'An auction already exists for this load')
+
+  if (data.capPrice < data.startPrice) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Cap price must be greater than or equal to start price')
+  }
+  if (data.priceCreepAmount <= 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Price creep amount must be positive')
+  }
+
+  const expiresAt = data.hoursBeforeDropoff
+    ? new Date(new Date(load.dropoffTime).getTime() - data.hoursBeforeDropoff * 60 * 60 * 1000)
+    : new Date(load.dropoffTime)
+
+  const auction = await AuctionModel.create({
+    loadId: load._id,
+    companyId: load.companyId,
+    startPrice: data.startPrice,
+    capPrice: data.capPrice,
+    currentPrice: data.startPrice,
+    priceCreepAmount: data.priceCreepAmount,
+    priceCreepIntervalHours: 1,
+    autoAcceptPercent: data.autoAcceptPercent ?? 0,
+    expiresAt,
+    status: AUCTION_STATUSES.Active,
+  })
+
+  await LoadModel.findByIdAndUpdate(loadId, {
+    auctionId: auction._id,
+    status: LOAD_STATUSES.AuctionLive,
+  })
+
+  return auction
+}
+
 export const getBidsSnapshot = async (loadId: string) => {
   assertValidId(loadId, 'loadId')
   const snapshot = await buildBidsPayload(loadId)
@@ -227,7 +275,7 @@ export const updateAuction = async (loadId: string, changes: UpdateAuctionChange
     loadId,
     newExpiresAt: auction.expiresAt,
     priceCeiling: auction.capPrice,
-    autoAcceptToleranceThreshold: auction.capPrice * (1 + auction.autoAcceptPercent / 100),
+    autoAcceptToleranceThreshold: auction.capPrice * (1 + (auction.autoAcceptPercent ?? 0) / 100),
   }
 }
 

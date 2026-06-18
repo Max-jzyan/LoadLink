@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { LoadForm, type LoadFormValues } from '@/components/LoadForm'
@@ -7,19 +8,34 @@ import Spinner from '@/components/shared/Spinner'
 import { RoutePath } from '@/config/routes'
 
 export default function PostLoad() {
-  const [createLoad, { isLoading }] = useCreateLoadMutation()
+  const [createLoad, { isLoading: isCreatingLoad }] = useCreateLoadMutation()
   const navigate = useNavigate()
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const companyId = useSelector(selectMongoId)
 
-  // Still resolving MongoDB id from auth
   if (!companyId) {
     return <Spinner fullPage />
   }
 
   const handleSubmit = async (values: LoadFormValues) => {
-    await createLoad({ companyId, body: values })
-    navigate(RoutePath.Loads)
+    setSubmitError(null)
+    try {
+      await createLoad({ companyId, body: values }).unwrap()
+      navigate(RoutePath.Loads)
+    } catch {
+      setSubmitError('Failed to post load. Please try again.')
+    }
   }
 
-  return <LoadForm onSubmit={handleSubmit} isSubmitting={isLoading} />
+  return (
+    <>
+      {submitError && (
+        <p className="text-sm text-destructive px-6 pt-4">{submitError}</p>
+      )}
+      <LoadForm
+        onSubmit={handleSubmit}
+        isSubmitting={isCreatingLoad}
+      />
+    </>
+  )
 }

@@ -5,6 +5,21 @@ import { onBidsUpdate, onPriceUpdate } from '../events/auctionEvents'
 import * as auctionService from '../services/auctionService'
 
 /**
+ * POST /api/auctions/:loadId
+ * Create an auction for an existing load.
+ * Body: { startPrice, capPrice, priceCreepAmount, autoAcceptPercent?, hoursBeforeDropoff? }
+ */
+export const createAuction = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const loadId = req.params.loadId as string
+    const auction = await auctionService.createAuction(loadId, req.body)
+    res.status(StatusCodes.CREATED).json(auction)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
  * POST /api/auctions/:loadId/bids
  * Place a bid on an auction load as a driver.
  * Body: { driverId: string, amount: number }

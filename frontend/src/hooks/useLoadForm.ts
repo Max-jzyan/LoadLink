@@ -131,13 +131,12 @@ export function useLoadForm(
             .filter(Boolean)
         : [],
       driverAssist: v.driverAssist,
-      // Auction fields where load goes live immediately on post
       startPrice: Number(v.minPrice),
       capPrice: Number(v.maxPrice),
       priceCreepAmount: Number(v.escalationRate),
       priceCreepIntervalHours: 1,
       autoAcceptPercent: v.tolerance ? Number(v.tolerance) : 0,
-      expiresAt: v.pickupTime, // auction must close before the truck is needed
+      expiresAt: v.pickupTime,
     })
   })
 

@@ -94,6 +94,18 @@ export interface CreateLoadPayload {
   expiresAt: string
 }
 
+export interface CreateAuctionPayload {
+  startPrice: number
+  capPrice: number
+  priceCreepAmount: number
+  autoAcceptPercent?: number
+  hoursBeforeDropoff?: number
+}
+
+export interface CreatedAuction {
+  _id: string
+}
+
 export interface UpdateLoadPayload extends Partial<CreateLoadPayload> {
   status?: string
   auctionId?: string

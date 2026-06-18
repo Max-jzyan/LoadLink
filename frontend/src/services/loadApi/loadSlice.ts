@@ -1,6 +1,6 @@
 import { api } from '../api'
 import { LoadTag, LoadTagId } from '../apiTypes'
-import type { CreateLoadPayload, Load, PopulatedLoad, UpdateLoadPayload } from './loadEnum'
+import type { CreateAuctionPayload, CreateLoadPayload, CreatedAuction, Load, PopulatedLoad, UpdateLoadPayload } from './loadEnum'
 
 export const loadApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -50,6 +50,16 @@ export const loadApi = api.injectEndpoints({
       ],
     }),
 
+    // POST /api/auctions/:loadId — create auction for a load
+    createAuction: build.mutation<CreatedAuction, { loadId: string; body: CreateAuctionPayload }>({
+      query: ({ loadId, body }) => ({
+        url: `auctions/${loadId}`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
+    }),
+
     // PATCH /api/loads/:loadId — update a load
     updateLoad: build.mutation<Load, { loadId: string; body: UpdateLoadPayload }>({
       query: ({ loadId, body }) => ({
@@ -73,5 +83,6 @@ export const {
   useGetLoadQuery,
   useListCompanyLoadsQuery,
   useCreateLoadMutation,
+  useCreateAuctionMutation,
   useUpdateLoadMutation,
 } = loadApi

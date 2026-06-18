@@ -58,4 +58,22 @@ const AuctionSchema = new Schema(
 )
 
 export type Auction = InferSchemaType<typeof AuctionSchema>
-export const AuctionModel = model('Auction', AuctionSchema)
+
+export interface IAuction {
+  loadId: Types.ObjectId
+  companyId: Types.ObjectId
+  startPrice: number
+  capPrice: number
+  currentPrice: number
+  priceCreepAmount: number
+  priceCreepIntervalHours: number
+  autoAcceptPercent?: number
+  currency?: string
+  expiresAt: Date
+  status?: string
+  claimedByDriverId?: Types.ObjectId | null
+  autoAcceptedBidId?: Types.ObjectId | null
+  lastPriceUpdateAt?: Date
+}
+
+export const AuctionModel = model<IAuction>('Auction', AuctionSchema)

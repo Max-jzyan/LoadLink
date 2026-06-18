@@ -3,6 +3,7 @@ import {
   acceptBid,
   cancelAuction,
   claimLoad,
+  createAuction,
   placeBid,
   streamBids,
   streamPrice,
@@ -11,6 +12,7 @@ import {
 
 const router = Router()
 
+router.post('/auctions/:loadId', createAuction)
 router.get('/auctions/:loadId/bids', streamBids)
 router.get('/auctions/:loadId/price', streamPrice)
 router.patch('/auctions/:loadId/bids/:bidId', acceptBid)
