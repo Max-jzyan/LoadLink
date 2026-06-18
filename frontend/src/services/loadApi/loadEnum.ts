@@ -1,6 +1,8 @@
+import type { Auction } from '../auctionApi/auctionEnum'
 import type { LoadStatus } from '@/types/enums'
 
 export type { LoadStatus }
+
 
 export interface Coordinate {
   lat: number
@@ -58,6 +60,16 @@ export interface Load {
   createdBy: string
   createdAt: string
   updatedAt: string
+}
+
+export interface PopulatedCompany {
+  _id: string
+  name: string
+}
+
+export interface PopulatedLoad extends Omit<Load, 'companyId' | 'auctionId'> {
+  companyId: PopulatedCompany
+  auctionId?: Auction | null
 }
 
 export interface CreateLoadPayload {

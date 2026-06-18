@@ -1,5 +1,6 @@
 import {
   ClipboardList,
+  Gavel,
   HelpCircle,
   LayoutDashboard,
   LayoutList,
@@ -18,6 +19,7 @@ export const RoutePath = {
   DriverLoads: '/driverLoads',
   DriverAuctions: '/driverAuctions',
   Loads: '/loads',
+  AuctionLive: '/auctionLive',
   PostLoad: '/loads/post',
   Map: '/map',
   Fleet: '/fleet',
@@ -53,6 +55,12 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     roles: ['driver'],
   },
   [RoutePath.Loads]: { label: 'Loads', icon: ClipboardList, navGroup: 'main', roles: ['company'] },
+  [RoutePath.AuctionLive]: {
+    label: 'Auction Live',
+    icon: Gavel,
+    navGroup: 'main',
+    roles: ['company'],
+  },
   [RoutePath.PostLoad]: { label: 'Post Load', icon: PlusCircle, navGroup: null },
   [RoutePath.Map]: { label: 'Map', icon: MapPin, navGroup: 'main' },
   [RoutePath.Fleet]: { label: 'My Fleet', icon: Truck, navGroup: 'main', roles: ['company'] },

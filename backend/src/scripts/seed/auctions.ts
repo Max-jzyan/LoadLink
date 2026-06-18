@@ -1,5 +1,6 @@
 import { Types } from 'mongoose'
 import { AuctionModel } from '../../models/loads/Auction'
+import { LoadModel } from '../../models/loads/Load'
 import { AUCTION_STATUSES, CURRENCIES } from '../../models/enums'
 import { LOAD_STATUSES } from '../../models/enums'
 
@@ -25,8 +26,8 @@ export async function seedAuctions(
   const auctionLoads = loads.filter((l) => l.status === LOAD_STATUSES.AuctionLive)
 
   const auctions = await Promise.all(
-    auctionLoads.map((load) =>
-      AuctionModel.create({
+    auctionLoads.map(async (load) => {
+      const auction = await AuctionModel.create({
         _id: new Types.ObjectId(AUCTION_ID_BY_LOAD[load._id.toString()]),
         loadId: load._id,
         companyId: load.companyId,
@@ -39,7 +40,12 @@ export async function seedAuctions(
         expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4 hours from now
         status: AUCTION_STATUSES.Active,
       })
-    )
+
+      // Link the load back to its auction
+      await LoadModel.findByIdAndUpdate(load._id, { auctionId: auction._id })
+
+      return auction
+    })
   )
 
   return auctions

@@ -38,19 +38,24 @@ async function main() {
 
     // Distribute bids across all auction loads (clear once, then seed per auction)
     await BidModel.deleteMany({})
+    let bidCount = 0
     for (const auction of auctions) {
       const bidIds = BID_IDS_BY_LOAD[auction.loadId.toString()]
       if (bidIds) {
-        await seedBids({
+        const bids = await seedBids({
           loadId: auction.loadId,
           auctionId: auction._id,
           driverIds: [drivers.sam._id, drivers.alex._id],
           bidIds: [new Types.ObjectId(bidIds[0]), new Types.ObjectId(bidIds[1])],
         })
+        bidCount += bids.length
       }
     }
 
-    console.log(`SEEDED ${loads.length} loads, ${auctions.length} auctions`)
+    const userCount = Object.keys(companies).length + Object.keys(drivers).length
+    console.log(
+      `SEEDED ${userCount} users, ${loads.length} loads, ${auctions.length} auctions, ${bidCount} bids`
+    )
     process.exit(0)
   } catch (err) {
     console.error(err)

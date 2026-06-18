@@ -1,6 +1,6 @@
 import { api } from '../api'
 import { LoadTag, LoadTagId } from '../apiTypes'
-import type { CreateLoadPayload, Load, UpdateLoadPayload } from './loadEnum'
+import type { CreateLoadPayload, Load, PopulatedLoad, UpdateLoadPayload } from './loadEnum'
 
 export const loadApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -19,8 +19,8 @@ export const loadApi = api.injectEndpoints({
           : [{ type: LoadTag.Load, id: LoadTagId.List }],
     }),
 
-    // GET /api/loads/:loadId — fetch single load
-    getLoad: build.query<Load, string>({
+    // GET /api/loads/:loadId — populates companyId + auctionId, hence PopulatedLoad.
+    getLoad: build.query<PopulatedLoad, string>({
       query: (loadId) => `loads/${loadId}`,
       providesTags: (_result, _error, loadId) => [{ type: LoadTag.Load, id: loadId }],
     }),

@@ -72,26 +72,13 @@ export default function DynamicCard({
       size={size}
     >
       {(title || description || action) && (
-        <CardHeader
-          className={cn(
-            roundedProp && roundedTMap[roundedProp],
-            noPadding && 'p-0'
-          )}
-        >
-          {title && (
-            <CardTitle className={cn(largeTitle && 'text-xl')}>
-              {title}
-            </CardTitle>
-          )}
+        <CardHeader className={cn(roundedProp && roundedTMap[roundedProp], noPadding && 'p-0')}>
+          {title && <CardTitle className={cn(largeTitle && 'text-xl')}>{title}</CardTitle>}
           {description && <CardDescription>{description}</CardDescription>}
           {action && <CardAction>{action}</CardAction>}
         </CardHeader>
       )}
-      {children && (
-        <CardContent className={cn(noPadding && 'p-0')}>
-          {children}
-        </CardContent>
-      )}
+      {children && <CardContent className={cn(noPadding && 'p-0')}>{children}</CardContent>}
       {footer && (
         <CardFooter
           className={cn(

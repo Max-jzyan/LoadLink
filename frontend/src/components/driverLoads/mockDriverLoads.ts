@@ -88,7 +88,7 @@ export const mockDriverLoads: Load[] = [
   {
     _id: 'yza567bcd890',
     companyId: 'comp004',
-    assignedDriverId: driver1,
+    assignedDriverId: 'driver1',
     originAddress: 'Prince George, BC',
     destinationAddress: 'Fort McMurray, AB',
     originCoords: { lat: 53.9171, lng: -122.7497 },
@@ -109,7 +109,7 @@ export const mockDriverLoads: Load[] = [
   {
     _id: 'egh123ijk456',
     companyId: 'comp005',
-    assignedDriverId: driver1,
+    assignedDriverId: 'driver1',
     originAddress: 'Halifax, NS',
     destinationAddress: 'Saint John, NB',
     originCoords: { lat: 44.6488, lng: -63.5752 },
