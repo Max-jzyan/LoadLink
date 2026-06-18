@@ -57,6 +57,43 @@ function createColoredIcon(color: string) {
 const originIcon = createColoredIcon('#22c55e') // green
 const destinationIcon = createColoredIcon('#ef4444') // red
 
+/**
+ * AI helped heavily
+ * Decode a Google-encoded polyline string into an array of [lat, lng] pairs.
+ * Implements the standard precision-5 algorithm used by OSRM / Google Maps.
+ */
+function decodePolyline(encoded: string): [number, number][] {
+  const points: [number, number][] = []
+  let index = 0
+  const len = encoded.length
+  let lat = 0
+  let lng = 0
+
+  while (index < len) {
+    let b: number
+    let shift = 0
+    let result = 0
+    do {
+      b = encoded.charCodeAt(index++) - 63
+      result |= (b & 0x1f) << shift
+      shift += 5
+    } while (b >= 0x20)
+    lat += result & 1 ? ~(result >> 1) : result >> 1
+
+    shift = 0
+    result = 0
+    do {
+      b = encoded.charCodeAt(index++) - 63
+      result |= (b & 0x1f) << shift
+      shift += 5
+    } while (b >= 0x20)
+    lng += result & 1 ? ~(result >> 1) : result >> 1
+
+    points.push([lat / 1e5, lng / 1e5])
+  }
+  return points
+}
+
 export type RouteCoordinate = {
   id: string
   origin: LatLngExpression
@@ -64,6 +101,10 @@ export type RouteCoordinate = {
   destination: LatLngExpression
   destinationName: string
   status: string
+  // Google encoded polyline from the backend route field -> renders as road path when present
+  polyline?: string
+  // Prefetched road coordinates [lat, lng][] — takes priority over polyline
+  positions?: [number, number][]
 }
 
 type DriverMapProps = {
@@ -72,7 +113,6 @@ type DriverMapProps = {
   selectedRouteId?: string | null
 }
 
-// This is mostly just a test
 export function DriverMap({ routes, height = '500px', selectedRouteId }: DriverMapProps) {
   const isDark = useDarkMode()
   const tile = isDark ? TILES.dark : TILES.light
@@ -80,8 +120,8 @@ export function DriverMap({ routes, height = '500px', selectedRouteId }: DriverM
   return (
     <div style={{ height }}>
       <MapContainer
-        center={[49.2827, -123.1207]}
-        zoom={5}
+        center={[54.0, -96.0]} // centred on Canada because I like details
+        zoom={4}
         style={{ height: '100%', width: '100%' }}
       >
         {/* key forces remount when tile variant changes */}
@@ -94,8 +134,8 @@ export function DriverMap({ routes, height = '500px', selectedRouteId }: DriverM
 
         <FlyToRoute routes={routes} selectedRouteId={selectedRouteId} />
 
-        {routes.map((route, idx) => (
-          <RouteLine key={idx} route={route} />
+        {routes.map((route) => (
+          <RouteLine key={route.id} route={route} />
         ))}
       </MapContainer>
     </div>
@@ -130,10 +170,18 @@ function RouteLine({ route }: { route: RouteCoordinate }) {
   const map = useMap()
   const polylineRef = useRef<L.Polyline>(null)
 
+  // Priority is prefetched positions -> decoded polyline -> straight line
+  const positions: LatLngExpression[] = route.positions
+    ? route.positions
+    : route.polyline
+      ? decodePolyline(route.polyline)
+      : [route.origin, route.destination]
+
+  const isRoad = !!(route.positions || route.polyline)
+
   const handleClick = () => {
     const line = polylineRef.current
     if (!line) return
-
     const bounds = line.getBounds() as LatLngBoundsExpression
     map.fitBounds(bounds, { padding: [40, 40] })
   }
@@ -141,15 +189,27 @@ function RouteLine({ route }: { route: RouteCoordinate }) {
   return (
     <>
       <Marker position={route.origin} icon={originIcon}>
-        <Popup>{route.originName}</Popup>
+        <Popup>
+          <strong>Origin</strong>
+          <br />
+          {route.originName}
+        </Popup>
       </Marker>
       <Marker position={route.destination} icon={destinationIcon}>
-        <Popup>{route.destinationName}</Popup>
+        <Popup>
+          <strong>Destination</strong>
+          <br />
+          {route.destinationName}
+        </Popup>
       </Marker>
       <Polyline
         ref={polylineRef}
-        positions={[route.origin, route.destination]}
-        pathOptions={{ color: 'gray', weight: 3 }}
+        positions={positions}
+        pathOptions={{
+          color: isRoad ? '#3b82f6' : '#6b7280',
+          weight: isRoad ? 4 : 2,
+          opacity: 0.8,
+        }}
         eventHandlers={{ click: handleClick }}
       />
     </>

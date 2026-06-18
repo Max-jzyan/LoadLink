@@ -1,26 +1,94 @@
+import { useEffect, useRef, useState } from 'react'
 import { DriverMap, type RouteCoordinate } from '@/components/driverLoads/Map'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { selectMongoId } from '@/services/authSlice'
+import { useListCompanyLoadsQuery } from '@/services/loadApi/loadSlice'
+import { useSelector } from 'react-redux'
 
-const SAMPLE_ROUTES: RouteCoordinate[] = [
-  {
-    origin: [49.2827, -123.1207], // Vancouver, BC
-    destination: [53.5461, -113.4938], // Edmonton, AB
-  },
-  {
-    origin: [51.0447, -114.0719], // Calgary, AB
-    destination: [49.8951, -97.1384], // Winnipeg, MB
-  },
-  {
-    origin: [43.6532, -79.3832], // Toronto, ON
-    destination: [45.5017, -73.5673], // Montreal, QC
-  },
-]
+const GEOAPIFY_KEY = import.meta.env.VITE_GEOAPIFY_KEY as string | undefined
+const GEOAPIFY_ROUTING = 'https://api.geoapify.com/v1/routing'
+
+/** Fetch road geometry for a single origin→destination pair from Geoapify. */
+async function fetchRoadPositions(
+  origin: { lat: number; lng: number },
+  destination: { lat: number; lng: number }
+): Promise<[number, number][] | null> {
+  if (!GEOAPIFY_KEY) return null
+  try {
+    const url =
+      `${GEOAPIFY_ROUTING}` +
+      `?waypoints=${origin.lat},${origin.lng}|${destination.lat},${destination.lng}` +
+      `&mode=truck` +
+      `&apiKey=${GEOAPIFY_KEY}`
+
+    const res = await fetch(url)
+    if (!res.ok) return null
+
+    const data = await res.json()
+    const feature = data.features?.[0]
+    if (!feature) return null
+
+    // GeoJSON coords are [lng, lat] — flip to [lat, lng] for Leaflet
+    return (feature.geometry.coordinates as [number, number][][])
+      .flat()
+      .map(([lng, lat]) => [lat, lng] as [number, number])
+  } catch {
+    return null
+  }
+}
 
 export default function MapPage() {
+  const mongoId = useSelector(selectMongoId)
+
+  const {
+    data: loads,
+    isLoading,
+    isError,
+  } = useListCompanyLoadsQuery(mongoId ?? '', { skip: !mongoId })
+
+  // loadId -> road [lat, lng][] positions fetched from Geoapify for loads without a stored polyline
+  const [roadPositions, setRoadPositions] = useState<Map<string, [number, number][]>>(new Map())
+  // Track IDs we have already starfted fetching so StrictMode doublefire doesnt duplicate requests
+  const fetchingRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!loads?.length) return
+
+    const loadsWithoutRoute = loads.filter((l) => !l.route?.polyline)
+    if (!loadsWithoutRoute.length) return
+
+    loadsWithoutRoute.forEach((load) => {
+      if (fetchingRef.current.has(load._id)) return
+      fetchingRef.current.add(load._id)
+
+      fetchRoadPositions(load.originCoords, load.destinationCoords).then((pts) => {
+        if (!pts) return
+        setRoadPositions((prev) => new Map(prev).set(load._id, pts))
+      })
+    })
+  }, [loads])
+
+  const routes: RouteCoordinate[] = (loads ?? []).map((load) => ({
+    id: load._id,
+    origin: [load.originCoords.lat, load.originCoords.lng],
+    originName: load.originAddress,
+    destination: [load.destinationCoords.lat, load.destinationCoords.lng],
+    destinationName: load.destinationAddress,
+    status: load.status,
+    polyline: load.route?.polyline,
+    positions: roadPositions.get(load._id),
+  }))
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4">
-      <h1 className="text-2xl font-semibold">Map</h1>
-      <div className="min-h-[60vh] flex-1 rounded-xl bg-muted/50 p-6">
-        <DriverMap routes={SAMPLE_ROUTES} height="100%" />
+      <PageHeader count={routes.length} noun="load" isLoading={isLoading} />
+
+      {isError && (
+        <p className="text-sm text-destructive">Failed to load routes. Please try again.</p>
+      )}
+
+      <div className="min-h-[60vh] flex-1 rounded-xl bg-muted/50 overflow-hidden">
+        <DriverMap routes={routes} height="100%" />
       </div>
     </div>
   )

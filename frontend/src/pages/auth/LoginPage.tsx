@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
+import { signInWithPopup } from 'firebase/auth'
+import { useDispatch } from 'react-redux'
 import { auth, googleProvider } from '@/lib/firebase'
+import { loginAndFetchUser, setUser } from '@/services/authSlice'
+import { useLazyGetUserByFirebaseUidQuery } from '@/services/userApi/userSlice'
 import { setStoredRole, type UserRole } from '@/hooks/useRole'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -9,23 +12,27 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Logo from '@/components/Logo'
 import { RoutePath } from '@/config/routes'
+import type { AppDispatch } from '@/services/store'
 
 const ROLE_HOME: Record<UserRole, string> = {
-  driver: RoutePath.Dashboard,
-  company: RoutePath.Dashboard,
+  driver: RoutePath.DriverLoads,
+  company: RoutePath.Loads,
 }
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const dispatch = useDispatch<AppDispatch>()
+
   const [role, setRole] = useState<UserRole>('driver')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [getUser] = useLazyGetUserByFirebaseUidQuery()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  function afterLogin(selectedRole: UserRole) {
-    setStoredRole(selectedRole)
-    navigate(ROLE_HOME[selectedRole])
+  function afterLogin(dbRole: UserRole) {
+    setStoredRole(dbRole)
+    navigate(ROLE_HOME[dbRole])
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -33,11 +40,28 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      // TODO: POST role to backend to persist on server
-      afterLogin(role)
-    } catch {
-      setError('Invalid email or password.')
+      const authUser = await loginAndFetchUser(email, password)
+
+      if (!authUser.role || !authUser.mongoId) {
+        throw new Error('Account not found. Please sign up first.')
+      }
+
+      // Role msimatch with good creds
+      if (authUser.role !== role) {
+        throw new Error(
+          `This account is registered as a ${authUser.role}. Please select "${authUser.role}" and try again.`
+        )
+      }
+
+      dispatch(setUser(authUser))
+      afterLogin(authUser.role)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : ''
+      if (msg.includes('Account not found') || msg.includes('registered as a')) {
+        setError(msg)
+      } else {
+        setError('Invalid email or password.')
+      }
     } finally {
       setLoading(false)
     }
@@ -47,11 +71,30 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
     try {
-      await signInWithPopup(auth, googleProvider)
-      // TODO: POST role to backend to persist on srever
-      afterLogin(role)
-    } catch {
-      setError('Google sign-in failed.')
+      const result = await signInWithPopup(auth, googleProvider)
+      const fbUser = result.user
+
+      let dbUser: { _id: string; role: UserRole }
+      try {
+        dbUser = await getUser(fbUser.uid).unwrap()
+      } catch {
+        throw new Error('Account not found. Please sign up first.')
+      }
+
+      // Role mismatch with google
+      if (dbUser.role !== role) {
+        throw new Error(
+          `This account is registered as a ${dbUser.role}. Please select "${dbUser.role}" and try again.`
+        )
+      }
+
+      dispatch(
+        setUser({ uid: fbUser.uid, email: fbUser.email, mongoId: dbUser._id, role: dbUser.role })
+      )
+      afterLogin(dbUser.role)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : ''
+      setError(msg || 'Google sign-in failed.')
     } finally {
       setLoading(false)
     }

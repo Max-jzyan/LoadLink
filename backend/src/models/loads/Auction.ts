@@ -49,6 +49,10 @@ const AuctionSchema = new Schema(
     },
 
     lastPriceUpdateAt: { type: Date, default: Date.now }, // for heartbeat engine
+
+    // Lowest submitted bid amount seen so far
+    // Null = no bids yet
+    bestBidAmount: { type: Number, default: null },
   },
   { timestamps: true }
 )

@@ -14,6 +14,7 @@ import { CompanySidebar } from '@/components/CompanySidebar'
 import PageLayout from '@/components/PageLayout'
 import AppRoutes from '@/routes'
 import { getStoredRole } from '@/hooks/useRole'
+import Spinner from '@/components/shared/Spinner'
 
 // Picks the correct sidebar based on the stored role
 // If authed but no role stored (localStorage cleared, different device, private tab)
@@ -33,7 +34,7 @@ function RoleLayout() {
   if (!role) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+        <Spinner />
       </div>
     )
   }

@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import useAuth from '@/hooks/useAuth'
 import { getStoredRole } from '@/hooks/useRole'
 import { RoutePath } from '@/config/routes'
+import Spinner from '@/components/shared/Spinner'
 
 const ROLE_HOME = {
   driver: RoutePath.Dashboard,
@@ -22,7 +23,7 @@ const PublicRoute = ({ children }: { children: ReactNode }) => {
   if (loading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+        <Spinner />
       </div>
     )
   }

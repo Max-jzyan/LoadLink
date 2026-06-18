@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import { LoadModel } from '../models/loads/Load'
+import { AuctionModel } from '../models/loads/Auction'
 import { LOAD_STATUSES } from '../models/enums'
+import { computeRoute } from '../lib/routing'
 
 /**
  * GET /api/loads/:loadId
@@ -35,11 +37,47 @@ export const createLoad = async (req: Request, res: Response, next: NextFunction
   try {
     const { companyId } = req.params
 
+    const {
+      startPrice,
+      capPrice,
+      priceCreepAmount,
+      priceCreepIntervalHours = 1,
+      autoAcceptPercent = 0,
+      expiresAt,
+      ...loadFields
+    } = req.body
+
+    // Create load immediately as auction_live
     const load = await LoadModel.create({
-      ...req.body,
+      ...loadFields,
       companyId,
       createdBy: companyId,
+      status: LOAD_STATUSES.AuctionLive,
     })
+
+    // Compute and persist the driving route -> failure is allowed
+    const routeSegment = await computeRoute(loadFields.originCoords, loadFields.destinationCoords)
+    if (routeSegment) {
+      load.route = routeSegment
+      await load.save()
+    }
+
+    // Create the auction too
+    const auction = await AuctionModel.create({
+      loadId: load._id,
+      companyId,
+      startPrice,
+      capPrice,
+      priceCreepAmount,
+      priceCreepIntervalHours,
+      autoAcceptPercent,
+      currentPrice: startPrice,
+      expiresAt,
+    })
+
+    // Link the auction tp the laod
+    load.auctionId = auction._id
+    await load.save()
 
     res.status(StatusCodes.CREATED).json(load)
   } catch (err) {
@@ -82,6 +120,8 @@ export const listCompanyLoads = async (req: Request, res: Response, next: NextFu
     const loads = await LoadModel.find({ companyId })
       .sort({ createdAt: -1 })
       .populate('assignedDriverId')
+      .populate('auctionId')
+      .populate('companyId')
 
     res.status(StatusCodes.OK).json(loads)
   } catch (err) {
@@ -105,7 +145,10 @@ export const listAvailableLoads = async (req: Request, res: Response, next: Next
       filter.status = LOAD_STATUSES.AuctionLive
     }
 
-    const loads = await LoadModel.find(filter).sort({ createdAt: -1 }).populate('companyId')
+    const loads = await LoadModel.find(filter)
+      .sort({ createdAt: -1 })
+      .populate('companyId')
+      .populate('auctionId')
 
     res.status(StatusCodes.OK).json(loads)
   } catch (err) {

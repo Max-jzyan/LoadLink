@@ -1,72 +1,81 @@
 import { Link } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { Plus, Truck } from 'lucide-react'
+import { useSelector } from 'react-redux'
 import { Button } from '@/components/ui/button'
+import { LoadCard } from '@/components/shared/LoadCard'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { RoutePath } from '@/config/routes'
 import { useListCompanyLoadsQuery } from '@/services/loadApi/loadSlice'
-
-// TODO: replace with real companyId from auth once auth is functional
-const DEV_COMPANY_ID = '000000000000000000000001'
+import { selectMongoId } from '@/services/authSlice'
+import Spinner from '@/components/shared/Spinner'
 
 export default function Loads() {
-  const { data: loads, isLoading, isError } = useListCompanyLoadsQuery(DEV_COMPANY_ID)
+  const companyId = useSelector(selectMongoId)
+  const {
+    data: loads,
+    isLoading,
+    isError,
+  } = useListCompanyLoadsQuery(companyId!, {
+    skip: !companyId,
+  })
+
+  if (!companyId) return <Spinner fullPage />
+
+  const count = loads?.length ?? 0
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Loads</h1>
-        <Button asChild>
-          <Link to={RoutePath.PostLoad}>
-            <Plus className="mr-2 h-4 w-4" />
-            Post Load
-          </Link>
-        </Button>
-      </div>
+    <div className="flex flex-1 flex-col gap-3 p-2">
+      <PageHeader
+        count={!isError ? count : undefined}
+        noun="load"
+        emptyLabel="No loads posted yet"
+        isLoading={isLoading}
+        actionLabel="Post Load"
+        actionTo={RoutePath.PostLoad}
+        middleText={`DEBUG Company ID: ${companyId}`}
+      />
 
       {isLoading && (
-        <div className="flex flex-1 items-center justify-center min-h-[40vh]">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+        <div className="flex flex-1 items-center justify-center">
+          <Spinner />
         </div>
       )}
 
+      {/* error */}
       {isError && (
-        <div className="min-h-[40vh] flex-1 rounded-xl bg-muted/50 p-6 flex items-center justify-center">
-          <p className="text-destructive text-lg">Failed to load loads. Please try again.</p>
+        <div className="min-h-[40vh] rounded-xl border border-destructive/30 bg-destructive/5 flex items-center justify-center p-6">
+          <p className="text-destructive text-sm font-medium">
+            Failed to load your loads. Please refresh.
+          </p>
         </div>
       )}
 
-      {!isLoading && !isError && (!loads || loads.length === 0) && (
-        <div className="min-h-[40vh] flex-1 rounded-xl bg-muted/50 p-6 flex flex-col items-center justify-center gap-4">
-          <p className="text-muted-foreground text-lg">No loads posted yet.</p>
-          <Button asChild variant="outline">
+      {/* when there is no loads */}
+      {!isLoading && !isError && count === 0 && (
+        <div className="min-h-[40vh] rounded-xl border border-dashed bg-muted/30 flex flex-col items-center justify-center gap-4 p-8">
+          <div className="rounded-full bg-muted p-4">
+            <Truck size={28} className="text-muted-foreground" />
+          </div>
+          <div className="text-center">
+            <p className="font-medium text-sm">No loads posted yet</p>
+            <p className="text-muted-foreground text-sm mt-1">
+              Post your first load to start receiving bids from drivers.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm">
             <Link to={RoutePath.PostLoad}>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-1.5 h-4 w-4" />
               Post your first load
             </Link>
           </Button>
         </div>
       )}
 
-      {!isLoading && !isError && loads && loads.length > 0 && (
+      {/* list of all the loads */}
+      {!isLoading && !isError && count > 0 && (
         <div className="flex flex-col gap-3">
-          {loads.map((load) => (
-            <div
-              key={load._id}
-              className="rounded-xl border bg-card p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
-            >
-              <div className="flex flex-col gap-1">
-                <span className="font-medium text-sm">
-                  {load.originAddress} → {load.destinationAddress}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {load.truckType} · {load.weightLbs} lbs · {load.trailerLengthFt} ft
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground capitalize">
-                  {load.status}
-                </span>
-              </div>
-            </div>
+          {loads!.map((load) => (
+            <LoadCard key={load._id} load={load} />
           ))}
         </div>
       )}

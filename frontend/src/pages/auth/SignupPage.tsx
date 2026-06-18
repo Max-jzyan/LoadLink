@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { createUserWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth'
+import { useDispatch } from 'react-redux'
+import { signInWithPopup } from 'firebase/auth'
 import { auth, googleProvider } from '@/lib/firebase'
-import { setStoredRole, type UserRole } from '@/hooks/useRole'
+import { type UserRole } from '@/hooks/useRole'
+import { registerAndFetchUser, setUser } from '@/services/authSlice'
+import { useRegisterUserMutation } from '@/services/userApi/userSlice'
+import { setStoredRole } from '@/hooks/useRole'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +19,7 @@ import {
 } from '@/components/ui/field'
 import Logo from '@/components/Logo'
 import { RoutePath } from '@/config/routes'
+import type { AppDispatch } from '@/services/store'
 
 const ROLE_HOME: Record<UserRole, string> = {
   driver: RoutePath.DriverLoads,
@@ -23,11 +28,14 @@ const ROLE_HOME: Record<UserRole, string> = {
 
 export default function SignupPage() {
   const navigate = useNavigate()
+  const dispatch = useDispatch<AppDispatch>()
+
   const [role, setRole] = useState<UserRole>('driver')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [registerUser] = useRegisterUserMutation()
   const [loading, setLoading] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [globalError, setGlobalError] = useState<string | null>(null)
@@ -38,16 +46,6 @@ export default function SignupPage() {
     if (password.length < 8) errs.password = 'Must be at least 8 characters long.'
     if (password !== confirmPassword) errs.confirmPassword = 'Passwords do not match.'
     return errs
-  }
-
-  async function afterSignup(selectedRole: UserRole, displayName?: string | null) {
-    // TODO: POST { firebaseUid, name, email, role } to backend /api/users/register
-    // so the MongoDB User discriminator persists the role on the server
-    if (displayName && auth.currentUser) {
-      await updateProfile(auth.currentUser, { displayName })
-    }
-    setStoredRole(selectedRole)
-    navigate(ROLE_HOME[selectedRole])
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -61,14 +59,18 @@ export default function SignupPage() {
     setGlobalError(null)
     setLoading(true)
     try {
-      await createUserWithEmailAndPassword(auth, email, password)
-      await afterSignup(role, name)
+      const authUser = await registerAndFetchUser(email, password, name.trim(), role)
+      dispatch(setUser(authUser))
+      setStoredRole(role)
+      navigate(ROLE_HOME[role])
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
       if (msg.includes('email-already-in-use')) {
         setGlobalError('An account with this email already exists.')
       } else if (msg.includes('invalid-email')) {
         setGlobalError('Invalid email address.')
+      } else if (msg.includes('Failed to register user profile')) {
+        setGlobalError(msg)
       } else {
         setGlobalError('Sign-up failed. Please try again.')
       }
@@ -82,9 +84,23 @@ export default function SignupPage() {
     setGlobalError(null)
     try {
       const result = await signInWithPopup(auth, googleProvider)
-      await afterSignup(role, result.user.displayName)
-    } catch {
-      setGlobalError('Google sign-up failed.')
+      const fbUser = result.user
+
+      // Register in MongoDB
+      const dbUser = await registerUser({
+        firebaseUid: fbUser.uid,
+        name: fbUser.displayName ?? fbUser.email ?? 'Unknown',
+        email: fbUser.email,
+        role,
+      }).unwrap()
+      dispatch(
+        setUser({ uid: fbUser.uid, email: fbUser.email, mongoId: dbUser._id, role: dbUser.role })
+      )
+      setStoredRole(dbUser.role)
+      navigate(ROLE_HOME[dbUser.role])
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : ''
+      setGlobalError(msg || 'Google sign-up failed.')
     } finally {
       setLoading(false)
     }

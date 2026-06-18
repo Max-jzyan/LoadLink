@@ -143,6 +143,13 @@ export const placeBid = async (loadId: string, driverId: string, amount: number)
     status: BID_STATUSES.Submitted,
   })
 
+  // Keep bestBidAmount in sync
+  // Track the lowest submitted bid so far
+  if (auction.bestBidAmount == null || amount < (auction.bestBidAmount as number)) {
+    auction.bestBidAmount = amount
+    await auction.save()
+  }
+
   await bid.populate('driverId')
   await emitBidsAndPrice(loadId)
   return bid

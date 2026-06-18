@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import useAuth from '@/hooks/useAuth'
+import Spinner from '@/components/shared/Spinner'
 
 // Redirects unauthed users to login
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
@@ -9,7 +10,7 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   if (loading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+        <Spinner />
       </div>
     )
   }

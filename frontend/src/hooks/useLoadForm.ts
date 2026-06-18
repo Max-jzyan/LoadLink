@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import { TRUCK_TYPES } from '@/types/enums'
 import type { CreateLoadPayload } from '@/services/loadApi/loadEnum'
 
-export interface LoadFormValues extends CreateLoadPayload {}
+export type LoadFormValues = CreateLoadPayload
 
 export interface LoadFormFields {
   truckType: string
@@ -131,6 +131,13 @@ export function useLoadForm(
             .filter(Boolean)
         : [],
       driverAssist: v.driverAssist,
+      // Auction fields where load goes live immediately on post
+      startPrice: Number(v.minPrice),
+      capPrice: Number(v.maxPrice),
+      priceCreepAmount: Number(v.escalationRate),
+      priceCreepIntervalHours: 1,
+      autoAcceptPercent: v.tolerance ? Number(v.tolerance) : 0,
+      expiresAt: v.pickupTime, // auction must close before the truck is needed
     })
   })
 
