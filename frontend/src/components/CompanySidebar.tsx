@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { LayoutDashboard, ClipboardList, MapPin, Truck } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Gavel, MapPin, Truck } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -18,6 +18,7 @@ import { RoutePath } from '@/config/routes'
 const COMPANY_NAV = [
   { path: RoutePath.Dashboard, label: 'Dashboard', icon: LayoutDashboard },
   { path: RoutePath.Loads, label: 'Loads', icon: ClipboardList },
+  { path: RoutePath.AuctionLive, label: 'Auction Live', icon: Gavel },
   { path: RoutePath.Fleet, label: 'My Fleet', icon: Truck },
   { path: RoutePath.Map, label: 'Map', icon: MapPin },
   { path: RoutePath.Test, label: 'Test', icon: MapPin },
