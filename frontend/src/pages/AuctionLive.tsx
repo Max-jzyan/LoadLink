@@ -12,6 +12,7 @@ import { useEventSource } from '@/components/auction/useEventSource'
 import type { BidsStreamPayload, PriceStreamPayload } from '@/services/auctionApi/auctionEnum'
 import { useAcceptBidMutation } from '@/services/auctionApi/auctionSlice'
 import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
+import NotFound from '@/pages/NotFound'
 
 /**
  * Pass a load id in the URL: http://localhost:3000/auctionLive/<loadId>
@@ -20,12 +21,16 @@ import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
  * TODO: remove DEMO_LOAD_ID + the bare /auctionLive route after MVP
  */
 const DEMO_LOAD_ID = '000000000000000000000102'
+const MONGO_ID_RE = /^[a-f\d]{24}$/i
 
 export default function AuctionLive() {
   const { loadId: loadIdParam } = useParams()
   const loadId = loadIdParam ?? DEMO_LOAD_ID
 
-  const { data: load, isLoading } = useGetLoadQuery(loadId)
+  // If a param was provided but isn't a valid ObjectId, skip the call entirely and render 404
+  const isValidId = !loadIdParam || MONGO_ID_RE.test(loadIdParam)
+
+  const { data: load, isLoading, isError } = useGetLoadQuery(loadId, { skip: !isValidId })
   const bidsPayload = useEventSource<BidsStreamPayload>(`/api/auctions/${loadId}/bids`)
   const pricePayload = useEventSource<PriceStreamPayload>(`/api/auctions/${loadId}/price`)
   const [acceptBid, { isLoading: accepting }] = useAcceptBidMutation()
@@ -35,6 +40,10 @@ export default function AuctionLive() {
   const bids = bidsPayload?.bids ?? []
   const bestBid = bids[0]
   const currentPrice = pricePayload?.currentPrice || auction?.currentPrice || 0
+
+  if (!isValidId || isError) {
+    return <NotFound />
+  }
 
   const handleAccept = (bidId: string) => {
     acceptBid({ loadId, bidId })

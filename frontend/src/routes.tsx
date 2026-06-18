@@ -8,6 +8,7 @@ import DriverLoads from '@/pages/DriverLoads'
 import Test from './pages/Test'
 import DriverAuction from '@/pages/DriverAuction'
 import PostLoad from '@/pages/PostLoad'
+import NotFound from '@/pages/NotFound'
 
 export default function AppRoutes() {
   return (
@@ -23,6 +24,7 @@ export default function AppRoutes() {
       <Route path={RoutePath.AuctionLive} element={<AuctionLive />} />
       <Route path={`${RoutePath.AuctionLive}/:loadId`} element={<AuctionLive />} />
       <Route path={RoutePath.Map} element={<MapPage />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }
