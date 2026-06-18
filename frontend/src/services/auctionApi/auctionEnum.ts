@@ -100,3 +100,12 @@ export interface EditAuctionResult {
   priceCeiling: number
   autoAcceptToleranceThreshold: number
 }
+
+export interface ReopenAuctionPayload {
+  extendByHours?: number // Default is 4 hours on the server
+}
+
+export interface ReopenAuctionResult {
+  loadId: string
+  newExpiresAt: string
+}

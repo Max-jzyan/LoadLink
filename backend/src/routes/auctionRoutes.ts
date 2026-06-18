@@ -5,6 +5,7 @@ import {
   claimLoad,
   createAuction,
   placeBid,
+  reopenAuction,
   streamBids,
   streamPrice,
   updateAuction,
@@ -18,6 +19,7 @@ router.get('/auctions/:loadId/price', streamPrice)
 router.patch('/auctions/:loadId/bids/:bidId', acceptBid)
 router.patch('/auctions/:loadId', updateAuction)
 router.delete('/auctions/:loadId', cancelAuction)
+router.post('/auctions/:loadId/reopen', reopenAuction)
 
 // Auction actions (driver-initiated)
 router.post('/auctions/:loadId/bids', placeBid)

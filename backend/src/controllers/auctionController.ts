@@ -146,3 +146,17 @@ export const cancelAuction = async (req: Request, res: Response, next: NextFunct
     next(err)
   }
 }
+
+// POST /api/auctions/:loadId/reopen
+// Reopen a closed auction with a new deadline.
+// Body: { extendByHours: number }
+export const reopenAuction = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const loadId = req.params.loadId as string
+    const { extendByHours = 4 } = req.body as { extendByHours?: number }
+    const result = await auctionService.reopenAuction(loadId, extendByHours)
+    res.status(StatusCodes.OK).json(result)
+  } catch (err) {
+    next(err)
+  }
+}

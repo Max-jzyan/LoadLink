@@ -1,6 +1,12 @@
 import { api } from '../api'
 import { LoadTag } from '../apiTypes'
-import type { AcceptBidResult, EditAuctionPayload, EditAuctionResult } from './auctionEnum'
+import type {
+  AcceptBidResult,
+  EditAuctionPayload,
+  EditAuctionResult,
+  ReopenAuctionPayload,
+  ReopenAuctionResult,
+} from './auctionEnum'
 
 export const auctionApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -28,8 +34,25 @@ export const auctionApi = api.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, loadId) => [{ type: LoadTag.Load, id: loadId }],
     }),
+
+    reopenAuction: build.mutation<
+      ReopenAuctionResult,
+      { loadId: string; body: ReopenAuctionPayload }
+    >({
+      query: ({ loadId, body }) => ({
+        url: `auctions/${loadId}/reopen`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
+    }),
   }),
   overrideExisting: false,
 })
 
-export const { useAcceptBidMutation, useEditAuctionMutation, useCancelAuctionMutation } = auctionApi
+export const {
+  useAcceptBidMutation,
+  useEditAuctionMutation,
+  useCancelAuctionMutation,
+  useReopenAuctionMutation,
+} = auctionApi

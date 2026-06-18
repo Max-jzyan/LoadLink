@@ -15,6 +15,8 @@ const LOAD_IDS = [
   new Types.ObjectId('000000000000000000000109'),
   new Types.ObjectId('000000000000000000000110'),
   new Types.ObjectId('000000000000000000000111'),
+  new Types.ObjectId('000000000000000000000112'),
+  new Types.ObjectId('000000000000000000000113'),
 ]
 
 type TruckTypeValue = (typeof TRUCK_TYPES)[keyof typeof TRUCK_TYPES]
@@ -260,6 +262,42 @@ export async function seedLoads({
       certifications: undefined,
       driverAssist: false,
       status: 'Active Bid',
+      driverKey: undefined,
+    },
+    // Close to expiry one
+    {
+      companyAlias: 'comp001' as const,
+      originAddress: 'Surrey, BC',
+      destinationAddress: 'Victoria, BC',
+      originCoords: { lat: 49.1044, lng: -122.8011 },
+      destinationCoords: { lat: 48.4284, lng: -123.3656 },
+      pickupTime: new Date('2026-06-19T10:00:00Z'),
+      dropoffTime: new Date('2026-06-19T14:00:00Z'),
+      weightLbs: 7500,
+      commodity: 'Electronics',
+      truckType: 'Dry Van',
+      trailerLengthFt: 28,
+      certifications: undefined,
+      driverAssist: false,
+      status: 'Available',
+      driverKey: undefined,
+    },
+    // Many bids one
+    {
+      companyAlias: 'comp001' as const,
+      originAddress: 'Burnaby, BC',
+      destinationAddress: 'Abbotsford, BC',
+      originCoords: { lat: 49.2488, lng: -122.9805 },
+      destinationCoords: { lat: 49.0504, lng: -122.3045 },
+      pickupTime: new Date('2026-07-01T09:00:00Z'),
+      dropoffTime: new Date('2026-07-01T13:00:00Z'),
+      weightLbs: 11000,
+      commodity: 'Consumer Goods',
+      truckType: 'Dry Van',
+      trailerLengthFt: 53,
+      certifications: undefined,
+      driverAssist: false,
+      status: 'Available',
       driverKey: undefined,
     },
   ]

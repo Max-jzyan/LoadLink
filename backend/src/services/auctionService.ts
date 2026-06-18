@@ -7,7 +7,7 @@ import '../models/users/Driver'
 import { AUCTION_STATUSES, BID_STATUSES, LOAD_STATUSES } from '../models/enums'
 import { emitBidsUpdate, emitPriceUpdate } from '../events/auctionEvents'
 import { ApiError } from '../utils/ApiError'
-import { MS_PER_MINUTE, RATE_CONFIRMATION_URL_BASE } from '../constants/auction'
+import { MS_PER_MINUTE, MS_PER_HOUR, RATE_CONFIRMATION_URL_BASE } from '../constants/auction'
 
 const assertValidId = (id: string, label: string) => {
   if (!isValidObjectId(id)) {
@@ -82,7 +82,10 @@ export const createAuction = async (loadId: string, data: CreateAuctionData) => 
   if (existing) throw new ApiError(StatusCodes.CONFLICT, 'An auction already exists for this load')
 
   if (data.capPrice < data.startPrice) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Cap price must be greater than or equal to start price')
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Cap price must be greater than or equal to start price'
+    )
   }
   if (data.priceCreepAmount <= 0) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Price creep amount must be positive')
@@ -291,4 +294,42 @@ export const cancelAuction = async (loadId: string) => {
   await LoadModel.findByIdAndUpdate(loadId, { status: LOAD_STATUSES.Cancelled })
 
   await emitBidsAndPrice(loadId)
+}
+
+// Reopen a closed auction -> reset it to Active with a new deadline
+// and unaccept any accepted bids
+export const reopenAuction = async (loadId: string, extendByHours: number) => {
+  assertValidId(loadId, 'loadId')
+  if (!Number.isFinite(extendByHours) || extendByHours <= 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Extension must be a positive number of hours')
+  }
+
+  const auction = await findAuctionOrThrow(loadId)
+  if (auction.status === AUCTION_STATUSES.Cancelled) {
+    throw new ApiError(StatusCodes.CONFLICT, 'A cancelled auction cannot be reopened')
+  }
+  if (auction.status === AUCTION_STATUSES.Active) {
+    throw new ApiError(StatusCodes.CONFLICT, 'Auction is already live')
+  }
+
+  // Reset any accepted bids back to submitted so they appear in the list again
+  await BidModel.updateMany(
+    { loadId, status: BID_STATUSES.Accepted },
+    { $set: { status: BID_STATUSES.Submitted, acceptedAt: null } }
+  )
+
+  auction.status = AUCTION_STATUSES.Active
+  auction.expiresAt = new Date(Date.now() + extendByHours * MS_PER_HOUR)
+  auction.claimedByDriverId = null
+  auction.autoAcceptedBidId = null
+  await auction.save()
+
+  await LoadModel.findByIdAndUpdate(loadId, {
+    status: LOAD_STATUSES.AuctionLive,
+    assignedDriverId: null,
+  })
+
+  await emitBidsAndPrice(loadId)
+
+  return { loadId, newExpiresAt: auction.expiresAt }
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatMoney } from '@/lib/format'
@@ -6,6 +7,7 @@ import {
   type Auction,
   type PopulatedBid,
 } from '@/services/auctionApi/auctionEnum'
+import AcceptBidDialog from './AcceptBidDialog'
 import BidRow from './BidRow'
 import AutoAcceptInfo from './AutoAcceptInfo'
 
@@ -17,9 +19,17 @@ interface BidListProps {
 }
 
 export default function BidList({ bids, auction, onAccept, accepting }: BidListProps) {
+  const [selectedBid, setSelectedBid] = useState<PopulatedBid | null>(null)
+
   const best = bids[0]
   const isLive = auction.status === AUCTION_STATUSES.Active
   const ceiling = auction.capPrice * (1 + auction.autoAcceptPercent / 100)
+
+  const handleConfirmAccept = () => {
+    if (!selectedBid) return
+    onAccept(selectedBid._id)
+    setSelectedBid(null)
+  }
 
   return (
     <div className="space-y-4">
@@ -44,18 +54,31 @@ export default function BidList({ bids, auction, onAccept, accepting }: BidListP
 
       <div className="space-y-2">
         <p className="text-sm font-medium">All Bids ({bids.length})</p>
-        {bids.length === 0 && <p className="text-sm text-muted-foreground">No bids yet.</p>}
-        {bids.map((bid) => (
-          <BidRow
-            key={bid._id}
-            bid={bid}
-            isBest={bid._id === best?._id}
-            withinAutoAccept={bid.amount <= ceiling}
-          />
-        ))}
+        {/* TODO: change the max-h to probably be more dynamic */}
+        <div className="max-h-70 overflow-y-auto space-y-2 pr-1">
+          {bids.length === 0 && <p className="text-sm text-muted-foreground">No bids yet.</p>}
+          {bids.map((bid) => (
+            <BidRow
+              key={bid._id}
+              bid={bid}
+              isBest={bid._id === best?._id}
+              withinAutoAccept={bid.amount <= ceiling}
+              onClick={isLive ? () => setSelectedBid(bid) : undefined}
+            />
+          ))}
+        </div>
       </div>
 
       <AutoAcceptInfo auction={auction} />
+
+      <AcceptBidDialog
+        bid={selectedBid}
+        isBest={selectedBid?._id === best?._id}
+        isLive={isLive}
+        accepting={!!accepting}
+        onAccept={handleConfirmAccept}
+        onClose={() => setSelectedBid(null)}
+      />
     </div>
   )
 }

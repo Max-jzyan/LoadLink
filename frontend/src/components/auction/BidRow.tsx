@@ -9,6 +9,7 @@ interface BidRowProps {
   bid: PopulatedBid
   isBest?: boolean
   withinAutoAccept?: boolean
+  onClick?: () => void
 }
 
 const initials = (name: string) =>
@@ -28,12 +29,18 @@ const timeAgo = (iso: string) => {
   }
 }
 
-export default function BidRow({ bid, isBest, withinAutoAccept }: BidRowProps) {
+export default function BidRow({ bid, isBest, withinAutoAccept, onClick }: BidRowProps) {
   const driver = bid.driverId
   const rating = driver.ratingSummary?.average
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+    <div
+      className={`flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors ${
+        onClick ? 'cursor-pointer hover:bg-muted/50' : ''
+      }`}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+    >
       <div className="flex items-center gap-3">
         <Avatar>
           <AvatarFallback>{initials(driver.name ?? '?')}</AvatarFallback>

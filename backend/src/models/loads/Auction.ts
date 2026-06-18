@@ -74,6 +74,7 @@ export interface IAuction {
   claimedByDriverId?: Types.ObjectId | null
   autoAcceptedBidId?: Types.ObjectId | null
   lastPriceUpdateAt?: Date
+  bestBidAmount?: number | null
 }
 
 export const AuctionModel = model<IAuction>('Auction', AuctionSchema)

@@ -23,6 +23,7 @@ interface DriverCardProps {
   rounded?: 'none' | 'sm' | 'md' | 'lg'
   largeTitle?: boolean
   noPadding?: boolean
+  expand?: boolean // When true the card fills its parent height and CardContent becomes scrollable
 }
 
 const roundedMap = {
@@ -59,6 +60,7 @@ export default function DynamicCard({
   rounded: roundedProp = 'sm',
   largeTitle,
   noPadding,
+  expand,
 }: DriverCardProps) {
   return (
     <Card
@@ -67,7 +69,8 @@ export default function DynamicCard({
         noBorder && 'ring-0',
         noBackground && 'bg-transparent',
         roundedProp && roundedMap[roundedProp],
-        noPadding && '[--card-spacing:0px]'
+        noPadding && '[--card-spacing:0px]',
+        expand && 'flex h-full flex-col overflow-hidden'
       )}
       size={size}
     >
@@ -78,7 +81,16 @@ export default function DynamicCard({
           {action && <CardAction>{action}</CardAction>}
         </CardHeader>
       )}
-      {children && <CardContent className={cn(noPadding && 'p-0')}>{children}</CardContent>}
+      {children && (
+        <CardContent
+          className={cn(
+            noPadding && 'p-0',
+            expand && 'flex min-h-0 flex-1 flex-col overflow-hidden'
+          )}
+        >
+          {children}
+        </CardContent>
+      )}
       {footer && (
         <CardFooter
           className={cn(

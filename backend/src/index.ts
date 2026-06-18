@@ -23,6 +23,7 @@ import auctionRouter from './routes/auctionRoutes'
 import driverRouter from './routes/driverRoutes'
 import userRouter from './routes/userRoutes'
 import { errorHandler } from './middleware/errorHandler'
+import { startHeartbeat } from './services/heartbeatService'
 
 // Routes
 app.use('/api', userRouter)
@@ -40,9 +41,21 @@ mongoose
   .connect(MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB')
-    app.listen(PORT, () => {
+
+    // Start the heartbeat engine once the DB is ready
+    const stopHeartbeat = startHeartbeat()
+
+    const server = app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`)
     })
+
+    // Stop heartbeat before closing gracefullu
+    const shutdown = () => {
+      stopHeartbeat()
+      server.close(() => process.exit(0))
+    }
+    process.once('SIGTERM', shutdown)
+    process.once('SIGINT', shutdown)
   })
   .catch((err) => {
     console.error('MongoDB connection failed:', err)

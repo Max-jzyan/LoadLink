@@ -17,7 +17,7 @@ interface ColProps {
 
 export default function Col({ size = 16, children }: ColProps) {
   return (
-    <div className="p-2 max-w" style={{ flex: size }}>
+    <div className="flex h-full flex-col overflow-hidden p-2" style={{ flex: size }}>
       {children}
     </div>
   )

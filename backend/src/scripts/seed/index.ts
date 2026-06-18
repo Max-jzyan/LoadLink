@@ -16,7 +16,11 @@ const BID_IDS_BY_LOAD: Record<string, [string, string]> = {
   '000000000000000000000108': ['000000000000000000000308', '000000000000000000000408'],
   '000000000000000000000110': ['000000000000000000000310', '000000000000000000000410'],
   '000000000000000000000111': ['000000000000000000000311', '000000000000000000000411'],
+  '000000000000000000000112': ['000000000000000000000312', '000000000000000000000412'], // Near expiry demo
 }
+
+// Bid amounts for the lots of bids demo auction 113
+const MANY_BID_AMOUNTS = [820, 838, 855, 867, 879, 892, 906, 918, 931, 947, 963, 1000]
 
 async function main() {
   await mongoose.connect(MONGODB_URI)
@@ -50,6 +54,25 @@ async function main() {
         })
         bidCount += bids.length
       }
+    }
+
+    // Lots of bids seed
+    const auction113 = auctions.find((a) => a.loadId.toString() === '000000000000000000000113')
+    if (auction113) {
+      // IDs 000000000000000000000500 → 000000000000000000000511
+      const manyBids = MANY_BID_AMOUNTS.map((amount, i) => ({
+        _id: new Types.ObjectId(`000000000000000000000${500 + i}`),
+        loadId: auction113.loadId,
+        auctionId: auction113._id,
+        driverId: i % 2 === 0 ? drivers.sam._id : drivers.alex._id,
+        amount,
+      }))
+
+      await BidModel.create(manyBids)
+      // Track the bestBidAmount on the auction so heartbeat auto accept works
+      ;(auction113 as any).bestBidAmount = MANY_BID_AMOUNTS[0]
+      await (auction113 as any).save()
+      bidCount += manyBids.length
     }
 
     const userCount = Object.keys(companies).length + Object.keys(drivers).length

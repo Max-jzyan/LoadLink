@@ -1,17 +1,23 @@
 import { useParams } from 'react-router-dom'
+import { Trophy, WifiOff } from 'lucide-react'
 import Col from '@/components/layout/Col'
 import DynamicCard from '@/components/layout/DynamicCard'
 import LayoutGrid from '@/components/layout/LayoutGrid'
 import Row from '@/components/layout/Row'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import AuctionControls from '@/components/auction/AuctionControls'
 import BidList from '@/components/auction/BidList'
 import LoadSummaryCard from '@/components/auction/LoadSummaryCard'
 import PriceTracker from '@/components/auction/PriceTracker'
+import ReopenAuctionDialog from '@/components/auction/ReopenAuctionDialog'
 import { useEventSource } from '@/components/auction/useEventSource'
+import { AUCTION_STATUSES, BID_STATUSES } from '@/services/auctionApi/auctionEnum'
 import type { BidsStreamPayload, PriceStreamPayload } from '@/services/auctionApi/auctionEnum'
 import { useAcceptBidMutation } from '@/services/auctionApi/auctionSlice'
 import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
+import { formatMoney } from '@/lib/format'
 import NotFound from '@/pages/NotFound'
 
 /**
@@ -31,8 +37,14 @@ export default function AuctionLive() {
   const isValidId = !loadIdParam || MONGO_ID_RE.test(loadIdParam)
 
   const { data: load, isLoading, isError } = useGetLoadQuery(loadId, { skip: !isValidId })
-  const bidsPayload = useEventSource<BidsStreamPayload>(`/api/auctions/${loadId}/bids`)
-  const pricePayload = useEventSource<PriceStreamPayload>(`/api/auctions/${loadId}/price`)
+
+  const { data: bidsPayload, status: bidsStatus } = useEventSource<BidsStreamPayload>(
+    isValidId ? `/api/auctions/${loadId}/bids` : null
+  )
+  const { data: pricePayload, status: priceStatus } = useEventSource<PriceStreamPayload>(
+    isValidId ? `/api/auctions/${loadId}/price` : null
+  )
+
   const [acceptBid, { isLoading: accepting }] = useAcceptBidMutation()
   const auction = load?.auctionId ?? undefined
   const companyName = load?.companyId?.name
@@ -40,6 +52,17 @@ export default function AuctionLive() {
   const bids = bidsPayload?.bids ?? []
   const bestBid = bids[0]
   const currentPrice = pricePayload?.currentPrice || auction?.currentPrice || 0
+
+  // Derive auction state from SSE payload
+  const liveEventType = pricePayload?.loadEventType ?? bidsPayload?.loadEventType
+  const isAuctionOver =
+    liveEventType === AUCTION_STATUSES.Closed || liveEventType === AUCTION_STATUSES.Cancelled
+  const isCancelled = liveEventType === AUCTION_STATUSES.Cancelled
+
+  const winnerBid = bids.find((b) => b.status === BID_STATUSES.Accepted)
+
+  // If any SSE stream has lost its connection
+  const sseDisconnected = bidsStatus === 'disconnected' || priceStatus === 'disconnected'
 
   if (!isValidId || isError) {
     return <NotFound />
@@ -51,6 +74,64 @@ export default function AuctionLive() {
 
   return (
     <LayoutGrid>
+      {sseDisconnected && (
+        <Row size={16}>
+          <Col size={16}>
+            <div className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+              <WifiOff className="h-4 w-4 shrink-0" />
+              <span>Live feed disconnected for some reason, reconnecting</span>
+            </div>
+          </Col>
+        </Row>
+      )}
+
+      {isAuctionOver && (
+        <Row size={16}>
+          <Col size={16}>
+            {isCancelled ? (
+              <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-4 py-2 text-sm text-muted-foreground">
+                <Badge variant="destructive">Cancelled</Badge>
+                <span>This auction is cancelled</span>
+              </div>
+            ) : winnerBid ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <Trophy className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback>
+                      {winnerBid.driverId.name
+                        .split(' ')
+                        .map((p) => p[0])
+                        .slice(0, 2)
+                        .join('')
+                        .toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm font-semibold leading-tight">{winnerBid.driverId.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Load assigned to a driver at{' '}
+                      <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                        {formatMoney(winnerBid.amount)}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                <ReopenAuctionDialog loadId={loadId} />
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-muted px-4 py-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Badge variant="secondary">Closed</Badge>
+                  <span>Auction closed with no driver</span>
+                </div>
+                <ReopenAuctionDialog loadId={loadId} />
+              </div>
+            )}
+          </Col>
+        </Row>
+      )}
+
       <Row size={16}>
         <Col size={7}>
           <DynamicCard>
@@ -64,21 +145,23 @@ export default function AuctionLive() {
               <div className="space-y-6">
                 <LoadSummaryCard load={load} auction={auction} companyName={companyName} />
                 <PriceTracker auction={auction} currentPrice={currentPrice} />
-                <AuctionControls
-                  loadId={loadId}
-                  auction={auction}
-                  bestBid={bestBid}
-                  currentPrice={currentPrice}
-                  onAcceptBest={() => bestBid && handleAccept(bestBid._id)}
-                  accepting={accepting}
-                />
+                {!isAuctionOver && (
+                  <AuctionControls
+                    loadId={loadId}
+                    auction={auction}
+                    bestBid={bestBid}
+                    currentPrice={currentPrice}
+                    onAcceptBest={() => bestBid && handleAccept(bestBid._id)}
+                    accepting={accepting}
+                  />
+                )}
               </div>
             )}
           </DynamicCard>
         </Col>
 
         <Col size={9}>
-          <DynamicCard>
+          <DynamicCard expand>
             {auction ? (
               <BidList
                 bids={bids}
