@@ -102,8 +102,6 @@ export function subscribeToAuthChanges(dispatch: AppDispatch) {
   })
 }
 
-
-
 // Register a new user in both Firebase and MongoDB and return the full AuthUser so callers can dispatch setUser directly
 export async function registerAndFetchUser(
   email: string,

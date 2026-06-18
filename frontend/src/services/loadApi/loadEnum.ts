@@ -3,7 +3,6 @@ import type { LoadStatus } from '@/types/enums'
 
 export type { LoadStatus }
 
-
 export interface Coordinate {
   lat: number
   lng: number

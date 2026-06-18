@@ -35,7 +35,7 @@ export const getLoad = async (req: Request, res: Response, next: NextFunction) =
  */
 export const createLoad = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { companyId } = req.params
+    const companyId = req.params.companyId as string
 
     const {
       startPrice,
