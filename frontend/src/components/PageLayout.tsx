@@ -39,7 +39,9 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
                       <BreadcrumbPage>{item.label}</BreadcrumbPage>
                     ) : (
                       <BreadcrumbLink asChild>
-                        <Link to={item.path}>{item.label}</Link>
+                        <Link to={item.path} className="underline-offset-4 hover:underline">
+                          {item.label}
+                        </Link>
                       </BreadcrumbLink>
                     )}
                   </BreadcrumbItem>
