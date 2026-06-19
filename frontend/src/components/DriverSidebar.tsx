@@ -17,10 +17,9 @@ import { RoutePath } from '@/config/routes'
 
 const DRIVER_NAV = [
   { path: RoutePath.Dashboard, label: 'Dashboard', icon: LayoutDashboard },
+  { path: RoutePath.DriverAuctions, label: 'Auctions', icon: Gavel },
   { path: RoutePath.DriverLoads, label: 'My Loads', icon: ClipboardList },
   { path: RoutePath.Map, label: 'Map', icon: MapPin },
-  { path: RoutePath.Test, label: 'Test', icon: MapPin },
-  { path: RoutePath.DriverAuctions, label: 'Auctions', icon: Gavel },
 ]
 
 export function DriverSidebar() {

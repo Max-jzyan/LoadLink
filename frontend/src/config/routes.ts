@@ -16,11 +16,14 @@ import type { UserRole } from '@/hooks/useRole'
 export const RoutePath = {
   Test: '/test',
   Dashboard: '/dashboard',
+  CompanyDashboard: '/company/dashboard',
   DriverLoads: '/driverLoads',
   DriverAuctions: '/driverAuctions',
   Loads: '/loads',
   AuctionLive: '/auctionLive',
   PostLoad: '/loads/post',
+  LoadDetail: '/loads/:loadId',
+  LoadEdit: '/loads/:loadId/edit',
   Map: '/map',
   Fleet: '/fleet',
   Settings: '/settings',
@@ -35,12 +38,18 @@ export interface RouteMeta {
   icon: LucideIcon
   /** Where this item appears in the nav. null = not in any nav group. */
   navGroup: 'main' | 'bottom' | null
-  // Which roles can see this nav item, where undefined = visible to all roles
+  // which roles can see this nav item, where undefined = visible to all roles
   roles?: UserRole[]
 }
 
 export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
   [RoutePath.Dashboard]: { label: 'Dashboard', icon: LayoutDashboard, navGroup: 'main' },
+  [RoutePath.CompanyDashboard]: {
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    navGroup: 'main',
+    roles: ['company'],
+  },
   [RoutePath.Test]: { label: 'Test', icon: LayoutDashboard, navGroup: null },
   [RoutePath.DriverLoads]: {
     label: 'My Loads',
@@ -61,7 +70,24 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     navGroup: 'main',
     roles: ['company'],
   },
-  [RoutePath.PostLoad]: { label: 'Post Load', icon: PlusCircle, navGroup: null },
+  [RoutePath.PostLoad]: {
+    label: 'Post Load',
+    icon: PlusCircle,
+    navGroup: null,
+    roles: ['company'],
+  },
+  [RoutePath.LoadDetail]: {
+    label: 'Load Detail',
+    icon: ClipboardList,
+    navGroup: null,
+    roles: ['company'],
+  },
+  [RoutePath.LoadEdit]: {
+    label: 'Edit Load',
+    icon: ClipboardList,
+    navGroup: null,
+    roles: ['company'],
+  },
   [RoutePath.Map]: { label: 'Map', icon: MapPin, navGroup: 'main' },
   [RoutePath.Fleet]: { label: 'My Fleet', icon: Truck, navGroup: 'main', roles: ['company'] },
   [RoutePath.Settings]: { label: 'Settings', icon: Settings, navGroup: 'bottom' },
@@ -71,26 +97,26 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
 
 /** Get label for any path (used by breadcrumbs). Falls back to Title Case of the segment. */
 export const getRouteLabel = (path: string): string => {
-  // Exact match in ROUTE_CONFIG (e.g. '/fleet' → 'My Fleet')
+  // exact match in ROUTE_CONFIG (e.g. '/fleet' -> 'My Fleet')
   if (ROUTE_CONFIG[path as RoutePath]) {
     return ROUTE_CONFIG[path as RoutePath].label
   }
 
-  // Extract last segment and try '/'+segment as a route
+  // extract last segment and try '/'+segment as a route
   const segment = path.split('/').filter(Boolean).pop() ?? path
   if (ROUTE_CONFIG[('/' + segment) as RoutePath]) {
     return ROUTE_CONFIG[('/' + segment) as RoutePath].label
   }
 
-  // Fallback: convert camelCase / kebab-case → Title Case
+  // fallback: convert camelCase / kebab-case -> Title Case
   return segment
-    .replace(/([a-z])([A-Z])/g, '$1 $2') // camelCase → "camel Case"
-    .replace(/-/g, ' ') // kebab-case → space separated
-    .replace(/\b\w/g, (c) => c.toUpperCase()) // Capitalize each word
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 /** Sidebar items filtered by nav group. */
-// TODO: connect the optional role based filtering to the sidebars -> hardcoded right now (DRIVER_NAV adn COMPANT_NAV)
+// TODO: connect the optional role based filtering to the sidebars -> hardcoded right now (DRIVER_NAV and COMPANY_NAV)
 export const getNavItems = (group: 'main' | 'bottom', role?: UserRole) =>
   (Object.entries(ROUTE_CONFIG) as [RoutePath, RouteMeta][])
     .filter(([, meta]) => meta.navGroup === group)

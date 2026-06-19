@@ -26,6 +26,24 @@ export const LOAD_STATUSES = {
 
 export type LoadStatus = (typeof LOAD_STATUSES)[keyof typeof LOAD_STATUSES]
 
+export const TimelineEventAction = {
+  Start: 'Start',
+  Break: 'Break',
+  Rest: 'Rest',
+  Refuel: 'Refuel',
+  Complete: 'Complete',
+} as const
+export type TimelineEventAction = (typeof TimelineEventAction)[keyof typeof TimelineEventAction]
+
+export const TimelineIconType = {
+  Pickup: 'pickup',
+  Rest: 'rest',
+  Sleep: 'sleep',
+  Fuel: 'fuel',
+  Delivery: 'delivery',
+} as const
+export type TimelineIconType = (typeof TimelineIconType)[keyof typeof TimelineIconType]
+
 export const USER_ROLES = {
   DRIVER: 'driver',
   COMPANY: 'company',
