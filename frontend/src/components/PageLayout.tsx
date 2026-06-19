@@ -43,7 +43,6 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
                           to={item.path}
                           className="text-primary underline-offset-4 hover:underline hover:text-primary"
                         >
-
                           {item.label}
                         </Link>
                       </BreadcrumbLink>
