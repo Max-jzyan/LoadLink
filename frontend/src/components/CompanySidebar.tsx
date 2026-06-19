@@ -16,7 +16,7 @@ import Logo from '@/components/Logo'
 import { RoutePath } from '@/config/routes'
 
 const COMPANY_NAV = [
-  { path: RoutePath.Dashboard, label: 'Dashboard', icon: LayoutDashboard },
+  { path: RoutePath.CompanyDashboard, label: 'Dashboard', icon: LayoutDashboard },
   { path: RoutePath.Loads, label: 'Loads', icon: ClipboardList },
   { path: RoutePath.AuctionLive, label: 'Auction Live', icon: Gavel },
   { path: RoutePath.Fleet, label: 'My Fleet', icon: Truck },
@@ -29,7 +29,7 @@ export function CompanySidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="flex flex-row items-center gap-1 p-2 group-data-[collapsible=icon]:justify-center">
         <Link
-          to={RoutePath.Dashboard}
+          to={RoutePath.CompanyDashboard}
           className="flex flex-1 cursor-pointer items-center gap-2 group-data-[collapsible=icon]:hidden"
         >
           <div className="flex shrink-0 items-center justify-center leading-tight">

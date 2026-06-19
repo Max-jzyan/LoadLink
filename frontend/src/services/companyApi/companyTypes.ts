@@ -1,4 +1,5 @@
 import type { Load } from '../loadApi/loadEnum'
+import type { Auction } from '../auctionApi/auctionEnum'
 
 // company returned by GET /api/companies (dev-only until firebase auth is wired up)
 export interface Company {
@@ -9,16 +10,11 @@ export interface Company {
   contactName: string
 }
 
-// auction doc as populated on a load (server side populates auctionId field)
-export interface AuctionInfo {
-  _id: string
-  currentPrice: number
-  startPrice: number
-  capPrice: number
-  status: string
-  expiresAt: string
-  currency: string
-}
+// subset of Auction fields returned when auctionId is populated on a load
+export type AuctionInfo = Pick<
+  Auction,
+  '_id' | 'currentPrice' | 'startPrice' | 'capPrice' | 'status' | 'expiresAt' | 'currency'
+>
 
 // load enriched with bid count and populated auction, returned by GET /api/company/:id/dashboard
 export interface LoadWithDetails extends Omit<Load, 'auctionId'> {

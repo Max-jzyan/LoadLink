@@ -4,6 +4,7 @@ import { CompanyModel } from '../models/users/Company'
 import { LoadModel } from '../models/loads/Load'
 import { BidModel } from '../models/loads/Bid'
 import { LOAD_STATUSES } from '../models/enums'
+import { ApiError } from '../utils/ApiError'
 
 // GET /api/companies
 // lists all companies -- dev only, replace with auth-based lookup once firebase auth is wired up
@@ -22,6 +23,14 @@ export const listCompanies = async (req: Request, res: Response, next: NextFunct
 export const getCompanyDashboard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { companyId } = req.params
+
+    // when auth is enforced, verify the caller owns this company account
+    if (req.firebaseUid) {
+      const caller = await CompanyModel.findOne({ firebaseUid: req.firebaseUid }).select('_id')
+      if (!caller || caller._id.toString() !== companyId) {
+        return next(new ApiError(StatusCodes.FORBIDDEN, 'Access denied'))
+      }
+    }
 
     // fetch all loads for this company sorted newest first, populate auction and driver info
     const loads = await LoadModel.find({ companyId })
@@ -43,7 +52,7 @@ export const getCompanyDashboard = async (req: Request, res: Response, next: Nex
 
     // count bids submitted today across all company loads for the summary card
     const startOfDay = new Date()
-    startOfDay.setHours(0, 0, 0, 0)
+    startOfDay.setUTCHours(0, 0, 0, 0)
     const totalBidsToday = await BidModel.countDocuments({
       loadId: { $in: loadIds },
       createdAt: { $gte: startOfDay },

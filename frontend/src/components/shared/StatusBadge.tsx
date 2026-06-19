@@ -1,6 +1,6 @@
-import { LOAD_STATUSES } from '@/types/enums'
+import { LOAD_STATUSES, type LoadStatus } from '@/types/enums'
 
-const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
+const STATUS_CONFIG: Record<LoadStatus, { label: string; cls: string }> = {
   [LOAD_STATUSES.AuctionLive]: {
     label: 'Live Auction',
     cls: 'text-amber-600 bg-amber-50 border-amber-200',
@@ -22,8 +22,8 @@ const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
   [LOAD_STATUSES.Draft]: { label: 'Draft', cls: 'text-gray-400 bg-gray-50 border-gray-100' },
 }
 
-export function StatusBadge({ status, bidCount }: { status: string; bidCount?: number }) {
-  const isNoBids = status === 'auction_live' && bidCount === 0
+export function StatusBadge({ status, bidCount }: { status: LoadStatus; bidCount?: number }) {
+  const isNoBids = status === LOAD_STATUSES.AuctionLive && bidCount === 0
   const cfg = isNoBids
     ? { label: 'No Bids', cls: 'text-gray-500 bg-gray-50 border-gray-200' }
     : (STATUS_CONFIG[status] ?? { label: status, cls: 'text-gray-400 bg-gray-50 border-gray-100' })

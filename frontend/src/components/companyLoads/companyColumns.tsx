@@ -4,11 +4,18 @@ import { Button } from '@/components/ui/button'
 import type { LoadWithDetails } from '@/services/companyApi/companyTypes'
 import { RoutePath } from '@/config/routes'
 import { StatusBadge } from '@/components/shared/StatusBadge'
-import { TRUCK_TYPES, LOAD_STATUSES } from '@/types/enums'
+import { TRUCK_TYPES, LOAD_STATUSES, type LoadStatus } from '@/types/enums'
 
 const TRUCK_LABELS: Record<string, string> = Object.fromEntries(
   TRUCK_TYPES.map((t) => [t.value, t.label])
 )
+
+const NON_EDITABLE_STATUSES = [
+  LOAD_STATUSES.InTransit,
+  LOAD_STATUSES.Booked,
+  LOAD_STATUSES.Completed,
+  LOAD_STATUSES.Cancelled,
+] as const
 
 export const companyColumns: ColumnDef<LoadWithDetails>[] = [
   {
@@ -72,7 +79,7 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => (
-      <StatusBadge status={row.getValue<string>('status')} bidCount={row.original.bidCount} />
+      <StatusBadge status={row.original.status as LoadStatus} bidCount={row.original.bidCount} />
     ),
   },
   {
@@ -80,23 +87,16 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
     header: 'Actions',
     cell: ({ row }) => {
       const load = row.original
-      const canEdit = !(
-        [
-          LOAD_STATUSES.InTransit,
-          LOAD_STATUSES.Booked,
-          LOAD_STATUSES.Completed,
-          LOAD_STATUSES.Cancelled,
-        ] as string[]
-      ).includes(load.status)
+      const canEdit = !(NON_EDITABLE_STATUSES as readonly string[]).includes(load.status)
       return (
         <div className="flex items-center gap-2">
-          {load.status === 'in_transit' ? (
-            // track links to map page — per-load tracking page not yet implemented
+          {load.status === LOAD_STATUSES.InTransit ? (
+            // track links to map page -- per-load tracking page not yet implemented
             <Button size="sm" asChild>
               <Link to={RoutePath.Map}>Track</Link>
             </Button>
           ) : (
-            // view links to load detail page — not yet implemented
+            // view links to load detail page -- not yet implemented
             <Button size="sm" asChild>
               <Link to={`/loads/${load._id}`}>View</Link>
             </Button>

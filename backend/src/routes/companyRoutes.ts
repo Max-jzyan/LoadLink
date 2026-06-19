@@ -1,13 +1,13 @@
 import { Router } from 'express'
 import { listCompanies, getCompanyDashboard } from '../controllers/companyController'
+import { requireAuth } from '../middleware/requireAuth'
 
 const router = Router()
 
 // dev-only endpoint: lists all companies (no auth guard)
-// replace with auth middleware once firebase is wired up
 router.get('/companies', listCompanies)
 
-// enriched dashboard payload: loads + per-load bid counts + summary stats
-router.get('/company/:companyId/dashboard', getCompanyDashboard)
+// auth-guarded: verifies Firebase token and checks caller owns the requested companyId
+router.get('/company/:companyId/dashboard', requireAuth, getCompanyDashboard)
 
 export default router

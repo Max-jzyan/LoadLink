@@ -14,6 +14,7 @@ import {
 import type { UserRole } from '@/hooks/useRole'
 
 export const RoutePath = {
+  CompanyDashboard: '/company/dashboard',
   Test: '/test',
   Dashboard: '/dashboard',
   CompanyDashboard: '/company/dashboard',
