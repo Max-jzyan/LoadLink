@@ -23,6 +23,7 @@ interface DriverCardProps {
   rounded?: 'none' | 'sm' | 'md' | 'lg'
   largeTitle?: boolean
   noPadding?: boolean
+  className?: string
   expand?: boolean // When true the card fills its parent height and CardContent becomes scrollable
 }
 
@@ -60,6 +61,7 @@ export default function DynamicCard({
   rounded: roundedProp = 'sm',
   largeTitle,
   noPadding,
+  className,
   expand,
 }: DriverCardProps) {
   return (
@@ -70,6 +72,7 @@ export default function DynamicCard({
         noBackground && 'bg-transparent',
         roundedProp && roundedMap[roundedProp],
         noPadding && '[--card-spacing:0px]',
+        className,
         expand && 'flex h-full flex-col overflow-hidden'
       )}
       size={size}
@@ -78,7 +81,16 @@ export default function DynamicCard({
         <CardHeader className={cn(roundedProp && roundedTMap[roundedProp], noPadding && 'p-0')}>
           {title && <CardTitle className={cn(largeTitle && 'text-xl')}>{title}</CardTitle>}
           {description && <CardDescription>{description}</CardDescription>}
-          {action && <CardAction>{action}</CardAction>}
+          {action && (
+            <CardAction
+              className={cn(
+                size === 'sm' && 'text-xs leading-5 p-0',
+                size === 'sm' && '[&_svg]:h-4 [&_svg]:w-4'
+              )}
+            >
+              {action}
+            </CardAction>
+          )}
         </CardHeader>
       )}
       {children && (
@@ -95,8 +107,9 @@ export default function DynamicCard({
         <CardFooter
           className={cn(
             roundedProp && roundedBMap[roundedProp],
-            noFooterStyle && 'bg-transparent border-none p-(--card-spacing)',
-            noPadding && 'p-0'
+            noFooterStyle && 'bg-transparent border-none',
+            noFooterStyle && 'p-(--card-spacing)',
+            !noFooterStyle && noPadding && 'p-0'
           )}
         >
           {footer}

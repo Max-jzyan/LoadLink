@@ -1,29 +1,31 @@
-import * as React from 'react'
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { InputGroup, InputGroupAddon } from '@/components/ui/input-group'
-import { PriceInputVariant } from '@/types/enums'
 import { cn } from '@/lib/utils'
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
+import { PriceInputVariant } from '@/types/enums'
+import * as React from 'react'
 
 interface PriceInputProps extends React.ComponentProps<typeof Input> {
-  label: string
+  label?: string
   variant: PriceInputVariant
   description?: string
   inputGroupClassName?: string
+  fullWidth?: boolean
 }
 
 function PriceInput({
   className,
-  label,
+  label = '',
   variant,
   description,
   placeholder,
   inputGroupClassName,
+  fullWidth = false,
   ...props
 }: PriceInputProps) {
   return (
-    <Field className="max-w-sm">
-      <FieldLabel>{label}</FieldLabel>
+    <Field className={fullWidth ? '' : 'max-w-sm'}>
+      {label && <FieldLabel>{label}</FieldLabel>}
 
       <InputGroup className={inputGroupClassName}>
         <InputGroupAddon

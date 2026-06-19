@@ -132,6 +132,7 @@ export function DriverMap({ routes, height = '500px', selectedRouteId }: DriverM
           maxZoom={19}
         />
 
+        <FitBoundsToRoutes routes={routes} />
         <FlyToRoute routes={routes} selectedRouteId={selectedRouteId} />
 
         {routes.map((route) => (
@@ -140,6 +141,30 @@ export function DriverMap({ routes, height = '500px', selectedRouteId }: DriverM
       </MapContainer>
     </div>
   )
+}
+
+/**
+ * On mount and whenever routes change, fits the map bounds to encompass all routes.
+ * This ensures the map auto-zooms to show all provided routes on initial render.
+ */
+function FitBoundsToRoutes({ routes }: { routes: RouteCoordinate[] }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (routes.length === 0) return
+
+    const bounds = L.latLngBounds([])
+    for (const route of routes) {
+      bounds.extend(route.origin)
+      bounds.extend(route.destination)
+    }
+
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [50, 50] })
+    }
+  }, [map, routes])
+
+  return null
 }
 
 /** Zooms the map to a route when selectedRouteId changes */

@@ -10,15 +10,31 @@
  *
  * Horizontal distribution is handled by the `size` prop on child Col components,
  * which use a 16-unit grid (col sizes should sum to 16 for a full-width row).
+ *
+ * The `stackAt` prop controls the breakpoint at which Col children stack vertically
+ * (flex-col) instead of sitting side-by-side (flex-row). Below the specified breakpoint,
+ * columns stack; at and above the breakpoint, they display side-by-side.
+ * Accepts standard Tailwind breakpoints: "sm" | "md" | "lg" | "xl" | "2xl". Defaults to "md".
  */
 interface RowProps {
   size?: number
+  stackAt?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
   children: React.ReactNode
 }
 
-export default function Row({ size = 16, children }: RowProps) {
+const breakpointClasses: Record<string, string> = {
+  sm: 'sm:flex-row',
+  md: 'md:flex-row',
+  lg: 'lg:flex-row',
+  xl: 'xl:flex-row',
+  '2xl': '2xl:flex-row',
+}
+
+export default function Row({ size = 16, stackAt = 'md', children }: RowProps) {
+  const responsiveClass = breakpointClasses[stackAt]
+
   return (
-    <div className="flex max-h" style={{ flex: size }}>
+    <div className={`flex flex-col ${responsiveClass} flex-wrap max-h`} style={{ flex: size }}>
       {children}
     </div>
   )

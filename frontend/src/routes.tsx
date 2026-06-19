@@ -18,6 +18,7 @@ export default function AppRoutes() {
       <Route path={RoutePath.Test} element={<Test />} />
       <Route path={RoutePath.DriverLoads} element={<DriverLoads />} />
       <Route path={RoutePath.DriverAuctions} element={<DriverAuction />} />
+      <Route path={`${RoutePath.DriverAuctions}/:loadId`} element={<DriverAuction />} />
       <Route path={RoutePath.Loads} element={<Loads />} />
       <Route path={RoutePath.PostLoad} element={<PostLoad />} />
       {/* TODO: remove the bare AuctionLive route after MVP — used for sidebar testing */}
