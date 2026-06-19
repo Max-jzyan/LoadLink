@@ -1,7 +1,7 @@
-import { isValidObjectId } from 'mongoose'
+import { HydratedDocument, isValidObjectId } from 'mongoose'
 import { StatusCodes } from 'http-status-codes'
-import { BidModel } from '../models/loads/Bid'
-import { AuctionModel } from '../models/loads/Auction'
+import { BidModel, type Bid } from '../models/loads/Bid'
+import { AuctionModel, type IAuction } from '../models/loads/Auction'
 import { LoadModel } from '../models/loads/Load'
 import '../models/users/Driver'
 import { AUCTION_STATUSES, BID_STATUSES, LOAD_STATUSES } from '../models/enums'
@@ -56,12 +56,34 @@ const buildPricePayload = async (loadId: string) => {
 }
 
 /** Push fresh bids + price snapshots to any open SSE streams for a load. */
-const emitBidsAndPrice = async (loadId: string) => {
+export const emitBidsAndPrice = async (loadId: string) => {
   const bidsPayload = await buildBidsPayload(loadId)
   if (bidsPayload) emitBidsUpdate(loadId, bidsPayload)
 
   const pricePayload = await buildPricePayload(loadId)
   if (pricePayload) emitPriceUpdate(loadId, pricePayload)
+}
+
+/**
+ * Flip a bid to accepted, close its auction, and book the load with that driver.
+ */
+export const settleAuctionWithBid = async (
+  auction: HydratedDocument<IAuction>,
+  bid: HydratedDocument<Bid>
+) => {
+  bid.status = BID_STATUSES.Accepted
+  bid.acceptedAt = new Date()
+  await bid.save()
+
+  auction.status = AUCTION_STATUSES.Closed
+  auction.claimedByDriverId = bid.driverId
+  auction.autoAcceptedBidId = bid._id
+  await auction.save()
+
+  await LoadModel.findByIdAndUpdate(auction.loadId, {
+    status: LOAD_STATUSES.Booked,
+    assignedDriverId: bid.driverId,
+  })
 }
 
 interface CreateAuctionData {
@@ -149,20 +171,7 @@ export const acceptBid = async (loadId: string, bidId: string) => {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Bid not found for this load')
   }
 
-  bid.status = BID_STATUSES.Accepted
-  bid.acceptedAt = new Date()
-  await bid.save()
-
-  auction.status = AUCTION_STATUSES.Closed
-  auction.claimedByDriverId = bid.driverId
-  auction.autoAcceptedBidId = bid._id
-  await auction.save()
-
-  await LoadModel.findByIdAndUpdate(loadId, {
-    status: LOAD_STATUSES.Booked,
-    assignedDriverId: bid.driverId,
-  })
-
+  await settleAuctionWithBid(auction, bid)
   await emitBidsAndPrice(loadId)
 
   return {
@@ -318,10 +327,16 @@ export const reopenAuction = async (loadId: string, extendByHours: number) => {
     { $set: { status: BID_STATUSES.Submitted, acceptedAt: null } }
   )
 
+  // Recompute the denormalized lowest-bid amount from the (now re-submitted) bids.
+  const lowest = await BidModel.findOne({ loadId, status: BID_STATUSES.Submitted }).sort({
+    amount: 1,
+  })
+
   auction.status = AUCTION_STATUSES.Active
   auction.expiresAt = new Date(Date.now() + extendByHours * MS_PER_HOUR)
   auction.claimedByDriverId = null
   auction.autoAcceptedBidId = null
+  auction.bestBidAmount = lowest?.amount ?? null
   await auction.save()
 
   await LoadModel.findByIdAndUpdate(loadId, {

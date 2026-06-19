@@ -55,7 +55,7 @@ export default function ReopenAuctionDialog({ loadId, disabled }: ReopenAuctionD
           <DialogTitle>Reopen this auction?</DialogTitle>
           <DialogDescription>
             The auction will go live again. Any previously accepted bids will return to submitted
-            status and the current drtiver assignment will be cleared
+            status and the current driver assignment will be cleared
           </DialogDescription>
         </DialogHeader>
 

@@ -3,53 +3,30 @@ import { AuctionModel, IAuction } from '../models/loads/Auction'
 import { BidModel } from '../models/loads/Bid'
 import { LoadModel } from '../models/loads/Load'
 import { AUCTION_STATUSES, BID_STATUSES, LOAD_STATUSES } from '../models/enums'
-import { emitBidsUpdate, emitPriceUpdate } from '../events/auctionEvents'
+import { emitBidsAndPrice, settleAuctionWithBid } from './auctionService'
 import { HEARTBEAT_INTERVAL_MS, MS_PER_HOUR } from '../constants/auction'
 
 // Convenience alias -> AI helped with this
 type AuctionDoc = HydratedDocument<IAuction>
 
-// Payload builders
-const buildPricePayload = (loadId: string, auction: AuctionDoc) => ({
-  loadId,
-  currentPrice: auction.currentPrice,
-  currency: auction.currency ?? 'CAD',
-  loadEventType: auction.status,
-  updatedAt: auction.lastPriceUpdateAt ?? new Date(),
-})
-
-const buildBidsPayload = async (loadId: string, auctionStatus: string) => {
-  const bids = await BidModel.find({ loadId }).sort({ amount: 1 }).populate('driverId')
-  return { loadId, bids, loadEventType: auctionStatus }
-}
-
 // Accept the lowest-priced submitted bid on the given auction and close it
 const autoAcceptBestBid = async (auction: AuctionDoc): Promise<boolean> => {
   const loadId = auction.loadId.toString()
 
-  const bestBid = await BidModel.findOne({ loadId, status: BID_STATUSES.Submitted })
-    .sort({ amount: 1 })
-    .populate('driverId')
-
-  if (!bestBid) {
-    return
-  }
-  false
-
-  bestBid.status = BID_STATUSES.Accepted
-  bestBid.acceptedAt = new Date()
-  await bestBid.save()
-
-  auction.status = AUCTION_STATUSES.Closed
-  auction.claimedByDriverId = bestBid.driverId as unknown as typeof auction.claimedByDriverId
-  auction.autoAcceptedBidId = bestBid._id as unknown as typeof auction.autoAcceptedBidId
-  await auction.save()
-
-  await LoadModel.findByIdAndUpdate(loadId, {
-    status: LOAD_STATUSES.Booked,
-    assignedDriverId: bestBid.driverId,
+  const bestBid = await BidModel.findOne({ loadId, status: BID_STATUSES.Submitted }).sort({
+    amount: 1,
   })
 
+  if (!bestBid) {
+    return false
+  }
+
+  const ceiling = auction.capPrice * (1 + (auction.autoAcceptPercent ?? 0) / 100)
+  if (bestBid.amount > ceiling) {
+    return false
+  }
+
+  await settleAuctionWithBid(auction, bestBid)
   return true
 }
 
@@ -61,24 +38,23 @@ const processAuction = async (auction: AuctionDoc): Promise<void> => {
 
   // Expiry
   if (auction.expiresAt <= now) {
-    const hasBids = auction.bestBidAmount != null
-    const shouldAutoAccept = (auction.autoAcceptPercent ?? 0) > 0 && hasBids
+    const shouldTryAutoAccept =
+      (auction.autoAcceptPercent ?? 0) >= 0 && auction.bestBidAmount != null
+    const accepted = shouldTryAutoAccept ? await autoAcceptBestBid(auction) : false
 
-    if (shouldAutoAccept) {
-      const accepted = await autoAcceptBestBid(auction)
-      console.log(
-        `[debugging heartbeat] Load ${loadId}: expired → ${accepted ? 'auto-accepted best bid' : 'no submitted bids — closed without winner'}`
-      )
-    } else {
+    // Always close on expiry. If no eligible bid was auto-accepted (disabled, no bids,
+    // or the lowest bid is above the tolerance ceiling), close without a winner.
+    if (!accepted) {
       auction.status = AUCTION_STATUSES.Closed
       await auction.save()
       await LoadModel.findByIdAndUpdate(loadId, { status: LOAD_STATUSES.AuctionClosed })
-      console.log(`[debugging heartbeat] Load ${loadId}: expired → closed (no auto-accept)`)
     }
 
-    const bidsPayload = await buildBidsPayload(loadId, auction.status ?? AUCTION_STATUSES.Closed)
-    emitBidsUpdate(loadId, bidsPayload)
-    emitPriceUpdate(loadId, buildPricePayload(loadId, auction))
+    console.log(
+      `[debugging heartbeat] Load ${loadId}: expired → ${accepted ? 'auto-accepted best bid' : 'closed without winner'}`
+    )
+
+    await emitBidsAndPrice(loadId)
     return
   }
 
@@ -103,27 +79,23 @@ const processAuction = async (auction: AuctionDoc): Promise<void> => {
   auction.lastPriceUpdateAt = now
   await auction.save()
 
-  // Always push the price update so clients see the creep in realtime
-  emitPriceUpdate(loadId, buildPricePayload(loadId, auction))
   console.log(`[debugging heartbeat] Load ${loadId}: price crept -> $${newPrice}`)
 
-  // Cap reached so auto accept it
+  // Cap reached so auto-accept the best in-range bid
   if (
     newPrice >= auction.capPrice &&
-    (auction.autoAcceptPercent ?? 0) > 0 &&
+    (auction.autoAcceptPercent ?? 0) >= 0 &&
     auction.bestBidAmount != null
   ) {
     const accepted = await autoAcceptBestBid(auction)
     if (accepted) {
-      const bidsPayload = await buildBidsPayload(loadId, auction.status ?? AUCTION_STATUSES.Closed)
-      emitBidsUpdate(loadId, bidsPayload)
-      // Send info again so it closes
-      emitPriceUpdate(loadId, buildPricePayload(loadId, auction))
       console.log(
         `[debugging heartbeat] Load ${loadId}: reached cap price → auto-accepted best bid`
       )
     }
   }
+
+  await emitBidsAndPrice(loadId)
 }
 
 // Tick
