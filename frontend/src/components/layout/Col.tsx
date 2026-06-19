@@ -21,7 +21,10 @@ interface ColProps {
 
 export default function Col({ size = 16, minWidth, children }: ColProps) {
   return (
-    <div className="flex h-full flex-col overflow-hidden p-2" style={{ flex: size, minWidth: minWidth ?? undefined }}>
+    <div
+      className="flex h-full flex-col overflow-hidden p-2"
+      style={{ flex: size, minWidth: minWidth ?? undefined }}
+    >
       {children}
     </div>
   )

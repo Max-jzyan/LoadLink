@@ -1,5 +1,6 @@
 import BidInput from '@/components/auction/BidInput'
 import PriceTracker from '@/components/auction/PriceTracker'
+import PriceTracker from '@/components/auction/PriceTracker'
 import BidTable from '@/components/auction/BidTable'
 import { DriverMap } from '@/components/driverLoads/Map'
 import Col from '@/components/layout/Col'
@@ -10,6 +11,7 @@ import { InfoIconPopover } from '@/components/shared/InfoIconPopover'
 import { SeparatorWithText } from '@/components/shared/SeparatorWithText'
 import { Badge } from '@/components/ui/badge'
 import { haversineDistanceKm } from '@/lib/geo'
+import type { Auction, PopulatedBid } from '@/services/auctionApi/auctionEnum'
 import type { Auction, PopulatedBid } from '@/services/auctionApi/auctionEnum'
 import { AUCTION_STATUSES } from '@/services/auctionApi/auctionEnum'
 import { useStreamAuctionPriceQuery, useStreamBidsQuery } from '@/services/auctionApi/auctionSlice'
@@ -36,7 +38,7 @@ function truncateId(id: string): string {
 export default function DriverAuctions() {
   // For testing, navigate to /driverAuctions/<valid-mongo-id>
   // TODO: fix the fixed value
-  const loadId = useParams<{ loadId: string }>().loadId ?? '';
+  const loadId = useParams<{ loadId: string }>().loadId ?? ''
 
   const mongoId = useSelector(selectMongoId)
   const { data: load, isLoading, isError } = useGetLoadQuery(loadId)
@@ -78,11 +80,9 @@ export default function DriverAuctions() {
 
   // Derive the full auction object from the populated load
   const auction: Auction | null =
-    load?.auctionId && typeof load.auctionId === 'object'
-      ? (load.auctionId as Auction)
-      : null
+    load?.auctionId && typeof load.auctionId === 'object' ? (load.auctionId as Auction) : null
 
-  const isAuctionLive = auctionStatus === AUCTION_STATUSES.Active;
+  const isAuctionLive = auctionStatus === AUCTION_STATUSES.Active
 
   if (isLoading) {
     return (
@@ -219,7 +219,11 @@ export default function DriverAuctions() {
               </Col>
             </Row>
             <Row size={3}>
+            <Row size={3}>
               <Col>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1">
+                    <h3 className="text-sm font-semibold">Live Auction</h3>
                 <div className="space-y-1">
                   <div className="flex items-center gap-1">
                     <h3 className="text-sm font-semibold">Live Auction</h3>
@@ -228,6 +232,13 @@ export default function DriverAuctions() {
                       description="This is a live reverse auction. The price ticks down every second as drivers bid lower. You can place a bid or claim the load instantly at the current price."
                       iconClassName="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help"
                     />
+                  </div>
+                  {auction ? (
+                    <PriceTracker auction={auction} currentPrice={livePrice} driver />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No auction data available</p>
+                  )}
+                </div>
                   </div>
                   {auction ? (
                     <PriceTracker auction={auction} currentPrice={livePrice} driver />

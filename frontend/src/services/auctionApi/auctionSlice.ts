@@ -1,5 +1,5 @@
-import { api } from '../api';
-import { LoadTag } from '../apiTypes';
+import { api } from '../api'
+import { LoadTag } from '../apiTypes'
 import type {
   AcceptBidResult,
   BidsStreamPayload,
@@ -8,7 +8,7 @@ import type {
   PriceStreamPayload,
   ReopenAuctionPayload,
   ReopenAuctionResult,
-} from './auctionEnum';
+} from './auctionEnum'
 
 export const auctionApi = api.injectEndpoints({
   endpoints: (build) => ({

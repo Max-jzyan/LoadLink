@@ -1,47 +1,45 @@
 import type { ColumnDef } from '@tanstack/react-table'
-import type { Load } from '@/services/loadApi/loadEnum'
-import { Badge } from '@/components/ui/badge'
+import type { Load, AuctionSummary } from '@/services/loadApi/loadEnum'
+import { StatusBadge } from '@/components/shared/StatusBadge'
+import { LoadActionsCell } from './LoadActionsCell'
+import { type LoadStatus } from '@/types/enums'
+import { TRUCK_TYPES } from '@/types/enums'
 
-const statusColors: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100',
-  auction_live: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  auction_closed: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100',
-  booked: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  in_transit: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
-  completed: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-}
-
-const statusLabels: Record<string, string> = {
-  draft: 'Draft',
-  auction_live: 'Auction Live',
-  auction_closed: 'Auction Closed',
-  booked: 'Booked',
-  in_transit: 'In Transit',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-}
+const TRUCK_LABELS: Record<string, string> = Object.fromEntries(
+  TRUCK_TYPES.map((t) => [t.value, t.label])
+)
 
 export const columns: ColumnDef<Load>[] = [
   {
-    accessorKey: '_id',
-    header: 'Load ID',
+    accessorKey: 'commodity',
+    header: 'Commodity',
     cell: ({ row }) => {
-      const id = row.getValue<string>('_id')
-      return id.slice(-6)
+      const commodity = row.getValue<string>('commodity')
+      return <p className="font-semibold text-sm">{commodity.toUpperCase()}</p>
     },
   },
   {
-    accessorKey: 'originAddress',
-    header: 'Origin',
+    id: 'route',
+    header: 'Route',
+    cell: ({ row }) => {
+      const { originAddress, destinationAddress } = row.original
+      return (
+        <span className="text-sm text-muted-foreground">
+          {originAddress}
+          <span className="mx-1.5 opacity-40">→</span>
+          {destinationAddress}
+        </span>
+      )
+    },
   },
   {
-    accessorKey: 'destinationAddress',
-    header: 'Destination',
-  },
-  {
-    accessorKey: 'commodity',
-    header: 'Commodity',
+    accessorKey: 'truckType',
+    header: 'Truck',
+    cell: ({ row }) => (
+      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground border border-border">
+        {TRUCK_LABELS[row.getValue<string>('truckType')] ?? row.getValue<string>('truckType')}
+      </span>
+    ),
   },
   {
     accessorKey: 'weightLbs',
@@ -56,7 +54,14 @@ export const columns: ColumnDef<Load>[] = [
     header: 'Pickup',
     cell: ({ row }) => {
       const date = row.getValue<string>('pickupTime')
-      return new Date(date).toLocaleDateString()
+      const d = new Date(date)
+      return (
+        <span>
+          <span className="text-sm">{d.toLocaleDateString()}</span>
+          <br />
+          <span className="text-xs text-muted-foreground">{d.toLocaleTimeString()}</span>
+        </span>
+      )
     },
   },
   {
@@ -64,7 +69,28 @@ export const columns: ColumnDef<Load>[] = [
     header: 'Dropoff',
     cell: ({ row }) => {
       const date = row.getValue<string>('dropoffTime')
-      return new Date(date).toLocaleDateString()
+      const d = new Date(date)
+      return (
+        <span>
+          <span className="text-sm">{d.toLocaleDateString()}</span>
+          <br />
+          <span className="text-xs text-muted-foreground">{d.toLocaleTimeString()}</span>
+        </span>
+      )
+    },
+  },
+  {
+    id: 'currentPrice',
+    header: 'My Price',
+    cell: ({ row }) => {
+      const auction = row.original.auctionId
+      const currentPrice =
+        auction && typeof auction === 'object' ? (auction as AuctionSummary).currentPrice : null
+      return (
+        <span className="text-sm font-semibold">
+          {currentPrice != null ? `$${currentPrice.toLocaleString()}` : '—'}
+        </span>
+      )
     },
   },
   {
@@ -72,11 +98,17 @@ export const columns: ColumnDef<Load>[] = [
     header: 'Status',
     cell: ({ row }) => {
       const status = row.getValue<string>('status')
-      return (
-        <Badge className={statusColors[status] ?? 'bg-gray-100 text-gray-800'}>
-          {statusLabels[status] ?? status}
-        </Badge>
-      )
+      return <StatusBadge status={status as LoadStatus} />
     },
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    cell: ({ row }) => (
+      <div className="w-[140px] min-w-[140px]">
+        <LoadActionsCell load={row.original} />
+      </div>
+    ),
+    size: 140,
   },
 ]

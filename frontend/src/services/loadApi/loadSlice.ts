@@ -74,11 +74,7 @@ export const loadApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (_result, _error, { loadId }) => [
-        { type: LoadTag.Load, id: loadId },
-        { type: LoadTag.Load, id: LoadTagId.List },
-        { type: LoadTag.Load, id: LoadTagId.CompanyList },
-      ],
+      invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
     }),
   }),
   overrideExisting: false,

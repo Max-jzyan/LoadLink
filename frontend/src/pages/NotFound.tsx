@@ -6,8 +6,7 @@ import { getStoredRole } from '@/hooks/useRole'
 
 export default function NotFound() {
   const role = getStoredRole()
-  const dashboardPath =
-    role === 'company' ? RoutePath.CompanyDashboard : RoutePath.Dashboard
+  const dashboardPath = role === 'company' ? RoutePath.CompanyDashboard : RoutePath.Dashboard
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
