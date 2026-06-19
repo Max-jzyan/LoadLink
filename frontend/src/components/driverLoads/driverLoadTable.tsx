@@ -24,7 +24,7 @@ export default function DriverLoadTable({ loads, onRowClick }: DriverLoadTablePr
 
   return (
     <DynamicCard
-      title="Table"
+      title="Loads"
       footer={table && <LoadTablePagination table={table} currentPage={pageIndex} />}
     >
       <DataTable

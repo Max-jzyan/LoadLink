@@ -1,6 +1,13 @@
 import { api } from '../api'
 import { LoadTag, LoadTagId } from '../apiTypes'
-import type { CreateAuctionPayload, CreateLoadPayload, CreatedAuction, Load, PopulatedLoad, UpdateLoadPayload } from './loadEnum'
+import type {
+  CreateAuctionPayload,
+  CreateLoadPayload,
+  CreatedAuction,
+  Load,
+  PopulatedLoad,
+  UpdateLoadPayload,
+} from './loadEnum'
 
 export const loadApi = api.injectEndpoints({
   endpoints: (build) => ({

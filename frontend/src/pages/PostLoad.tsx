@@ -29,13 +29,8 @@ export default function PostLoad() {
 
   return (
     <>
-      {submitError && (
-        <p className="text-sm text-destructive px-6 pt-4">{submitError}</p>
-      )}
-      <LoadForm
-        onSubmit={handleSubmit}
-        isSubmitting={isCreatingLoad}
-      />
+      {submitError && <p className="text-sm text-destructive px-6 pt-4">{submitError}</p>}
+      <LoadForm onSubmit={handleSubmit} isSubmitting={isCreatingLoad} />
     </>
   )
 }

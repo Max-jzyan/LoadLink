@@ -191,6 +191,14 @@ function FlyToRoute({
   return null
 }
 
+const HISTORICAL_STATUSES = new Set<string>(['completed', 'cancelled', 'auction_closed'])
+
+function getRouteColor(status: string): string {
+  if (status === 'auction_live') return '#f97316' // orange
+  if (HISTORICAL_STATUSES.has(status)) return '#6b7280' // grey
+  return '#3b82f6' // blue (all others)
+}
+
 function RouteLine({ route }: { route: RouteCoordinate }) {
   const map = useMap()
   const polylineRef = useRef<L.Polyline>(null)
@@ -210,6 +218,8 @@ function RouteLine({ route }: { route: RouteCoordinate }) {
     const bounds = line.getBounds() as LatLngBoundsExpression
     map.fitBounds(bounds, { padding: [40, 40] })
   }
+
+  const color = getRouteColor(route.status)
 
   return (
     <>
@@ -231,7 +241,7 @@ function RouteLine({ route }: { route: RouteCoordinate }) {
         ref={polylineRef}
         positions={positions}
         pathOptions={{
-          color: isRoad ? '#3b82f6' : '#6b7280',
+          color,
           weight: isRoad ? 4 : 2,
           opacity: 0.8,
         }}
