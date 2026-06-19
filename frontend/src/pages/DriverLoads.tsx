@@ -84,11 +84,8 @@ export default function DriverLoads() {
     // Price range filter (using auction currentPrice if available)
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
       result = result.filter((load) => {
-        const price =
-          load.auctionId && typeof load.auctionId === 'object'
-            ? load.auctionId.currentPrice
-            : undefined
-        if (price === undefined) return false
+        if (typeof load.auctionId !== 'object' || !load.auctionId) return false
+        const price = load.auctionId.currentPrice
         if (filters.minPrice !== undefined && price < filters.minPrice) return false
         if (filters.maxPrice !== undefined && price > filters.maxPrice) return false
         return true

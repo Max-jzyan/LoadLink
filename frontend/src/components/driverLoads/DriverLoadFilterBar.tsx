@@ -141,6 +141,27 @@ export default function DriverLoadFilterBar({
           }
         />
       </div>
+
+      <Separator orientation="vertical" className="hidden md:block h-6" />
+
+      {/* Reset Filters Button */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() =>
+          onFiltersChange({
+            loadStatus: 'all',
+            dateRange: undefined,
+            truckType: '',
+            minWeight: undefined,
+            maxWeight: undefined,
+            minPrice: undefined,
+            maxPrice: undefined,
+          })
+        }
+      >
+        Reset Filters
+      </Button>
     </div>
   )
 }

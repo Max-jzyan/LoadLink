@@ -3,6 +3,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useEffect, useRef, useState } from 'react'
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
+import { LOAD_STATUSES } from '@/types/enums'
 
 // Fix default Leaflet icon issue with bundlers
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
@@ -199,6 +200,10 @@ function getRouteColor(status: string): string {
   return '#3b82f6' // blue (all others)
 }
 
+function isRouteDashed(status: string): boolean {
+  return status === LOAD_STATUSES.Booked
+}
+
 function RouteLine({ route }: { route: RouteCoordinate }) {
   const map = useMap()
   const polylineRef = useRef<L.Polyline>(null)
@@ -244,6 +249,7 @@ function RouteLine({ route }: { route: RouteCoordinate }) {
           color,
           weight: isRoad ? 4 : 2,
           opacity: 0.8,
+          dashArray: isRouteDashed(route.status) ? '10, 10' : undefined,
         }}
         eventHandlers={{ click: handleClick }}
       />
