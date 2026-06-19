@@ -7,9 +7,10 @@ import type { Auction } from '@/services/auctionApi/auctionEnum'
 interface PriceTrackerProps {
   auction: Auction
   currentPrice: number
+  driver?: boolean
 }
 
-export default function PriceTracker({ auction, currentPrice }: PriceTrackerProps) {
+export default function PriceTracker({ auction, currentPrice, driver = false }: PriceTrackerProps) {
   const { startPrice, capPrice, autoAcceptPercent, priceCreepAmount, priceCreepIntervalHours } =
     auction
 
@@ -19,7 +20,7 @@ export default function PriceTracker({ auction, currentPrice }: PriceTrackerProp
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold">Auction Price Tracker</h3>
+      {!driver && <h3 className="text-sm font-semibold">Auction Price Tracker</h3>}
 
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>Start {formatMoney(startPrice)}</span>
@@ -34,9 +35,11 @@ export default function PriceTracker({ auction, currentPrice }: PriceTrackerProp
           <p className="text-3xl font-bold text-primary">{formatMoney(currentPrice)}</p>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <Badge variant="secondary">
-            Up to {formatMoney(toleranceCeiling)} ({autoAcceptPercent}% above cap)
-          </Badge>
+          {!driver && (
+            <Badge variant="secondary">
+              Up to {formatMoney(toleranceCeiling)} ({autoAcceptPercent}% above cap)
+            </Badge>
+          )}
           <Badge variant="outline" className="gap-1 font-normal">
             <TrendingUp className="h-3.5 w-3.5" />+{formatMoney(priceCreepAmount)} every{' '}
             {priceCreepIntervalHours}h

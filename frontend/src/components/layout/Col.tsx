@@ -9,15 +9,19 @@
  * within a single Row should sum to 16 for a full-width row.
  *
  * Vertical distribution is handled by the `size` prop on parent Row components.
+ *
+ * The optional `minWidth` prop sets a minimum width in pixels for the column,
+ * preventing it from shrinking below that value when the row is resized.
  */
 interface ColProps {
   size?: number
+  minWidth?: number
   children: React.ReactNode
 }
 
-export default function Col({ size = 16, children }: ColProps) {
+export default function Col({ size = 16, minWidth, children }: ColProps) {
   return (
-    <div className="flex h-full flex-col overflow-hidden p-2" style={{ flex: size }}>
+    <div className="flex h-full flex-col overflow-hidden p-2" style={{ flex: size, minWidth: minWidth ?? undefined }}>
       {children}
     </div>
   )

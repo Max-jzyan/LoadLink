@@ -49,14 +49,25 @@ export default function BidInput({ loadId, auctionStatus }: BidInputProps) {
       size="sm"
       noFooterStyle
       footer={
-        <Badge
-          variant="outline"
-          className="border-yellow-200 bg-yellow-50 text-yellow-800 hover:bg-yellow-100"
-          data-icon="inline-start"
-        >
-          <BadgeAlert data-icon="inline-start" />
-          Bids cannot be withdrawn after submission
-        </Badge>
+        isAuctionLive ? (
+          <Badge
+            variant="outline"
+            className="border-yellow-200 bg-yellow-50 text-yellow-800 hover:bg-yellow-100"
+            data-icon="inline-start"
+          >
+            <BadgeAlert data-icon="inline-start" />
+            Bids cannot be withdrawn after submission
+          </Badge>
+        ) : (
+          <Badge
+            variant="outline"
+            className="border-red-200 bg-red-50 text-red-800 hover:bg-red-100"
+            data-icon="inline-start"
+          >
+            <BadgeAlert data-icon="inline-start" />
+            The auction is no longer taking any bids.
+          </Badge>
+        )
       }
     >
       <Row size={1}>

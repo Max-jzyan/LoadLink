@@ -91,7 +91,7 @@ export default function DriverAuctions() {
     <LayoutGrid>
       <Row size={16}>
         {/* left panel: search bar, bids banner, scrollable load feed */}
-        <Col size={5}>
+        <Col size={5} minWidth={400}>
           <div className="h-full flex flex-col gap-2 overflow-hidden">
             {/* header */}
             <div className="flex items-center gap-2 px-1 pt-1 shrink-0">
