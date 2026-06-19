@@ -15,15 +15,23 @@ interface BidTableProps {
   currentDriverId?: string
 }
 
-function getDriverLabel(bid: PopulatedBid): string {
+function getDriverLabel(bid: PopulatedBid, currentDriverId?: string): string {
+  let label: string
   if (typeof bid.driverId === 'object' && bid.driverId?.name) {
-    return bid.driverId.name
+    label = bid.driverId.name
+  } else {
+    const rawId =
+      typeof bid.driverId === 'string'
+        ? bid.driverId
+        : ((bid.driverId as { _id?: string })?._id ?? '')
+    label = `#${rawId.slice(-6).toUpperCase()}`
   }
-  const rawId =
-    typeof bid.driverId === 'string'
-      ? bid.driverId
-      : ((bid.driverId as { _id?: string })?._id ?? '')
-  return `#${rawId.slice(-6).toUpperCase()}`
+
+  if (!currentDriverId) return label
+  const bidDriverId = typeof bid.driverId === 'string' ? bid.driverId : bid.driverId?._id
+  const isMine = bidDriverId === currentDriverId
+
+  return isMine ? `${label} (me)` : label
 }
 
 export default function BidTable({ bids, currentDriverId }: BidTableProps) {
@@ -35,10 +43,10 @@ export default function BidTable({ bids, currentDriverId }: BidTableProps) {
     )
   }
 
-  const isMyBid = (bid: PopulatedBid): boolean => {
-    if (!currentDriverId) return false
+  const isMyBidFn = (bid: PopulatedBid, driverId?: string): boolean => {
+    if (!driverId) return false
     const bidDriverId = typeof bid.driverId === 'string' ? bid.driverId : bid.driverId?._id
-    return bidDriverId === currentDriverId
+    return bidDriverId === driverId
   }
 
   return (
@@ -54,7 +62,7 @@ export default function BidTable({ bids, currentDriverId }: BidTableProps) {
       <TableBody>
         {bids.map((bid) => {
           const isWinner = bid.status === 'accepted'
-          const isMine = isMyBid(bid)
+          const isMine = isMyBidFn(bid, currentDriverId)
 
           let rowClassName = ''
           if (isWinner) {
@@ -65,7 +73,7 @@ export default function BidTable({ bids, currentDriverId }: BidTableProps) {
 
           return (
             <TableRow key={bid._id} className={rowClassName}>
-              <TableCell className="font-medium">{getDriverLabel(bid)}</TableCell>
+              <TableCell className="font-medium">{getDriverLabel(bid, currentDriverId)}</TableCell>
               <TableCell>${bid.amount.toLocaleString()}</TableCell>
               <TableCell>
                 <BidStatusBadge status={bid.status} />

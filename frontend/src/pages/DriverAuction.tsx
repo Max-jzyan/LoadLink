@@ -1,6 +1,5 @@
 import BidInput from '@/components/auction/BidInput'
 import PriceTracker from '@/components/auction/PriceTracker'
-import PriceTracker from '@/components/auction/PriceTracker'
 import BidTable from '@/components/auction/BidTable'
 import { DriverMap } from '@/components/driverLoads/Map'
 import Col from '@/components/layout/Col'
@@ -11,13 +10,13 @@ import { InfoIconPopover } from '@/components/shared/InfoIconPopover'
 import { SeparatorWithText } from '@/components/shared/SeparatorWithText'
 import { Badge } from '@/components/ui/badge'
 import { haversineDistanceKm } from '@/lib/geo'
-import type { Auction, PopulatedBid } from '@/services/auctionApi/auctionEnum'
-import type { Auction, PopulatedBid } from '@/services/auctionApi/auctionEnum'
+import type { PopulatedBid } from '@/services/auctionApi/auctionEnum'
 import { AUCTION_STATUSES } from '@/services/auctionApi/auctionEnum'
 import { useStreamAuctionPriceQuery, useStreamBidsQuery } from '@/services/auctionApi/auctionSlice'
 import { selectMongoId } from '@/services/authSlice'
 import { useClaimLoadMutation } from '@/services/driverApi/driverSlice'
 import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
+import { Clock } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
 
@@ -78,10 +77,6 @@ export default function DriverAuctions() {
       ? (load.auctionId as { status?: string }).status
       : undefined
 
-  // Derive the full auction object from the populated load
-  const auction: Auction | null =
-    load?.auctionId && typeof load.auctionId === 'object' ? (load.auctionId as Auction) : null
-
   const isAuctionLive = auctionStatus === AUCTION_STATUSES.Active
 
   if (isLoading) {
@@ -112,8 +107,18 @@ export default function DriverAuctions() {
   const weightLabel = `${load.weightLbs.toLocaleString()} lbs`
   const trailerLabel = `${load.trailerLengthFt} ft`
   const driverAssistLabel = load.driverAssist ? 'Required' : 'Not Required'
-  const certsLabel =
-    load.certifications && load.certifications.length > 0 ? load.certifications.join(', ') : 'None'
+  const certs =
+    load.certifications && load.certifications.length > 0
+      ? load.certifications.map((cert) => (
+          <Badge key={cert} variant="outline">
+            {cert}
+          </Badge>
+        ))
+      : [
+          <span key="none" className="text-muted-foreground">
+            None
+          </span>,
+        ]
 
   return (
     <LayoutGrid>
@@ -133,7 +138,11 @@ export default function DriverAuctions() {
                   Active
                 </Badge>
               ) : (
-                <Badge variant="outline" className="border-red-200 bg-red-50 text-red-800">
+                <Badge
+                  variant={auctionStatus === 'cancelled' ? 'destructive' : 'secondary'}
+                  className="gap-1"
+                >
+                  <Clock className="h-3 w-3" />
                   {auctionStatus === 'cancelled' ? 'Cancelled' : 'Closed'}
                 </Badge>
               )
@@ -157,7 +166,10 @@ export default function DriverAuctions() {
                 <DynamicCard noBorder>{load.destinationAddress}</DynamicCard>
               </Col>
               <Col size={3}>
-                <DynamicCard noBorder className="bg-blue-100/70 dark:bg-blue-950/30">
+                <DynamicCard
+                  noBorder
+                  className="bg-blue-100/70 dark:bg-blue-950/30 border border-blue-300/50 dark:border-blue-700/50"
+                >
                   {haversineDistanceKm(
                     load.originCoords.lat,
                     load.originCoords.lng,
@@ -170,35 +182,60 @@ export default function DriverAuctions() {
             </Row>
             <Row size={2}>
               <Col>
-                <h3>Load Specifications</h3>
+                <h3 className="text-sm font-semibold">Load Specifications</h3>
               </Col>
             </Row>
             <Row size={2}>
               <Col size={4}>
-                <DynamicCard title="Truck Type" noBorder size="sm">
+                <DynamicCard
+                  title="Truck Type"
+                  noBorder
+                  size="sm"
+                  titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                >
                   {load.truckType}
                 </DynamicCard>
               </Col>
               <Col size={4}>
-                <DynamicCard title="Size" noBorder size="sm">
+                <DynamicCard
+                  title="Size"
+                  noBorder
+                  size="sm"
+                  titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                >
                   {trailerLabel}
                 </DynamicCard>
               </Col>
               <Col size={4}>
-                <DynamicCard title="Weight" noBorder size="sm">
+                <DynamicCard
+                  title="Weight"
+                  noBorder
+                  size="sm"
+                  titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                >
                   {weightLabel}
                 </DynamicCard>
               </Col>
             </Row>
             <Row size={2}>
               <Col size={4}>
-                <DynamicCard title="Commodity" noBorder size="sm">
+                <DynamicCard
+                  title="Commodity"
+                  noBorder
+                  size="sm"
+                  titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                >
                   {load.commodity}
                 </DynamicCard>
               </Col>
               <Col size={4}>
-                <DynamicCard title="Certifications" noBorder size="sm">
-                  {certsLabel}
+                <DynamicCard
+                  title="Certifications"
+                  noBorder
+                  size="sm"
+                  titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                >
+                  <span className="flex flex-wrap gap-1">{certs}</span>
                 </DynamicCard>
               </Col>
               <Col size={4}>
@@ -213,39 +250,28 @@ export default function DriverAuctions() {
                   }
                   noBorder
                   size="sm"
+                  titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
                 >
                   {driverAssistLabel}
                 </DynamicCard>
               </Col>
             </Row>
-            <Row size={3}>
-            <Row size={3}>
+            <Row size={2}>
               <Col>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1">
-                    <h3 className="text-sm font-semibold">Live Auction</h3>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1">
-                    <h3 className="text-sm font-semibold">Live Auction</h3>
+                <DynamicCard
+                  title="Live Auction"
+                  action={
                     <InfoIconPopover
                       title="Live Auction"
-                      description="This is a live reverse auction. The price ticks down every second as drivers bid lower. You can place a bid or claim the load instantly at the current price."
+                      description="This is a live reverse auction. The price ticks up at a set interval as drivers bid lower. You can place a bid or claim the load instantly at the current price."
                       iconClassName="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help"
                     />
-                  </div>
-                  {auction ? (
-                    <PriceTracker auction={auction} currentPrice={livePrice} driver />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No auction data available</p>
-                  )}
-                </div>
-                  </div>
-                  {auction ? (
-                    <PriceTracker auction={auction} currentPrice={livePrice} driver />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No auction data available</p>
-                  )}
-                </div>
+                  }
+                  footer={`Current Price $${livePrice.toLocaleString()}`}
+                  noFooterStyle
+                  noBackground
+                  noBorder
+                />
               </Col>
             </Row>
             <Row size={1}>
@@ -305,7 +331,12 @@ export default function DriverAuctions() {
             <Col>
               <DynamicCard
                 title="Current Bids"
-                action={`${bids.length} Bid${bids.length !== 1 ? 's' : ''}`}
+                action={
+                  <Badge variant="secondary">
+                    {bids.length} {bids.length === 1 ? 'bid' : 'bids'}
+                  </Badge>
+                }
+                titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
               >
                 <BidTable bids={bids} currentDriverId={mongoId ?? undefined} />
               </DynamicCard>

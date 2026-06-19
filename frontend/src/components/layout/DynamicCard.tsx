@@ -25,6 +25,7 @@ interface DriverCardProps {
   noPadding?: boolean
   className?: string
   expand?: boolean // When true the card fills its parent height and CardContent becomes scrollable
+  titleClassName?: string // Additional classes for the CardTitle element
 }
 
 const roundedMap = {
@@ -63,6 +64,7 @@ export default function DynamicCard({
   noPadding,
   className,
   expand,
+  titleClassName,
 }: DriverCardProps) {
   return (
     <Card
@@ -79,7 +81,9 @@ export default function DynamicCard({
     >
       {(title || description || action) && (
         <CardHeader className={cn(roundedProp && roundedTMap[roundedProp], noPadding && 'p-0')}>
-          {title && <CardTitle className={cn(largeTitle && 'text-xl')}>{title}</CardTitle>}
+          {title && (
+            <CardTitle className={cn(largeTitle && 'text-xl', titleClassName)}>{title}</CardTitle>
+          )}
           {description && <CardDescription>{description}</CardDescription>}
           {action && (
             <CardAction

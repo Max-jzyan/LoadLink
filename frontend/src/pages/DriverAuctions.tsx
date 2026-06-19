@@ -83,7 +83,11 @@ export default function DriverAuctions() {
           selectedLoad?._id === load._id && 'ring-2 ring-primary ring-offset-1'
         )}
       >
-        <LoadCard load={load} onClick={() => setSelectedLoad(load)} />
+        <LoadCard
+          load={load}
+          onClick={() => setSelectedLoad(load)}
+          viewAuctionHref={`/driverAuctions/${load._id}`}
+        />
       </div>
     ))
 

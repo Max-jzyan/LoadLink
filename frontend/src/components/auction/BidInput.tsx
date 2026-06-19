@@ -48,6 +48,7 @@ export default function BidInput({ loadId, auctionStatus }: BidInputProps) {
       title="Your Bid Amount"
       size="sm"
       noFooterStyle
+      titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
       footer={
         isAuctionLive ? (
           <Badge

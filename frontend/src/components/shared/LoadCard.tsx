@@ -1,4 +1,5 @@
 import { ArrowRight, CalendarClock, MapPin, Truck, Weight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import type { AuctionSummary, CompanySummary, Load, LoadStatus } from '@/services/loadApi/loadEnum'
 
@@ -47,9 +48,10 @@ function isPopulatedCompany(value: Load['companyId']): value is CompanySummary {
 interface LoadCardProps {
   load: Load
   onClick?: () => void
+  viewAuctionHref?: string
 }
 
-export function LoadCard({ load, onClick }: LoadCardProps) {
+export function LoadCard({ load, onClick, viewAuctionHref }: LoadCardProps) {
   const auction = isPopulatedAuction(load.auctionId) ? load.auctionId : null
   const company = isPopulatedCompany(load.companyId) ? load.companyId : null
   const badge = STATUS_BADGE[load.status] ?? STATUS_BADGE.draft
@@ -151,6 +153,17 @@ export function LoadCard({ load, onClick }: LoadCardProps) {
             </div>
           ) : (
             <div /> // spacer to keep the badge at top
+          )}
+
+          {/* View Auction button */}
+          {viewAuctionHref && (
+            <Link
+              to={viewAuctionHref}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors whitespace-nowrap"
+              onClick={(e) => e.stopPropagation()}
+            >
+              View Auction
+            </Link>
           )}
         </div>
       </CardContent>
