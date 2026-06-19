@@ -29,7 +29,7 @@ export default function LoadSummaryCard({ load, auction, companyName }: LoadSumm
               LIVE
             </Badge>
           )}
-          <CountdownTimer expiresAt={auction.expiresAt} />
+          {isLive && <CountdownTimer expiresAt={auction.expiresAt} />}
         </div>
       </div>
 

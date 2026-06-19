@@ -91,6 +91,7 @@ interface CreateAuctionData {
   capPrice: number
   priceCreepAmount: number
   autoAcceptPercent?: number
+  autoAcceptTriggerHours?: number
   hoursBeforeDropoff?: number
 }
 
@@ -126,6 +127,7 @@ export const createAuction = async (loadId: string, data: CreateAuctionData) => 
     priceCreepAmount: data.priceCreepAmount,
     priceCreepIntervalHours: 1,
     autoAcceptPercent: data.autoAcceptPercent ?? 0,
+    autoAcceptTriggerHours: data.autoAcceptTriggerHours ?? 0,
     expiresAt,
     status: AUCTION_STATUSES.Active,
   })

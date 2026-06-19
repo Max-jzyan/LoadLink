@@ -22,10 +22,15 @@ const AUCTION_PRICING_BY_LOAD: Record<
 
 const NEAR_EXPIRY_MS_BY_LOAD: Record<string, number> = {
   '000000000000000000000102': 4 * 60 * 1000,
+  '000000000000000000000103': 62 * 60 * 1000,
 }
 
 const PRICE_CREEP_DUE_SOON_MS_BY_LOAD: Record<string, number> = {
   '000000000000000000000104': 2 * 60 * 1000,
+}
+
+const AUTO_ACCEPT_TRIGGER_HOURS_BY_LOAD: Record<string, number> = {
+  '000000000000000000000103': 1,
 }
 
 /** Seed one active auction for each seeded load. */
@@ -53,6 +58,7 @@ export async function seedAuctions(
         startPrice: pricing.startPrice,
         capPrice: pricing.capPrice,
         autoAcceptPercent: 10,
+        autoAcceptTriggerHours: AUTO_ACCEPT_TRIGGER_HOURS_BY_LOAD[loadIdStr] ?? 0,
         priceCreepAmount: 10,
         priceCreepIntervalHours,
         currentPrice: pricing.currentPrice,

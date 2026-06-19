@@ -66,9 +66,7 @@ async function main() {
         await auction.save()
       }
 
-
       bidCount += bids.length
-
     }
 
     const userCount = Object.keys(companies).length + Object.keys(drivers).length

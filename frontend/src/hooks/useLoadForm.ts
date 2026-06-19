@@ -136,6 +136,7 @@ export function useLoadForm(
       priceCreepAmount: Number(v.escalationRate),
       priceCreepIntervalHours: 1,
       autoAcceptPercent: v.tolerance ? Number(v.tolerance) : 0,
+      autoAcceptTriggerHours: v.trigger ? Number(v.trigger) : 0,
       expiresAt: v.pickupTime,
     })
   })

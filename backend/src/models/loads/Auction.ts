@@ -23,6 +23,8 @@ const AuctionSchema = new Schema(
 
     autoAcceptPercent: { type: Number, default: 0 }, // 0–100
 
+    autoAcceptTriggerHours: { type: Number, default: 0 },
+
     priceCreepAmount: { type: Number, required: true }, // e.g., +$10
     priceCreepIntervalHours: { type: Number, required: true }, // e.g., every 1 hour
 
@@ -68,6 +70,7 @@ export interface IAuction {
   priceCreepAmount: number
   priceCreepIntervalHours: number
   autoAcceptPercent?: number
+  autoAcceptTriggerHours?: number
   currency?: string
   expiresAt: Date
   status?: string

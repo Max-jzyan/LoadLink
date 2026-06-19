@@ -9,6 +9,9 @@ import { HEARTBEAT_INTERVAL_MS, MS_PER_HOUR } from '../constants/auction'
 // Convenience alias -> AI helped with this
 type AuctionDoc = HydratedDocument<IAuction>
 
+const isAutoAcceptEligible = (auction: AuctionDoc): boolean =>
+  (auction.autoAcceptPercent ?? 0) >= 0 && auction.bestBidAmount != null
+
 // Accept the lowest-priced submitted bid on the given auction and close it
 const autoAcceptBestBid = async (auction: AuctionDoc): Promise<boolean> => {
   const loadId = auction.loadId.toString()
@@ -38,9 +41,7 @@ const processAuction = async (auction: AuctionDoc): Promise<void> => {
 
   // Expiry
   if (auction.expiresAt <= now) {
-    const shouldTryAutoAccept =
-      (auction.autoAcceptPercent ?? 0) >= 0 && auction.bestBidAmount != null
-    const accepted = shouldTryAutoAccept ? await autoAcceptBestBid(auction) : false
+    const accepted = isAutoAcceptEligible(auction) ? await autoAcceptBestBid(auction) : false
 
     // Always close on expiry. If no eligible bid was auto-accepted (disabled, no bids,
     // or the lowest bid is above the tolerance ceiling), close without a winner.
@@ -56,6 +57,23 @@ const processAuction = async (auction: AuctionDoc): Promise<void> => {
 
     await emitBidsAndPrice(loadId)
     return
+  }
+
+  // Auto-accept trigger window: once we're within `autoAcceptTriggerHours` of the
+  // deadline, start retrying auto-accept every tick instead of waiting for expiry.
+  const triggerHours = auction.autoAcceptTriggerHours ?? 0
+  if (triggerHours > 0 && isAutoAcceptEligible(auction)) {
+    const triggerAt = new Date(auction.expiresAt.getTime() - triggerHours * MS_PER_HOUR)
+    if (now >= triggerAt) {
+      const accepted = await autoAcceptBestBid(auction)
+      if (accepted) {
+        console.log(
+          `[debugging heartbeat] Load ${loadId}: within auto-accept trigger window → auto-accepted best bid`
+        )
+        await emitBidsAndPrice(loadId)
+        return
+      }
+    }
   }
 
   // Price creep
@@ -82,11 +100,7 @@ const processAuction = async (auction: AuctionDoc): Promise<void> => {
   console.log(`[debugging heartbeat] Load ${loadId}: price crept -> $${newPrice}`)
 
   // Cap reached so auto-accept the best in-range bid
-  if (
-    newPrice >= auction.capPrice &&
-    (auction.autoAcceptPercent ?? 0) >= 0 &&
-    auction.bestBidAmount != null
-  ) {
+  if (newPrice >= auction.capPrice && isAutoAcceptEligible(auction)) {
     const accepted = await autoAcceptBestBid(auction)
     if (accepted) {
       console.log(

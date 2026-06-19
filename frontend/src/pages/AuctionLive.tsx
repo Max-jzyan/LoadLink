@@ -46,15 +46,20 @@ export default function AuctionLive() {
   )
 
   const [acceptBid, { isLoading: accepting }] = useAcceptBidMutation()
-  const auction = load?.auctionId ?? undefined
   const companyName = load?.companyId?.name
 
   const bids = bidsPayload?.bids ?? []
   const bestBid = bids[0]
-  const currentPrice = pricePayload?.currentPrice || auction?.currentPrice || 0
 
   // Derive auction state from SSE payload
   const liveEventType = pricePayload?.loadEventType ?? bidsPayload?.loadEventType
+
+  const rawAuction = load?.auctionId ?? undefined
+  const auction =
+    rawAuction && liveEventType ? { ...rawAuction, status: liveEventType } : rawAuction
+
+  const currentPrice = pricePayload?.currentPrice || auction?.currentPrice || 0
+
   const isAuctionOver =
     liveEventType === AUCTION_STATUSES.Closed || liveEventType === AUCTION_STATUSES.Cancelled
   const isCancelled = liveEventType === AUCTION_STATUSES.Cancelled

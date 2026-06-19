@@ -7,7 +7,7 @@ import * as auctionService from '../services/auctionService'
 /**
  * POST /api/auctions/:loadId
  * Create an auction for an existing load.
- * Body: { startPrice, capPrice, priceCreepAmount, autoAcceptPercent?, hoursBeforeDropoff? }
+ * Body: { startPrice, capPrice, priceCreepAmount, autoAcceptPercent?, autoAcceptTriggerHours?, hoursBeforeDropoff? }
  */
 export const createAuction = async (req: Request, res: Response, next: NextFunction) => {
   try {

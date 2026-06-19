@@ -17,7 +17,6 @@ export const RoutePath = {
   CompanyDashboard: '/company/dashboard',
   Test: '/test',
   Dashboard: '/dashboard',
-  CompanyDashboard: '/company/dashboard',
   DriverLoads: '/driverLoads',
   DriverAuctions: '/driverAuctions',
   Loads: '/loads',

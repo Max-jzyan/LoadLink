@@ -11,9 +11,11 @@ export default function AutoAcceptInfo({ auction }: { auction: Auction }) {
       <div>
         <p className="font-medium text-primary">Auto-Accept Rule Active</p>
         <p className="text-muted-foreground">
-          If this load is unbooked when the timer ends, the system automatically accepts the lowest
-          bid at or below {formatMoney(ceiling)} (the cap {formatMoney(auction.capPrice)} +{' '}
-          {auction.autoAcceptPercent}% tolerance).
+          {auction.autoAcceptTriggerHours > 0
+            ? `Starting ${auction.autoAcceptTriggerHours}h before the deadline (or when the timer ends, whichever comes first)`
+            : 'If this load is unbooked when the timer ends'}
+          , the system automatically accepts the lowest bid at or below {formatMoney(ceiling)} (the
+          cap {formatMoney(auction.capPrice)} + {auction.autoAcceptPercent}% tolerance).
         </p>
       </div>
     </div>

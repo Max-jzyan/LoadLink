@@ -55,6 +55,7 @@ export interface Auction {
   startPrice: number
   capPrice: number
   autoAcceptPercent: number
+  autoAcceptTriggerHours: number
   priceCreepAmount: number
   priceCreepIntervalHours: number
   currentPrice: number

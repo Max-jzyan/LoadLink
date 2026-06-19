@@ -90,6 +90,7 @@ export interface CreateLoadPayload {
   priceCreepAmount: number
   priceCreepIntervalHours?: number
   autoAcceptPercent?: number
+  autoAcceptTriggerHours?: number
   expiresAt: string
 }
 
@@ -98,6 +99,7 @@ export interface CreateAuctionPayload {
   capPrice: number
   priceCreepAmount: number
   autoAcceptPercent?: number
+  autoAcceptTriggerHours?: number
   hoursBeforeDropoff?: number
 }
 

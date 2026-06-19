@@ -43,6 +43,7 @@ export const createLoad = async (req: Request, res: Response, next: NextFunction
       priceCreepAmount,
       priceCreepIntervalHours = 1,
       autoAcceptPercent = 0,
+      autoAcceptTriggerHours = 0,
       expiresAt,
       ...loadFields
     } = req.body
@@ -71,6 +72,7 @@ export const createLoad = async (req: Request, res: Response, next: NextFunction
       priceCreepAmount,
       priceCreepIntervalHours,
       autoAcceptPercent,
+      autoAcceptTriggerHours,
       currentPrice: startPrice,
       expiresAt,
     })
