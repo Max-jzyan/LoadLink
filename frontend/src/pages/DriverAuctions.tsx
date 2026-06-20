@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, SlidersHorizontal, Calendar, AlertTriangle, X } from 'lucide-react'
 import Col from '@/components/layout/Col'
@@ -11,6 +11,7 @@ import DeliveryTimeline from '@/components/driverLoads/DeliveryTimeline'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useEventSource } from '@/components/auction/useEventSource'
 import {
   useListDriverBidsQuery,
   useGetRecommendedLoadsQuery,
@@ -26,9 +27,21 @@ type MapLayer = 'route' | 'fuel' | 'rest'
 export default function DriverAuctions() {
   const driverId = PLACEHOLDER_DRIVER_ID
 
-  const { data: availableLoads = [], isLoading } = useListAvailableLoadsQuery()
-  const { data: recommendedLoads = [] } = useGetRecommendedLoadsQuery(driverId)
+  const {
+    data: availableLoads = [],
+    isLoading,
+    refetch: refetchAvailable,
+  } = useListAvailableLoadsQuery()
+  const { data: recommendedLoads = [], refetch: refetchRecommended } =
+    useGetRecommendedLoadsQuery(driverId)
   const { data: activeBids = [] } = useListDriverBidsQuery({ driverId, status: 'active' })
+
+  const { data: loadPostedEvent } = useEventSource<{ loadId: string }>('/api/loads/stream')
+  useEffect(() => {
+    if (!loadPostedEvent) return
+    refetchAvailable()
+    refetchRecommended()
+  }, [loadPostedEvent, refetchAvailable, refetchRecommended])
 
   const [selectedLoad, setSelectedLoad] = useState<Load | null>(null)
   const [searchText, setSearchText] = useState('')

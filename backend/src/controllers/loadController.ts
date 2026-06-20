@@ -4,6 +4,8 @@ import { LoadModel } from '../models/loads/Load'
 import { AuctionModel } from '../models/loads/Auction'
 import { LOAD_STATUSES } from '../models/enums'
 import { computeRoute } from '../lib/routing'
+import { emitLoadPosted, onLoadPosted } from '../events/auctionEvents'
+import { initSSE, sendSSE, startSSEKeepAlive } from '../utils/sse'
 
 /**
  * GET /api/loads/:loadId
@@ -81,10 +83,28 @@ export const createLoad = async (req: Request, res: Response, next: NextFunction
     load.auctionId = auction._id
     await load.save()
 
+    emitLoadPosted({ loadId: load._id.toString(), companyId: load.companyId.toString() })
+
     res.status(StatusCodes.CREATED).json(load)
   } catch (err) {
     next(err)
   }
+}
+
+/**
+ * GET /api/loads/stream
+ * Global SSE channel: pings all connected clients whenever a new load is posted.
+ */
+export const streamNewLoads = async (req: Request, res: Response) => {
+  initSSE(res)
+  const keepAlive = startSSEKeepAlive(res)
+  const unsubscribe = onLoadPosted((payload) => sendSSE(res, payload))
+
+  req.on('close', () => {
+    clearInterval(keepAlive)
+    unsubscribe()
+    res.end()
+  })
 }
 
 /**

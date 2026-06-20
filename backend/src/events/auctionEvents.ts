@@ -17,6 +17,7 @@ auctionEvents.setMaxListeners(SSE_MAX_LISTENERS)
 
 const bidsChannel = (loadId: string) => `bids:${loadId}`
 const priceChannel = (loadId: string) => `price:${loadId}`
+const loadsChannel = 'loads:posted'
 
 export const emitBidsUpdate = (loadId: string, payload: unknown): void => {
   auctionEvents.emit(bidsChannel(loadId), payload)
@@ -44,4 +45,13 @@ export const onPriceUpdate = (
   const channel = priceChannel(loadId)
   auctionEvents.on(channel, listener)
   return () => auctionEvents.off(channel, listener)
+}
+
+export const emitLoadPosted = (payload: unknown): void => {
+  auctionEvents.emit(loadsChannel, payload)
+}
+
+export const onLoadPosted = (listener: (payload: unknown) => void): (() => void) => {
+  auctionEvents.on(loadsChannel, listener)
+  return () => auctionEvents.off(loadsChannel, listener)
 }
