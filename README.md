@@ -173,7 +173,7 @@ npm run format:check # check formatting
 ### Note: You can create your own accounts and everything, however, we have pre seeded some to be able to follow our test plan.
 
 1. Clone `Milestone2` branch
-2. Put `.env` into project root
+2. Put `.env` into project root AND `./backend/.env`
 3. `docker compose up --build`
 4. Open `http://localhost:3000` (healthcheck is on `http://localhost:5001/api/health`)
 5. To stop use `docker compose down` (to also delete db volume use `docker compose down -v`)
