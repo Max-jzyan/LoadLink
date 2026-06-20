@@ -7,9 +7,10 @@ const LOAD_IDS = [
   new Types.ObjectId('000000000000000000000102'),
   new Types.ObjectId('000000000000000000000103'),
   new Types.ObjectId('000000000000000000000104'),
+  new Types.ObjectId('000000000000000000000105'),
 ]
 
-/** Seed two active auction loads for each test company. */
+/** Seed active auction loads for each test company, plus one near-to-close-with-no-winner load. */
 export async function seedLoads({
   companies,
 }: {
@@ -76,6 +77,21 @@ export async function seedLoads({
       truckType: TRUCK_TYPES.Flatbed,
       trailerLengthFt: 40,
       certifications: ['Hazmat'],
+      driverAssist: false,
+    },
+    {
+      companyId: companies.testCompany1,
+      originAddress: 'Calgary, AB',
+      destinationAddress: 'Saskatoon, SK',
+      originCoords: { lat: 51.0447, lng: -114.0719 },
+      destinationCoords: { lat: 52.1332, lng: -106.67 },
+      pickupTime: new Date('2026-07-09T15:00:00Z'),
+      dropoffTime: new Date('2026-07-09T22:00:00Z'),
+      weightLbs: 12000,
+      commodity: 'Packaged Goods',
+      truckType: TRUCK_TYPES.DryVan,
+      trailerLengthFt: 53,
+      certifications: [],
       driverAssist: false,
     },
   ]
