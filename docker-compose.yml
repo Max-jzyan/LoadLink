@@ -1,47 +1,65 @@
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - '3000:80'
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
+    seeder:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        env_file:
+            - .env
+        depends_on:
+            mongo:
+                condition: service_healthy
+        command: ['node', 'dist/scripts/seed/index.js']
+        restart: 'no'
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        ports:
+            - '3000:80'
+        depends_on:
+            backend:
+                condition: service_healthy
+        restart: unless-stopped
 
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - '5001:5000'
-    env_file:
-      - .env
-    depends_on:
-      mongo:
-        condition: service_healthy
-    healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:5000/api/health']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-    restart: unless-stopped
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        ports:
+            - '5001:5000'
+        env_file:
+            - .env
+        depends_on:
+            mongo:
+                condition: service_healthy
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'wget',
+                    '--spider',
+                    '-q',
+                    'http://localhost:5000/api/health',
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 15s
+        restart: unless-stopped
 
-  mongo:
-    image: mongo:7
-    ports:
-      - '27017:27017'
-    volumes:
-      - mongo-data:/data/db
-    healthcheck:
-      test: ['CMD', 'mongosh', '--eval', 'db.adminCommand("ping")']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
+    mongo:
+        image: mongo:7
+        ports:
+            - '27017:27017'
+        volumes:
+            - mongo-data:/data/db
+        healthcheck:
+            test: ['CMD', 'mongosh', '--eval', 'db.adminCommand("ping")']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
+        restart: unless-stopped
 
 volumes:
-  mongo-data:
+    mongo-data:

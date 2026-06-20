@@ -7,7 +7,6 @@ import {
   MapPin,
   PlusCircle,
   Settings,
-  Truck,
   type LucideIcon,
 } from 'lucide-react'
 import type { UserRole } from '@/hooks/useRole'
@@ -24,7 +23,6 @@ export const RoutePath = {
   LoadDetail: '/loads/:loadId',
   LoadEdit: '/loads/:loadId/edit',
   Map: '/map',
-  Fleet: '/fleet',
   Settings: '/settings',
   Help: '/help',
   Logout: '/logout',
@@ -93,7 +91,8 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     roles: ['company'],
   },
   [RoutePath.Map]: { label: 'Map', icon: MapPin, navGroup: 'main' },
-  // [RoutePath.Fleet]: { label: 'My Fleet', icon: Truck, navGroup: 'main', roles: ['company'] }, TODO: Coming soon!
+  // TODO: Fleet route coming soon — add Fleet: '/fleet' to RoutePath and uncomment below:
+  // { label: 'My Fleet', icon: Truck, navGroup: 'main', roles: ['company'] }
   [RoutePath.Settings]: { label: 'Settings', icon: Settings, navGroup: 'bottom' },
   [RoutePath.Help]: { label: 'Help', icon: HelpCircle, navGroup: 'bottom' },
   [RoutePath.Logout]: { label: 'Logout', icon: LogOut, navGroup: null },
