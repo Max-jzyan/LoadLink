@@ -9,8 +9,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { DriverSidebar } from '@/components/DriverSidebar'
-import { CompanySidebar } from '@/components/CompanySidebar'
+import { AppSidebar } from '@/components/AppSidebar'
 import PageLayout from '@/components/PageLayout'
 import AppRoutes from '@/routes'
 import { getStoredRole } from '@/hooks/useRole'
@@ -41,7 +40,7 @@ function RoleLayout() {
 
   return (
     <SidebarProvider className="h-svh">
-      {role === 'driver' ? <DriverSidebar /> : <CompanySidebar />}
+      <AppSidebar role={role} />
       <SidebarInset>
         <PageLayout>
           <AppRoutes />

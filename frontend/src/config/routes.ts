@@ -3,7 +3,6 @@ import {
   Gavel,
   HelpCircle,
   LayoutDashboard,
-  LayoutList,
   LogOut,
   MapPin,
   PlusCircle,
@@ -43,7 +42,12 @@ export interface RouteMeta {
 }
 
 export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
-  [RoutePath.Dashboard]: { label: 'Dashboard', icon: LayoutDashboard, navGroup: 'main' },
+  [RoutePath.Dashboard]: {
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    navGroup: 'main',
+    roles: ['driver'],
+  },
   [RoutePath.CompanyDashboard]: {
     label: 'Dashboard',
     icon: LayoutDashboard,
@@ -59,7 +63,7 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
   },
   [RoutePath.DriverAuctions]: {
     label: 'Auctions',
-    icon: LayoutList,
+    icon: Gavel,
     navGroup: 'main',
     roles: ['driver'],
   },
@@ -89,7 +93,7 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     roles: ['company'],
   },
   [RoutePath.Map]: { label: 'Map', icon: MapPin, navGroup: 'main' },
-  [RoutePath.Fleet]: { label: 'My Fleet', icon: Truck, navGroup: 'main', roles: ['company'] },
+  // [RoutePath.Fleet]: { label: 'My Fleet', icon: Truck, navGroup: 'main', roles: ['company'] }, TODO: Coming soon!
   [RoutePath.Settings]: { label: 'Settings', icon: Settings, navGroup: 'bottom' },
   [RoutePath.Help]: { label: 'Help', icon: HelpCircle, navGroup: 'bottom' },
   [RoutePath.Logout]: { label: 'Logout', icon: LogOut, navGroup: null },
@@ -116,7 +120,6 @@ export const getRouteLabel = (path: string): string => {
 }
 
 /** Sidebar items filtered by nav group. */
-// TODO: connect the optional role based filtering to the sidebars -> hardcoded right now (DRIVER_NAV and COMPANY_NAV)
 export const getNavItems = (group: 'main' | 'bottom', role?: UserRole) =>
   (Object.entries(ROUTE_CONFIG) as [RoutePath, RouteMeta][])
     .filter(([, meta]) => meta.navGroup === group)

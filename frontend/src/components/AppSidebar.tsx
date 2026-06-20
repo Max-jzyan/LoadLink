@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { LayoutDashboard, ClipboardList, MapPin, Gavel } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -13,21 +12,23 @@ import {
 import { NavMain } from '@/components/nav/NavMain'
 import { NavUser } from '@/components/nav/NavUser'
 import Logo from '@/components/Logo'
-import { RoutePath } from '@/config/routes'
+import { getNavItems, RoutePath } from '@/config/routes'
+import type { UserRole } from '@/hooks/useRole'
 
-const DRIVER_NAV = [
-  { path: RoutePath.Dashboard, label: 'Dashboard', icon: LayoutDashboard },
-  { path: RoutePath.DriverAuctions, label: 'Auctions', icon: Gavel },
-  { path: RoutePath.DriverLoads, label: 'My Loads', icon: ClipboardList },
-  { path: RoutePath.Map, label: 'Map', icon: MapPin },
-]
+interface AppSidebarProps {
+  role: UserRole
+}
 
-export function DriverSidebar() {
+export function AppSidebar({ role }: AppSidebarProps) {
+  const mainNav = getNavItems('main', role)
+  const bottomNav = getNavItems('bottom', role)
+  const dashboardPath = role === 'company' ? RoutePath.CompanyDashboard : RoutePath.Dashboard
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="flex flex-row items-center gap-1 p-2 group-data-[collapsible=icon]:justify-center">
         <Link
-          to={RoutePath.Dashboard}
+          to={dashboardPath}
           className="flex flex-1 cursor-pointer items-center gap-2 group-data-[collapsible=icon]:hidden"
         >
           <div className="flex shrink-0 items-center justify-center leading-tight">
@@ -43,9 +44,17 @@ export function DriverSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <NavMain items={DRIVER_NAV} />
+            <NavMain items={mainNav} />
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {bottomNav.length > 0 && (
+          <SidebarGroup className="mt-auto">
+            <SidebarGroupContent>
+              <NavMain items={bottomNav} />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter>
