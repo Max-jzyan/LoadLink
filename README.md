@@ -83,6 +83,9 @@ Here atre some features in our M1 design doc's standard features and their M2 st
 - Notification system not started
 - PDF rate confirmation and S3 document storage not yet implemented (placeholder URL returned on bid accept)
 
+## Milestone 3
+Add things here
+
 ---
 
 ### Tech Stack
