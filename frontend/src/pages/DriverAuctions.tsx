@@ -1,21 +1,21 @@
+import { useEventSource } from '@/components/auction/useEventSource'
+import DeliveryTimeline from '@/components/driverLoads/DeliveryTimeline'
+import { DriverMap } from '@/components/driverLoads/Map'
 import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, SlidersHorizontal, Calendar, AlertTriangle, X } from 'lucide-react'
 import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
-import { DriverMap } from '@/components/driverLoads/Map'
 import { LoadCard } from '@/components/shared/LoadCard'
-import DeliveryTimeline from '@/components/driverLoads/DeliveryTimeline'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import { useEventSource } from '@/components/auction/useEventSource'
 import {
-  useListDriverBidsQuery,
   useGetRecommendedLoadsQuery,
+  useListDriverBidsQuery,
 } from '@/services/driverApi/driverSlice'
-import { useListAvailableLoadsQuery } from '@/services/loadApi/loadSlice'
 import type { Load } from '@/services/loadApi/loadEnum'
+import { useListAvailableLoadsQuery } from '@/services/loadApi/loadSlice'
 
 // TODO: replace with auth context once firebase auth is wired up
 const PLACEHOLDER_DRIVER_ID = '6a30df19f9e53fd472dd8954'
@@ -157,7 +157,7 @@ export default function DriverAuctions() {
     >
       <div className="flex gap-2 min-h-0">
         {/* left panel: scrollable load feed */}
-        <div className="flex-[5] min-w-[400px] overflow-y-auto space-y-2 pr-1">
+        <div className="flex-[5] min-w-[400px] overflow-y-auto space-y-2 pl-1 pr-1">
           {isLoading && (
             <div className="space-y-2">
               {[0, 1, 2].map((i) => (

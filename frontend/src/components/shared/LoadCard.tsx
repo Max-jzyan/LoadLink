@@ -1,5 +1,5 @@
 import { ArrowRight, CalendarClock, MapPin, Truck, Weight } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import type { AuctionSummary, CompanySummary, Load, LoadStatus } from '@/services/loadApi/loadEnum'
 
@@ -52,6 +52,7 @@ interface LoadCardProps {
 }
 
 export function LoadCard({ load, onClick, viewAuctionHref }: LoadCardProps) {
+  const navigate = useNavigate()
   const auction = isPopulatedAuction(load.auctionId) ? load.auctionId : null
   const company = isPopulatedCompany(load.companyId) ? load.companyId : null
   const badge = STATUS_BADGE[load.status] ?? STATUS_BADGE.draft
@@ -59,7 +60,7 @@ export function LoadCard({ load, onClick, viewAuctionHref }: LoadCardProps) {
   return (
     <Card
       className={`rounded-xl overflow-hidden transition-colors cursor-pointer hover:bg-muted/40`}
-      onClick={onClick}
+      onClick={() => viewAuctionHref && navigate(viewAuctionHref)}
     >
       <CardContent className="px-4 py-3 flex flex-row items-stretch gap-0">
         <div className="flex flex-col gap-1.5 flex-1 min-w-0 justify-center">
@@ -158,11 +159,14 @@ export function LoadCard({ load, onClick, viewAuctionHref }: LoadCardProps) {
           {/* View Auction button */}
           {viewAuctionHref && (
             <Link
-              to={viewAuctionHref}
+              to="#"
               className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors whitespace-nowrap"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                onClick?.()
+              }}
             >
-              View Auction
+              Quick View
             </Link>
           )}
         </div>
