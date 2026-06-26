@@ -39,7 +39,7 @@ function RoleLayout() {
   }
 
   return (
-    <SidebarProvider className="h-svh">
+    <SidebarProvider defaultOpen={false} className="h-svh">
       <AppSidebar role={role} />
       <SidebarInset>
         <PageLayout>
