@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/command'
 import { cn } from '@/lib/utils'
 import { useAutocompleteAddressQuery } from '@/services/locationSlices/geocoding'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
@@ -78,7 +78,7 @@ export function AddressField({
     return () => clearTimeout(id)
   }, [query])
 
-  const { data: geocodeResults = [] } = useAutocompleteAddressQuery(debouncedQuery, {
+  const { data: geocodeResults = [], isFetching } = useAutocompleteAddressQuery(debouncedQuery, {
     skip: debouncedQuery.length < 6,
   })
 
@@ -139,7 +139,16 @@ export function AddressField({
                 }
               }}
             />
-            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandEmpty>
+              {isFetching ? (
+                <span className="flex items-center justify-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Searching...
+                </span>
+              ) : (
+                'No results found.'
+              )}
+            </CommandEmpty>
 
             <CommandList>
               <CommandGroup className="overflow-y-auto">
