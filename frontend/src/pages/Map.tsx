@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { DriverMap, type RouteCoordinate } from '@/components/driverLoads/Map'
-import { PageHeader } from '@/components/shared/PageHeader'
+import PageShell from '@/components/layout/PageShell'
 import { selectMongoId } from '@/services/authSlice'
 import { useListCompanyLoadsQuery } from '@/services/loadApi/loadSlice'
 import { useSelector } from 'react-redux'
@@ -48,7 +48,7 @@ export default function MapPage() {
 
   // loadId -> road [lat, lng][] positions fetched from Geoapify for loads without a stored polyline
   const [roadPositions, setRoadPositions] = useState<Map<string, [number, number][]>>(new Map())
-  // Track IDs we have already starfted fetching so StrictMode doublefire doesnt duplicate requests
+  // Track IDs we have already started fetching so StrictMode doublefire doesnt duplicate requests
   const fetchingRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
@@ -79,17 +79,20 @@ export default function MapPage() {
     positions: roadPositions.get(load._id),
   }))
 
-  return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
-      <PageHeader count={routes.length} noun="load" isLoading={isLoading} />
+  const count = routes.length
 
+  return (
+    <PageShell
+      title="Route Map"
+      subtitle={!isLoading && !isError ? `${count} load${count !== 1 ? 's' : ''}` : undefined}
+    >
       {isError && (
-        <p className="text-sm text-destructive">Failed to load routes. Please try again.</p>
+        <p className="text-sm text-destructive mb-2">Failed to load routes. Please try again.</p>
       )}
 
-      <div className="min-h-[60vh] flex-1 rounded-xl bg-muted/50 overflow-hidden">
+      <div className="min-h-[60vh] rounded-xl bg-muted/50 overflow-hidden">
         <DriverMap routes={routes} height="100%" />
       </div>
-    </div>
+    </PageShell>
   )
 }

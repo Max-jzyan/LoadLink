@@ -1,9 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { Trophy, WifiOff } from 'lucide-react'
-import Col from '@/components/layout/Col'
 import DynamicCard from '@/components/layout/DynamicCard'
-import LayoutGrid from '@/components/layout/LayoutGrid'
-import Row from '@/components/layout/Row'
+import PageShell from '@/components/layout/PageShell'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -77,68 +75,69 @@ export default function AuctionLive() {
     acceptBid({ loadId, bidId })
   }
 
-  return (
-    <LayoutGrid>
+  // Build sticky bar content from status banners
+  const stickyBanners = (
+    <div className="flex flex-col gap-2">
       {sseDisconnected && (
-        <Row size={16}>
-          <Col size={16}>
-            <div className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-              <WifiOff className="h-4 w-4 shrink-0" />
-              <span>Live feed disconnected for some reason, reconnecting</span>
-            </div>
-          </Col>
-        </Row>
+        <div className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+          <WifiOff className="h-4 w-4 shrink-0" />
+          <span>Live feed disconnected for some reason, reconnecting</span>
+        </div>
       )}
 
       {isAuctionOver && (
-        <Row size={16}>
-          <Col size={16}>
-            {isCancelled ? (
-              <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-4 py-2 text-sm text-muted-foreground">
-                <Badge variant="destructive">Cancelled</Badge>
-                <span>This auction is cancelled</span>
-              </div>
-            ) : winnerBid ? (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <Trophy className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                  <Avatar className="h-9 w-9">
-                    <AvatarFallback>
-                      {winnerBid.driverId.name
-                        .split(' ')
-                        .map((p) => p[0])
-                        .slice(0, 2)
-                        .join('')
-                        .toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-semibold leading-tight">{winnerBid.driverId.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Load assigned to a driver at{' '}
-                      <span className="font-medium text-emerald-700 dark:text-emerald-400">
-                        {formatMoney(winnerBid.amount)}
-                      </span>
-                    </p>
-                  </div>
+        <>
+          {isCancelled ? (
+            <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-4 py-2 text-sm text-muted-foreground">
+              <Badge variant="destructive">Cancelled</Badge>
+              <span>This auction is cancelled</span>
+            </div>
+          ) : winnerBid ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
+              <div className="flex items-center gap-3">
+                <Trophy className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback>
+                    {winnerBid.driverId.name
+                      .split(' ')
+                      .map((p) => p[0])
+                      .slice(0, 2)
+                      .join('')
+                      .toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-semibold leading-tight">{winnerBid.driverId.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Load assigned to a driver at{' '}
+                    <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                      {formatMoney(winnerBid.amount)}
+                    </span>
+                  </p>
                 </div>
-                <ReopenAuctionDialog loadId={loadId} />
               </div>
-            ) : (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-muted px-4 py-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Badge variant="secondary">Closed</Badge>
-                  <span>Auction closed with no driver</span>
-                </div>
-                <ReopenAuctionDialog loadId={loadId} />
+              <ReopenAuctionDialog loadId={loadId} />
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-muted px-4 py-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Badge variant="secondary">Closed</Badge>
+                <span>Auction closed with no driver</span>
               </div>
-            )}
-          </Col>
-        </Row>
+              <ReopenAuctionDialog loadId={loadId} />
+            </div>
+          )}
+        </>
       )}
+    </div>
+  )
 
-      <Row size={16}>
-        <Col size={7}>
+  const subtitle = loadId ? `Load #${loadId.slice(-6).toUpperCase()}` : undefined
+
+  return (
+    <PageShell title="Live Auction" subtitle={subtitle} stickyBar={stickyBanners}>
+      <div className="flex gap-2">
+        <div className="flex-[7] min-w-0">
           <DynamicCard>
             {isLoading || !load || !auction ? (
               <div className="space-y-3">
@@ -163,9 +162,9 @@ export default function AuctionLive() {
               </div>
             )}
           </DynamicCard>
-        </Col>
+        </div>
 
-        <Col size={9}>
+        <div className="flex-[9] min-w-0">
           <DynamicCard expand>
             {auction ? (
               <BidList
@@ -182,8 +181,8 @@ export default function AuctionLive() {
               </div>
             )}
           </DynamicCard>
-        </Col>
-      </Row>
-    </LayoutGrid>
+        </div>
+      </div>
+    </PageShell>
   )
 }

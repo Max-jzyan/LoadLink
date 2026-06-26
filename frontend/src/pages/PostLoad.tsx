@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux'
 import { LoadForm, type LoadFormValues } from '@/components/LoadForm'
 import { useCreateLoadMutation } from '@/services/loadApi/loadSlice'
 import { selectMongoId } from '@/services/authSlice'
+import PageShell from '@/components/layout/PageShell'
 import Spinner from '@/components/shared/Spinner'
 import { RoutePath } from '@/config/routes'
 
@@ -28,9 +29,9 @@ export default function PostLoad() {
   }
 
   return (
-    <>
-      {submitError && <p className="text-sm text-destructive px-6 pt-4">{submitError}</p>}
+    <PageShell title="Post a Load">
+      {submitError && <p className="text-sm text-destructive mb-4">{submitError}</p>}
       <LoadForm onSubmit={handleSubmit} isSubmitting={isCreatingLoad} />
-    </>
+    </PageShell>
   )
 }

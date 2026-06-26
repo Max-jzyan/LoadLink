@@ -56,8 +56,8 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
         </Breadcrumb>
       </header>
 
-      {/* content scrolls internally so the outer page never gets a scrollbar */}
-      <div className="flex flex-1 overflow-y-auto p-6">{children}</div>
+      {/* Content area — scroll management delegated to child page components (PageShell) */}
+      <div className="flex flex-1 min-h-0">{children}</div>
     </div>
   )
 }

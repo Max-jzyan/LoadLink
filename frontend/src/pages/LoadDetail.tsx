@@ -1,8 +1,12 @@
+import PageShell from '@/components/layout/PageShell'
+
 // placeholder -- load detail view not yet implemented
 export default function LoadDetail() {
   return (
-    <div className="flex flex-1 items-center justify-center p-8 text-muted-foreground text-sm">
-      Load Detail — coming soon
-    </div>
+    <PageShell title="Load Details">
+      <div className="flex items-center justify-center min-h-[40vh] text-muted-foreground text-sm">
+        Load Detail — coming soon
+      </div>
+    </PageShell>
   )
 }

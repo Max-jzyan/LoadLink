@@ -1,17 +1,17 @@
-import { Navigate, Routes, Route } from 'react-router-dom'
 import { RoutePath } from '@/config/routes'
 import AuctionLive from '@/pages/AuctionLive'
-import Dashboard from '@/pages/Dashboard'
 import CompanyDashboard from '@/pages/CompanyDashboard'
+import Dashboard from '@/pages/Dashboard'
+import DriverAuction from '@/pages/DriverAuction'
+import DriverAuctions from '@/pages/DriverAuctions'
+import DriverDashboard from '@/pages/DriverDashboard'
+import LoadDetail from '@/pages/LoadDetail'
 import Loads from '@/pages/Loads'
 import MapPage from '@/pages/Map'
-import DriverLoads from '@/pages/DriverLoads'
-import Test from '@/pages/Test'
-import LoadDetail from '@/pages/LoadDetail'
-import DriverAuctions from '@/pages/DriverAuctions'
-import DriverAuction from '@/pages/DriverAuction'
-import PostLoad from '@/pages/PostLoad'
 import NotFound from '@/pages/NotFound'
+import PostLoad from '@/pages/PostLoad'
+import Test from '@/pages/Test'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
 export default function AppRoutes() {
   return (
@@ -20,7 +20,7 @@ export default function AppRoutes() {
       <Route path={RoutePath.Dashboard} element={<Dashboard />} />
       <Route path={RoutePath.CompanyDashboard} element={<CompanyDashboard />} />
       <Route path={RoutePath.Test} element={<Test />} />
-      <Route path={RoutePath.DriverLoads} element={<DriverLoads />} />
+      <Route path={RoutePath.DriverLoads} element={<DriverDashboard />} />
       <Route path={RoutePath.DriverAuctions} element={<DriverAuctions />} />
       <Route path={`${RoutePath.DriverAuctions}/:loadId`} element={<DriverAuction />} />
       <Route path={RoutePath.Loads} element={<Loads />} />

@@ -26,6 +26,20 @@ export const LOAD_STATUSES = {
 
 export type LoadStatus = (typeof LOAD_STATUSES)[keyof typeof LOAD_STATUSES]
 
+/** Set of load statuses considered "active" for dashboard filtering */
+export const ACTIVE_STATUSES = new Set<string>([
+  LOAD_STATUSES.AuctionLive,
+  LOAD_STATUSES.Booked,
+  LOAD_STATUSES.InTransit,
+])
+
+/** Set of load statuses considered "historical" for dashboard filtering */
+export const HISTORICAL_STATUSES = new Set<string>([
+  LOAD_STATUSES.Completed,
+  LOAD_STATUSES.Cancelled,
+  LOAD_STATUSES.AuctionClosed,
+])
+
 export const TimelineEventAction = {
   Start: 'Start',
   Break: 'Break',

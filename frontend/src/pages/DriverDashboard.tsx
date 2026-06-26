@@ -1,34 +1,22 @@
-import DriverLoadTable from '@/components/driverLoads/driverLoadTable'
 import DriverLoadFilterBar, {
   type DriverLoadFilters,
 } from '@/components/driverLoads/DriverLoadFilterBar'
+import DriverLoadTable from '@/components/driverLoads/driverLoadTable'
 import { DriverMap } from '@/components/driverLoads/Map'
-import Col from '@/components/layout/Col'
 import DynamicCard from '@/components/layout/DynamicCard'
-import LayoutGrid from '@/components/layout/LayoutGrid'
-import Row from '@/components/layout/Row'
-import { useListDriverBidsQuery, useListDriverLoadsQuery } from '@/services/driverApi/driverSlice'
-import { LOAD_STATUSES } from '@/types/enums'
+import LoadsPageLayout from '@/components/layout/LoadsPageLayout'
+import PageShell from '@/components/layout/PageShell'
+import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
 import { selectMongoId } from '@/services/authSlice'
-import { useSelector, useDispatch } from 'react-redux'
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
-import { setDriverLoads, selectDriverLoads } from '@/services/driverLoadsSlice'
+import { useListDriverBidsQuery, useListDriverLoadsQuery } from '@/services/driverApi/driverSlice'
+import { selectDriverLoads, setDriverLoads } from '@/services/driverLoadsSlice'
 import type { AppDispatch } from '@/services/store'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LOAD_STATUSES, ACTIVE_STATUSES, HISTORICAL_STATUSES } from '@/types/enums'
+import { Hammer, Package2, TrendingUp, Truck, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Package2, Hammer, Truck, TrendingUp, RefreshCw } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { relativeTime } from '@/lib/utils'
-
-const ACTIVE_STATUSES = new Set<string>([
-  LOAD_STATUSES.AuctionLive,
-  LOAD_STATUSES.Booked,
-  LOAD_STATUSES.InTransit,
-])
-const HISTORICAL_STATUSES = new Set<string>([
-  LOAD_STATUSES.Completed,
-  LOAD_STATUSES.Cancelled,
-  LOAD_STATUSES.AuctionClosed,
-])
 
 const DEFAULT_FILTERS: DriverLoadFilters = {
   loadStatus: 'all',
@@ -40,7 +28,7 @@ const DEFAULT_FILTERS: DriverLoadFilters = {
   maxPrice: undefined,
 }
 
-export default function DriverLoads() {
+export default function DriverDashboard() {
   const driverId = useSelector(selectMongoId)
   const dispatch = useDispatch<AppDispatch>()
 
@@ -64,6 +52,12 @@ export default function DriverLoads() {
 
   // Read from the slice so LoadActionsCell's optimistic updates are reflected
   const availableLoads = useSelector(selectDriverLoads)
+
+  // Refresh timestamp tracking
+  const { lastManualRefresh, handleRefresh, captureInitialLoad } = useRefreshTimestamp()
+  useEffect(() => {
+    captureInitialLoad(fulfilledTimeStamp)
+  }, [fulfilledTimeStamp, captureInitialLoad])
 
   // Filter state
   const [filters, setFilters] = useState<DriverLoadFilters>(DEFAULT_FILTERS)
@@ -147,117 +141,57 @@ export default function DriverLoads() {
     status: load.status,
   }))
 
-  // track when the user manually triggered a refresh so the relative timestamp isn't reset by background polling every 60s
-  const [lastManualRefresh, setLastManualRefresh] = useState<number | null>(null)
-  const capturedInitialLoad = useRef(false)
-  useEffect(() => {
-    if (fulfilledTimeStamp && !capturedInitialLoad.current) {
-      capturedInitialLoad.current = true
-      setLastManualRefresh(fulfilledTimeStamp)
-    }
-  }, [fulfilledTimeStamp])
-
-  // tick every 30s so the relative timestamp re-renders without a full refetch
-  const [, setTick] = useState(0)
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 30000)
-    return () => clearInterval(id)
-  }, [])
-
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
 
-  const handleRefresh = useCallback(() => {
-    refetch()
-    setLastManualRefresh(Date.now())
-  }, [refetch])
+  const onRefresh = useCallback(() => handleRefresh(refetch), [handleRefresh, refetch])
+  const subtitle = lastManualRefresh ? `Updated ${relativeTime(lastManualRefresh)}` : undefined
 
   const handleRowClick = (load: (typeof filteredLoads)[number]) => {
     setSelectedRouteId(load._id)
   }
 
+  // ── Stats cards (bare DynamicCards — no Col wrappers) ──
+  const statsCards = (
+    <>
+      <DynamicCard title="My Loads" action={<Package2 className="text-primary" />}>
+        <p className="text-4xl font-bold">{availableLoads.length}</p>
+      </DynamicCard>
+      <DynamicCard title="In Transit" action={<Truck className="text-green-500" />}>
+        <p className="text-4xl font-bold">{loadsInTransit.length}</p>
+      </DynamicCard>
+      <DynamicCard title="Active Bids" action={<Hammer className="text-amber-500" />}>
+        <p className="text-4xl font-bold">{activeBidCount}</p>
+      </DynamicCard>
+      <DynamicCard title="Completed Loads" action={<TrendingUp className="text-violet-500" />}>
+        <p className="text-4xl font-bold">{completedLoads.length}</p>
+      </DynamicCard>
+    </>
+  )
+
   return (
-    <LayoutGrid>
-      <Row size={1}>
-        <Col size={16}>
-          <div className="flex items-center justify-between px-2 h-full">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">My Loads</h1>
-              {lastManualRefresh && (
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  Updated {relativeTime(lastManualRefresh)}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" onClick={handleRefresh} title="Refresh">
-                <RefreshCw className={isFetching ? 'animate-spin' : ''} />
-              </Button>
-            </div>
-          </div>
-        </Col>
-      </Row>
-      <Row size={1}>
-        <Col size={16}>
-          <DynamicCard noBorder noBackground noPadding>
-            <div className="p-3">
-              <DriverLoadFilterBar filters={filters} onFiltersChange={setFilters} />
-            </div>
-          </DynamicCard>
-        </Col>
-      </Row>
-      <Row size={2}>
-        {isLoading ? (
-          <Col size={16}>
-            <div className="flex gap-2 h-full">
-              {[0, 1, 2, 3].map((i) => (
-                <Skeleton key={i} className="flex-1 rounded-xl" />
-              ))}
-            </div>
-          </Col>
-        ) : (
-          <>
-            <Col size={4}>
-              <DynamicCard title="My Loads" action={<Package2 className="text-primary" />}>
-                <p className="text-4xl font-bold">{availableLoads.length}</p>
-              </DynamicCard>
-            </Col>
-            <Col size={4}>
-              <DynamicCard title="In Transit" action={<Truck className="text-green-500" />}>
-                <p className="text-4xl font-bold">{loadsInTransit.length}</p>
-              </DynamicCard>
-            </Col>
-            <Col size={4}>
-              <DynamicCard title="Active Bids" action={<Hammer className="text-amber-500" />}>
-                <p className="text-4xl font-bold">{activeBidCount}</p>
-              </DynamicCard>
-            </Col>
-            <Col size={4}>
-              <DynamicCard
-                title="Completed Loads"
-                action={<TrendingUp className="text-violet-500" />}
-              >
-                <p className="text-4xl font-bold">{completedLoads.length}</p>
-              </DynamicCard>
-            </Col>
-          </>
-        )}
-      </Row>
-      <Row size={7}>
-        <Col size={16}>
+    <PageShell
+      title="My Loads"
+      subtitle={subtitle}
+      stickyBar={<DriverLoadFilterBar filters={filters} onFiltersChange={setFilters} />}
+      actions={
+        <Button variant="outline" size="icon" onClick={onRefresh} title="Refresh">
+          <RefreshCw className={isFetching ? 'animate-spin' : ''} />
+        </Button>
+      }
+    >
+      <LoadsPageLayout
+        isLoading={isLoading}
+        statsCards={statsCards}
+        mapHeight={600}
+        table={
           <DriverLoadTable
             title={isLoading ? 'Loading...' : 'Available Loads'}
             loads={filteredLoads}
             onRowClick={handleRowClick}
           />
-        </Col>
-      </Row>
-      <Row size={8}>
-        <Col size={16}>
-          <DynamicCard title="Map">
-            <DriverMap routes={routes} selectedRouteId={selectedRouteId} />
-          </DynamicCard>
-        </Col>
-      </Row>
-    </LayoutGrid>
+        }
+        map={<DriverMap routes={routes} selectedRouteId={selectedRouteId} height="100%" />}
+      />
+    </PageShell>
   )
 }

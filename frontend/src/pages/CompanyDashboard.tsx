@@ -1,22 +1,25 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
-import { Link } from 'react-router-dom'
-import { Package2, Hammer, Truck, TrendingUp, Plus, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import Col from '@/components/layout/Col'
-import DynamicCard from '@/components/layout/DynamicCard'
-import LayoutGrid from '@/components/layout/LayoutGrid'
-import Row from '@/components/layout/Row'
-import { DriverMap } from '@/components/driverLoads/Map'
+import CompanyLoadFilterBar, {
+  type CompanyLoadFilters,
+  DEFAULT_FILTERS,
+} from '@/components/companyLoads/CompanyLoadFilterBar'
 import CompanyLoadTable from '@/components/companyLoads/companyLoadTable'
-import { useSelector } from 'react-redux'
-import { useGetCompanyDashboardQuery } from '@/services/companyApi/companyApi'
-import { selectMongoId } from '@/services/authSlice'
-import useAuth from '@/hooks/useAuth'
+import { DriverMap } from '@/components/driverLoads/Map'
+import DynamicCard from '@/components/layout/DynamicCard'
+import LoadsPageLayout from '@/components/layout/LoadsPageLayout'
+import PageShell from '@/components/layout/PageShell'
+import { Button } from '@/components/ui/button'
 import { RoutePath } from '@/config/routes'
-import { relativeTime } from '@/lib/utils'
-import { LOAD_STATUSES } from '@/types/enums'
+import useAuth from '@/hooks/useAuth'
+import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
+import { selectMongoId } from '@/services/authSlice'
+import { useGetCompanyDashboardQuery } from '@/services/companyApi/companyApi'
 import type { LoadWithDetails } from '@/services/companyApi/companyTypes'
+import { LOAD_STATUSES, ACTIVE_STATUSES, HISTORICAL_STATUSES } from '@/types/enums'
+import { Hammer, Package2, Plus, RefreshCw, TrendingUp, Truck } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSelector } from 'react-redux'
+import { Link } from 'react-router-dom'
+import { relativeTime } from '@/lib/utils'
 
 export default function CompanyDashboard() {
   const { user } = useAuth()
@@ -34,34 +37,49 @@ export default function CompanyDashboard() {
     pollingInterval: 60000,
   })
 
-  const loads = dashboard?.loads ?? []
+  const loads = useMemo(() => dashboard?.loads ?? [], [dashboard?.loads])
   const summary = dashboard?.summary
   const isLoading = dashLoading && !dashboard
 
-  // track when the user manually triggered a refresh so the relative timestamp
-  // isn't reset by background polling every 60s
-  const [lastManualRefresh, setLastManualRefresh] = useState<number | null>(null)
-  const capturedInitialLoad = useRef(false)
+  // Refresh timestamp tracking
+  const { lastManualRefresh, handleRefresh, captureInitialLoad } = useRefreshTimestamp()
   useEffect(() => {
-    if (fulfilledTimeStamp && !capturedInitialLoad.current) {
-      capturedInitialLoad.current = true
-      setLastManualRefresh(fulfilledTimeStamp)
-    }
-  }, [fulfilledTimeStamp])
+    captureInitialLoad(fulfilledTimeStamp)
+  }, [fulfilledTimeStamp, captureInitialLoad])
 
-  // tick every 30s so the relative timestamp re-renders without a full refetch
-  const [, setTick] = useState(0)
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 30000)
-    return () => clearInterval(id)
-  }, [])
+  const onRefresh = useCallback(() => handleRefresh(refetch), [handleRefresh, refetch])
+  const subtitle =
+    [companyName, lastManualRefresh ? `Updated ${relativeTime(lastManualRefresh)}` : null]
+      .filter(Boolean)
+      .join(' · ') || undefined
 
   const [selectedLoad, setSelectedLoad] = useState<LoadWithDetails | null>(null)
+  const [filters, setFilters] = useState<CompanyLoadFilters>(DEFAULT_FILTERS)
 
-  const handleRefresh = useCallback(() => {
-    refetch()
-    setLastManualRefresh(Date.now())
-  }, [refetch])
+  // Apply filters client-side
+  const filteredLoads = useMemo(() => {
+    let result = loads
+
+    // Status filter
+    if (filters.loadStatus === 'active') {
+      result = result.filter((l) => ACTIVE_STATUSES.has(l.status))
+    } else if (filters.loadStatus === 'historical') {
+      result = result.filter((l) => HISTORICAL_STATUSES.has(l.status))
+    }
+
+    // Date range filter (by createdAt)
+    const dateRange = filters.dateRange
+    if (dateRange?.from) {
+      const from = dateRange.from
+      result = result.filter((l) => new Date(l.createdAt) >= from)
+    }
+    if (dateRange?.to) {
+      const to = dateRange.to
+      result = result.filter((l) => new Date(l.createdAt) <= to)
+    }
+
+    return result
+  }, [loads, filters])
 
   // map in-transit loads to the shape DriverMap expects;
   // if a specific in-transit load is selected, zoom to just that one
@@ -80,105 +98,64 @@ export default function CompanyDashboard() {
     }))
   }, [loads, selectedLoad])
 
+  // ── Stats cards (bare DynamicCards — no Col wrappers) ──
+  const statsCards = (
+    <>
+      <DynamicCard title="Active Loads" action={<Package2 className="text-primary" />}>
+        <p className="text-4xl font-bold">{summary?.activeLoads ?? 0}</p>
+      </DynamicCard>
+      <DynamicCard title="Live Auctions" action={<Hammer className="text-amber-500" />}>
+        <p className="text-4xl font-bold">{summary?.liveAuctions ?? 0}</p>
+      </DynamicCard>
+      <DynamicCard title="In Transit" action={<Truck className="text-green-500" />}>
+        <p className="text-4xl font-bold">{summary?.inTransit ?? 0}</p>
+      </DynamicCard>
+      <DynamicCard title="Total Bids Today" action={<TrendingUp className="text-violet-500" />}>
+        <p className="text-4xl font-bold">{summary?.totalBidsToday ?? 0}</p>
+      </DynamicCard>
+    </>
+  )
+
   return (
-    <LayoutGrid>
-      <Row size={1}>
-        <Col size={16}>
-          <div className="flex items-center justify-between px-2 h-full">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Active Loads</h1>
-              {(companyName || lastManualRefresh) && (
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {companyName}
-                  {companyName && lastManualRefresh ? ' · ' : ''}
-                  {lastManualRefresh ? `Updated ${relativeTime(lastManualRefresh)}` : ''}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" onClick={handleRefresh} title="Refresh">
-                <RefreshCw className={isFetching ? 'animate-spin' : ''} />
-              </Button>
-              <Button asChild>
-                <Link to={RoutePath.PostLoad}>
-                  <Plus />
-                  Post New Load
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </Col>
-      </Row>
-
-      <Row size={2}>
-        {isLoading ? (
-          <Col size={16}>
-            <div className="flex gap-2 h-full">
-              {[0, 1, 2, 3].map((i) => (
-                <Skeleton key={i} className="flex-1 rounded-xl" />
-              ))}
-            </div>
-          </Col>
-        ) : (
-          <>
-            <Col size={4}>
-              <DynamicCard title="Active Loads" action={<Package2 className="text-primary" />}>
-                <p className="text-4xl font-bold">{summary?.activeLoads ?? 0}</p>
-              </DynamicCard>
-            </Col>
-            <Col size={4}>
-              <DynamicCard title="Live Auctions" action={<Hammer className="text-amber-500" />}>
-                <p className="text-4xl font-bold">{summary?.liveAuctions ?? 0}</p>
-              </DynamicCard>
-            </Col>
-            <Col size={4}>
-              <DynamicCard title="In Transit" action={<Truck className="text-green-500" />}>
-                <p className="text-4xl font-bold">{summary?.inTransit ?? 0}</p>
-              </DynamicCard>
-            </Col>
-            <Col size={4}>
-              <DynamicCard
-                title="Total Bids Today"
-                action={<TrendingUp className="text-violet-500" />}
-              >
-                <p className="text-4xl font-bold">{summary?.totalBidsToday ?? 0}</p>
-              </DynamicCard>
-            </Col>
-          </>
-        )}
-      </Row>
-
-      <Row size={7}>
-        <Col size={16}>
+    <PageShell
+      title="Active Loads"
+      subtitle={subtitle}
+      stickyBar={<CompanyLoadFilterBar filters={filters} onFiltersChange={setFilters} />}
+      actions={
+        <>
+          <Button variant="outline" size="icon" onClick={onRefresh} title="Refresh">
+            <RefreshCw className={isFetching ? 'animate-spin' : ''} />
+          </Button>
+          <Button asChild>
+            <Link to={RoutePath.PostLoad}>
+              <Plus />
+              Post New Load
+            </Link>
+          </Button>
+        </>
+      }
+    >
+      <LoadsPageLayout
+        isLoading={isLoading}
+        statsCards={statsCards}
+        mapHeight={600}
+        table={
           <CompanyLoadTable
             title={isLoading ? 'Loading...' : 'Loads'}
-            loads={loads}
+            loads={filteredLoads}
             onRowClick={setSelectedLoad}
           />
-        </Col>
-      </Row>
-
-      <Row size={6}>
-        <Col size={16}>
-          <DynamicCard
-            title="Routes in Progress"
-            action={
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-                {summary?.inTransit ?? 0} in transit
-              </span>
+        }
+        map={
+          <DriverMap
+            routes={transitRoutes}
+            selectedRouteId={
+              selectedLoad?.status === LOAD_STATUSES.InTransit ? selectedLoad._id : null
             }
-          >
-            <DriverMap
-              routes={transitRoutes}
-              selectedRouteId={
-                selectedLoad?.status === LOAD_STATUSES.InTransit ? selectedLoad._id : null
-              }
-              height="220px"
-            />
-          </DynamicCard>
-        </Col>
-      </Row>
-    </LayoutGrid>
+            height="100%"
+          />
+        }
+      />
+    </PageShell>
   )
 }

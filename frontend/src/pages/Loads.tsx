@@ -3,7 +3,7 @@ import { Plus, Truck } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { Button } from '@/components/ui/button'
 import { LoadCard } from '@/components/shared/LoadCard'
-import { PageHeader } from '@/components/shared/PageHeader'
+import PageShell from '@/components/layout/PageShell'
 import { RoutePath } from '@/config/routes'
 import { useListCompanyLoadsQuery } from '@/services/loadApi/loadSlice'
 import { selectMongoId } from '@/services/authSlice'
@@ -24,19 +24,20 @@ export default function Loads() {
   const count = loads?.length ?? 0
 
   return (
-    <div className="flex flex-1 flex-col gap-3 p-2">
-      <PageHeader
-        count={!isError ? count : undefined}
-        noun="load"
-        emptyLabel="No loads posted yet"
-        isLoading={isLoading}
-        actionLabel="Post Load"
-        actionTo={RoutePath.PostLoad}
-        middleText={`DEBUG Company ID: ${companyId}`}
-      />
-
+    <PageShell
+      title="Your Loads"
+      subtitle={!isError && !isLoading ? `${count} load${count !== 1 ? 's' : ''}` : undefined}
+      actions={
+        <Button asChild size="sm">
+          <Link to={RoutePath.PostLoad}>
+            <Plus className="mr-1.5 h-4 w-4" />
+            Post Load
+          </Link>
+        </Button>
+      }
+    >
       {isLoading && (
-        <div className="flex flex-1 items-center justify-center">
+        <div className="flex items-center justify-center min-h-[40vh]">
           <Spinner />
         </div>
       )}
@@ -79,6 +80,6 @@ export default function Loads() {
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   )
 }
