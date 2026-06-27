@@ -1,7 +1,7 @@
 // models/users/Driver.ts
 import { InferSchemaType, Schema, Types } from 'mongoose'
 import { RatingSummarySchema } from '../ratings/ratings'
-import { USER_ROLES } from '../enums'
+import { USER_ROLES, CERTIFICATION_VALUES } from '../enums'
 import { UserModel } from './User'
 
 const PricingPreferencesSchema = new Schema(
@@ -24,7 +24,7 @@ const NotificationPreferencesSchema = new Schema(
 
 const DriverSchema = new Schema({
   trucks: [{ type: Types.ObjectId, ref: 'Truck', index: true }],
-  certifications: [{ type: String, trim: true }],
+  certifications: [{ type: String, enum: CERTIFICATION_VALUES, trim: true }],
 
   availableForLoads: { type: Boolean, default: true },
   pricingPreferences: { type: PricingPreferencesSchema, default: () => ({}) },

@@ -5,6 +5,8 @@ import { seedAuctions } from './auctions'
 import { seedBids } from './bids'
 import { seedLoads } from './loads'
 import { seedUsers, type SeedDriverKey } from './users'
+import { seedTrucks } from './trucks'
+import { seedReviews } from './reviews'
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://mongo:27017/loadlink'
 
@@ -69,9 +71,16 @@ async function main() {
       bidCount += bids.length
     }
 
+    const trucks = await seedTrucks(drivers)
+
+    const reviews = await seedReviews(loads, {
+      testCompany1: { _id: companies.testCompany1._id },
+      testCompany2: { _id: companies.testCompany2._id },
+    }, drivers)
+
     const userCount = Object.keys(companies).length + Object.keys(drivers).length
     console.log(
-      `SEEDED ${userCount} users, ${loads.length} loads, ${auctions.length} auctions, ${bidCount} bids`
+      `SEEDED ${userCount} users, ${loads.length} loads, ${auctions.length} auctions, ${bidCount} bids, ${trucks.length} trucks, ${reviews.length} reviews`
     )
     process.exit(0)
   } catch (err) {

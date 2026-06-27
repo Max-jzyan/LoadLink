@@ -1,5 +1,5 @@
 import { Schema, model, InferSchemaType, Types } from 'mongoose'
-import { LOAD_STATUSES, TRUCK_TYPES } from '../enums'
+import { LOAD_STATUSES, TRUCK_TYPES, CERTIFICATION_VALUES } from '../enums'
 
 const CoordinateSchema = new Schema(
   {
@@ -52,7 +52,7 @@ const LoadSchema = new Schema(
     },
 
     trailerLengthFt: { type: Number, required: true },
-    certifications: [{ type: String }], // e.g., ["Reefer HACCP", "HazMat Class A"]
+    certifications: [{ type: String, enum: CERTIFICATION_VALUES }],
     driverAssist: { type: Boolean, default: false },
 
     route: {

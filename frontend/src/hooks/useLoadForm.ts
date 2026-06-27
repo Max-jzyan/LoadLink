@@ -9,7 +9,7 @@ export interface LoadFormFields {
   truckSize: string
   weightLbs: string
   commodity: string
-  certifications: string
+  certifications: string[]
   driverAssist: boolean
   originAddress: string
   originCoords: { lat: number; lng: number } | null
@@ -45,7 +45,7 @@ export function useLoadForm(
       truckSize: String(initialValues?.trailerLengthFt ?? ''),
       weightLbs: String(initialValues?.weightLbs ?? ''),
       commodity: initialValues?.commodity ?? '',
-      certifications: initialValues?.certifications?.join(', ') ?? '',
+      certifications: initialValues?.certifications ?? [],
       driverAssist: initialValues?.driverAssist ?? false,
       originAddress: initialValues?.originAddress ?? '',
       originCoords: initialValues?.originCoords ?? null,
@@ -108,7 +108,7 @@ export function useLoadForm(
       value: values.weightLbs ? `${Number(values.weightLbs).toLocaleString()} lbs` : '—',
     },
     { label: 'Commodity', value: values.commodity || '—' },
-    { label: 'Certifications', value: values.certifications || 'None' },
+    { label: 'Certifications', value: values.certifications.length > 0 ? values.certifications.join(', ') : 'None' },
     { label: 'Driver Assist', value: values.driverAssist ? 'Required' : 'Not Required' },
   ]
 
@@ -124,12 +124,7 @@ export function useLoadForm(
       commodity: v.commodity,
       truckType: v.truckType,
       trailerLengthFt: Number(v.truckSize),
-      certifications: v.certifications
-        ? v.certifications
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : [],
+      certifications: v.certifications,
       driverAssist: v.driverAssist,
       startPrice: Number(v.minPrice),
       capPrice: Number(v.maxPrice),

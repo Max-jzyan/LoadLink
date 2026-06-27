@@ -44,6 +44,19 @@ export const CURRENCIES = {
   CAD: 'CAD',
 } as const
 
+// Standardized certifications for Canadian trucking
+export const CERTIFICATIONS = {
+  Hazmat: 'Hazmat',
+  ReeferHACCP: 'Reefer HACCP',
+  Forklift: 'Forklift',
+  TWIC: 'TWIC',
+  AirBrakes: 'Air Brakes',
+  Tanker: 'Tanker',
+  DangerousGoods: 'Dangerous Goods',
+  CustomsFAST: 'Customs FAST',
+  PDP: 'PDP',
+} as const
+
 // Derived helpers
 export const TRUCK_TYPE_VALUES = Object.values(TRUCK_TYPES)
 export type TruckType = (typeof TRUCK_TYPE_VALUES)[number]
@@ -62,3 +75,6 @@ export type AuctionStatus = (typeof AUCTION_STATUS_VALUES)[number]
 
 export const CURRENCY_VALUES = Object.values(CURRENCIES)
 export type Currency = (typeof CURRENCY_VALUES)[number]
+
+export const CERTIFICATION_VALUES = Object.values(CERTIFICATIONS)
+export type Certification = (typeof CERTIFICATION_VALUES)[number]

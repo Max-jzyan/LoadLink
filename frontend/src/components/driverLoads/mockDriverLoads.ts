@@ -1,4 +1,5 @@
 import type { Load } from '@/services/loadApi/loadEnum'
+import { CERTIFICATIONS } from '@/types/enums'
 
 export const mockDriverLoads: Load[] = [
   {
@@ -15,7 +16,7 @@ export const mockDriverLoads: Load[] = [
     commodity: 'Lumber',
     truckType: 'Flatbed',
     trailerLengthFt: 48,
-    certifications: ['Forklift'],
+    certifications: [CERTIFICATIONS.Forklift],
     driverAssist: true,
     status: 'in_transit',
     createdBy: 'comp001',
@@ -57,7 +58,7 @@ export const mockDriverLoads: Load[] = [
     commodity: 'Grain',
     truckType: 'Hopper Bottom',
     trailerLengthFt: 40,
-    certifications: ['Hazmat'],
+    certifications: [CERTIFICATIONS.Hazmat],
     driverAssist: false,
     status: 'auction_live',
     createdBy: 'comp003',
@@ -99,7 +100,7 @@ export const mockDriverLoads: Load[] = [
     commodity: 'Industrial Equipment',
     truckType: 'Flatbed',
     trailerLengthFt: 48,
-    certifications: ['Hazmat', 'Forklift'],
+    certifications: [CERTIFICATIONS.Hazmat, CERTIFICATIONS.Forklift],
     driverAssist: true,
     status: 'auction_live',
     createdBy: 'comp004',
@@ -162,7 +163,7 @@ export const mockDriverLoads: Load[] = [
     commodity: 'Pharmaceuticals',
     truckType: 'Dry Van',
     trailerLengthFt: 28,
-    certifications: ['Hazmat'],
+    certifications: [CERTIFICATIONS.Hazmat],
     driverAssist: false,
     status: 'auction_live',
     createdBy: 'comp006',
@@ -183,7 +184,7 @@ export const mockDriverLoads: Load[] = [
     commodity: 'Potash',
     truckType: 'Hopper Bottom',
     trailerLengthFt: 40,
-    certifications: ['Hazmat'],
+    certifications: [CERTIFICATIONS.Hazmat],
     driverAssist: false,
     status: 'in_transit',
     createdBy: 'comp003',
@@ -204,7 +205,7 @@ export const mockDriverLoads: Load[] = [
     commodity: 'Building Materials',
     truckType: 'Flatbed',
     trailerLengthFt: 48,
-    certifications: ['Forklift'],
+    certifications: [CERTIFICATIONS.Forklift],
     driverAssist: true,
     status: 'auction_live',
     createdBy: 'comp001',

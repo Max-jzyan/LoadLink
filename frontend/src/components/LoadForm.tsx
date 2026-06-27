@@ -1,5 +1,6 @@
 import { type FieldError, Controller } from 'react-hook-form'
 import { ArrowRight, MapPin, TrendingUp, Truck } from 'lucide-react'
+import { useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,11 +13,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Combobox,
+  ComboboxChips,
+  ComboboxChip,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+} from '@/components/ui/combobox'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { PriceInput } from '@/components/shared/PriceInput'
 import { DatePicker } from '@/components/shared/DatePicker'
 import { AddressField } from '@/components/shared/AddressField'
-import { PriceInputVariant, TRUCK_TYPES } from '@/types/enums'
+import { PriceInputVariant, TRUCK_TYPES, CERTIFICATION_OPTIONS } from '@/types/enums'
 import { useLoadForm, type LoadFormValues } from '@/hooks/useLoadForm'
 
 export type { LoadFormValues }
@@ -35,6 +45,7 @@ function FieldError({ message }: { message?: string }) {
 export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProps) {
   const { register, control, setValue, trigger, values, summaryRows, onFormSubmit, errors } =
     useLoadForm(initialValues, onSubmit)
+  const certAnchor = useRef<HTMLDivElement | null>(null)
 
   const inputCls = 'bg-background border-border placeholder:text-muted-foreground/50'
 
@@ -120,11 +131,42 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
                 </Field>
                 <Field>
                   <FieldLabel>Special Certifications</FieldLabel>
-                  <Input
-                    className={inputCls}
-                    placeholder="None (optional)"
-                    {...register('certifications')}
+                  <Controller
+                    control={control}
+                    name="certifications"
+                    render={({ field }) => (
+                      <div ref={certAnchor}>
+                        <Combobox
+                          value={field.value}
+                          onValueChange={(newValue: string[]) => {
+                            field.onChange(newValue)
+                          }}
+                          multiple
+                        >
+                          <ComboboxChips className="min-h-8">
+                            {field.value.map((cert: string) => (
+                              <ComboboxChip key={cert}>
+                                {CERTIFICATION_OPTIONS.find((c) => c.value === cert)?.label ?? cert}
+                              </ComboboxChip>
+                            ))}
+                            <ComboboxChipsInput placeholder="Select certifications..." />
+                          </ComboboxChips>
+                          <ComboboxContent sideOffset={4} align="start" anchor={certAnchor}>
+                            <ComboboxList>
+                              {CERTIFICATION_OPTIONS.map((cert) => (
+                                <ComboboxItem key={cert.value} value={cert.value}>
+                                  {cert.label}
+                                </ComboboxItem>
+                              ))}
+                            </ComboboxList>
+                          </ComboboxContent>
+                        </Combobox>
+                      </div>
+                    )}
                   />
+                  <FieldDescription>
+                    Select all relevant certifications for this load
+                  </FieldDescription>
                 </Field>
               </div>
 

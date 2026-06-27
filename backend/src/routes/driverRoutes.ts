@@ -3,7 +3,6 @@ import {
   getRecommendedLoads,
   listDriverBids,
   listDriverLoads,
-  listDriverTrucks,
 } from '../controllers/driverController'
 
 export const router = Router()
@@ -12,6 +11,5 @@ export const router = Router()
 router.get('/driver/:driverId/bids', listDriverBids)
 router.get('/driver/:driverId/loads', listDriverLoads)
 router.get('/driver/:driverId/recommended-loads', getRecommendedLoads)
-router.get('/driver/:driverId/trucks', listDriverTrucks)
 
 export default router

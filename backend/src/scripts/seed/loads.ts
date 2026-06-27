@@ -1,6 +1,6 @@
 import { Types } from 'mongoose'
 import { LoadModel } from '../../models/loads/Load'
-import { LOAD_STATUSES, TRUCK_TYPES } from '../../models/enums'
+import { LOAD_STATUSES, TRUCK_TYPES, CERTIFICATIONS } from '../../models/enums'
 
 const LOAD_IDS = [
   new Types.ObjectId('000000000000000000000101'),
@@ -31,7 +31,7 @@ export async function seedLoads({
       commodity: 'Lumber',
       truckType: TRUCK_TYPES.Flatbed,
       trailerLengthFt: 48,
-      certifications: ['Forklift'],
+      certifications: [CERTIFICATIONS.Forklift],
       driverAssist: true,
     },
     {
@@ -76,7 +76,7 @@ export async function seedLoads({
       commodity: 'Grain',
       truckType: TRUCK_TYPES.Flatbed,
       trailerLengthFt: 40,
-      certifications: ['Hazmat'],
+      certifications: [CERTIFICATIONS.Hazmat],
       driverAssist: false,
     },
     {

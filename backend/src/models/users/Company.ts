@@ -1,6 +1,6 @@
-import { Schema, InferSchemaType, Types } from 'mongoose'
-import { RatingSummarySchema } from '../ratings/ratings'
+import { InferSchemaType, Schema, Types } from 'mongoose'
 import { USER_ROLES } from '../enums'
+import { RatingSummarySchema } from '../ratings/Ratings'
 import { UserModel } from './User'
 
 const CompanySchema = new Schema({

@@ -1,6 +1,6 @@
 // models/trucks/Truck.ts
 import { Schema, model, InferSchemaType, Types } from 'mongoose'
-import { TRUCK_TYPES } from '../enums'
+import { TRUCK_TYPES, CERTIFICATION_VALUES } from '../enums'
 
 const MaintenanceRecordSchema = new Schema(
   {
@@ -40,7 +40,7 @@ const TruckSchema = new Schema(
     plateNumber: { type: String, required: true, trim: true, index: true },
     vin: { type: String, default: '', trim: true, index: true },
 
-    certifications: [{ type: String, trim: true }], // e.g., "Reefer HACCP", "HazMat Class A"
+    certifications: [{ type: String, enum: CERTIFICATION_VALUES, trim: true }],
 
     isPrimary: { type: Boolean, default: false }, // primary truck for owner
 

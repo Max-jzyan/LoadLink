@@ -23,6 +23,8 @@ import auctionRouter from './routes/auctionRoutes'
 import companyRouter from './routes/companyRoutes'
 import driverRouter from './routes/driverRoutes'
 import userRouter from './routes/userRoutes'
+import truckRouter from './routes/truckRoutes'
+import reviewRouter from './routes/reviewRoutes'
 import { errorHandler } from './middleware/errorHandler'
 import { startHeartbeat } from './services/heartbeatService'
 
@@ -32,6 +34,8 @@ app.use('/api', loadRouter)
 app.use('/api', auctionRouter)
 app.use('/api', companyRouter)
 app.use('/api', driverRouter)
+app.use('/api', truckRouter)
+app.use('/api', reviewRouter)
 
 // Central error handler
 app.use(errorHandler)
