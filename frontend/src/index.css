@@ -349,3 +349,12 @@ code {
     letter-spacing: var(--tracking-normal);
   }
 }
+
+/* Unlayered on purpose: these must override the ghost Button variant's
+   `hover:bg-muted` etc. */
+.filter-btn-active {
+  @apply bg-primary text-primary-foreground hover:bg-primary/80 dark:hover:bg-primary/60;
+}
+.filter-btn-inactive {
+  @apply dark:hover:bg-primary/20;
+}
