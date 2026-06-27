@@ -2,6 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { Load, AuctionSummary } from '@/services/loadApi/loadEnum'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { LoadActionsCell } from './LoadActionsCell'
+import { ResponsiveRowMenu } from '@/components/shared/ResponsiveRowMenu'
 import { type LoadStatus } from '@/types/enums'
 import { TRUCK_TYPES } from '@/types/enums'
 
@@ -40,6 +41,10 @@ export const columns: ColumnDef<Load>[] = [
         {TRUCK_LABELS[row.getValue<string>('truckType')] ?? row.getValue<string>('truckType')}
       </span>
     ),
+    meta: {
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell',
+    },
   },
   {
     accessorKey: 'weightLbs',
@@ -47,6 +52,10 @@ export const columns: ColumnDef<Load>[] = [
     cell: ({ row }) => {
       const weight = row.getValue<number>('weightLbs')
       return weight.toLocaleString()
+    },
+    meta: {
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell',
     },
   },
   {
@@ -63,6 +72,10 @@ export const columns: ColumnDef<Load>[] = [
         </span>
       )
     },
+    meta: {
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell',
+    },
   },
   {
     accessorKey: 'dropoffTime',
@@ -78,6 +91,10 @@ export const columns: ColumnDef<Load>[] = [
         </span>
       )
     },
+    meta: {
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell',
+    },
   },
   {
     id: 'currentPrice',
@@ -91,6 +108,10 @@ export const columns: ColumnDef<Load>[] = [
           {currentPrice != null ? `$${currentPrice.toLocaleString()}` : '—'}
         </span>
       )
+    },
+    meta: {
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell',
     },
   },
   {
@@ -110,5 +131,80 @@ export const columns: ColumnDef<Load>[] = [
       </div>
     ),
     size: 140,
+    meta: {
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell',
+    },
+  },
+  {
+    id: 'mobileActions',
+    header: '',
+    cell: ({ row }) => {
+      const load = row.original
+      return (
+        <div className="lg:hidden">
+          <ResponsiveRowMenu
+            load={load}
+            mobileDetails={[
+              {
+                label: 'Truck',
+                value: (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground border border-border">
+                    {TRUCK_LABELS[load.truckType] ?? load.truckType}
+                  </span>
+                ),
+              },
+              {
+                label: 'Weight',
+                value: <span>{load.weightLbs.toLocaleString()} lbs</span>,
+              },
+              {
+                label: 'Pickup',
+                value: (
+                  <span className="text-right">
+                    {new Date(load.pickupTime).toLocaleDateString()}
+                    <br />
+                    <span className="text-muted-foreground">
+                      {new Date(load.pickupTime).toLocaleTimeString()}
+                    </span>
+                  </span>
+                ),
+              },
+              {
+                label: 'Dropoff',
+                value: (
+                  <span className="text-right">
+                    {new Date(load.dropoffTime).toLocaleDateString()}
+                    <br />
+                    <span className="text-muted-foreground">
+                      {new Date(load.dropoffTime).toLocaleTimeString()}
+                    </span>
+                  </span>
+                ),
+              },
+              {
+                label: 'My Price',
+                value: (() => {
+                  const auction = load.auctionId
+                  const currentPrice =
+                    auction && typeof auction === 'object' ? (auction as AuctionSummary).currentPrice : null
+                  return (
+                    <span className="font-semibold">
+                      {currentPrice != null ? `$${currentPrice.toLocaleString()}` : '—'}
+                    </span>
+                  )
+                })(),
+              },
+            ]}
+          >
+            <LoadActionsCell load={load} />
+          </ResponsiveRowMenu>
+        </div>
+      )
+    },
+    meta: {
+      headerClassName: 'lg:hidden',
+      cellClassName: 'lg:hidden',
+    },
   },
 ]

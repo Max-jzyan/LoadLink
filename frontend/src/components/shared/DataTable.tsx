@@ -60,8 +60,9 @@ export function DataTable<TData, TValue>({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
+                const meta = header.column.columnDef.meta as Record<string, unknown> | undefined
                 return (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} className={(meta?.headerClassName as string | undefined) ?? ''}>
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -80,11 +81,14 @@ export function DataTable<TData, TValue>({
                 className="cursor-pointer"
                 onClick={() => onRowClick?.(row.original)}
               >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
+                {row.getVisibleCells().map((cell) => {
+                  const meta = cell.column.columnDef.meta as Record<string, unknown> | undefined
+                  return (
+                    <TableCell key={cell.id} className={(meta?.cellClassName as string | undefined) ?? ''}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  )
+                })}
               </TableRow>
             ))
           ) : (

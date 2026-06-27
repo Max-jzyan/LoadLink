@@ -1,9 +1,11 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import type { LoadWithDetails } from '@/services/companyApi/companyTypes'
 import { RoutePath } from '@/config/routes'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { ResponsiveRowMenu } from '@/components/shared/ResponsiveRowMenu'
 import { TRUCK_TYPES, LOAD_STATUSES, type LoadStatus } from '@/types/enums'
 
 const TRUCK_LABELS: Record<string, string> = Object.fromEntries(
@@ -48,6 +50,10 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
         {TRUCK_LABELS[row.getValue<string>('truckType')] ?? row.getValue<string>('truckType')}
       </span>
     ),
+    meta: {
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell',
+    },
   },
   {
     accessorKey: 'bidCount',
@@ -62,6 +68,10 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
         </span>
       )
     },
+    meta: {
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell',
+    },
   },
   {
     id: 'currentPrice',
@@ -73,6 +83,10 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
           {auction ? `$${auction.currentPrice.toLocaleString()}` : '—'}
         </span>
       )
+    },
+    meta: {
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell',
     },
   },
   {
@@ -108,6 +122,70 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
           )}
         </div>
       )
+    },
+    meta: {
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell',
+    },
+  },
+  {
+    id: 'mobileActions',
+    header: '',
+    cell: ({ row }) => {
+      const load = row.original
+      const canEdit = !(NON_EDITABLE_STATUSES as readonly string[]).includes(load.status)
+      return (
+        <div className="lg:hidden">
+          <ResponsiveRowMenu
+            load={load}
+            mobileDetails={[
+              {
+                label: 'Truck',
+                value: (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground border border-border">
+                    {TRUCK_LABELS[load.truckType] ?? load.truckType}
+                  </span>
+                ),
+              },
+              {
+                label: 'Bids',
+                value: (
+                  <span className={load.bidCount > 0 ? 'text-primary font-semibold' : 'text-muted-foreground'}>
+                    {load.bidCount}
+                  </span>
+                ),
+              },
+              {
+                label: 'Current Price',
+                value: (
+                  <span className="font-semibold">
+                    {load.auctionId ? `$${load.auctionId.currentPrice.toLocaleString()}` : '—'}
+                  </span>
+                ),
+              },
+            ]}
+          >
+            {load.status === LOAD_STATUSES.InTransit ? (
+              <DropdownMenuItem asChild>
+                <Link to={RoutePath.Map}>Track</Link>
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem asChild>
+                <Link to={`/loads/${load._id}`}>View</Link>
+              </DropdownMenuItem>
+            )}
+            {canEdit && (
+              <DropdownMenuItem asChild>
+                <Link to={`/loads/${load._id}/edit`}>Edit</Link>
+              </DropdownMenuItem>
+            )}
+          </ResponsiveRowMenu>
+        </div>
+      )
+    },
+    meta: {
+      headerClassName: 'lg:hidden',
+      cellClassName: 'lg:hidden',
     },
   },
 ]
