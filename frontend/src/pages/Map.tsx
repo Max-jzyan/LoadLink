@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
 import { DriverMap, type RouteCoordinate } from '@/components/driverLoads/Map'
 import PageShell from '@/components/layout/PageShell'
 import { selectMongoId } from '@/services/authSlice'
 import { useListCompanyLoadsQuery } from '@/services/loadApi/loadSlice'
+import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 
 const GEOAPIFY_KEY = import.meta.env.VITE_GEOAPIFY_KEY as string | undefined
@@ -90,7 +90,7 @@ export default function MapPage() {
         <p className="text-sm text-destructive mb-2">Failed to load routes. Please try again.</p>
       )}
 
-      <div className="min-h-[60vh] rounded-xl bg-muted/50 overflow-hidden">
+      <div className="h-[calc(100vh-125px)] rounded-xl border overflow-hidden">
         <DriverMap routes={routes} height="100%" />
       </div>
     </PageShell>

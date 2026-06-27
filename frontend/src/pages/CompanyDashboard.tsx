@@ -81,13 +81,10 @@ export default function CompanyDashboard() {
     return result
   }, [loads, filters])
 
-  // map in-transit loads to the shape DriverMap expects;
-  // if a specific in-transit load is selected, zoom to just that one
+  // map loads to the shape DriverMap expects;
+  // if a specific load is selected, zoom to just that one
   const transitRoutes = useMemo(() => {
-    const source =
-      selectedLoad?.status === LOAD_STATUSES.InTransit
-        ? [selectedLoad]
-        : loads.filter((l) => l.status === LOAD_STATUSES.InTransit)
+    const source = selectedLoad ? [selectedLoad] : loads
     return source.map((l) => ({
       id: l._id,
       origin: [l.originCoords.lat, l.originCoords.lng] as [number, number],
@@ -95,6 +92,7 @@ export default function CompanyDashboard() {
       destination: [l.destinationCoords.lat, l.destinationCoords.lng] as [number, number],
       destinationName: l.destinationAddress,
       status: l.status,
+      polyline: l.route?.polyline,
     }))
   }, [loads, selectedLoad])
 
