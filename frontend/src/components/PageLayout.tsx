@@ -9,9 +9,39 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { RoutePath, getRouteLabel } from '@/config/routes'
+import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
+
+// Patterns for routes that have a :loadId parameter
+const ID_ROUTE_PREFIXES = [
+  `${RoutePath.DriverAuctions}/`,
+  `${RoutePath.Loads}/`,
+  `${RoutePath.AuctionLive}/`,
+]
+
+function isIdRoute(pathname: string): boolean {
+  return ID_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+}
+
+function extractLoadId(pathname: string): string | null {
+  for (const prefix of ID_ROUTE_PREFIXES) {
+    if (pathname.startsWith(prefix)) {
+      const id = pathname.slice(prefix.length)
+      if (id) return id
+    }
+  }
+  return null
+}
+
+function truncateId(id: string): string {
+  return `#${id.slice(-6).toUpperCase()}`
+}
 
 export default function PageLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
+  const loadId = extractLoadId(location.pathname)
+  const { data: load, isLoading: loadLoading, isError: loadError } = useGetLoadQuery(loadId ?? '', {
+    skip: loadId === null,
+  })
 
   const segments = location.pathname.split('/').filter(Boolean)
 
@@ -21,7 +51,25 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
       ? [{ path: RoutePath.Dashboard, label: getRouteLabel(RoutePath.Dashboard) }]
       : segments.map((seg, i) => {
           const path = '/' + segments.slice(0, i + 1).join('/')
-          return { path, label: getRouteLabel('/' + seg) }
+          const isLast = i === segments.length - 1
+          const isIdSegment = isIdRoute(path) && isLast && loadId !== null
+
+          let label: string
+          if (isIdSegment) {
+            if (loadLoading) {
+              label = 'Loading...'
+            } else if (loadError || !load) {
+              label = truncateId(loadId)
+            } else {
+              const origin = load.originAddress.split(',')[0].trim()
+              const destination = load.destinationAddress.split(',')[0].trim()
+              label = `${origin} → ${destination}`
+            }
+          } else {
+            label = getRouteLabel('/' + seg)
+          }
+
+          return { path, label }
         })
 
   return (
