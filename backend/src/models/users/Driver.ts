@@ -1,6 +1,6 @@
 // models/users/Driver.ts
 import { InferSchemaType, Schema, Types } from 'mongoose'
-import { RatingSummarySchema } from '../ratings/ratings'
+import { RatingSummarySchema } from '../ratings/Rating'
 import { USER_ROLES, CERTIFICATION_VALUES } from '../enums'
 import { UserModel } from './User'
 

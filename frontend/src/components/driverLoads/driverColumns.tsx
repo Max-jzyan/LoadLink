@@ -187,7 +187,9 @@ export const columns: ColumnDef<Load>[] = [
                 value: (() => {
                   const auction = load.auctionId
                   const currentPrice =
-                    auction && typeof auction === 'object' ? (auction as AuctionSummary).currentPrice : null
+                    auction && typeof auction === 'object'
+                      ? (auction as AuctionSummary).currentPrice
+                      : null
                   return (
                     <span className="font-semibold">
                       {currentPrice != null ? `$${currentPrice.toLocaleString()}` : '—'}

@@ -14,8 +14,13 @@ const REVIEW_IDS = {
   company1OnDriver1: new Types.ObjectId('000000000000000000000506'),
 }
 
+const LOAD_IDS = {
+  company1_load1: new Types.ObjectId('000000000000000000000101'),
+  company1_load2: new Types.ObjectId('000000000000000000000102'),
+  company2_load1: new Types.ObjectId('000000000000000000000103'),
+}
+
 type DriverDoc = Awaited<ReturnType<typeof import('./users').seedUsers>>['drivers'][SeedDriverKey]
-// Only need _id from companies — use a simple object type
 type CompanyRef = { _id: Types.ObjectId }
 
 /**
@@ -25,24 +30,11 @@ type CompanyRef = { _id: Types.ObjectId }
  * Reviews reference existing loads, companies, and drivers from the seed data.
  */
 export async function seedReviews(
-  loads: Array<{ _id: Types.ObjectId; companyId: Types.ObjectId }>,
+  _loads: Array<{ _id: Types.ObjectId; companyId: Types.ObjectId }>,
   companies: { testCompany1: CompanyRef; testCompany2: CompanyRef },
   drivers: Record<SeedDriverKey, DriverDoc>
 ) {
-  // Delete existing reviews to avoid unique index conflicts
   await ReviewModel.deleteMany({})
-  // Ensure the deletion is committed before proceeding
-  await ReviewModel.syncIndexes()
-
-  // Build a lookup: companyId -> loadId
-  // Use the first load from each company for review associations
-  const companyToLoad = new Map<string, Types.ObjectId>()
-  for (const load of loads) {
-    const cid = load.companyId.toString()
-    if (!companyToLoad.has(cid)) {
-      companyToLoad.set(cid, load._id)
-    }
-  }
 
   const reviewDocs = [
     {
@@ -50,7 +42,7 @@ export async function seedReviews(
       reviewerId: drivers.testUser1._id,
       targetId: companies.testCompany1._id,
       targetType: TARGET_TYPES.COMPANY,
-      loadId: companyToLoad.get(companies.testCompany1._id.toString())!,
+      loadId: LOAD_IDS.company1_load1,
       ratingCategories: {
         timeliness: 5,
         communication: 4,
@@ -66,7 +58,7 @@ export async function seedReviews(
       reviewerId: drivers.testUser2._id,
       targetId: companies.testCompany2._id,
       targetType: TARGET_TYPES.COMPANY,
-      loadId: companyToLoad.get(companies.testCompany2._id.toString())!,
+      loadId: LOAD_IDS.company2_load1,
       ratingCategories: {
         timeliness: 4,
         communication: 3,
@@ -82,7 +74,7 @@ export async function seedReviews(
       reviewerId: companies.testCompany1._id,
       targetId: drivers.testUser3._id,
       targetType: TARGET_TYPES.DRIVER,
-      loadId: companyToLoad.get(companies.testCompany1._id.toString())!,
+      loadId: LOAD_IDS.company1_load1,
       ratingCategories: {
         timeliness: 5,
         communication: 5,
@@ -98,7 +90,7 @@ export async function seedReviews(
       reviewerId: companies.testCompany2._id,
       targetId: drivers.testUser4._id,
       targetType: TARGET_TYPES.DRIVER,
-      loadId: companyToLoad.get(companies.testCompany2._id.toString())!,
+      loadId: LOAD_IDS.company2_load1,
       ratingCategories: {
         timeliness: 3,
         communication: 4,
@@ -114,7 +106,7 @@ export async function seedReviews(
       reviewerId: drivers.testUser3._id,
       targetId: companies.testCompany1._id,
       targetType: TARGET_TYPES.COMPANY,
-      loadId: companyToLoad.get(companies.testCompany1._id.toString())!,
+      loadId: LOAD_IDS.company1_load1,
       ratingCategories: {
         timeliness: 4,
         communication: 4,
@@ -130,7 +122,7 @@ export async function seedReviews(
       reviewerId: companies.testCompany1._id,
       targetId: drivers.testUser1._id,
       targetType: TARGET_TYPES.DRIVER,
-      loadId: companyToLoad.get(companies.testCompany1._id.toString())!,
+      loadId: LOAD_IDS.company1_load2,
       ratingCategories: {
         timeliness: 4,
         communication: 3,
@@ -143,19 +135,5 @@ export async function seedReviews(
     },
   ]
 
-  // Insert reviews - use ordered: false to continue on duplicate key errors
-  let reviews
-  try {
-    reviews = await ReviewModel.insertMany(reviewDocs, { ordered: false })
-  } catch (err: any) {
-    // If duplicate key error, fetch the reviews that were successfully inserted
-    if (err.code === 11000 || err.message?.includes('duplicate key')) {
-      console.log('Some reviews already exist, fetching existing reviews...')
-      reviews = await ReviewModel.find({ _id: { $in: reviewDocs.map((d) => d._id) } })
-    } else {
-      throw err
-    }
-  }
-
-  return reviews
+  return ReviewModel.insertMany(reviewDocs)
 }

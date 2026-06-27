@@ -1,5 +1,5 @@
 import { InferSchemaType, Schema, Types, model } from 'mongoose'
-import { RatingCategoriesSchema } from './Ratings'
+import { RatingCategoriesSchema } from './Rating'
 
 // Reviews are bidirectional:
 //   - A DRIVER reviews a COMPANY (after hauling their load)

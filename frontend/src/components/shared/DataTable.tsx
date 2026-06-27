@@ -62,7 +62,10 @@ export function DataTable<TData, TValue>({
               {headerGroup.headers.map((header) => {
                 const meta = header.column.columnDef.meta as Record<string, unknown> | undefined
                 return (
-                  <TableHead key={header.id} className={(meta?.headerClassName as string | undefined) ?? ''}>
+                  <TableHead
+                    key={header.id}
+                    className={(meta?.headerClassName as string | undefined) ?? ''}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -84,7 +87,10 @@ export function DataTable<TData, TValue>({
                 {row.getVisibleCells().map((cell) => {
                   const meta = cell.column.columnDef.meta as Record<string, unknown> | undefined
                   return (
-                    <TableCell key={cell.id} className={(meta?.cellClassName as string | undefined) ?? ''}>
+                    <TableCell
+                      key={cell.id}
+                      className={(meta?.cellClassName as string | undefined) ?? ''}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   )

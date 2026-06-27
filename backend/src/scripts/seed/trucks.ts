@@ -18,9 +18,7 @@ const TRUCK_IDS: Record<string, Types.ObjectId> = {
 type DriverDoc = Awaited<ReturnType<typeof import('./users').seedUsers>>['drivers'][SeedDriverKey]
 
 /** Seed trucks for each driver with realistic Canadian fleet specs. */
-export async function seedTrucks(
-  drivers: Record<SeedDriverKey, DriverDoc>
-) {
+export async function seedTrucks(drivers: Record<SeedDriverKey, DriverDoc>) {
   await TruckModel.deleteMany({})
 
   const truckData: Array<{

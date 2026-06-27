@@ -50,9 +50,7 @@ export default function CompanyLoadFilterBar({
             size="sm"
             className={cn(
               'rounded-none border-0',
-              filters.loadStatus === option.value
-                ? 'filter-btn-active'
-                : 'filter-btn-inactive'
+              filters.loadStatus === option.value ? 'filter-btn-active' : 'filter-btn-inactive'
             )}
             onClick={() => updateFilter('loadStatus', option.value)}
           >

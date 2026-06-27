@@ -73,10 +73,14 @@ async function main() {
 
     const trucks = await seedTrucks(drivers)
 
-    const reviews = await seedReviews(loads, {
-      testCompany1: { _id: companies.testCompany1._id },
-      testCompany2: { _id: companies.testCompany2._id },
-    }, drivers)
+    const reviews = await seedReviews(
+      loads,
+      {
+        testCompany1: { _id: companies.testCompany1._id },
+        testCompany2: { _id: companies.testCompany2._id },
+      },
+      drivers
+    )
 
     const userCount = Object.keys(companies).length + Object.keys(drivers).length
     console.log(

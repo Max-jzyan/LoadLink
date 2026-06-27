@@ -1,6 +1,6 @@
 import { InferSchemaType, Schema, Types } from 'mongoose'
 import { USER_ROLES } from '../enums'
-import { RatingSummarySchema } from '../ratings/Ratings'
+import { RatingSummarySchema } from '../ratings/Rating'
 import { UserModel } from './User'
 
 const CompanySchema = new Schema({

@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes'
 import { isValidObjectId, Types } from 'mongoose'
-import { RatingCategories } from '../models/ratings/Ratings'
+import { RatingCategories } from '../models/ratings/Rating'
 import { ReviewModel, TARGET_TYPES, TargetType } from '../models/ratings/Review'
 import { CompanyModel } from '../models/users/Company'
 import { DriverModel } from '../models/users/Driver'
@@ -19,7 +19,13 @@ const round1 = (n: number) => Math.round(n * 10) / 10
 const emptyRatingSummary = () => ({
   average: 0,
   totalReviews: 0,
-  categories: { timeliness: 0, communication: 0, reliability: 0, professionalism: 0, documentationAccuracy: 0 },
+  categories: {
+    timeliness: 0,
+    communication: 0,
+    reliability: 0,
+    professionalism: 0,
+    documentationAccuracy: 0,
+  },
   lastUpdatedAt: new Date(),
 })
 
@@ -79,16 +85,14 @@ const recalculateRatingSummary = async (targetId: string, targetType: TargetType
 /**
  * Create a new review. Enforces one review per (reviewer, load) pair.
  */
-export const createReview = async (
-  data: {
-    reviewerId: string
-    targetId: string
-    targetType: TargetType
-    loadId: string
-    ratingCategories: RatingCategories
-    comment?: string
-  }
-) => {
+export const createReview = async (data: {
+  reviewerId: string
+  targetId: string
+  targetType: TargetType
+  loadId: string
+  ratingCategories: RatingCategories
+  comment?: string
+}) => {
   assertValidId(data.reviewerId, 'reviewerId')
   assertValidId(data.targetId, 'targetId')
   assertValidId(data.loadId, 'loadId')
@@ -130,12 +134,10 @@ export const createReview = async (
     comment: data.comment ?? '',
   })
 
-  const savedReview = await review.save()
-
   // Keep the target's rating summary up to date
   await recalculateRatingSummary(data.targetId, data.targetType)
 
-  return savedReview
+  return review
 }
 
 /**

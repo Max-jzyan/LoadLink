@@ -74,15 +74,9 @@ export const CERTIFICATIONS = {
 export type Certification = (typeof CERTIFICATIONS)[keyof typeof CERTIFICATIONS]
 
 // Array of { label, value } for populating dropdowns/selects
-export const CERTIFICATION_OPTIONS: { label: string; value: string }[] =
-  Object.entries(CERTIFICATIONS).map(([key, value]) => ({
-    label: key === 'ReeferHACCP' ? 'Reefer HACCP'
-      : key === 'AirBrakes' ? 'Air Brakes'
-      : key === 'DangerousGoods' ? 'Dangerous Goods'
-      : key === 'CustomsFAST' ? 'Customs FAST'
-      : key,
-    value,
-  }))
+export const CERTIFICATION_OPTIONS: { label: string; value: string }[] = Object.values(
+  CERTIFICATIONS
+).map((value) => ({ label: value, value }))
 
 export const USER_ROLES = {
   DRIVER: 'driver',

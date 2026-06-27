@@ -108,7 +108,10 @@ export function useLoadForm(
       value: values.weightLbs ? `${Number(values.weightLbs).toLocaleString()} lbs` : '—',
     },
     { label: 'Commodity', value: values.commodity || '—' },
-    { label: 'Certifications', value: values.certifications.length > 0 ? values.certifications.join(', ') : 'None' },
+    {
+      label: 'Certifications',
+      value: values.certifications.length > 0 ? values.certifications.join(', ') : 'None',
+    },
     { label: 'Driver Assist', value: values.driverAssist ? 'Required' : 'Not Required' },
   ]
 

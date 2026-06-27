@@ -150,7 +150,11 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
               {
                 label: 'Bids',
                 value: (
-                  <span className={load.bidCount > 0 ? 'text-primary font-semibold' : 'text-muted-foreground'}>
+                  <span
+                    className={
+                      load.bidCount > 0 ? 'text-primary font-semibold' : 'text-muted-foreground'
+                    }
+                  >
                     {load.bidCount}
                   </span>
                 ),

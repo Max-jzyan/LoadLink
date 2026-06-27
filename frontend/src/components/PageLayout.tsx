@@ -39,7 +39,11 @@ function truncateId(id: string): string {
 export default function PageLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const loadId = extractLoadId(location.pathname)
-  const { data: load, isLoading: loadLoading, isError: loadError } = useGetLoadQuery(loadId ?? '', {
+  const {
+    data: load,
+    isLoading: loadLoading,
+    isError: loadError,
+  } = useGetLoadQuery(loadId ?? '', {
     skip: loadId === null,
   })
 
