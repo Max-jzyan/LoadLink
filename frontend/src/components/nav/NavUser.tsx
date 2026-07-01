@@ -1,18 +1,18 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
-import { getStoredRole } from '@/hooks/useRole'
 import {
-  ChevronRightIcon,
   BellIcon,
-  Settings,
+  ChevronRightIcon,
   LogOutIcon,
-  SunIcon,
-  MoonIcon,
   MonitorIcon,
+  MoonIcon,
+  Settings,
+  SunIcon,
 } from 'lucide-react'
+import { useState } from 'react'
+import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,10 +25,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SidebarMenu, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
-import { auth } from '@/lib/firebase'
-import { clearStoredRole } from '@/hooks/useRole'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+
+import { clearStoredRole, getStoredRole } from '@/hooks/useRole'
 import { applyTheme, getStoredTheme, type Theme } from '@/hooks/useTheme'
-import useAuth from '@/hooks/useAuth'
+import { auth } from '@/lib/firebase'
+import { selectMongoId } from '@/services/authSlice'
+import { useGetDriverProfileQuery } from '@/services/driverApi/driverSlice'
 
 const THEME_ICONS: Record<Theme, React.ReactNode> = {
   light: <SunIcon className="h-4 w-4" />,
@@ -39,9 +42,11 @@ const THEME_ICONS: Record<Theme, React.ReactNode> = {
 export function NavUser() {
   const { isMobile, state } = useSidebar()
   const isCollapsed = state === 'collapsed'
-  const { user } = useAuth()
   const navigate = useNavigate()
   const [theme, setTheme] = useState<Theme>(getStoredTheme)
+
+  const mongoId = useSelector(selectMongoId)
+  const { data: driver } = useGetDriverProfileQuery(mongoId!, { skip: !mongoId })
 
   async function handleLogout() {
     clearStoredRole()
@@ -55,21 +60,30 @@ export function NavUser() {
     setTheme(t)
   }
 
-  const displayName = user?.displayName ?? user?.email?.split('@')[0] ?? 'User'
-  const role = getStoredRole()
-  const roleLabel = role === 'driver' ? 'Driver' : role === 'company' ? 'Company' : ''
+  const displayName =
+    driver?.name ??
+    (typeof driver?.email === 'string' && driver.email ? driver.email.split('@')[0] : 'User')
+
+  const fallbackRole = getStoredRole()
+  let roleLabel = ''
+  if (driver?.role === 'driver' || fallbackRole === 'driver') roleLabel = 'Driver'
+  if (driver?.role === 'company' || fallbackRole === 'company') roleLabel = 'Company'
+
   const initials = displayName.slice(0, 2).toUpperCase()
+  const profilePictureUrl = driver?.profilePictureUrl ?? ''
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <div
-          className={`flex items-center gap-1 px-2 py-1.5 rounded-md ${isCollapsed ? 'justify-center' : ''}`}
+          className={`flex items-center gap-1 px-2 py-1.5 rounded-md ${
+            isCollapsed ? 'justify-center' : ''
+          }`}
         >
           {!isCollapsed && (
             <>
               <Avatar className="h-8 w-8 rounded-lg shrink-0">
-                <AvatarImage src={user?.photoURL ?? ''} alt={displayName} />
+                <AvatarImage src={profilePictureUrl} alt={displayName} />
                 <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 min-w-0 text-left text-sm leading-tight">
@@ -118,11 +132,10 @@ export function NavUser() {
                 align="end"
                 sideOffset={4}
               >
-                {/* User info header */}
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage src={user?.photoURL ?? ''} alt={displayName} />
+                      <AvatarImage src={profilePictureUrl} alt={displayName} />
                       <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
@@ -146,6 +159,7 @@ export function NavUser() {
                 <DropdownMenuLabel className="text-xs text-muted-foreground px-2 py-1">
                   Theme
                 </DropdownMenuLabel>
+
                 <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
                   {(['light', 'dark', 'system'] as Theme[]).map((t) => (
                     <DropdownMenuRadioItem key={t} value={t} className="capitalize">

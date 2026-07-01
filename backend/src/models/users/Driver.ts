@@ -22,13 +22,26 @@ const NotificationPreferencesSchema = new Schema(
   { _id: false }
 )
 
+const HomeLocationSchema = new Schema(
+  {
+    city: { type: String, default: '' },
+    province: { type: String, default: '' },
+    country: { type: String, default: 'Canada' },
+  },
+  { _id: false }
+)
+
 const DriverSchema = new Schema({
+  professionalTitle: { type: String, default: '', trim: true },
+  profilePictureUrl: { type: String, default: '' },
+
   trucks: [{ type: Types.ObjectId, ref: 'Truck', index: true }],
   certifications: [{ type: String, enum: CERTIFICATION_VALUES, trim: true }],
 
   availableForLoads: { type: Boolean, default: true },
   pricingPreferences: { type: PricingPreferencesSchema, default: () => ({}) },
   notificationPreferences: { type: NotificationPreferencesSchema, default: () => ({}) },
+  homeLocation: { type: HomeLocationSchema, default: () => ({}) },
 
   ratingSummary: { type: RatingSummarySchema, default: () => ({}) },
 

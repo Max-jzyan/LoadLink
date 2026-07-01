@@ -1,7 +1,17 @@
 import { api } from '../api'
 import { LoadTag, LoadTagId } from '../apiTypes'
 import type { Load } from '../loadApi/loadEnum'
-import type { PlaceBidPayload, ClaimLoadPayload, ClaimResult, Bid, Truck } from './driverEnum'
+import type {
+  PlaceBidPayload,
+  ClaimLoadPayload,
+  ClaimResult,
+  Bid,
+  Truck,
+  DriverProfile,
+  CreateTruckPayload,
+  UpdateTruckPayload,
+  UpdateDriverProfilePayload,
+} from './driverEnum'
 
 export const driverApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -67,6 +77,60 @@ export const driverApi = api.injectEndpoints({
       query: (driverId) => `driver/${driverId}/trucks`,
       providesTags: (_result, _error, driverId) => [{ type: LoadTag.Truck, id: driverId }],
     }),
+
+    // GET /api/driver/:driverId/profile — fetch full driver profile
+    getDriverProfile: build.query<DriverProfile, string>({
+      query: (driverId) => `driver/${driverId}/profile`,
+      providesTags: (_result, _error, driverId) => [{ type: LoadTag.Driver, id: driverId }],
+    }),
+
+    // PATCH /api/driver/:driverId/profile — update driver profile fields
+    updateDriverProfile: build.mutation<DriverProfile, { driverId: string; body: UpdateDriverProfilePayload }>({
+      query: ({ driverId, body }) => ({
+        url: `driver/${driverId}/profile`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { driverId }) => [{ type: LoadTag.Driver, id: driverId }],
+    }),
+
+    // POST /api/driver/:driverId/trucks — create a new truck
+    createTruck: build.mutation<Truck, { driverId: string; body: CreateTruckPayload }>({
+      query: ({ driverId, body }) => ({
+        url: `driver/${driverId}/trucks`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { driverId }) => [
+        { type: LoadTag.Driver, id: driverId },
+        { type: LoadTag.Truck, id: driverId },
+      ],
+    }),
+
+    // PATCH /api/driver/:driverId/trucks/:truckId — update a truck
+    updateTruck: build.mutation<Truck, { driverId: string; truckId: string; body: UpdateTruckPayload }>({
+      query: ({ driverId, truckId, body }) => ({
+        url: `driver/${driverId}/trucks/${truckId}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { driverId }) => [
+        { type: LoadTag.Driver, id: driverId },
+        { type: LoadTag.Truck, id: driverId },
+      ],
+    }),
+
+    // DELETE /api/driver/:driverId/trucks/:truckId — delete a truck
+    deleteTruck: build.mutation<void, { driverId: string; truckId: string }>({
+      query: ({ driverId, truckId }) => ({
+        url: `driver/${driverId}/trucks/${truckId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (_result, _error, { driverId }) => [
+        { type: LoadTag.Driver, id: driverId },
+        { type: LoadTag.Truck, id: driverId },
+      ],
+    }),
   }),
   overrideExisting: false,
 })
@@ -79,4 +143,9 @@ export const {
   useListDriverLoadsQuery,
   useGetRecommendedLoadsQuery,
   useListDriverTrucksQuery,
+  useGetDriverProfileQuery,
+  useUpdateDriverProfileMutation,
+  useCreateTruckMutation,
+  useUpdateTruckMutation,
+  useDeleteTruckMutation,
 } = driverApi

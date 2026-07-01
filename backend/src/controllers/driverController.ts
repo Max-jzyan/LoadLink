@@ -1,10 +1,11 @@
-import { Request, Response, NextFunction } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import { isValidObjectId, Types } from 'mongoose'
+import { LOAD_STATUSES } from '../models/enums'
 import { BidModel } from '../models/loads/Bid'
 import { LoadModel } from '../models/loads/Load'
 import { TruckModel } from '../models/trucks/Truck'
-import { LOAD_STATUSES } from '../models/enums'
+import { DriverModel } from '../models/users/Driver'
 import { ApiError } from '../utils/ApiError'
 
 // ── helpers ──────────────────────────────────────────────────────────────
@@ -115,6 +116,78 @@ export const listDriverTrucks = async (req: Request, res: Response, next: NextFu
     })
 
     res.status(StatusCodes.OK).json(trucks)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * GET /api/driver/:driverId/profile
+ * Fetch the full driver profile document with user-level fields merged in.
+ */
+export const getDriverProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const driverId = req.params.driverId as string
+    assertValidId(driverId, 'driverId')
+
+    const driver = await DriverModel.findById(new Types.ObjectId(driverId))
+      .populate('trucks')
+      .lean()
+
+    if (!driver) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Driver not found')
+    }
+
+    res.status(StatusCodes.OK).json(driver)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * PATCH /api/driver/:driverId/profile
+ * Update editable fields on a driver's profile.
+ */
+export const updateDriverProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const driverId = req.params.driverId as string
+    assertValidId(driverId, 'driverId')
+
+    const allowedFields = [
+      'name',
+      'professionalTitle',
+      'profilePictureUrl',
+      'phone',
+      'homeLocation',
+      'pricingPreferences',
+      'notificationPreferences',
+      'availableForLoads',
+    ]
+
+    const updateData: Record<string, unknown> = {}
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field]
+      }
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'No valid fields to update')
+    }
+
+    const driver = await DriverModel.findByIdAndUpdate(
+      new Types.ObjectId(driverId),
+      { $set: updateData },
+      { new: true, runValidators: true }
+    )
+      .populate('trucks')
+      .lean()
+
+    if (!driver) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Driver not found')
+    }
+
+    res.status(StatusCodes.OK).json(driver)
   } catch (err) {
     next(err)
   }

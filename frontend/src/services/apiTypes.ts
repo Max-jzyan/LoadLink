@@ -3,6 +3,8 @@ export const LoadTag = {
   Bid: 'Bid',
   AuctionPrice: 'AuctionPrice',
   Truck: 'Truck',
+  DriverProfile: 'DriverProfile',
+  Driver: 'Driver',
 } as const
 
 export type LoadTag = (typeof LoadTag)[keyof typeof LoadTag]

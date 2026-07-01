@@ -7,6 +7,7 @@ import {
   MapPin,
   PlusCircle,
   Settings,
+  User,
   type LucideIcon,
 } from 'lucide-react'
 import type { UserRole } from '@/hooks/useRole'
@@ -17,6 +18,7 @@ export const RoutePath = {
   Dashboard: '/dashboard',
   DriverLoads: '/driverLoads',
   DriverAuctions: '/driverAuctions',
+  DriverProfile: '/driver/profile',
   Loads: '/loads',
   AuctionLive: '/auctionLive',
   PostLoad: '/loads/post',
@@ -62,6 +64,12 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
   [RoutePath.DriverAuctions]: {
     label: 'Auctions',
     icon: Gavel,
+    navGroup: 'main',
+    roles: ['driver'],
+  },
+  [RoutePath.DriverProfile]: {
+    label: 'My Profile',
+    icon: User,
     navGroup: 'main',
     roles: ['driver'],
   },
