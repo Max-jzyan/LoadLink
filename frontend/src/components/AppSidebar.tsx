@@ -38,7 +38,7 @@ export function AppSidebar({ role }: AppSidebarProps) {
             <span className="truncate font-semibold">LoadLink</span>
           </div>
         </Link>
-        <SidebarTrigger className="shrink-0 cursor-pointer rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8" />
+        <SidebarTrigger className="hidden md:flex shrink-0 cursor-pointer rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8" />
       </SidebarHeader>
 
       <SidebarContent>

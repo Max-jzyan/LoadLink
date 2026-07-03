@@ -1,5 +1,8 @@
 import React from 'react'
-import { useLocation, Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import {
+  SidebarTrigger,
+} from '@/components/ui/sidebar'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -80,6 +83,7 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
     <div className="flex h-full flex-col">
       {/* Full-width breadcrumb bar */}
       <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
+        <SidebarTrigger className="shrink-0 cursor-pointer rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:hidden" />
         <Breadcrumb>
           <BreadcrumbList>
             {breadcrumbItems.map((item, index) => {
