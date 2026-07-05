@@ -6,6 +6,7 @@ import DriverAuction from '@/pages/DriverAuction'
 import DriverAuctions from '@/pages/DriverAuctions'
 import DriverDashboard from '@/pages/DriverDashboard'
 import DriverProfile from '@/pages/DriverProfile'
+import DriverPublicProfile from '@/pages/DriverPublicProfile'
 import LoadDetail from '@/pages/LoadDetail'
 import Loads from '@/pages/Loads'
 import MapPage from '@/pages/Map'
@@ -25,6 +26,7 @@ export default function AppRoutes() {
       <Route path={RoutePath.DriverAuctions} element={<DriverAuctions />} />
       <Route path={`${RoutePath.DriverAuctions}/:loadId`} element={<DriverAuction />} />
       <Route path={RoutePath.DriverProfile} element={<DriverProfile />} />
+      <Route path={RoutePath.DriverPublicProfile} element={<DriverPublicProfile />} />
       <Route path={RoutePath.Loads} element={<Loads />} />
       <Route path={RoutePath.PostLoad} element={<PostLoad />} />
       {/* load detail/edit are stubs -- not yet implemented */}

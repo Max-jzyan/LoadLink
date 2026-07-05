@@ -1,3 +1,4 @@
+import type { UserRole } from '@/hooks/useRole'
 import {
   ClipboardList,
   Gavel,
@@ -10,7 +11,6 @@ import {
   User,
   type LucideIcon,
 } from 'lucide-react'
-import type { UserRole } from '@/hooks/useRole'
 
 export const RoutePath = {
   CompanyDashboard: '/company/dashboard',
@@ -19,6 +19,7 @@ export const RoutePath = {
   DriverLoads: '/driverLoads',
   DriverAuctions: '/driverAuctions',
   DriverProfile: '/driver/profile',
+  DriverPublicProfile: '/driver/profile/:driverId',
   Loads: '/loads',
   AuctionLive: '/auctionLive',
   PostLoad: '/loads/post',
@@ -72,6 +73,12 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     icon: User,
     navGroup: 'main',
     roles: ['driver'],
+  },
+  [RoutePath.DriverPublicProfile]: {
+    label: 'Driver Profile',
+    icon: User,
+    navGroup: null,
+    // accessible to logged-in users regardless of role
   },
   [RoutePath.Loads]: { label: 'Loads', icon: ClipboardList, navGroup: 'main', roles: ['company'] },
   [RoutePath.AuctionLive]: {

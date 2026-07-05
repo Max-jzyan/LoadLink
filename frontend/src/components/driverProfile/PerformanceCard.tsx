@@ -1,36 +1,11 @@
 import DynamicCard from '@/components/layout/DynamicCard'
 import type { DriverProfile } from '@/services/driverApi/driverEnum'
 import { categoryLabels } from '@/services/driverApi/driverEnum'
-import { Star, Truck, Award } from 'lucide-react'
+import { Truck, Award } from 'lucide-react'
+import StarRating from '@/components/shared/StarRating'
 
 interface PerformanceCardProps {
   driver: DriverProfile
-}
-
-function getStarClassName(filled: boolean, half: boolean): string {
-  if (filled) {
-    return 'fill-amber-400 text-amber-400'
-  }
-  if (half) {
-    return 'fill-amber-400/50 text-amber-400'
-  }
-  return 'fill-muted text-muted-foreground/30'
-}
-
-function StarRating({ value, max = 5 }: { value: number; max?: number }) {
-  const stars = []
-  const rounded = Math.round(value * 2) / 2 // round to nearest 0.5
-  for (let i = 1; i <= max; i++) {
-    const filled = i <= rounded
-    const half = !filled && i - 0.5 === rounded
-    stars.push(
-      <Star
-        key={i}
-        className={`h-3.5 w-3.5 ${getStarClassName(filled, half)}`}
-      />
-    )
-  }
-  return <div className="flex items-center gap-0.5">{stars}</div>
 }
 
 export default function PerformanceCard({ driver }: PerformanceCardProps) {
