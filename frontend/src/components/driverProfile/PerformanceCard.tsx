@@ -1,6 +1,6 @@
 import DynamicCard from '@/components/layout/DynamicCard'
 import type { DriverProfile } from '@/services/driverApi/driverEnum'
-import { categoryLabels } from '@/services/driverApi/driverEnum'
+import { categoryLabels, RATING_CATEGORIES_COUNT } from '@/services/driverApi/driverEnum'
 import { Truck, Award } from 'lucide-react'
 import StarRating from '@/components/shared/StarRating'
 
@@ -53,10 +53,10 @@ export default function PerformanceCard({ driver }: PerformanceCardProps) {
                 <span className="text-muted-foreground">{label}</span>
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-20 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-amber-400"
-                      style={{ width: `${(categories[key] / 5) * 100}%` }}
-                    />
+                  <div
+                    className="h-full rounded-full bg-amber-400"
+                    style={{ width: `${(categories[key] / RATING_CATEGORIES_COUNT) * 100}%` }}
+                  />
                   </div>
                   <span className="w-6 text-right font-medium">
                     {categories[key].toFixed(1)}

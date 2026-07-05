@@ -70,6 +70,8 @@ export interface RatingCategories {
   documentationAccuracy: number
 }
 
+export const RATING_CATEGORIES_COUNT = 5
+
 export const categoryLabels: { key: keyof RatingCategories; label: string }[] = [
   { key: 'timeliness', label: 'Timeliness' },
   { key: 'communication', label: 'Communication' },

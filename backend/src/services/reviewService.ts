@@ -34,7 +34,7 @@ const emptyRatingSummary = () => ({
  * by aggregating all reviews left for them. Falls back to zeros when
  * no reviews exist.
  */
-const recalculateRatingSummary = async (targetId: string, targetType: TargetType) => {
+export const recalculateRatingSummary = async (targetId: string, targetType: TargetType) => {
   const [aggregated] = await ReviewModel.aggregate([
     { $match: { targetId: new Types.ObjectId(targetId) } },
     {
@@ -46,15 +46,8 @@ const recalculateRatingSummary = async (targetId: string, targetType: TargetType
         avgReliability: { $avg: '$ratingCategories.reliability' },
         avgProfessionalism: { $avg: '$ratingCategories.professionalism' },
         avgDocumentationAccuracy: { $avg: '$ratingCategories.documentationAccuracy' },
-        overallAverage: {
-          $avg: [
-            '$ratingCategories.timeliness',
-            '$ratingCategories.communication',
-            '$ratingCategories.reliability',
-            '$ratingCategories.professionalism',
-            '$ratingCategories.documentationAccuracy',
-          ],
-        },
+        // overallAverage computed in JS below from the 5 category averages
+        // (MongoDB $avg is a unary operator and does not accept an array)
       },
     },
   ])
@@ -62,7 +55,15 @@ const recalculateRatingSummary = async (targetId: string, targetType: TargetType
   // aggregated will be undefined when no reviews matched (the $group produces zero docs)
   const summaryData = aggregated
     ? {
-        average: round1(aggregated.overallAverage),
+        // Compute overall average from the 5 category averages
+        average: round1(
+          (aggregated.avgTimeliness +
+            aggregated.avgCommunication +
+            aggregated.avgReliability +
+            aggregated.avgProfessionalism +
+            aggregated.avgDocumentationAccuracy) /
+            5
+        ),
         totalReviews: aggregated.totalReviews,
         categories: {
           timeliness: round1(aggregated.avgTimeliness),

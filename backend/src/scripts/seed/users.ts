@@ -40,7 +40,6 @@ export async function seedUsers() {
     firebaseUid: 'TvOVchr9RFe6p1cnibkkEsxMH473',
     name: 'testUser1',
     email: 'testuser1@example.com',
-    ratingSummary: { average: 4.7, totalReviews: 18 },
   })
 
   const testUser2 = await DriverModel.create({
@@ -48,7 +47,6 @@ export async function seedUsers() {
     firebaseUid: 'Q9PZSRdPG2eYRIiUE2RTf1Y2dWk2',
     name: 'testUser2',
     email: 'testuser2@example.com',
-    ratingSummary: { average: 4.8, totalReviews: 22 },
   })
 
   const testUser3 = await DriverModel.create({
@@ -56,15 +54,13 @@ export async function seedUsers() {
     firebaseUid: 'tuJLp8qN6WO1eY2Bq0rgTmJ3x4p2',
     name: 'testUser3',
     email: 'testuser3@example.com',
-    ratingSummary: { average: 4.6, totalReviews: 14 },
   })
 
   const testUser4 = await DriverModel.create({
     _id: TEST_USER4_ID,
-    firebaseUid: 'aT4XwmUqIiTZbxcCrfrnKVlPOzN2',
+    firebaseUid: 'aT4XwmUqIiTZbxcCrfrnKlVPOzN2',
     name: 'testUser4',
     email: 'testuser4@example.com',
-    ratingSummary: { average: 4.9, totalReviews: 31 },
   })
 
   const testUser5 = await DriverModel.create({
@@ -72,7 +68,6 @@ export async function seedUsers() {
     firebaseUid: 'Eoqv2IXuDoNYzrFXzCeBFjS6RAz2',
     name: 'testUser5',
     email: 'testuser5@example.com',
-    ratingSummary: { average: 4.5, totalReviews: 11 },
   })
 
   return {

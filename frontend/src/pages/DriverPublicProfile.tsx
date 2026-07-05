@@ -10,7 +10,7 @@ import { useGetReviewsForTargetQuery } from '@/services/reviewApi/reviewSlice'
 import { Loader2 } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import StarRating from '@/components/shared/StarRating'
-import { categoryLabels, type RatingCategories } from '@/services/driverApi/driverEnum'
+import { categoryLabels, type RatingCategories, RATING_CATEGORIES_COUNT } from '@/services/driverApi/driverEnum'
 
 function averageFromCategories(categories: RatingCategories): number {
   const sum =
@@ -19,7 +19,7 @@ function averageFromCategories(categories: RatingCategories): number {
     categories.reliability +
     categories.professionalism +
     categories.documentationAccuracy
-  return sum / 5
+  return sum / RATING_CATEGORIES_COUNT
 }
 
 function ReviewCard({ review }: { review: Review }) {
@@ -180,7 +180,13 @@ export default function DriverPublicProfile() {
         <Col size={12}>
           <Row>
             <Col size={16}>
-              <DynamicCard title="Ratings & Reviews">
+              <DynamicCard
+                title={
+                  reviewsPayload?.pagination
+                    ? `Ratings & Reviews (${reviewsPayload.pagination.total})`
+                    : 'Ratings & Reviews'
+                }
+              >
                 <div className="p-4">{reviewsBody}</div>
               </DynamicCard>
             </Col>
