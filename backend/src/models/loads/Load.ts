@@ -18,6 +18,15 @@ const RouteSegmentSchema = new Schema(
   { _id: false }
 )
 
+const ExpenseOverridesSchema = new Schema(
+  {
+    fuelCostPerLiter: { type: Number, default: null, min: 0 },
+    fuelEfficiencyKmPerLiter: { type: Number, default: null, min: 0 },
+    maintenancePerKm: { type: Number, default: null, min: 0 },
+  },
+  { _id: false }
+)
+
 const LoadSchema = new Schema(
   {
     companyId: {
@@ -54,6 +63,8 @@ const LoadSchema = new Schema(
     trailerLengthFt: { type: Number, required: true },
     certifications: [{ type: String, enum: CERTIFICATION_VALUES }],
     driverAssist: { type: Boolean, default: false },
+
+    expenseOverrides: { type: ExpenseOverridesSchema, default: () => ({}) },
 
     route: {
       type: RouteSegmentSchema,

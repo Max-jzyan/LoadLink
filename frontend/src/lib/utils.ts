@@ -12,3 +12,20 @@ export function relativeTime(timestamp: number): string {
   const hours = Math.floor(mins / 60)
   return `${hours} hour${hours === 1 ? '' : 's'} ago`
 }
+
+export function formatCAD(n: number): string {
+  return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(n)
+}
+
+export function formatKm(n: number): string {
+  return new Intl.NumberFormat('en-CA', { maximumFractionDigits: 0 }).format(n) + ' km'
+}
+
+export function formatDate(d: string): string {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('en-CA', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}

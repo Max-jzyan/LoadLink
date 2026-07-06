@@ -126,6 +126,76 @@ export interface CreateTruckPayload {
 
 export interface UpdateTruckPayload extends Partial<CreateTruckPayload> {}
 
+export interface ExpensePreferences {
+  fuelCostPerLiter: number
+  fuelEfficiencyKmPerLiter: number
+  insurancePerMonth: number
+  maintenancePerKm: number
+  otherFixedCostsPerMonth: number
+}
+
+export interface LoadRevenue {
+  loadId: string
+  originAddress: string
+  destinationAddress: string
+  distanceKm: number
+  payout: number
+  fuelCost: number
+  maintenanceCost: number
+  totalExpenses: number
+  netProfit: number
+  deliveryDate: string
+  completedAt: string
+  effectiveFuelCostPerLiter: number
+  effectiveFuelEfficiencyKmPerLiter: number
+  effectiveMaintenancePerKm: number
+}
+
+import { type DateRange } from 'react-day-picker'
+
+export interface ExpenseOverrideFields {
+  fuelCostPerLiter?: number | null
+  fuelEfficiencyKmPerLiter?: number | null
+  maintenancePerKm?: number | null
+}
+
+export interface RevenueFilters {
+  dateRange?: DateRange
+  truckType: string
+  minPayout: number | null
+  maxPayout: number | null
+  origin: string
+  destination: string
+  minDistance: number | null
+  maxDistance: number | null
+}
+
+export interface RevenueFiltersQuery {
+  dateRange: {
+    from?: string
+    to?: string
+  }
+  truckType: string
+  minPayout: number | null
+  maxPayout: number | null
+  origin: string
+  destination: string
+  minDistance: number | null
+  maxDistance: number | null
+}
+
+export interface RevenueSummary {
+  totalRevenue: number
+  totalExpenses: number
+  netProfit: number
+  profitMargin: number
+  totalDistanceKm: number
+  completedLoadsCount: number
+  monthlyFixedCosts: number
+  loadBreakdown: LoadRevenue[]
+  expensePreferences: ExpensePreferences
+}
+
 export interface UpdateDriverProfilePayload {
   name?: string
   professionalTitle?: string

@@ -9,14 +9,25 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 
 interface DatePickerWithRangeProps {
   label?: string
+  date?: DateRange | undefined
   onRangeChange?: (range: DateRange | undefined) => void
 }
 
-export function DatePickerWithRange({ label, onRangeChange }: DatePickerWithRangeProps) {
-  const [date, setDate] = React.useState<DateRange | undefined>(undefined)
+export function DatePickerWithRange({ label, date, onRangeChange }: DatePickerWithRangeProps) {
+  // Internal state for the calendar selection
+  const [internalRange, setInternalRange] = React.useState<DateRange | undefined>(undefined)
+  
+  // Sync with external date prop when it changes (for reset functionality)
+  // Compare by timestamp to avoid unnecessary resets from new Date object references
+  const dateFromTime = date?.from?.getTime()
+  const dateToTime = date?.to?.getTime()
+  
+  React.useEffect(() => {
+    setInternalRange(date)
+  }, [dateFromTime, dateToTime])
 
   const handleSelect = (range: DateRange | undefined) => {
-    setDate(range)
+    setInternalRange(range)
     onRangeChange?.(range)
   }
 
@@ -27,13 +38,13 @@ export function DatePickerWithRange({ label, onRangeChange }: DatePickerWithRang
         <PopoverTrigger asChild>
           <Button variant="outline" className="justify-start px-2.5 font-normal w-56">
             <CalendarIcon />
-            {date?.from ? (
-              date.to ? (
+            {internalRange?.from ? (
+              internalRange.to ? (
                 <>
-                  {format(date.from, 'LLL dd, y')} - {format(date.to, 'LLL dd, y')}
+                  {format(internalRange.from, 'LLL dd, y')} - {format(internalRange.to, 'LLL dd, y')}
                 </>
               ) : (
-                format(date.from, 'LLL dd, y')
+                format(internalRange.from, 'LLL dd, y')
               )
             ) : (
               <span>Pick a date range</span>
@@ -43,10 +54,11 @@ export function DatePickerWithRange({ label, onRangeChange }: DatePickerWithRang
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             mode="range"
-            defaultMonth={date?.from}
-            selected={date}
+            defaultMonth={internalRange?.from}
+            selected={internalRange}
             onSelect={handleSelect}
             numberOfMonths={2}
+            showOutsideDays={true}
           />
         </PopoverContent>
       </Popover>

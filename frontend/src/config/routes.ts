@@ -44,7 +44,7 @@ export interface RouteMeta {
 
 export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
   [RoutePath.Dashboard]: {
-    label: 'Dashboard',
+    label: 'Revenue Center',
     icon: LayoutDashboard,
     navGroup: 'main',
     roles: ['driver'],

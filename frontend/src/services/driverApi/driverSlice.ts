@@ -8,9 +8,12 @@ import type {
   Bid,
   Truck,
   DriverProfile,
+  RevenueSummary,
+  ExpensePreferences,
   CreateTruckPayload,
   UpdateTruckPayload,
   UpdateDriverProfilePayload,
+  RevenueFiltersQuery,
 } from './driverEnum'
 
 export const driverApi = api.injectEndpoints({
@@ -131,6 +134,51 @@ export const driverApi = api.injectEndpoints({
         { type: LoadTag.Truck, id: driverId },
       ],
     }),
+
+  // GET /api/driver/:driverId/revenue — fetch revenue summary with optional filters
+  getDriverRevenue: build.query<
+    RevenueSummary,
+    { driverId: string; filters?: RevenueFiltersQuery }
+  >({
+    query: ({ driverId, filters }) => {
+      const params = new URLSearchParams()
+
+      if (filters?.dateRange?.from) {
+        params.set('dateFrom', filters.dateRange.from.split('T')[0])
+      }
+      if (filters?.dateRange?.to) {
+        params.set('dateTo', filters.dateRange.to.split('T')[0])
+      }
+
+      if (filters?.truckType) params.set('truckType', filters.truckType)
+      if (filters?.minPayout != null) params.set('minPayout', String(filters.minPayout))
+      if (filters?.maxPayout != null) params.set('maxPayout', String(filters.maxPayout))
+      if (filters?.origin) params.set('origin', filters.origin)
+      if (filters?.destination) params.set('destination', filters.destination)
+      if (filters?.minDistance != null) params.set('minDistance', String(filters.minDistance))
+      if (filters?.maxDistance != null) params.set('maxDistance', String(filters.maxDistance))
+
+      const qs = params.toString()
+      return `driver/${driverId}/revenue${qs ? `?${qs}` : ''}`
+    },
+
+    providesTags: (_result, _error, { driverId }) => [
+      { type: LoadTag.Driver, id: `${driverId}-revenue` },
+    ],
+  }),
+
+    // PATCH /api/driver/:driverId/expenses — update expense preferences
+    updateDriverExpenses: build.mutation<DriverProfile, { driverId: string; body: Partial<ExpensePreferences> }>({
+      query: ({ driverId, body }) => ({
+        url: `driver/${driverId}/expenses`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { driverId }) => [
+        { type: LoadTag.Driver, id: driverId },
+        { type: LoadTag.Driver, id: `${driverId}-revenue` },
+      ],
+    }),
   }),
   overrideExisting: false,
 })
@@ -148,4 +196,6 @@ export const {
   useCreateTruckMutation,
   useUpdateTruckMutation,
   useDeleteTruckMutation,
+  useGetDriverRevenueQuery,
+  useUpdateDriverExpensesMutation,
 } = driverApi

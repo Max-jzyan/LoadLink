@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
 import { StatusCodes } from 'http-status-codes'
+import { isValidObjectId, Types } from 'mongoose'
+import { LoadModel } from '../models/loads/Load'
+import { ApiError } from '../utils/ApiError'
 import * as loadService from '../services/loadService'
 
 /**
@@ -78,6 +81,69 @@ export const listCompanyLoads = async (req: Request, res: Response, next: NextFu
     }
     const loads = await loadService.listCompanyLoads(companyId as string, options)
     res.status(StatusCodes.OK).json(loads)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * PATCH /api/loads/:loadId/expenses
+ * Update per-load expense overrides for a specific load.
+ * Only the assigned driver can update these fields.
+ */
+export const updateLoadExpenses = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { loadId } = req.params
+
+    if (!isValidObjectId(loadId)) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid loadId')
+    }
+
+    const load = await LoadModel.findById(loadId)
+    if (!load) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Load not found')
+    }
+
+    // Only the assigned driver can update expense overrides
+    if (!load.assignedDriverId) {
+      throw new ApiError(StatusCodes.FORBIDDEN, 'No assigned driver for this load')
+    }
+
+    // Populate to get the driver's firebaseUid for comparison
+    await load.populate({
+      path: 'assignedDriverId',
+      select: 'firebaseUid',
+    })
+
+    if ((load.assignedDriverId as any).firebaseUid !== req.firebaseUid) {
+      throw new ApiError(StatusCodes.FORBIDDEN, 'Only the assigned driver can update expense overrides')
+    }
+
+    const allowedFields = [
+      'fuelCostPerLiter',
+      'fuelEfficiencyKmPerLiter',
+      'maintenancePerKm',
+    ]
+
+    const updateData: Record<string, unknown> = {}
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        // Allow setting to null to clear the override (fall back to global defaults)
+        updateData[`expenseOverrides.${field}`] = req.body[field] === null ? null : req.body[field]
+      }
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'No valid expense fields to update')
+    }
+
+    const updated = await LoadModel.findByIdAndUpdate(
+      loadId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    )
+
+    res.status(StatusCodes.OK).json(updated)
   } catch (err) {
     next(err)
   }

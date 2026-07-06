@@ -8,6 +8,7 @@ import type {
   PopulatedLoad,
   UpdateLoadPayload,
 } from './loadEnum'
+import type { ExpenseOverrideFields } from '../driverApi/driverEnum'
 
 export const loadApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -93,6 +94,20 @@ export const loadApi = api.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
     }),
+
+    // PATCH /api/loads/:loadId/expenses — update per-load expense overrides
+    updateLoadExpenses: build.mutation<Load, { loadId: string; body: ExpenseOverrideFields }>({
+      query: ({ loadId, body }) => ({
+        url: `loads/${loadId}/expenses`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { loadId }) => [
+        { type: LoadTag.Load, id: loadId },
+        // Invalidate all Driver tags (revenue cache uses driverId-revenue)
+        { type: LoadTag.Driver, id: LoadTagId.List },
+      ],
+    }),
   }),
   overrideExisting: false,
 })
@@ -105,4 +120,5 @@ export const {
   useCreateLoadMutation,
   useCreateAuctionMutation,
   useUpdateLoadMutation,
+  useUpdateLoadExpensesMutation,
 } = loadApi

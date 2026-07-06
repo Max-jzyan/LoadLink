@@ -13,6 +13,17 @@ const PricingPreferencesSchema = new Schema(
   { _id: false }
 )
 
+const ExpensePreferencesSchema = new Schema(
+  {
+    fuelCostPerLiter: { type: Number, default: 1.5, min: 0 },
+    fuelEfficiencyKmPerLiter: { type: Number, default: 3.5, min: 0 },
+    insurancePerMonth: { type: Number, default: 500, min: 0 },
+    maintenancePerKm: { type: Number, default: 0.15, min: 0 },
+    otherFixedCostsPerMonth: { type: Number, default: 0, min: 0 },
+  },
+  { _id: false }
+)
+
 const NotificationPreferencesSchema = new Schema(
   {
     email: { type: Boolean, default: true },
@@ -40,6 +51,7 @@ const DriverSchema = new Schema({
 
   availableForLoads: { type: Boolean, default: true },
   pricingPreferences: { type: PricingPreferencesSchema, default: () => ({}) },
+  expensePreferences: { type: ExpensePreferencesSchema, default: () => ({}) },
   notificationPreferences: { type: NotificationPreferencesSchema, default: () => ({}) },
   homeLocation: { type: HomeLocationSchema, default: () => ({}) },
 
