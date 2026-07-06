@@ -1,16 +1,24 @@
+import { useState } from 'react'
 import DriverInfoCard from '@/components/driverProfile/DriverInfoCard'
 import PerformanceCard from '@/components/driverProfile/PerformanceCard'
+import ReviewForm from '@/components/review/ReviewForm'
 import Col from '@/components/layout/Col'
 import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
 import { useGetDriverProfileQuery } from '@/services/driverApi/driverSlice'
-import type { Review } from '@/services/reviewApi/reviewEnum'
-import { useGetReviewsForTargetQuery } from '@/services/reviewApi/reviewSlice'
-import { Loader2 } from 'lucide-react'
+import { useListCompanyLoadsQuery } from '@/services/loadApi/loadSlice'
+import {
+  useGetReviewsForTargetQuery,
+  useCreateReviewMutation,
+} from '@/services/reviewApi/reviewSlice'
+import { useSelector } from 'react-redux'
+import { selectRole, selectMongoId } from '@/services/authSlice'
+import { Loader2, Plus } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import StarRating from '@/components/shared/StarRating'
 import { categoryLabels, type RatingCategories, RATING_CATEGORIES_COUNT } from '@/services/driverApi/driverEnum'
+import type { Review } from '@/services/reviewApi/reviewEnum'
 
 function averageFromCategories(categories: RatingCategories): number {
   const sum =
@@ -68,14 +76,11 @@ function ReviewCard({ review }: { review: Review }) {
 }
 
 export default function DriverPublicProfile() {
-  // const params = useParams()
-
-  // // Generic param parsing: pick the first value that looks like a Mongo ObjectId.
-  // const driverId =
-  //   Object.values(params).find((v) => /^[0-9a-fA-F]{24}$/.test(v ?? '')) ?? ''
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const currentRole = useSelector(selectRole)
+  const currentMongoId = useSelector(selectMongoId)
 
   const { driverId } = useParams<{ driverId?: string }>();
-
 
   const {
     data: driver,
@@ -91,6 +96,16 @@ export default function DriverPublicProfile() {
     { targetId: driverId!, page: 1, limit: 20 },
     { skip: !driverId }
   )
+
+  const {
+    data: companyLoads,
+    isLoading: isLoadingCompanyLoads,
+  } = useListCompanyLoadsQuery(
+    { companyId: currentMongoId!, assignedDriverId: driverId, excludeReviewedBy: currentMongoId! },
+    { skip: !currentMongoId || !driverId }
+  )
+
+  const [createReview, { isLoading: isSubmittingReview }] = useCreateReviewMutation()
 
   if (!driverId) {
     return (
@@ -186,6 +201,18 @@ export default function DriverPublicProfile() {
                     ? `Ratings & Reviews (${reviewsPayload.pagination.total})`
                     : 'Ratings & Reviews'
                 }
+                action={
+                  currentRole === 'company' ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowReviewForm(true)}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Write a Review
+                    </button>
+                  ) : undefined
+                }
               >
                 <div className="p-4">{reviewsBody}</div>
               </DynamicCard>
@@ -193,6 +220,29 @@ export default function DriverPublicProfile() {
           </Row>
         </Col>
       </Row>
+
+      {showReviewForm && (
+        <ReviewForm
+          driverName={driver.name ?? 'this driver'}
+          loads={companyLoads ?? []}
+          onSubmit={async (data) => {
+            try {
+              await createReview({
+                reviewerId: currentMongoId!,
+                targetId: driverId,
+                loadId: data.loadId,
+                ratingCategories: data.ratingCategories,
+                comment: data.comment,
+              }).unwrap()
+              setShowReviewForm(false)
+            } catch {
+              // Error toast could be added here; the mutation handles cache invalidation
+            }
+          }}
+          onCancel={() => setShowReviewForm(false)}
+          isSubmitting={isSubmittingReview}
+        />
+      )}
     </PageShell>
   )
 }

@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import DriverNameLink from '@/components/shared/DriverNameLink'
 import { formatMoney } from '@/lib/format'
 import type { PopulatedBid } from '@/services/auctionApi/auctionEnum'
 
@@ -76,7 +77,9 @@ export default function AcceptBidDialog({
             <AvatarFallback>{initials(driver.name ?? '?')}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold leading-tight">{driver.name}</p>
+            <p className="font-semibold leading-tight">
+              <DriverNameLink name={driver.name} driverId={driver._id} />
+            </p>
             <p className="text-xs text-muted-foreground">
               {typeof rating === 'number' ? `${rating.toFixed(1)} ★` : 'No rating yet'}
               {submittedAt ? ` · Submitted ${submittedAt}` : ''}

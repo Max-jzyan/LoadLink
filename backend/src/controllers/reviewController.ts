@@ -4,12 +4,13 @@ import * as reviewService from '../services/reviewService'
 
 /**
  * POST /api/reviews
- * Create a new review (drivers review companies, or companies review drivers).
- * Body: { reviewerId, targetId, targetType, loadId, ratingCategories, comment? }
+ * Create a new review — only companies can review drivers.
+ * Body: { reviewerId, targetId, loadId, ratingCategories, comment? }
+ * The service layer validates that reviewerId belongs to a company.
  */
 export const createReview = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const review = await reviewService.createReview(req.body)
+    const review = await reviewService.createCompanyReview(req.body)
     res.status(StatusCodes.CREATED).json(review)
   } catch (err) {
     next(err)

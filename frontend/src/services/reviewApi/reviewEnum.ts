@@ -19,6 +19,14 @@ export interface Review {
   updatedAt: string
 }
 
+export interface CreateReviewPayload {
+  reviewerId: string
+  targetId: string
+  loadId: string
+  ratingCategories: import('../driverApi/driverEnum').RatingCategories
+  comment?: string
+}
+
 export interface GetReviewsForTargetResponse {
   data: Review[]
   pagination: {

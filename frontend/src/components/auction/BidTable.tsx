@@ -7,6 +7,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { BidStatusBadge } from '@/components/auction/statusBadge'
+import DriverNameLink from '@/components/shared/DriverNameLink'
 import { timeAgo } from '@/lib/format'
 import type { PopulatedBid } from '@/services/auctionApi/auctionEnum'
 
@@ -15,23 +16,21 @@ interface BidTableProps {
   currentDriverId?: string
 }
 
-function getDriverLabel(bid: PopulatedBid, currentDriverId?: string): string {
-  let label: string
-  if (typeof bid.driverId === 'object' && bid.driverId?.name) {
-    label = bid.driverId.name
-  } else {
-    const rawId =
-      typeof bid.driverId === 'string'
-        ? bid.driverId
-        : ((bid.driverId as { _id?: string })?._id ?? '')
-    label = `#${rawId.slice(-6).toUpperCase()}`
-  }
+function getDriverLabel(bid: PopulatedBid, currentDriverId?: string) {
+  const driver =
+    typeof bid.driverId === 'object' ? bid.driverId : null
+  const driverId = driver?._id ?? (typeof bid.driverId === 'string' ? bid.driverId : '')
+  const name = driver?.name ?? ''
+
+  const label = driver
+    ? <DriverNameLink name={name} driverId={driverId} />
+    : <span>{`#${driverId.slice(-6).toUpperCase()}`}</span>
 
   if (!currentDriverId) return label
-  const bidDriverId = typeof bid.driverId === 'string' ? bid.driverId : bid.driverId?._id
+  const bidDriverId = driverId
   const isMine = bidDriverId === currentDriverId
 
-  return isMine ? `${label} (me)` : label
+  return isMine ? <>{label} <span className="text-muted-foreground">(me)</span></> : label
 }
 
 export default function BidTable({ bids, currentDriverId }: BidTableProps) {

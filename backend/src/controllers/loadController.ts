@@ -1,11 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { StatusCodes } from 'http-status-codes'
-import { LoadModel } from '../models/loads/Load'
-import { AuctionModel } from '../models/loads/Auction'
-import { LOAD_STATUSES } from '../models/enums'
-import { computeRoute } from '../lib/routing'
-import { emitLoadPosted, onLoadPosted } from '../events/auctionEvents'
-import { initSSE, sendSSE, startSSEKeepAlive } from '../utils/sse'
+import * as loadService from '../services/loadService'
 
 /**
  * GET /api/loads/:loadId
@@ -14,17 +9,7 @@ import { initSSE, sendSSE, startSSEKeepAlive } from '../utils/sse'
 export const getLoad = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { loadId } = req.params
-
-    const load = await LoadModel.findById(loadId)
-      .populate('companyId')
-      .populate('assignedDriverId')
-      .populate('auctionId')
-
-    if (!load) {
-      res.status(StatusCodes.NOT_FOUND).json({ message: 'Load not found' })
-      return
-    }
-
+    const load = await loadService.getLoad(loadId as string)
     res.status(StatusCodes.OK).json(load)
   } catch (err) {
     next(err)
@@ -38,53 +23,7 @@ export const getLoad = async (req: Request, res: Response, next: NextFunction) =
 export const createLoad = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const companyId = req.params.companyId as string
-
-    const {
-      startPrice,
-      capPrice,
-      priceCreepAmount,
-      priceCreepIntervalHours = 1,
-      autoAcceptPercent = 0,
-      autoAcceptTriggerHours = 0,
-      expiresAt,
-      ...loadFields
-    } = req.body
-
-    // Create load immediately as auction_live
-    const load = await LoadModel.create({
-      ...loadFields,
-      companyId,
-      createdBy: companyId,
-      status: LOAD_STATUSES.AuctionLive,
-    })
-
-    // Compute and persist the driving route -> failure is allowed
-    const routeSegment = await computeRoute(loadFields.originCoords, loadFields.destinationCoords)
-    if (routeSegment) {
-      load.route = routeSegment
-      await load.save()
-    }
-
-    // Create the auction too
-    const auction = await AuctionModel.create({
-      loadId: load._id,
-      companyId,
-      startPrice,
-      capPrice,
-      priceCreepAmount,
-      priceCreepIntervalHours,
-      autoAcceptPercent,
-      autoAcceptTriggerHours,
-      currentPrice: startPrice,
-      expiresAt,
-    })
-
-    // Link the auction tp the laod
-    load.auctionId = auction._id
-    await load.save()
-
-    emitLoadPosted({ loadId: load._id.toString(), companyId: load.companyId.toString() })
-
+    const load = await loadService.createLoad(companyId, req.body)
     res.status(StatusCodes.CREATED).json(load)
   } catch (err) {
     next(err)
@@ -96,6 +35,9 @@ export const createLoad = async (req: Request, res: Response, next: NextFunction
  * Global SSE channel: pings all connected clients whenever a new load is posted.
  */
 export const streamNewLoads = async (req: Request, res: Response) => {
+  const { initSSE, sendSSE, startSSEKeepAlive } = await import('../utils/sse')
+  const { onLoadPosted } = await import('../events/auctionEvents')
+
   initSSE(res)
   const keepAlive = startSSEKeepAlive(res)
   const unsubscribe = onLoadPosted((payload) => sendSSE(res, payload))
@@ -114,17 +56,7 @@ export const streamNewLoads = async (req: Request, res: Response) => {
 export const updateLoad = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { loadId } = req.params
-
-    const load = await LoadModel.findByIdAndUpdate(loadId, req.body, {
-      new: true,
-      runValidators: true,
-    })
-
-    if (!load) {
-      res.status(StatusCodes.NOT_FOUND).json({ message: 'Load not found' })
-      return
-    }
-
+    const load = await loadService.updateLoad(loadId as string, req.body)
     res.status(StatusCodes.OK).json(load)
   } catch (err) {
     next(err)
@@ -134,17 +66,17 @@ export const updateLoad = async (req: Request, res: Response, next: NextFunction
 /**
  * GET /api/company/:companyId/loads
  * List all loads for a specific company.
+ * Optional query: ?assignedDriverId=<id> to filter by driver.
+ * Optional query: ?excludeReviewedBy=<id> to exclude already-reviewed loads.
  */
 export const listCompanyLoads = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { companyId } = req.params
-
-    const loads = await LoadModel.find({ companyId })
-      .sort({ createdAt: -1 })
-      .populate('assignedDriverId')
-      .populate('auctionId')
-      .populate('companyId')
-
+    const options = {
+      assignedDriverId: req.query.assignedDriverId as string | undefined,
+      excludeReviewedBy: req.query.excludeReviewedBy as string | undefined,
+    }
+    const loads = await loadService.listCompanyLoads(companyId as string, options)
     res.status(StatusCodes.OK).json(loads)
   } catch (err) {
     next(err)
@@ -158,20 +90,8 @@ export const listCompanyLoads = async (req: Request, res: Response, next: NextFu
  */
 export const listAvailableLoads = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const filter: Record<string, unknown> = {}
-
-    // Default to auction_live; allow override via query param
-    if (req.query.status) {
-      filter.status = req.query.status
-    } else {
-      filter.status = LOAD_STATUSES.AuctionLive
-    }
-
-    const loads = await LoadModel.find(filter)
-      .sort({ createdAt: -1 })
-      .populate('companyId')
-      .populate('auctionId')
-
+    const status = req.query.status as string | undefined
+    const loads = await loadService.listAvailableLoads(status)
     res.status(StatusCodes.OK).json(loads)
   } catch (err) {
     next(err)

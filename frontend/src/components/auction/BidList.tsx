@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import DriverNameLink from '@/components/shared/DriverNameLink'
 import { formatMoney } from '@/lib/format'
 import {
   AUCTION_STATUSES,
@@ -43,7 +44,8 @@ export default function BidList({ bids, auction, onAccept, accepting }: BidListP
           <div>
             <p className="text-xs text-muted-foreground">Best Bid Right Now</p>
             <p className="text-lg font-bold text-primary">
-              {formatMoney(best.amount)} by {best.driverId.name}
+              {formatMoney(best.amount)} by{' '}
+              <DriverNameLink name={best.driverId.name} driverId={best.driverId._id} />
             </p>
           </div>
           <Button onClick={() => onAccept(best._id)} disabled={!isLive || accepting}>

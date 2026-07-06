@@ -5,6 +5,7 @@ export const LoadTag = {
   Truck: 'Truck',
   DriverProfile: 'DriverProfile',
   Driver: 'Driver',
+  Review: 'Review',
 } as const
 
 export type LoadTag = (typeof LoadTag)[keyof typeof LoadTag]

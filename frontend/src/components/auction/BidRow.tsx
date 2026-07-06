@@ -1,6 +1,7 @@
 import { formatDistanceToNow } from 'date-fns'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import DriverNameLink from '@/components/shared/DriverNameLink'
 import { formatMoney } from '@/lib/format'
 import type { PopulatedBid } from '@/services/auctionApi/auctionEnum'
 import { BidStatusBadge } from './statusBadge'
@@ -46,7 +47,7 @@ export default function BidRow({ bid, isBest, withinAutoAccept, onClick }: BidRo
           <AvatarFallback>{initials(driver.name ?? '?')}</AvatarFallback>
         </Avatar>
         <div>
-          <p className="font-medium">{driver.name}</p>
+          <p className="font-medium"><DriverNameLink name={driver.name} driverId={driver._id} /></p>
           <p className="text-xs text-muted-foreground">
             Driver{typeof rating === 'number' ? ` · ${rating.toFixed(1)} ★` : ''}
           </p>

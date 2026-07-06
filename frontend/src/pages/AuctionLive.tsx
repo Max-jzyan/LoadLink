@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import AuctionControls from '@/components/auction/AuctionControls'
 import BidList from '@/components/auction/BidList'
+import DriverNameLink from '@/components/shared/DriverNameLink'
 import LoadSummaryCard from '@/components/auction/LoadSummaryCard'
 import PriceTracker from '@/components/auction/PriceTracker'
 import ReopenAuctionDialog from '@/components/auction/ReopenAuctionDialog'
@@ -107,7 +108,9 @@ export default function AuctionLive() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-semibold leading-tight">{winnerBid.driverId.name}</p>
+                  <p className="text-sm font-semibold leading-tight">
+                    <DriverNameLink name={winnerBid.driverId.name} driverId={winnerBid.driverId._id} />
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     Load assigned to a driver at{' '}
                     <span className="font-medium text-emerald-700 dark:text-emerald-400">

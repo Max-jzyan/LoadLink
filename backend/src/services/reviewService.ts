@@ -142,6 +142,67 @@ export const createReview = async (data: {
 }
 
 /**
+ * Create a review from a company reviewing a driver.
+ * Validates that the reviewerId belongs to a company document.
+ * Enforces one review per (reviewer, load) pair.
+ */
+export const createCompanyReview = async (data: {
+  reviewerId: string
+  targetId: string
+  loadId: string
+  ratingCategories: RatingCategories
+  comment?: string
+}) => {
+  assertValidId(data.reviewerId, 'reviewerId')
+  assertValidId(data.targetId, 'targetId')
+  assertValidId(data.loadId, 'loadId')
+
+  // Verify the reviewer is a company
+  const company = await CompanyModel.findById(data.reviewerId)
+  if (!company) {
+    throw new ApiError(StatusCodes.FORBIDDEN, 'Only companies can review drivers')
+  }
+
+  if (data.reviewerId === data.targetId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Cannot review yourself')
+  }
+
+  // Validate each rating category is within 0-5
+  for (const [key, value] of Object.entries(data.ratingCategories)) {
+    if (typeof value !== 'number' || value < 0 || value > 5) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        `Rating "${key}" must be a number between 0 and 5`
+      )
+    }
+  }
+
+  // Check the unique constraint explicitly for a better error message
+  const existing = await ReviewModel.findOne({
+    reviewerId: new Types.ObjectId(data.reviewerId),
+    loadId: new Types.ObjectId(data.loadId),
+  })
+
+  if (existing) {
+    throw new ApiError(StatusCodes.CONFLICT, 'You have already reviewed this load')
+  }
+
+  const review = await ReviewModel.create({
+    reviewerId: new Types.ObjectId(data.reviewerId),
+    targetId: new Types.ObjectId(data.targetId),
+    targetType: TARGET_TYPES.DRIVER,
+    loadId: new Types.ObjectId(data.loadId),
+    ratingCategories: data.ratingCategories,
+    comment: data.comment ?? '',
+  })
+
+  // Keep the target's rating summary up to date
+  await recalculateRatingSummary(data.targetId, TARGET_TYPES.DRIVER)
+
+  return review
+}
+
+/**
  * Fetch paginated reviews for a target user.
  */
 export const getReviewsForTarget = async (

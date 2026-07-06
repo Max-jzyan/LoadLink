@@ -11,6 +11,7 @@ import Spinner from '@/components/shared/Spinner'
 
 export default function Loads() {
   const companyId = useSelector(selectMongoId)
+
   const {
     data: loads,
     isLoading,
@@ -19,7 +20,9 @@ export default function Loads() {
     skip: !companyId,
   })
 
-  if (!companyId) return <Spinner fullPage />
+  if (!companyId) {
+    return <Spinner fullPage />
+  }
 
   const count = loads?.length ?? 0
 
