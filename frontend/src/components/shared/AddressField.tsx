@@ -158,7 +158,6 @@ export function AddressField({
                     tabIndex={0}
                     value={option.label}
                     onSelect={() => {
-                      console.log('onSelect')
                       handleSelect(option.value)
                     }}
                     onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {

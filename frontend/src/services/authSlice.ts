@@ -8,6 +8,7 @@ import {
 import { auth } from '@/lib/firebase'
 import type { AppDispatch, RootState } from './store'
 import { setStoredRole, type UserRole } from '@/hooks/useRole'
+import { showSuccess, showError, getHttpErrorMessage, getErrorStatus } from '@/lib/toast'
 
 export interface AuthUser {
   uid: string
@@ -109,40 +110,53 @@ export async function registerAndFetchUser(
   name: string,
   role: UserRole
 ): Promise<AuthUser> {
-  const { user: fbUser } = await createUserWithEmailAndPassword(auth, email, password)
+  try {
+    const { user: fbUser } = await createUserWithEmailAndPassword(auth, email, password)
 
-  const res = await fetch('/api/users/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ firebaseUid: fbUser.uid, name, email, role }),
-  })
+    const res = await fetch('/api/users/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ firebaseUid: fbUser.uid, name, email, role }),
+    })
 
-  if (!res.ok) {
-    await signOut(auth)
-    throw new Error('Failed to register user profile. Please try again.')
-  }
+    if (!res.ok) {
+      await signOut(auth)
+      throw new Error(getHttpErrorMessage(res.status, 'Failed to register user profile'))
+    }
 
-  const dbUser: { _id: string; role: UserRole } = await res.json()
+    const dbUser: { _id: string; role: UserRole } = await res.json()
+    showSuccess('Account created successfully!')
 
-  return {
-    uid: fbUser.uid,
-    email: fbUser.email,
-    mongoId: dbUser._id,
-    role: dbUser.role,
+    return {
+      uid: fbUser.uid,
+      email: fbUser.email,
+      mongoId: dbUser._id,
+      role: dbUser.role,
+    }
+  } catch (error) {
+    showError(getHttpErrorMessage(getErrorStatus(error), 'Failed to register. Please try again.'))
+    throw error
   }
 }
 
 // Sign in with email/password and resolve the MongoDB profile
 export async function loginAndFetchUser(email: string, password: string): Promise<AuthUser> {
-  const { user: fbUser } = await signInWithEmailAndPassword(auth, email, password)
+  try {
+    const { user: fbUser } = await signInWithEmailAndPassword(auth, email, password)
 
-  const dbUser = await fetchDbUser(fbUser.uid)
+    const dbUser = await fetchDbUser(fbUser.uid)
 
-  return {
-    uid: fbUser.uid,
-    email: fbUser.email,
-    mongoId: dbUser?._id ?? null,
-    role: dbUser?.role ?? null,
+    showSuccess('Welcome back!')
+
+    return {
+      uid: fbUser.uid,
+      email: fbUser.email,
+      mongoId: dbUser?._id ?? null,
+      role: dbUser?.role ?? null,
+    }
+  } catch (error) {
+    showError('Invalid email or password. Please try again.')
+    throw error
   }
 }
 

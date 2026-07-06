@@ -8,6 +8,7 @@ import type {
   PopulatedLoad,
   UpdateLoadPayload,
 } from './loadEnum'
+import { showSuccess, showError, getSuccessMessage, getHttpErrorMessage, getErrorStatus } from '@/lib/toast'
 import type { ExpenseOverrideFields } from '../driverApi/driverEnum'
 
 export const loadApi = api.injectEndpoints({
@@ -73,6 +74,15 @@ export const loadApi = api.injectEndpoints({
         { type: LoadTag.Load, id: LoadTagId.List },
         { type: LoadTag.Load, id: LoadTagId.CompanyList },
       ],
+      async onQueryStarted(arg, { queryFulfilled }) {
+        try {
+          await queryFulfilled
+          showSuccess(getSuccessMessage('create', 'load'))
+        } catch (error) {
+          const status = getErrorStatus(error)
+          showError(getHttpErrorMessage(status))
+        }
+      },
     }),
 
     // POST /api/auctions/:loadId — create auction for a load

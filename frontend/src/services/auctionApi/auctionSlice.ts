@@ -9,6 +9,7 @@ import type {
   ReopenAuctionPayload,
   ReopenAuctionResult,
 } from './auctionEnum'
+import { showSuccess, showError, getSuccessMessage, getHttpErrorMessage, getErrorStatus } from '@/lib/toast'
 
 export const auctionApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -18,6 +19,15 @@ export const auctionApi = api.injectEndpoints({
         method: 'PATCH',
       }),
       invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
+      async onQueryStarted(arg, { queryFulfilled }) {
+        try {
+          await queryFulfilled
+          showSuccess(getSuccessMessage('accept', 'bid'))
+        } catch (error) {
+          const status = getErrorStatus(error)
+          showError(getHttpErrorMessage(status))
+        }
+      },
     }),
 
     editAuction: build.mutation<EditAuctionResult, { loadId: string; body: EditAuctionPayload }>({
@@ -27,6 +37,15 @@ export const auctionApi = api.injectEndpoints({
         body,
       }),
       invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
+      async onQueryStarted(arg, { queryFulfilled }) {
+        try {
+          await queryFulfilled
+          showSuccess(getSuccessMessage('update', 'auction'))
+        } catch (error) {
+          const status = getErrorStatus(error)
+          showError(getHttpErrorMessage(status))
+        }
+      },
     }),
 
     cancelAuction: build.mutation<void, string>({
@@ -35,6 +54,15 @@ export const auctionApi = api.injectEndpoints({
         method: 'DELETE',
       }),
       invalidatesTags: (_result, _error, loadId) => [{ type: LoadTag.Load, id: loadId }],
+      async onQueryStarted(arg, { queryFulfilled }) {
+        try {
+          await queryFulfilled
+          showSuccess(getSuccessMessage('cancel', 'auction'))
+        } catch (error) {
+          const status = getErrorStatus(error)
+          showError(getHttpErrorMessage(status))
+        }
+      },
     }),
 
     reopenAuction: build.mutation<
@@ -47,6 +75,15 @@ export const auctionApi = api.injectEndpoints({
         body,
       }),
       invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
+      async onQueryStarted(arg, { queryFulfilled }) {
+        try {
+          await queryFulfilled
+          showSuccess(getSuccessMessage('reopen', 'auction'))
+        } catch (error) {
+          const status = getErrorStatus(error)
+          showError(getHttpErrorMessage(status))
+        }
+      },
     }),
 
     /**

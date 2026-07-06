@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/breadcrumb'
 import { RoutePath, getRouteLabel } from '@/config/routes'
 import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
+import { ToastManager } from '@/components/shared/ToastManager'
 
 // Patterns for routes that have a :loadId parameter
 const ID_ROUTE_PREFIXES = [
@@ -114,6 +115,9 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
 
       {/* Content area — scroll management delegated to child page components (PageShell) */}
       <div className="flex flex-1 min-h-0">{children}</div>
+
+      {/* Global toast notifications */}
+      <ToastManager />
     </div>
   )
 }

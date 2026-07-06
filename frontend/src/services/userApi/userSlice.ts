@@ -1,5 +1,6 @@
 import { api } from '../api'
 import type { RegisterUserPayload, RegisterUserResponse } from './userEnum'
+import { showSuccess, showError, getSuccessMessage, getHttpErrorMessage, getErrorStatus } from '@/lib/toast'
 
 export const userApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -10,6 +11,15 @@ export const userApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
+      async onQueryStarted(arg, { queryFulfilled }) {
+        try {
+          await queryFulfilled
+          showSuccess(getSuccessMessage('create', 'user profile'))
+        } catch (error) {
+          const status = getErrorStatus(error)
+          showError(getHttpErrorMessage(status))
+        }
+      },
     }),
 
     // GET /api/users/me?firebaseUid=... -> fetch existing user by Firebase UID

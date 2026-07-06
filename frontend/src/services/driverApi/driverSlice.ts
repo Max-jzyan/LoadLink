@@ -1,3 +1,4 @@
+import { getHttpErrorMessage, showError, showSuccess, getErrorStatus } from '@/lib/toast'
 import { api } from '../api'
 import { LoadTag, LoadTagId } from '../apiTypes'
 import type { Load } from '../loadApi/loadEnum'
@@ -29,6 +30,16 @@ export const driverApi = api.injectEndpoints({
         { type: LoadTag.Bid, id: loadId },
         { type: LoadTag.AuctionPrice, id: loadId },
       ],
+      async onQueryStarted(arg, { queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled
+          const bidAmount = typeof data.amount === 'number' ? data.amount.toFixed(2) : '0.00'
+          showSuccess(`Bid placed successfully for $${bidAmount}`)
+        } catch (error) {
+          const status = getErrorStatus(error)
+          showError(getHttpErrorMessage(status))
+        }
+      },
     }),
 
     // POST /api/auctions/:loadId/claim — claim a load at current price
@@ -44,6 +55,16 @@ export const driverApi = api.injectEndpoints({
         { type: LoadTag.AuctionPrice, id: loadId },
         { type: LoadTag.Load, id: LoadTagId.DriverList },
       ],
+      async onQueryStarted(arg, { queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled
+          const payout = typeof data.finalPayout === 'number' ? data.finalPayout.toFixed(2) : '0.00'
+          showSuccess(`Load claimed successfully for $${payout}`)
+        } catch (error) {
+          const status = getErrorStatus(error)
+          showError(getHttpErrorMessage(status))
+        }
+      },
     }),
 
     // GET /api/driver/:driverId/bids — list driver's bids
