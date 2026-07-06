@@ -15,9 +15,10 @@ import { selectMongoId } from '@/services/authSlice'
 interface BidInputProps {
   loadId: string
   auctionStatus?: string
+  currentPrice?: number
 }
 
-export default function BidInput({ loadId, auctionStatus }: BidInputProps) {
+export default function BidInput({ loadId, auctionStatus, currentPrice }: BidInputProps) {
   const [bidAmount, setBidAmount] = useState<number | ''>('')
   const [placeBid, { isLoading: isPlacing }] = usePlaceBidMutation()
   const mongoId = useSelector(selectMongoId)
@@ -32,6 +33,12 @@ export default function BidInput({ loadId, auctionStatus }: BidInputProps) {
     if (typeof bidAmount !== 'number' || bidAmount <= 0) return
     if (!mongoId) {
       alert('You must be logged in to place a bid.')
+      return
+    }
+    if (currentPrice !== undefined && bidAmount < currentPrice) {
+      alert(
+        `Your bid of $${bidAmount.toLocaleString()} is lower than the current accept price of $${currentPrice.toLocaleString()}. Consider using the "Accept $${currentPrice.toLocaleString()} Now" button instead.`
+      )
       return
     }
     try {

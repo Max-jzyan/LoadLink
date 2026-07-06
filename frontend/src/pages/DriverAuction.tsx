@@ -253,7 +253,7 @@ export default function DriverAuctions() {
           <SeparatorWithText />
 
           <div>
-            <BidInput loadId={loadId} auctionStatus={auctionStatus} />
+          <BidInput loadId={loadId} auctionStatus={auctionStatus} currentPrice={livePrice} />
           </div>
         </div>
 

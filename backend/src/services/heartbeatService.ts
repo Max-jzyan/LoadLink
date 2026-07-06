@@ -99,6 +99,20 @@ const processAuction = async (auction: AuctionDoc): Promise<void> => {
 
   console.log(`[debugging heartbeat] Load ${loadId}: price crept -> $${newPrice}`)
 
+  // Check if the new price meets or exceeds the lowest submitted bid
+  // (reverse auction: price ticks up, lowest bid wins when price reaches it)
+  const lowestBid = await BidModel.findOne({ loadId, status: BID_STATUSES.Submitted }).sort({
+    amount: 1,
+  })
+  if (lowestBid && newPrice >= lowestBid.amount) {
+    await settleAuctionWithBid(auction, lowestBid)
+    console.log(
+      `[debugging heartbeat] Load ${loadId}: price $${newPrice} reached lowest bid $${lowestBid.amount} → auto-accepted`
+    )
+    await emitBidsAndPrice(loadId)
+    return
+  }
+
   // Cap reached so auto-accept the best in-range bid
   if (newPrice >= auction.capPrice && isAutoAcceptEligible(auction)) {
     const accepted = await autoAcceptBestBid(auction)

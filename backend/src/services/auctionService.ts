@@ -197,6 +197,10 @@ export const placeBid = async (loadId: string, driverId: string, amount: number)
     throw new ApiError(StatusCodes.CONFLICT, `Auction is not live (status: ${auction.status})`)
   }
 
+  if (amount < auction.currentPrice) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Your bid is below the accept now price.')
+  }
+
   const bid = await BidModel.create({
     loadId,
     auctionId: auction._id,
