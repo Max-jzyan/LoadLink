@@ -133,7 +133,7 @@ export function DriverMap({ routes, height = '500px', selectedRouteId }: DriverM
           maxZoom={19}
         />
 
-        <FitBoundsToRoutes routes={routes} />
+        <FitBoundsToRoutes routes={routes} selectedRouteId={selectedRouteId} />
         <FlyToRoute routes={routes} selectedRouteId={selectedRouteId} />
 
         {routes.map((route) => (
@@ -145,25 +145,63 @@ export function DriverMap({ routes, height = '500px', selectedRouteId }: DriverM
 }
 
 /**
- * On mount and whenever routes change, fits the map bounds to encompass all routes.
- * This ensures the map auto-zooms to show all provided routes on initial render.
+ * Fits the map bounds to encompass all routes under two conditions:
+ *  1. On initial mount when routes first become available.
+ *  2. When selectedRouteId transitions from a value → null (reset).
+ *
+ * While a route is selected, this component does nothing — FlyToRoute handles focusing.
  */
-function FitBoundsToRoutes({ routes }: { routes: RouteCoordinate[] }) {
+function FitBoundsToRoutes({
+  routes,
+  selectedRouteId,
+}: {
+  routes: RouteCoordinate[]
+  selectedRouteId?: string | null
+}) {
   const map = useMap()
+  const hasInitialFitRef = useRef(false)
 
   useEffect(() => {
     if (routes.length === 0) return
 
-    const bounds = L.latLngBounds([])
-    for (const route of routes) {
-      bounds.extend(route.origin)
-      bounds.extend(route.destination)
+    const doFit = () => {
+      const bounds = L.latLngBounds([])
+      for (const route of routes) {
+        bounds.extend(route.origin)
+        bounds.extend(route.destination)
+      }
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [50, 50] })
+      }
     }
 
-    if (bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [50, 50] })
+    // Initial fit: first time routes become non-empty
+    if (!hasInitialFitRef.current) {
+      hasInitialFitRef.current = true
+      doFit()
+      return
     }
   }, [map, routes])
+
+  // Reset handler: when selectedRouteId goes from truthy → null, refit to all routes
+  const prevSelectedRef = useRef(selectedRouteId)
+  useEffect(() => {
+    if (!prevSelectedRef.current && selectedRouteId) {
+      // transitioning from null → value: skip, FlyToRoute handles this
+    } else if (prevSelectedRef.current && !selectedRouteId) {
+      // transitioning from value → null: reset view to all routes
+      if (routes.length === 0) return
+      const bounds = L.latLngBounds([])
+      for (const route of routes) {
+        bounds.extend(route.origin)
+        bounds.extend(route.destination)
+      }
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [50, 50] })
+      }
+    }
+    prevSelectedRef.current = selectedRouteId
+  }, [map, routes, selectedRouteId])
 
   return null
 }
@@ -184,9 +222,24 @@ function FlyToRoute({
     const route = routes.find((r) => r.id === selectedRouteId)
     if (!route) return
 
-    // Create a temporary polyline just to compute bounds
-    const tempBounds = L.latLngBounds([route.origin, route.destination])
-    map.fitBounds(tempBounds, { padding: [40, 40] })
+    // Build bounds from actual road positions/polyline if available,
+    // otherwise fall back to origin→destination straight line.
+    const tempBounds = L.latLngBounds([])
+
+    // Try to use the same positions the polyline would render
+    const positions: LatLngExpression[] = route.positions
+      ? route.positions
+      : route.polyline
+        ? decodePolyline(route.polyline)
+        : [route.origin, route.destination]
+
+    for (const pos of positions) {
+      tempBounds.extend(pos)
+    }
+
+    if (tempBounds.isValid()) {
+      map.fitBounds(tempBounds, { padding: [40, 40] })
+    }
   }, [map, routes, selectedRouteId])
 
   return null

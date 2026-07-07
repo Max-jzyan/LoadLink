@@ -10,9 +10,10 @@ interface CompanyLoadTableProps {
   title?: string
   loads: LoadWithDetails[]
   onRowClick?: (load: LoadWithDetails) => void
+  selectedId?: string | null
 }
 
-export default function CompanyLoadTable({ title, loads, onRowClick }: CompanyLoadTableProps) {
+export default function CompanyLoadTable({ title, loads, onRowClick, selectedId }: CompanyLoadTableProps) {
   const [table, setTable] = useState<Table<LoadWithDetails> | null>(null)
   const [pageIndex, setPageIndex] = useState(0)
 
@@ -31,6 +32,8 @@ export default function CompanyLoadTable({ title, loads, onRowClick }: CompanyLo
         data={loads}
         onTableReady={handleTableReady}
         onRowClick={onRowClick}
+        selectedId={selectedId}
+        getId={(load) => load._id}
       />
     </DynamicCard>
   )

@@ -142,6 +142,7 @@ export default function DriverDashboard() {
   }))
 
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
+  const handleResetView = useCallback(() => setSelectedRouteId(null), [])
 
   const onRefresh = useCallback(() => handleRefresh(refetch), [handleRefresh, refetch])
   const subtitle = lastManualRefresh ? `Updated ${relativeTime(lastManualRefresh)}` : undefined
@@ -188,9 +189,19 @@ export default function DriverDashboard() {
             title={isLoading ? 'Loading...' : 'Available Loads'}
             loads={filteredLoads}
             onRowClick={handleRowClick}
+            selectedId={selectedRouteId}
           />
         }
-        map={<DriverMap routes={routes} selectedRouteId={selectedRouteId} height="100%" />}
+        map={
+          <DriverMap routes={routes} selectedRouteId={selectedRouteId} height="100%" />
+        }
+        mapAction={
+          selectedRouteId ? (
+            <Button variant="ghost" size="sm" onClick={handleResetView}>
+              Reset View
+            </Button>
+          ) : undefined
+        }
       />
     </PageShell>
   )

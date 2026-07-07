@@ -13,6 +13,8 @@ interface LoadsPageLayoutProps {
   map: ReactNode
   /** Height of the map container in pixels (default 400) */
   mapHeight?: number
+  /** Optional action element to show in the Map DynamicCard header (e.g. a "Reset View" button) */
+  mapAction?: ReactNode
 }
 
 /**
@@ -33,6 +35,7 @@ export default function LoadsPageLayout({
   table,
   map,
   mapHeight = 400,
+  mapAction,
 }: LoadsPageLayoutProps) {
   return (
     <div className="flex flex-col gap-3">
@@ -51,7 +54,7 @@ export default function LoadsPageLayout({
       <div className="min-h-[300px]">{table}</div>
 
       {/* ── Map Row ── */}
-      <DynamicCard title="Map">
+      <DynamicCard title="Map" action={mapAction}>
         <div style={{ height: mapHeight }}>{map}</div>
       </DynamicCard>
     </div>

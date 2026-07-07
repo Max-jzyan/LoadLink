@@ -13,8 +13,7 @@ import useAuth from '@/hooks/useAuth'
 import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
 import { selectMongoId } from '@/services/authSlice'
 import { useGetCompanyDashboardQuery } from '@/services/companyApi/companyApi'
-import type { LoadWithDetails } from '@/services/companyApi/companyTypes'
-import { LOAD_STATUSES, ACTIVE_STATUSES, HISTORICAL_STATUSES } from '@/types/enums'
+import { ACTIVE_STATUSES, HISTORICAL_STATUSES } from '@/types/enums'
 import { Hammer, Package2, Plus, RefreshCw, TrendingUp, Truck } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -53,7 +52,8 @@ export default function CompanyDashboard() {
       .filter(Boolean)
       .join(' · ') || undefined
 
-  const [selectedLoad, setSelectedLoad] = useState<LoadWithDetails | null>(null)
+  const [selectedLoadId, setSelectedLoadId] = useState<string | null>(null)
+  const handleResetView = useCallback(() => setSelectedLoadId(null), [])
   const [filters, setFilters] = useState<CompanyLoadFilters>(DEFAULT_FILTERS)
 
   // Apply filters client-side
@@ -81,11 +81,9 @@ export default function CompanyDashboard() {
     return result
   }, [loads, filters])
 
-  // map loads to the shape DriverMap expects;
-  // if a specific load is selected, zoom to just that one
+  // Map all loads to the shape DriverMap expects; the map component handles focusing
   const transitRoutes = useMemo(() => {
-    const source = selectedLoad ? [selectedLoad] : loads
-    return source.map((l) => ({
+    return loads.map((l) => ({
       id: l._id,
       origin: [l.originCoords.lat, l.originCoords.lng] as [number, number],
       originName: l.originAddress,
@@ -94,7 +92,7 @@ export default function CompanyDashboard() {
       status: l.status,
       polyline: l.route?.polyline,
     }))
-  }, [loads, selectedLoad])
+  }, [loads])
 
   // ── Stats cards (bare DynamicCards — no Col wrappers) ──
   const statsCards = (
@@ -141,17 +139,23 @@ export default function CompanyDashboard() {
           <CompanyLoadTable
             title={isLoading ? 'Loading...' : 'Loads'}
             loads={filteredLoads}
-            onRowClick={setSelectedLoad}
+            onRowClick={(load) => setSelectedLoadId(load._id)}
+            selectedId={selectedLoadId}
           />
         }
         map={
           <DriverMap
             routes={transitRoutes}
-            selectedRouteId={
-              selectedLoad?.status === LOAD_STATUSES.InTransit ? selectedLoad._id : null
-            }
+            selectedRouteId={selectedLoadId}
             height="100%"
           />
+        }
+        mapAction={
+          selectedLoadId ? (
+            <Button variant="ghost" size="sm" onClick={handleResetView}>
+              Reset View
+            </Button>
+          ) : undefined
         }
       />
     </PageShell>

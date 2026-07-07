@@ -10,9 +10,10 @@ interface DriverLoadTableProps {
   title: string
   loads: Load[]
   onRowClick?: (load: Load) => void
+  selectedId?: string | null
 }
 
-export default function DriverLoadTable({ loads, onRowClick }: DriverLoadTableProps) {
+export default function DriverLoadTable({ loads, onRowClick, selectedId }: DriverLoadTableProps) {
   const [table, setTable] = useState<Table<Load> | null>(null)
 
   const [pageIndex, setPageIndex] = useState(0)
@@ -32,6 +33,8 @@ export default function DriverLoadTable({ loads, onRowClick }: DriverLoadTablePr
         data={loads}
         onTableReady={handleTableReady}
         onRowClick={onRowClick}
+        selectedId={selectedId}
+        getId={(load) => load._id}
       />
     </DynamicCard>
   )

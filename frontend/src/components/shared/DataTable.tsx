@@ -9,11 +9,11 @@ import {
   type Table as TanstackTable,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-  getPaginationRowModel,
 } from '@tanstack/react-table'
-import { ArrowUpDown, ArrowUp, ArrowDown, Inbox } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, Inbox } from 'lucide-react'
 
 import {
   Table,
@@ -36,6 +36,8 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   onTableReady?: (payload: OnTableReadyPayload<TData>) => void
   onRowClick?: (row: TData) => void
+  selectedId?: string | null
+  getId?: (row: TData) => string
 }
 
 export function DataTable<TData, TValue>({
@@ -43,6 +45,8 @@ export function DataTable<TData, TValue>({
   data,
   onTableReady,
   onRowClick,
+  selectedId,
+  getId,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
 
@@ -64,11 +68,22 @@ export function DataTable<TData, TValue>({
     }
   }, [onTableReady, table, pageIndex])
 
-  const SortIcon = ({ column }: { column: { getIsSorted: () => false | 'asc' | 'desc'; toggleSorting: () => void } }) => {
+  const SortIcon = ({
+    column,
+  }: {
+    column: {
+      getIsSorted: () => false | 'asc' | 'desc'
+      toggleSorting: () => void
+    }
+  }) => {
     const sorted = column.getIsSorted()
-    if (sorted === 'asc') return <ArrowUp className="ml-1 inline-block h-3.5 w-3.5" />
-    if (sorted === 'desc') return <ArrowDown className="ml-1 inline-block h-3.5 w-3.5" />
-    return <ArrowUpDown className="ml-1 inline-block h-3.5 w-3.5 opacity-30 group-hover:opacity-100 transition-opacity" />
+    if (sorted === 'asc')
+      return <ArrowUp className="ml-1 inline-block h-3.5 w-3.5" />
+    if (sorted === 'desc')
+      return <ArrowDown className="ml-1 inline-block h-3.5 w-3.5" />
+    return (
+      <ArrowUpDown className="ml-1 inline-block h-3.5 w-3.5 opacity-30 transition-opacity group-hover:opacity-100" />
+    )
   }
 
   // Requires creating a column object as seen in `frontend\src\components\driverLoads\driverColumns.tsx`
@@ -79,7 +94,9 @@ export function DataTable<TData, TValue>({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
-                const meta = header.column.columnDef.meta as Record<string, unknown> | undefined
+                const meta = header.column.columnDef.meta as
+                  | Record<string, unknown>
+                  | undefined
                 const canSort = header.column.getCanSort()
                 return (
                   <TableHead
@@ -89,11 +106,18 @@ export function DataTable<TData, TValue>({
                       canSort && 'cursor-pointer select-none group',
                       (meta?.headerClassName as string | undefined) ?? ''
                     )}
-                    onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                    onClick={
+                      canSort
+                        ? header.column.getToggleSortingHandler()
+                        : undefined
+                    }
                   >
                     {header.isPlaceholder ? null : (
                       <span className="inline-flex items-center">
-                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                         {canSort && <SortIcon column={header.column} />}
                       </span>
                     )}
@@ -105,29 +129,51 @@ export function DataTable<TData, TValue>({
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && 'selected'}
-                className={cn(onRowClick && 'cursor-pointer')}
-                onClick={() => onRowClick?.(row.original)}
-              >
-                {row.getVisibleCells().map((cell) => {
-                  const meta = cell.column.columnDef.meta as Record<string, unknown> | undefined
-                  return (
-                    <TableCell
-                      key={cell.id}
-                      className={(meta?.cellClassName as string | undefined) ?? ''}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  )
-                })}
-              </TableRow>
-            ))
+            table.getRowModel().rows.map((row) => {
+              const rowId =
+                getId?.(row.original) ??
+                ((row.original as Record<string, unknown>)._id as
+                  | string
+                  | undefined)
+              const isSelected =
+                selectedId != null && rowId != null && rowId === selectedId
+              return (
+                <TableRow
+                  key={row.id}
+                  data-state={isSelected ? 'selected' : undefined}
+                  className={cn(
+                    onRowClick && 'cursor-pointer',
+                    isSelected && 'bg-muted/50 hover:bg-muted/50'
+                  )}
+                  onClick={() => onRowClick?.(row.original)}
+                >
+                  {row.getVisibleCells().map((cell) => {
+                    const meta = cell.column.columnDef.meta as
+                      | Record<string, unknown>
+                      | undefined
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        className={
+                          (meta?.cellClassName as string | undefined) ?? ''
+                        }
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    )
+                  })}
+                </TableRow>
+              )
+            })
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="py-12 text-center">
+              <TableCell
+                colSpan={columns.length}
+                className="py-12 text-center"
+              >
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                   <Inbox className="h-8 w-8" />
                   <p>No results.</p>
