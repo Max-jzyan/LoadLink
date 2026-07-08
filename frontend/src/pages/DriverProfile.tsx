@@ -27,7 +27,11 @@ import { useSelector } from 'react-redux'
 
 export default function DriverProfile() {
   const driverId = useSelector(selectMongoId)
-  const { data: driver, isLoading, isError } = useGetDriverProfileQuery(driverId!, {
+  const {
+    data: driver,
+    isLoading,
+    isError,
+  } = useGetDriverProfileQuery(driverId!, {
     skip: !driverId,
   })
 
@@ -57,7 +61,6 @@ export default function DriverProfile() {
     }
   }, [])
 
-
   const handleEditTruck = useCallback((truck: Truck) => {
     setEditTruck(truck)
     setDrawerOpen(true)
@@ -75,7 +78,6 @@ export default function DriverProfile() {
         capacityLbs: values.capacityLbs ?? 0,
       }
 
-
       if (truckId) {
         await updateTruck({ driverId, truckId, body }).unwrap()
       } else {
@@ -85,7 +87,6 @@ export default function DriverProfile() {
     },
     [driverId, createTruck, updateTruck]
   )
-
 
   const handleContactSave = useCallback(
     async (values: ContactFormValues) => {

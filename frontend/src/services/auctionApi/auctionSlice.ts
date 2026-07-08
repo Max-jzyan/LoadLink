@@ -9,7 +9,13 @@ import type {
   ReopenAuctionPayload,
   ReopenAuctionResult,
 } from './auctionEnum'
-import { showSuccess, showError, getSuccessMessage, getHttpErrorMessage, getErrorStatus } from '@/lib/toast'
+import {
+  showSuccess,
+  showError,
+  getSuccessMessage,
+  getHttpErrorMessage,
+  getErrorStatus,
+} from '@/lib/toast'
 
 export const auctionApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -19,7 +25,7 @@ export const auctionApi = api.injectEndpoints({
         method: 'PATCH',
       }),
       invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
-      async onQueryStarted(arg, { queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           await queryFulfilled
           showSuccess(getSuccessMessage('accept', 'bid'))
@@ -37,7 +43,7 @@ export const auctionApi = api.injectEndpoints({
         body,
       }),
       invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
-      async onQueryStarted(arg, { queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           await queryFulfilled
           showSuccess(getSuccessMessage('update', 'auction'))
@@ -54,7 +60,7 @@ export const auctionApi = api.injectEndpoints({
         method: 'DELETE',
       }),
       invalidatesTags: (_result, _error, loadId) => [{ type: LoadTag.Load, id: loadId }],
-      async onQueryStarted(arg, { queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           await queryFulfilled
           showSuccess(getSuccessMessage('cancel', 'auction'))
@@ -75,7 +81,7 @@ export const auctionApi = api.injectEndpoints({
         body,
       }),
       invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
-      async onQueryStarted(arg, { queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           await queryFulfilled
           showSuccess(getSuccessMessage('reopen', 'auction'))

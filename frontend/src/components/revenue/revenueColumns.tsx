@@ -11,21 +11,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { useUpdateLoadExpensesMutation } from '@/services/loadApi/loadSlice'
-import type { DashboardViewMode, LoadRevenue, ExpenseOverrideFields } from '@/services/driverApi/driverEnum'
+import type {
+  DashboardViewMode,
+  LoadRevenue,
+  ExpenseOverrideFields,
+} from '@/services/driverApi/driverEnum'
 import type { ColumnDef } from '@tanstack/react-table'
 import { formatCAD, cn } from '@/lib/utils'
 
 // ── Per-load expense dialog component ────────────────────────────────────
 
-const perLoadFields: { key: keyof ExpenseOverrideFields; label: string; suffix: string; step: number; isMonetary?: boolean }[] = [
+const perLoadFields: {
+  key: keyof ExpenseOverrideFields
+  label: string
+  suffix: string
+  step: number
+  isMonetary?: boolean
+}[] = [
   { key: 'fuelCostPerLiter', label: 'Fuel Cost', suffix: 'per L', step: 0.01, isMonetary: true },
   { key: 'fuelEfficiencyKmPerLiter', label: 'Fuel Efficiency', suffix: 'km/L', step: 0.1 },
   { key: 'maintenancePerKm', label: 'Maintenance', suffix: 'per km', step: 0.01, isMonetary: true },
@@ -82,7 +87,8 @@ function PerLoadExpenseDialog({
           <DialogHeader>
             <DialogTitle>Override Load Expenses</DialogTitle>
             <DialogDescription>
-              Set custom expense assumptions for this specific load. Leave empty to use global defaults.
+              Set custom expense assumptions for this specific load. Leave empty to use global
+              defaults.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -93,7 +99,9 @@ function PerLoadExpenseDialog({
                 </FieldLabel>
                 <div className="relative">
                   {isMonetary && (
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      $
+                    </span>
                   )}
                   <Input
                     type="number"
@@ -137,7 +145,10 @@ const statusLabel: Record<string, string> = {
 
 // ── Column definitions ───────────────────────────────────────────────────
 
-export function createColumns(onPerLoadSaved: () => void, viewMode: DashboardViewMode = 'completed'): ColumnDef<LoadRevenue>[] {
+export function createColumns(
+  onPerLoadSaved: () => void,
+  viewMode: DashboardViewMode = 'completed'
+): ColumnDef<LoadRevenue>[] {
   const isPotential = viewMode === 'potential'
 
   const columns: ColumnDef<LoadRevenue>[] = [
@@ -147,9 +158,16 @@ export function createColumns(onPerLoadSaved: () => void, viewMode: DashboardVie
       cell: ({ row }) => {
         const d = row.original.deliveryDate
         if (!d) return '—'
-        return new Date(d).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' })
+        return new Date(d).toLocaleDateString('en-CA', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        })
       },
-      meta: { headerClassName: 'hidden lg:table-cell', cellClassName: 'hidden lg:table-cell text-muted-foreground' },
+      meta: {
+        headerClassName: 'hidden lg:table-cell',
+        cellClassName: 'hidden lg:table-cell text-muted-foreground',
+      },
     },
     {
       accessorKey: 'originAddress',
@@ -170,11 +188,7 @@ export function createColumns(onPerLoadSaved: () => void, viewMode: DashboardVie
       header: 'Status',
       cell: ({ row }) => {
         const s = row.original.status ?? ''
-        return (
-          <Badge variant={statusBadgeVariant[s] ?? 'outline'}>
-            {statusLabel[s] ?? s}
-          </Badge>
-        )
+        return <Badge variant={statusBadgeVariant[s] ?? 'outline'}>{statusLabel[s] ?? s}</Badge>
       },
       meta: { headerClassName: 'text-center', cellClassName: 'text-center' },
     })
@@ -197,13 +211,19 @@ export function createColumns(onPerLoadSaved: () => void, viewMode: DashboardVie
       accessorKey: 'fuelCost',
       header: 'Fuel',
       cell: ({ row }) => formatCAD(row.original.fuelCost),
-      meta: { headerClassName: 'text-right hidden md:table-cell', cellClassName: 'text-right hidden md:table-cell' },
+      meta: {
+        headerClassName: 'text-right hidden md:table-cell',
+        cellClassName: 'text-right hidden md:table-cell',
+      },
     },
     {
       accessorKey: 'totalExpenses',
       header: isPotential ? 'Est. Expenses' : 'Expenses',
       cell: ({ row }) => formatCAD(row.original.totalExpenses),
-      meta: { headerClassName: 'text-right hidden sm:table-cell', cellClassName: 'text-right hidden sm:table-cell' },
+      meta: {
+        headerClassName: 'text-right hidden sm:table-cell',
+        cellClassName: 'text-right hidden sm:table-cell',
+      },
     },
     {
       accessorKey: 'netProfit',
@@ -211,9 +231,7 @@ export function createColumns(onPerLoadSaved: () => void, viewMode: DashboardVie
       cell: ({ row }) => {
         const val = row.original.netProfit
         return (
-          <span className={val >= 0 ? 'text-green-600' : 'text-red-600'}>
-            {formatCAD(val)}
-          </span>
+          <span className={val >= 0 ? 'text-green-600' : 'text-red-600'}>{formatCAD(val)}</span>
         )
       },
       meta: { headerClassName: 'text-right', cellClassName: 'text-right font-semibold' },
@@ -225,7 +243,10 @@ export function createColumns(onPerLoadSaved: () => void, viewMode: DashboardVie
         const lr = row.original
         const tooltipContent = (
           <div className="space-y-1 text-xs">
-            <p>Fuel: {formatCAD(lr.effectiveFuelCostPerLiter)}/L @ {lr.effectiveFuelEfficiencyKmPerLiter} km/L</p>
+            <p>
+              Fuel: {formatCAD(lr.effectiveFuelCostPerLiter)}/L @{' '}
+              {lr.effectiveFuelEfficiencyKmPerLiter} km/L
+            </p>
             <p>Maintenance: {formatCAD(lr.effectiveMaintenancePerKm)}/km</p>
           </div>
         )
@@ -245,7 +266,7 @@ export function createColumns(onPerLoadSaved: () => void, viewMode: DashboardVie
         )
       },
       meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
-    },
+    }
   )
 
   // Edit column only for completed mode (per-load expense overrides make sense only for actual data)
@@ -254,11 +275,15 @@ export function createColumns(onPerLoadSaved: () => void, viewMode: DashboardVie
       id: 'edit',
       header: '',
       cell: ({ row }) => (
-        <PerLoadExpenseDialog load={row.original} onSaved={onPerLoadSaved} trigger={
-          <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit load expenses">
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-        } />
+        <PerLoadExpenseDialog
+          load={row.original}
+          onSaved={onPerLoadSaved}
+          trigger={
+            <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit load expenses">
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          }
+        />
       ),
       meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
     })

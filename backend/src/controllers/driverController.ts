@@ -98,7 +98,10 @@ export const updateDriverProfile = async (req: Request, res: Response, next: Nex
 export const getDriverRevenue = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const driverId = req.params.driverId as string
-    const summary = await driverService.getDriverRevenue(driverId, req.query as Record<string, unknown>)
+    const summary = await driverService.getDriverRevenue(
+      driverId,
+      req.query as Record<string, unknown>
+    )
     res.status(StatusCodes.OK).json(summary)
   } catch (err) {
     next(err)

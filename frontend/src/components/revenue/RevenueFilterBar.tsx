@@ -23,7 +23,7 @@ interface RevenueFilterBarProps {
 const DEFAULT_FILTERS: RevenueFilters = {
   dateRange: {
     from: undefined,
-    to: undefined
+    to: undefined,
   },
   truckType: '',
   minPayout: null,
@@ -34,7 +34,11 @@ const DEFAULT_FILTERS: RevenueFilters = {
   maxDistance: null,
 }
 
-function ActiveFiltersNotice({ filters, onRemoveFilter, onReset }: {
+function ActiveFiltersNotice({
+  filters,
+  onRemoveFilter,
+  onReset,
+}: {
   filters: RevenueFilters
   onRemoveFilter: (key: keyof RevenueFilters) => void
   onReset: () => void
@@ -54,7 +58,8 @@ function ActiveFiltersNotice({ filters, onRemoveFilter, onReset }: {
   }
 
   if (filters.truckType) {
-    const truckLabel = TRUCK_TYPES.find(t => t.value === filters.truckType)?.label ?? filters.truckType
+    const truckLabel =
+      TRUCK_TYPES.find((t) => t.value === filters.truckType)?.label ?? filters.truckType
     activeFilters.push({ key: 'truckType', label: 'Truck', value: truckLabel })
   }
 
@@ -113,12 +118,7 @@ function ActiveFiltersNotice({ filters, onRemoveFilter, onReset }: {
           </span>
         ))}
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onReset}
-        className="ml-auto text-xs h-7"
-      >
+      <Button variant="ghost" size="sm" onClick={onReset} className="ml-auto text-xs h-7">
         Clear all
       </Button>
     </div>
@@ -141,7 +141,13 @@ export default function RevenueFilterBar({ filters, onFiltersChange }: RevenueFi
   const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
     if (key === 'dateRange') return value !== undefined
     if (key === 'truckType' || key === 'origin' || key === 'destination') return value !== ''
-    if (key === 'minPayout' || key === 'maxPayout' || key === 'minDistance' || key === 'maxDistance') return value !== null
+    if (
+      key === 'minPayout' ||
+      key === 'maxPayout' ||
+      key === 'minDistance' ||
+      key === 'maxDistance'
+    )
+      return value !== null
     return false
   })
 

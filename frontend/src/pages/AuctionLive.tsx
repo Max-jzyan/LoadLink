@@ -109,7 +109,10 @@ export default function AuctionLive() {
                 </Avatar>
                 <div>
                   <p className="text-sm font-semibold leading-tight">
-                    <DriverNameLink name={winnerBid.driverId.name} driverId={winnerBid.driverId._id} />
+                    <DriverNameLink
+                      name={winnerBid.driverId.name}
+                      driverId={winnerBid.driverId._id}
+                    />
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Load assigned to a driver at{' '}

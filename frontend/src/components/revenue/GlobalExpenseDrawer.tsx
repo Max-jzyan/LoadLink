@@ -6,12 +6,24 @@ import { Field, FieldLabel } from '@/components/ui/field'
 import type { ExpensePreferences } from '@/services/driverApi/driverEnum'
 import { cn } from '@/lib/utils'
 
-const globalExpenseFields: { key: keyof ExpensePreferences; label: string; suffix: string; step: number; isMonetary?: boolean }[] = [
+const globalExpenseFields: {
+  key: keyof ExpensePreferences
+  label: string
+  suffix: string
+  step: number
+  isMonetary?: boolean
+}[] = [
   { key: 'fuelCostPerLiter', label: 'Fuel Cost', suffix: 'per L', step: 0.01, isMonetary: true },
   { key: 'fuelEfficiencyKmPerLiter', label: 'Fuel Efficiency', suffix: 'km/L', step: 0.1 },
   { key: 'insurancePerMonth', label: 'Insurance', suffix: '/month', step: 1, isMonetary: true },
   { key: 'maintenancePerKm', label: 'Maintenance', suffix: 'per km', step: 0.01, isMonetary: true },
-  { key: 'otherFixedCostsPerMonth', label: 'Other Fixed Costs', suffix: '/month', step: 1, isMonetary: true },
+  {
+    key: 'otherFixedCostsPerMonth',
+    label: 'Other Fixed Costs',
+    suffix: '/month',
+    step: 1,
+    isMonetary: true,
+  },
 ]
 
 export function GlobalExpenseDrawer({
@@ -67,7 +79,9 @@ export function GlobalExpenseDrawer({
             </FieldLabel>
             <div className="relative">
               {isMonetary && (
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  $
+                </span>
               )}
               <Input
                 type="number"

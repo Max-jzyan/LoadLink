@@ -77,10 +77,8 @@ export function DataTable<TData, TValue>({
     }
   }) => {
     const sorted = column.getIsSorted()
-    if (sorted === 'asc')
-      return <ArrowUp className="ml-1 inline-block h-3.5 w-3.5" />
-    if (sorted === 'desc')
-      return <ArrowDown className="ml-1 inline-block h-3.5 w-3.5" />
+    if (sorted === 'asc') return <ArrowUp className="ml-1 inline-block h-3.5 w-3.5" />
+    if (sorted === 'desc') return <ArrowDown className="ml-1 inline-block h-3.5 w-3.5" />
     return (
       <ArrowUpDown className="ml-1 inline-block h-3.5 w-3.5 opacity-30 transition-opacity group-hover:opacity-100" />
     )
@@ -94,9 +92,7 @@ export function DataTable<TData, TValue>({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
-                const meta = header.column.columnDef.meta as
-                  | Record<string, unknown>
-                  | undefined
+                const meta = header.column.columnDef.meta as Record<string, unknown> | undefined
                 const canSort = header.column.getCanSort()
                 return (
                   <TableHead
@@ -106,18 +102,11 @@ export function DataTable<TData, TValue>({
                       canSort && 'cursor-pointer select-none group',
                       (meta?.headerClassName as string | undefined) ?? ''
                     )}
-                    onClick={
-                      canSort
-                        ? header.column.getToggleSortingHandler()
-                        : undefined
-                    }
+                    onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                   >
                     {header.isPlaceholder ? null : (
                       <span className="inline-flex items-center">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                        {flexRender(header.column.columnDef.header, header.getContext())}
                         {canSort && <SortIcon column={header.column} />}
                       </span>
                     )}
@@ -132,11 +121,8 @@ export function DataTable<TData, TValue>({
             table.getRowModel().rows.map((row) => {
               const rowId =
                 getId?.(row.original) ??
-                ((row.original as Record<string, unknown>)._id as
-                  | string
-                  | undefined)
-              const isSelected =
-                selectedId != null && rowId != null && rowId === selectedId
+                ((row.original as Record<string, unknown>)._id as string | undefined)
+              const isSelected = selectedId != null && rowId != null && rowId === selectedId
               return (
                 <TableRow
                   key={row.id}
@@ -148,20 +134,13 @@ export function DataTable<TData, TValue>({
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => {
-                    const meta = cell.column.columnDef.meta as
-                      | Record<string, unknown>
-                      | undefined
+                    const meta = cell.column.columnDef.meta as Record<string, unknown> | undefined
                     return (
                       <TableCell
                         key={cell.id}
-                        className={
-                          (meta?.cellClassName as string | undefined) ?? ''
-                        }
+                        className={(meta?.cellClassName as string | undefined) ?? ''}
                       >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     )
                   })}
@@ -170,10 +149,7 @@ export function DataTable<TData, TValue>({
             })
           ) : (
             <TableRow>
-              <TableCell
-                colSpan={columns.length}
-                className="py-12 text-center"
-              >
+              <TableCell colSpan={columns.length} className="py-12 text-center">
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                   <Inbox className="h-8 w-8" />
                   <p>No results.</p>

@@ -8,7 +8,13 @@ import type {
   PopulatedLoad,
   UpdateLoadPayload,
 } from './loadEnum'
-import { showSuccess, showError, getSuccessMessage, getHttpErrorMessage, getErrorStatus } from '@/lib/toast'
+import {
+  showSuccess,
+  showError,
+  getSuccessMessage,
+  getHttpErrorMessage,
+  getErrorStatus,
+} from '@/lib/toast'
 import type { ExpenseOverrideFields } from '../driverApi/driverEnum'
 
 export const loadApi = api.injectEndpoints({
@@ -36,7 +42,10 @@ export const loadApi = api.injectEndpoints({
 
     // GET /api/company/:companyId/loads — list company loads, optionally filtered by driver and/or excluding reviewed loads
     // Accepts either a plain companyId string (legacy) or an object with optional filters
-    listCompanyLoads: build.query<Load[], string | { companyId: string; assignedDriverId?: string; excludeReviewedBy?: string }>({
+    listCompanyLoads: build.query<
+      Load[],
+      string | { companyId: string; assignedDriverId?: string; excludeReviewedBy?: string }
+    >({
       query: (arg) => {
         let companyId: string
         let assignedDriverId: string | undefined
@@ -74,7 +83,7 @@ export const loadApi = api.injectEndpoints({
         { type: LoadTag.Load, id: LoadTagId.List },
         { type: LoadTag.Load, id: LoadTagId.CompanyList },
       ],
-      async onQueryStarted(arg, { queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           await queryFulfilled
           showSuccess(getSuccessMessage('create', 'load'))

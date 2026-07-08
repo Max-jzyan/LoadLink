@@ -72,10 +72,7 @@ export function RevenueTimeChart({ loadBreakdown, viewMode = 'completed' }: Reve
 
   return (
     <ChartContainer config={chartConfig} className="h-64 w-full">
-      <LineChart
-        data={chartData}
-        margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
-      >
+      <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
         <XAxis
           dataKey="period"

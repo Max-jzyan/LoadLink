@@ -15,7 +15,10 @@ interface DistanceProfitScatterChartProps {
   viewMode?: DashboardViewMode
 }
 
-export function DistanceProfitScatterChart({ loadBreakdown, viewMode = 'completed' }: DistanceProfitScatterChartProps) {
+export function DistanceProfitScatterChart({
+  loadBreakdown,
+  viewMode = 'completed',
+}: DistanceProfitScatterChartProps) {
   const isPotential = viewMode === 'potential'
   const chartData = useMemo(() => {
     if (!loadBreakdown.length) return []
@@ -50,18 +53,14 @@ export function DistanceProfitScatterChart({ loadBreakdown, viewMode = 'complete
   // Calculate bubble size range
   const maxPayout = Math.max(...chartData.map((d) => d.payout))
   const minPayout = Math.min(...chartData.map((d) => d.payout))
-  
+
   // Dynamic bubble size range based on payout distribution
   // Scale bubble radius between 40px and 300px based on payout values
-  const bubbleSizeRange = maxPayout > minPayout 
-    ? [40, 300] 
-    : [100, 100] // Uniform size if all payouts are the same
+  const bubbleSizeRange: [number, number] = maxPayout > minPayout ? [40, 300] : [100, 100] // Uniform size if all payouts are the same
 
   return (
     <ChartContainer config={chartConfig} className="h-64 w-full">
-      <ScatterChart
-        margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-      >
+      <ScatterChart margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
         <XAxis
           type="number"
@@ -72,7 +71,12 @@ export function DistanceProfitScatterChart({ loadBreakdown, viewMode = 'complete
           axisLine={false}
           tickMargin={8}
           className="text-xs"
-          label={{ value: 'Distance (km)', position: 'insideBottom', offset: -5, className: 'text-xs' }}
+          label={{
+            value: 'Distance (km)',
+            position: 'insideBottom',
+            offset: -5,
+            className: 'text-xs',
+          }}
         />
         <YAxis
           type="number"
@@ -83,14 +87,14 @@ export function DistanceProfitScatterChart({ loadBreakdown, viewMode = 'complete
           tickMargin={8}
           className="text-xs"
           tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
-          label={{ value: isPotential ? 'Expected Profit ($)' : 'Net Profit ($)', angle: -90, position: 'insideLeft', className: 'text-xs' }}
+          label={{
+            value: isPotential ? 'Expected Profit ($)' : 'Net Profit ($)',
+            angle: -90,
+            position: 'insideLeft',
+            className: 'text-xs',
+          }}
         />
-        <ZAxis
-          type="number"
-          dataKey="payout"
-          range={bubbleSizeRange}
-          name="Payout"
-        />
+        <ZAxis type="number" dataKey="payout" range={bubbleSizeRange} name="Payout" />
         <ChartTooltip
           content={
             <ChartTooltipContent
@@ -109,7 +113,13 @@ export function DistanceProfitScatterChart({ loadBreakdown, viewMode = 'complete
                         {props.payload.route}
                       </div>
                     </div>,
-                    name === 'profit' ? (isPotential ? 'Expected Profit' : 'Net Profit') : name === 'distance' ? 'Distance' : 'Payout',
+                    name === 'profit'
+                      ? isPotential
+                        ? 'Expected Profit'
+                        : 'Net Profit'
+                      : name === 'distance'
+                        ? 'Distance'
+                        : 'Payout',
                   ]
                 }
                 return [value, name]

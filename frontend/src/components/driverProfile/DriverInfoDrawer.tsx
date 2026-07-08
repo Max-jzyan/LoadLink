@@ -74,7 +74,6 @@ export default function DriverInfoDrawer({
     }
   }, [open, driver, reset])
 
-
   const onFormSubmit = async (values: DriverInfoFormValues) => {
     await onSubmit(values)
   }
@@ -151,7 +150,6 @@ export default function DriverInfoDrawer({
       }
     >
       <form id={formId} onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
-
         {/* Profile Picture Preview */}
         <div className="flex flex-col items-center">
           <div className="relative">
@@ -208,9 +206,7 @@ export default function DriverInfoDrawer({
             placeholder="e.g. Long Haul Truck Driver"
             {...register('professionalTitle')}
           />
-          <FieldDescription>
-            Optional: Add a professional title or certification
-          </FieldDescription>
+          <FieldDescription>Optional: Add a professional title or certification</FieldDescription>
         </Field>
 
         {/* Profile Picture URL (hidden, used for base64 storage) */}

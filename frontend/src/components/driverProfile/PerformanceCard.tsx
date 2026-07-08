@@ -23,9 +23,7 @@ export default function PerformanceCard({ driver }: PerformanceCardProps) {
           </div>
           <div className="flex items-center gap-2">
             <StarRating value={ratingSummary.average} />
-            <span className="text-sm font-semibold">
-              {ratingSummary.average.toFixed(1)}
-            </span>
+            <span className="text-sm font-semibold">{ratingSummary.average.toFixed(1)}</span>
           </div>
         </div>
 
@@ -53,14 +51,12 @@ export default function PerformanceCard({ driver }: PerformanceCardProps) {
                 <span className="text-muted-foreground">{label}</span>
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-20 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-amber-400"
-                    style={{ width: `${(categories[key] / RATING_CATEGORIES_COUNT) * 100}%` }}
-                  />
+                    <div
+                      className="h-full rounded-full bg-amber-400"
+                      style={{ width: `${(categories[key] / RATING_CATEGORIES_COUNT) * 100}%` }}
+                    />
                   </div>
-                  <span className="w-6 text-right font-medium">
-                    {categories[key].toFixed(1)}
-                  </span>
+                  <span className="w-6 text-right font-medium">{categories[key].toFixed(1)}</span>
                 </div>
               </div>
             ))}

@@ -192,9 +192,7 @@ export default function DriverDashboard() {
             selectedId={selectedRouteId}
           />
         }
-        map={
-          <DriverMap routes={routes} selectedRouteId={selectedRouteId} height="100%" />
-        }
+        map={<DriverMap routes={routes} selectedRouteId={selectedRouteId} height="100%" />}
         mapAction={
           selectedRouteId ? (
             <Button variant="ghost" size="sm" onClick={handleResetView}>

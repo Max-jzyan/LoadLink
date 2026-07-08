@@ -116,7 +116,10 @@ export const updateLoad = async (loadId: string, updateData: Record<string, unkn
 /**
  * List all loads for a specific company with optional filters.
  */
-export const listCompanyLoads = async (companyId: string, options: ListCompanyLoadsOptions = {}) => {
+export const listCompanyLoads = async (
+  companyId: string,
+  options: ListCompanyLoadsOptions = {}
+) => {
   const filter: Record<string, unknown> = { companyId }
 
   if (options.assignedDriverId) {

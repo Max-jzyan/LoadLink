@@ -120,11 +120,7 @@ export const updateLoadExpenses = async (req: Request, res: Response, next: Next
       //throw new ApiError(StatusCodes.FORBIDDEN, 'Only the assigned driver can update expense overrides')
     }
 
-    const allowedFields = [
-      'fuelCostPerLiter',
-      'fuelEfficiencyKmPerLiter',
-      'maintenancePerKm',
-    ]
+    const allowedFields = ['fuelCostPerLiter', 'fuelEfficiencyKmPerLiter', 'maintenancePerKm']
 
     const updateData: Record<string, unknown> = {}
     for (const field of allowedFields) {

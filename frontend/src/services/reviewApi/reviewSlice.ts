@@ -1,6 +1,6 @@
-import { api } from '@/services/api';
-import { LoadTag } from '@/services/apiTypes';
-import { type CreateReviewPayload, type GetReviewsForTargetResponse } from './reviewEnum';
+import { api } from '@/services/api'
+import { LoadTag } from '@/services/apiTypes'
+import { type CreateReviewPayload, type GetReviewsForTargetResponse } from './reviewEnum'
 
 export const reviewApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -32,10 +32,10 @@ export const reviewApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-        invalidatesTags: (_result, _error, { targetId, loadId }) => [
-          { type: LoadTag.Review, id: `TARGET_${targetId}` },
-          { type: LoadTag.Load, id: loadId },
-        ],
+      invalidatesTags: (_result, _error, { targetId, loadId }) => [
+        { type: LoadTag.Review, id: `TARGET_${targetId}` },
+        { type: LoadTag.Load, id: loadId },
+      ],
     }),
   }),
   overrideExisting: false,

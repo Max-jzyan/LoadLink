@@ -84,11 +84,7 @@ export default function DrawerShell({
             </div>
             {showCloseButton && (
               <DrawerClose asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full hover:bg-muted"
-                >
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-muted">
                   <X className="h-4 w-4" />
                   <span className="sr-only">Close</span>
                 </Button>

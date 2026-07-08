@@ -105,9 +105,7 @@ export const listDriverTrucks = async (driverId: string) => {
 export const getDriverProfile = async (driverId: string) => {
   assertValidId(driverId, 'driverId')
 
-  const driver = await DriverModel.findById(new Types.ObjectId(driverId))
-    .populate('trucks')
-    .lean()
+  const driver = await DriverModel.findById(new Types.ObjectId(driverId)).populate('trucks').lean()
 
   if (!driver) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Driver not found')
@@ -119,7 +117,10 @@ export const getDriverProfile = async (driverId: string) => {
 /**
  * Update editable fields on a driver's profile.
  */
-export const updateDriverProfile = async (driverId: string, updateData: Record<string, unknown>) => {
+export const updateDriverProfile = async (
+  driverId: string,
+  updateData: Record<string, unknown>
+) => {
   assertValidId(driverId, 'driverId')
 
   const allowedFields = [
@@ -161,10 +162,7 @@ export const updateDriverProfile = async (driverId: string, updateData: Record<s
  * Aggregate completed loads and compute revenue, expenses, and profit.
  * Optional query params: dateFrom, dateTo, truckType, minPayout, maxPayout, origin, destination, minDistance, maxDistance
  */
-export const getDriverRevenue = async (
-  driverId: string,
-  queryParams: Record<string, unknown>
-) => {
+export const getDriverRevenue = async (driverId: string, queryParams: Record<string, unknown>) => {
   assertValidId(driverId, 'driverId')
 
   const driver = await DriverModel.findById(new Types.ObjectId(driverId)).lean()
@@ -247,19 +245,23 @@ export const getDriverRevenue = async (
     }
 
     // Distance range filter (applied after calculation)
-    if (queryParams.minDistance !== undefined && distanceKm < Number(queryParams.minDistance)) continue
-    if (queryParams.maxDistance !== undefined && distanceKm > Number(queryParams.maxDistance)) continue
+    if (queryParams.minDistance !== undefined && distanceKm < Number(queryParams.minDistance))
+      continue
+    if (queryParams.maxDistance !== undefined && distanceKm > Number(queryParams.maxDistance))
+      continue
 
     // Resolve effective expense values: per-load override > driver global default
     const loadOverrides = load.expenseOverrides || {}
     const effFuelCostPerLiter = loadOverrides.fuelCostPerLiter ?? expensePrefs.fuelCostPerLiter
-    const effFuelEfficiencyKmPerLiter = loadOverrides.fuelEfficiencyKmPerLiter ?? expensePrefs.fuelEfficiencyKmPerLiter
+    const effFuelEfficiencyKmPerLiter =
+      loadOverrides.fuelEfficiencyKmPerLiter ?? expensePrefs.fuelEfficiencyKmPerLiter
     const effMaintenancePerKm = loadOverrides.maintenancePerKm ?? expensePrefs.maintenancePerKm
 
     // Per-load expense estimates
-    const fuelCost = distanceKm > 0 && effFuelEfficiencyKmPerLiter > 0
-      ? (distanceKm / effFuelEfficiencyKmPerLiter) * effFuelCostPerLiter
-      : 0
+    const fuelCost =
+      distanceKm > 0 && effFuelEfficiencyKmPerLiter > 0
+        ? (distanceKm / effFuelEfficiencyKmPerLiter) * effFuelCostPerLiter
+        : 0
     const maintenanceCost = distanceKm * effMaintenancePerKm
     const totalLoadExpenses = fuelCost + maintenanceCost
     const netProfit = payout - totalLoadExpenses
@@ -288,10 +290,8 @@ export const getDriverRevenue = async (
 
   // Monthly fixed costs (insurance + other) — prorated by number of completed loads
   const monthlyFixedCosts = expensePrefs.insurancePerMonth + expensePrefs.otherFixedCostsPerMonth
-  const totalExpenses = loadBreakdown.reduce(
-    (sum: number, lb: any) => sum + lb.totalExpenses,
-    0
-  ) + monthlyFixedCosts
+  const totalExpenses =
+    loadBreakdown.reduce((sum: number, lb: any) => sum + lb.totalExpenses, 0) + monthlyFixedCosts
 
   const netProfit = totalRevenue - totalExpenses
   const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0
@@ -314,7 +314,10 @@ export const getDriverRevenue = async (
 /**
  * Update the driver's expense preferences.
  */
-export const updateDriverExpenses = async (driverId: string, expenseData: Record<string, unknown>) => {
+export const updateDriverExpenses = async (
+  driverId: string,
+  expenseData: Record<string, unknown>
+) => {
   assertValidId(driverId, 'driverId')
 
   const allowedExpenseFields = [

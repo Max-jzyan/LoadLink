@@ -17,7 +17,11 @@ import { selectRole, selectMongoId } from '@/services/authSlice'
 import { Loader2, Plus } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import StarRating from '@/components/shared/StarRating'
-import { categoryLabels, type RatingCategories, RATING_CATEGORIES_COUNT } from '@/services/driverApi/driverEnum'
+import {
+  categoryLabels,
+  type RatingCategories,
+  RATING_CATEGORIES_COUNT,
+} from '@/services/driverApi/driverEnum'
 import type { Review } from '@/services/reviewApi/reviewEnum'
 
 function averageFromCategories(categories: RatingCategories): number {
@@ -80,7 +84,7 @@ export default function DriverPublicProfile() {
   const currentRole = useSelector(selectRole)
   const currentMongoId = useSelector(selectMongoId)
 
-  const { driverId } = useParams<{ driverId?: string }>();
+  const { driverId } = useParams<{ driverId?: string }>()
 
   const {
     data: driver,
@@ -92,15 +96,9 @@ export default function DriverPublicProfile() {
     data: reviewsPayload,
     isLoading: isReviewsLoading,
     isError: isReviewsError,
-  } = useGetReviewsForTargetQuery(
-    { targetId: driverId!, page: 1, limit: 20 },
-    { skip: !driverId }
-  )
+  } = useGetReviewsForTargetQuery({ targetId: driverId!, page: 1, limit: 20 }, { skip: !driverId })
 
-  const {
-    data: companyLoads,
-    isLoading: isLoadingCompanyLoads,
-  } = useListCompanyLoadsQuery(
+  const { data: companyLoads } = useListCompanyLoadsQuery(
     { companyId: currentMongoId!, assignedDriverId: driverId, excludeReviewedBy: currentMongoId! },
     { skip: !currentMongoId || !driverId }
   )
@@ -154,9 +152,7 @@ export default function DriverPublicProfile() {
     )
   } else if (reviews.length === 0) {
     reviewsBody = (
-      <div className="text-sm text-muted-foreground italic">
-        No reviews yet for this driver.
-      </div>
+      <div className="text-sm text-muted-foreground italic">No reviews yet for this driver.</div>
     )
   } else {
     reviewsBody = (
@@ -167,7 +163,6 @@ export default function DriverPublicProfile() {
       </div>
     )
   }
-
 
   return (
     <PageShell

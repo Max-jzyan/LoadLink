@@ -26,9 +26,7 @@ export default function TruckInfoCard({ driver, onAddTruck, onEditTruck }: Truck
       }
     >
       {driver.trucks.length === 0 ? (
-        <p className="text-sm text-muted-foreground italic">
-          No trucks registered yet.
-        </p>
+        <p className="text-sm text-muted-foreground italic">No trucks registered yet.</p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {/* Primary Truck */}

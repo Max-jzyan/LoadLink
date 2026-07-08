@@ -20,13 +20,7 @@ interface ReviewFormProps {
   isSubmitting?: boolean
 }
 
-function StarInput({
-  value,
-  onChange,
-}: {
-  value: number
-  onChange: (v: number) => void
-}) {
+function StarInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hovered, setHovered] = useState(0)
 
   return (
@@ -95,7 +89,12 @@ export default function ReviewForm({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onCancel(); }}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onCancel()
+      }}
+    >
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Review Driver: {driverName}</DialogTitle>
@@ -103,8 +102,9 @@ export default function ReviewForm({
 
         {loads.length === 0 ? (
           <DialogDescription className="rounded-md border border-dashed p-4">
-            This driver currently has no loads available for review. This may be because they have not completed a load for your company yet,
-            or because all completed loads have already been reviewed.
+            This driver currently has no loads available for review. This may be because they have
+            not completed a load for your company yet, or because all completed loads have already
+            been reviewed.
           </DialogDescription>
         ) : (
           <div>
@@ -128,10 +128,7 @@ export default function ReviewForm({
           {categoryLabels.map(({ key, label }) => (
             <div key={key} className="flex items-center justify-between">
               <span className="text-sm font-medium">{label}</span>
-              <StarInput
-                value={ratingCategories[key]}
-                onChange={(v) => updateCategory(key, v)}
-              />
+              <StarInput value={ratingCategories[key]} onChange={(v) => updateCategory(key, v)} />
             </div>
           ))}
 
@@ -145,24 +142,15 @@ export default function ReviewForm({
               maxLength={2000}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
-            <p className="mt-1 text-xs text-muted-foreground text-right">
-              {comment.length}/2000
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground text-right">{comment.length}/2000</p>
           </div>
         </div>
 
         <DialogFooter className="border-0 bg-transparent -mx-0 -mb-0 p-0">
-          <Button
-            variant="outline"
-            onClick={onCancel}
-            disabled={isSubmitting}
-          >
+          <Button variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-          >
+          <Button onClick={handleSubmit} disabled={!canSubmit}>
             {isSubmitting ? 'Submitting...' : 'Submit Review'}
           </Button>
         </DialogFooter>

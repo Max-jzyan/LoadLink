@@ -8,7 +8,6 @@ import { useForm } from 'react-hook-form'
 
 import EditPencilButton from '@/components/shared/EditPencilButton'
 
-
 interface ContactInfoCardProps {
   driver: DriverProfile
   onSave: (values: ContactFormValues) => Promise<void>
@@ -91,9 +90,7 @@ export default function ContactInfoCard({ driver, onSave }: ContactInfoCardProps
       {editing ? (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           {error && (
-            <p className="text-xs text-destructive bg-destructive/10 rounded px-2 py-1">
-              {error}
-            </p>
+            <p className="text-xs text-destructive bg-destructive/10 rounded px-2 py-1">{error}</p>
           )}
 
           {/* Phone */}
@@ -101,11 +98,7 @@ export default function ContactInfoCard({ driver, onSave }: ContactInfoCardProps
             <Phone className="mt-1.5 h-4 w-4 shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground mb-1">Phone</p>
-              <Input
-                className={inputCls}
-                {...register('phone')}
-                placeholder="Phone number"
-              />
+              <Input className={inputCls} {...register('phone')} placeholder="Phone number" />
             </div>
           </div>
 
@@ -115,11 +108,7 @@ export default function ContactInfoCard({ driver, onSave }: ContactInfoCardProps
             <div className="min-w-0 flex-1 space-y-2">
               <p className="text-xs text-muted-foreground">Home Location</p>
               <div className="grid grid-cols-3 gap-2">
-                <Input
-                  className={inputCls}
-                  placeholder="City"
-                  {...register('homeLocation.city')}
-                />
+                <Input className={inputCls} placeholder="City" {...register('homeLocation.city')} />
                 <Input
                   className={inputCls}
                   placeholder="Province"

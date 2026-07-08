@@ -143,13 +143,7 @@ export default function CompanyDashboard() {
             selectedId={selectedLoadId}
           />
         }
-        map={
-          <DriverMap
-            routes={transitRoutes}
-            selectedRouteId={selectedLoadId}
-            height="100%"
-          />
-        }
+        map={<DriverMap routes={transitRoutes} selectedRouteId={selectedLoadId} height="100%" />}
         mapAction={
           selectedLoadId ? (
             <Button variant="ghost" size="sm" onClick={handleResetView}>

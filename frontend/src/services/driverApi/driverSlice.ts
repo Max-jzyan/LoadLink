@@ -30,7 +30,7 @@ export const driverApi = api.injectEndpoints({
         { type: LoadTag.Bid, id: loadId },
         { type: LoadTag.AuctionPrice, id: loadId },
       ],
-      async onQueryStarted(arg, { queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           const { data } = await queryFulfilled
           const bidAmount = typeof data.amount === 'number' ? data.amount.toFixed(2) : '0.00'
@@ -55,7 +55,7 @@ export const driverApi = api.injectEndpoints({
         { type: LoadTag.AuctionPrice, id: loadId },
         { type: LoadTag.Load, id: LoadTagId.DriverList },
       ],
-      async onQueryStarted(arg, { queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           const { data } = await queryFulfilled
           const payout = typeof data.finalPayout === 'number' ? data.finalPayout.toFixed(2) : '0.00'
@@ -109,7 +109,10 @@ export const driverApi = api.injectEndpoints({
     }),
 
     // PATCH /api/driver/:driverId/profile — update driver profile fields
-    updateDriverProfile: build.mutation<DriverProfile, { driverId: string; body: UpdateDriverProfilePayload }>({
+    updateDriverProfile: build.mutation<
+      DriverProfile,
+      { driverId: string; body: UpdateDriverProfilePayload }
+    >({
       query: ({ driverId, body }) => ({
         url: `driver/${driverId}/profile`,
         method: 'PATCH',
@@ -132,7 +135,10 @@ export const driverApi = api.injectEndpoints({
     }),
 
     // PATCH /api/driver/:driverId/trucks/:truckId — update a truck
-    updateTruck: build.mutation<Truck, { driverId: string; truckId: string; body: UpdateTruckPayload }>({
+    updateTruck: build.mutation<
+      Truck,
+      { driverId: string; truckId: string; body: UpdateTruckPayload }
+    >({
       query: ({ driverId, truckId, body }) => ({
         url: `driver/${driverId}/trucks/${truckId}`,
         method: 'PATCH',
@@ -156,41 +162,44 @@ export const driverApi = api.injectEndpoints({
       ],
     }),
 
-  // GET /api/driver/:driverId/revenue — fetch revenue summary with optional filters
-  getDriverRevenue: build.query<
-    RevenueSummary,
-    { driverId: string; filters?: RevenueFiltersQuery }
-  >({
-    query: ({ driverId, filters }) => {
-      const params = new URLSearchParams()
+    // GET /api/driver/:driverId/revenue — fetch revenue summary with optional filters
+    getDriverRevenue: build.query<
+      RevenueSummary,
+      { driverId: string; filters?: RevenueFiltersQuery }
+    >({
+      query: ({ driverId, filters }) => {
+        const params = new URLSearchParams()
 
-      if (filters?.dateRange?.from) {
-        params.set('dateFrom', filters.dateRange.from.split('T')[0])
-      }
-      if (filters?.dateRange?.to) {
-        params.set('dateTo', filters.dateRange.to.split('T')[0])
-      }
+        if (filters?.dateRange?.from) {
+          params.set('dateFrom', filters.dateRange.from.split('T')[0])
+        }
+        if (filters?.dateRange?.to) {
+          params.set('dateTo', filters.dateRange.to.split('T')[0])
+        }
 
-      if (filters?.status) params.set('status', filters.status)
-      if (filters?.truckType) params.set('truckType', filters.truckType)
-      if (filters?.minPayout != null) params.set('minPayout', String(filters.minPayout))
-      if (filters?.maxPayout != null) params.set('maxPayout', String(filters.maxPayout))
-      if (filters?.origin) params.set('origin', filters.origin)
-      if (filters?.destination) params.set('destination', filters.destination)
-      if (filters?.minDistance != null) params.set('minDistance', String(filters.minDistance))
-      if (filters?.maxDistance != null) params.set('maxDistance', String(filters.maxDistance))
+        if (filters?.status) params.set('status', filters.status)
+        if (filters?.truckType) params.set('truckType', filters.truckType)
+        if (filters?.minPayout != null) params.set('minPayout', String(filters.minPayout))
+        if (filters?.maxPayout != null) params.set('maxPayout', String(filters.maxPayout))
+        if (filters?.origin) params.set('origin', filters.origin)
+        if (filters?.destination) params.set('destination', filters.destination)
+        if (filters?.minDistance != null) params.set('minDistance', String(filters.minDistance))
+        if (filters?.maxDistance != null) params.set('maxDistance', String(filters.maxDistance))
 
-      const qs = params.toString()
-      return `driver/${driverId}/revenue${qs ? `?${qs}` : ''}`
-    },
+        const qs = params.toString()
+        return `driver/${driverId}/revenue${qs ? `?${qs}` : ''}`
+      },
 
-    providesTags: (_result, _error, { driverId }) => [
-      { type: LoadTag.Driver, id: `${driverId}-revenue` },
-    ],
-  }),
+      providesTags: (_result, _error, { driverId }) => [
+        { type: LoadTag.Driver, id: `${driverId}-revenue` },
+      ],
+    }),
 
     // PATCH /api/driver/:driverId/expenses — update expense preferences
-    updateDriverExpenses: build.mutation<DriverProfile, { driverId: string; body: Partial<ExpensePreferences> }>({
+    updateDriverExpenses: build.mutation<
+      DriverProfile,
+      { driverId: string; body: Partial<ExpensePreferences> }
+    >({
       query: ({ driverId, body }) => ({
         url: `driver/${driverId}/expenses`,
         method: 'PATCH',

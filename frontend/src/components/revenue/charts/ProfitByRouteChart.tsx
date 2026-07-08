@@ -16,7 +16,11 @@ interface ProfitByRouteChartProps {
   viewMode?: DashboardViewMode
 }
 
-export function ProfitByRouteChart({ loadBreakdown, maxRoutes = 10, viewMode = 'completed' }: ProfitByRouteChartProps) {
+export function ProfitByRouteChart({
+  loadBreakdown,
+  maxRoutes = 10,
+  viewMode = 'completed',
+}: ProfitByRouteChartProps) {
   const isPotential = viewMode === 'potential'
   const chartData = useMemo(() => {
     if (!loadBreakdown.length) return []
@@ -27,7 +31,7 @@ export function ProfitByRouteChart({ loadBreakdown, maxRoutes = 10, viewMode = '
     loadBreakdown.forEach((load) => {
       const routeKey = `${load.originAddress} → ${load.destinationAddress}`
       const existing = routeMap.get(routeKey) || { profit: 0, count: 0, avgProfit: 0 }
-      
+
       routeMap.set(routeKey, {
         profit: existing.profit + load.netProfit,
         count: existing.count + 1,
@@ -64,10 +68,7 @@ export function ProfitByRouteChart({ loadBreakdown, maxRoutes = 10, viewMode = '
 
   return (
     <ChartContainer config={chartConfig} className="h-64 w-full">
-      <BarChart
-        data={chartData}
-        margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-      >
+      <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
         <XAxis
           dataKey="route"
@@ -97,11 +98,9 @@ export function ProfitByRouteChart({ loadBreakdown, maxRoutes = 10, viewMode = '
                       <div className="text-xs text-muted-foreground">
                         {props.payload.count} load{props.payload.count !== 1 ? 's' : ''}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {props.payload.fullRoute}
-                      </div>
+                      <div className="text-xs text-muted-foreground">{props.payload.fullRoute}</div>
                     </div>,
-                    isPotential ? 'Expected Profit' : 'Net Profit'
+                    isPotential ? 'Expected Profit' : 'Net Profit',
                   ]
                 }
                 return [value, name]

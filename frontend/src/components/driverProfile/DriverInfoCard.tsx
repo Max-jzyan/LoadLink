@@ -32,7 +32,7 @@ export default function DriverInfoCard({ driver, onEdit }: DriverInfoCardProps) 
             <EditPencilButton onClick={onEdit} ariaLabel="Edit profile" title="Edit profile" />
           </div>
         )}
-        
+
         <div className="flex flex-col items-center">
           {/* Avatar / Profile Picture */}
           {driver.profilePictureUrl ? (

@@ -54,12 +54,7 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-xs text-destructive mt-1">{message}</p>
 }
 
-export default function TruckDrawer({
-  open,
-  onOpenChange,
-  editTruck,
-  onSubmit,
-}: TruckDrawerProps) {
+export default function TruckDrawer({ open, onOpenChange, editTruck, onSubmit }: TruckDrawerProps) {
   const formId = 'truck-form'
 
   const isEdit = !!editTruck
@@ -69,8 +64,7 @@ export default function TruckDrawer({
   // Force remount of the form when switching modes (edit <-> create)
   // to guarantee RHF state is fully cleared.
   const formKey = `${open ? 'open' : 'closed'}:${editTruck?._id ?? 'create'}`
-  const { register, handleSubmit, control, reset, formState } =
-    useForm<TruckFormValues>({
+  const { register, handleSubmit, control, reset, formState } = useForm<TruckFormValues>({
     defaultValues: {
       make: '',
       model: '',
@@ -163,7 +157,9 @@ export default function TruckDrawer({
       open={open}
       onOpenChange={onOpenChange}
       title={isEdit ? 'Edit Truck' : 'Add New Truck'}
-      description={isEdit ? 'Update the details of your truck.' : 'Register a new truck to your fleet.'}
+      description={
+        isEdit ? 'Update the details of your truck.' : 'Register a new truck to your fleet.'
+      }
       size="lg"
       footer={
         <>

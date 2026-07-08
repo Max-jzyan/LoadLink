@@ -1,9 +1,9 @@
-import { toast } from "sonner";
+import { toast } from 'sonner'
 
-const DEFAULT_TIMEOUT = 4000;
-const ERROR_TIMEOUT = 6000;
+const DEFAULT_TIMEOUT = 4000
+const ERROR_TIMEOUT = 6000
 
-export type ToastType = "success" | "error" | "info" | "warning"
+export type ToastType = 'success' | 'error' | 'info' | 'warning'
 
 export interface ToastOptions {
   description?: string
@@ -56,27 +56,27 @@ export function showWarning(message: string, options?: ToastOptions) {
 export function getHttpErrorMessage(status: number, defaultMessage?: string): string {
   switch (true) {
     case status >= 200 && status < 300:
-      return defaultMessage ?? "Operation completed successfully"
+      return defaultMessage ?? 'Operation completed successfully'
     case status === 400:
-      return "Invalid request. Please check your input and try again."
+      return 'Invalid request. Please check your input and try again.'
     case status === 401:
-      return "You are not authorized. Please log in again."
+      return 'You are not authorized. Please log in again.'
     case status === 403:
       return "You don't have permission to perform this action."
     case status === 404:
-      return "The requested resource was not found."
+      return 'The requested resource was not found.'
     case status === 409:
-      return "This action conflicts with existing data."
+      return 'This action conflicts with existing data.'
     case status >= 400 && status < 500:
-      return defaultMessage ?? "Client error. Please try again."
+      return defaultMessage ?? 'Client error. Please try again.'
     case status === 500:
-      return "Server error. Please try again later."
+      return 'Server error. Please try again later.'
     case status === 502:
-      return "Service temporarily unavailable. Please try again."
+      return 'Service temporarily unavailable. Please try again.'
     case status >= 500:
-      return defaultMessage ?? "Server error. Please try again later."
+      return defaultMessage ?? 'Server error. Please try again later.'
     default:
-      return defaultMessage ?? "An unexpected error occurred."
+      return defaultMessage ?? 'An unexpected error occurred.'
   }
 }
 
@@ -101,18 +101,18 @@ export function getSuccessMessage(action: string, entity: string): string {
   const entityLower = entity.toLowerCase()
 
   switch (actionLower) {
-    case "create":
-    case "post":
+    case 'create':
+    case 'post':
       return `Successfully created ${entityLower}`
-    case "update":
-    case "patch":
+    case 'update':
+    case 'patch':
       return `Successfully updated ${entityLower}`
-    case "delete":
-    case "remove":
+    case 'delete':
+    case 'remove':
       return `Successfully deleted ${entityLower}`
-    case "claim":
+    case 'claim':
       return `Successfully claimed ${entityLower}`
-    case "bid":
+    case 'bid':
       return `Successfully placed bid on ${entityLower}`
     default:
       return `${action} ${entityLower} completed successfully`

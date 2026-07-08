@@ -1,6 +1,12 @@
 import { api } from '../api'
 import type { RegisterUserPayload, RegisterUserResponse } from './userEnum'
-import { showSuccess, showError, getSuccessMessage, getHttpErrorMessage, getErrorStatus } from '@/lib/toast'
+import {
+  showSuccess,
+  showError,
+  getSuccessMessage,
+  getHttpErrorMessage,
+  getErrorStatus,
+} from '@/lib/toast'
 
 export const userApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -11,7 +17,7 @@ export const userApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      async onQueryStarted(arg, { queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           await queryFulfilled
           showSuccess(getSuccessMessage('create', 'user profile'))

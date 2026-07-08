@@ -16,12 +16,12 @@ interface DatePickerWithRangeProps {
 export function DatePickerWithRange({ label, date, onRangeChange }: DatePickerWithRangeProps) {
   // Internal state for the calendar selection
   const [internalRange, setInternalRange] = React.useState<DateRange | undefined>(undefined)
-  
+
   // Sync with external date prop when it changes (for reset functionality)
   // Compare by timestamp to avoid unnecessary resets from new Date object references
   const dateFromTime = date?.from?.getTime()
   const dateToTime = date?.to?.getTime()
-  
+
   React.useEffect(() => {
     setInternalRange(date)
   }, [dateFromTime, dateToTime])
@@ -41,7 +41,8 @@ export function DatePickerWithRange({ label, date, onRangeChange }: DatePickerWi
             {internalRange?.from ? (
               internalRange.to ? (
                 <>
-                  {format(internalRange.from, 'LLL dd, y')} - {format(internalRange.to, 'LLL dd, y')}
+                  {format(internalRange.from, 'LLL dd, y')} -{' '}
+                  {format(internalRange.to, 'LLL dd, y')}
                 </>
               ) : (
                 format(internalRange.from, 'LLL dd, y')

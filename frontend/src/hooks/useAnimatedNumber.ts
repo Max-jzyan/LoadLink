@@ -5,14 +5,11 @@ interface UseAnimatedNumberOptions {
   easing?: (t: number) => number
 }
 
-export function useAnimatedNumber(
-  targetValue: number,
-  options: UseAnimatedNumberOptions = {}
-) {
+export function useAnimatedNumber(targetValue: number, options: UseAnimatedNumberOptions = {}) {
   const { duration = 800, easing = easeOutCubic } = options
   const [displayValue, setDisplayValue] = useState(targetValue)
   const previousValueRef = useRef(targetValue)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     const startValue = previousValueRef.current
@@ -51,7 +48,7 @@ function easeOutCubic(t: number): number {
 
 export function useAnimatedCurrency(value: number | null | undefined, currency = 'CAD'): string {
   const animatedValue = useAnimatedNumber(value ?? 0)
-  
+
   if (value === null || value === undefined) {
     return '—'
   }

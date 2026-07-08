@@ -75,7 +75,9 @@ export default function PricingPreferencesCard({ driver, onSave }: PricingPrefer
             <div className="flex flex-col gap-1">
               <p className="text-xs text-muted-foreground">Min Rate / Mile</p>
               <div className="relative">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  $
+                </span>
                 <Input
                   className={`${inputCls} pl-6`}
                   type="number"
@@ -88,7 +90,9 @@ export default function PricingPreferencesCard({ driver, onSave }: PricingPrefer
             <div className="flex flex-col gap-1">
               <p className="text-xs text-muted-foreground">Min Load Value</p>
               <div className="relative">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  $
+                </span>
                 <Input
                   className={`${inputCls} pl-6`}
                   type="number"

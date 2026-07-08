@@ -9,7 +9,12 @@ import { Button } from '@/components/ui/button'
 import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
 import { relativeTime } from '@/lib/utils'
 import { selectMongoId } from '@/services/authSlice'
-import type { DashboardViewMode, ExpensePreferences, RevenueFilters, RevenueFiltersQuery } from '@/services/driverApi/driverEnum'
+import type {
+  DashboardViewMode,
+  ExpensePreferences,
+  RevenueFilters,
+  RevenueFiltersQuery,
+} from '@/services/driverApi/driverEnum'
 import {
   useGetDriverRevenueQuery,
   useUpdateDriverExpensesMutation,
@@ -25,7 +30,7 @@ export default function Dashboard() {
   const [filters, setFilters] = useState<RevenueFilters>({
     dateRange: {
       from: undefined,
-      to: undefined
+      to: undefined,
     },
     truckType: '',
     minPayout: null,
@@ -54,19 +59,21 @@ export default function Dashboard() {
     isFetching,
     refetch,
     fulfilledTimeStamp,
-  } = useGetDriverRevenueQuery(
-    {
-      driverId, // This is a known issue that needs to be fixed, auth seems to be duplicated? #134
-      filters: {
-        ...debouncedFilters,
-        status: viewMode === 'potential' ? 'booked,in_transit' : 'completed',
-        dateRange: {
-          from: debouncedFilters.dateRange?.from ? debouncedFilters.dateRange.from.toISOString() : undefined,
-          to: debouncedFilters.dateRange?.to ? debouncedFilters.dateRange.to.toISOString() : undefined,
-        }
-      } as RevenueFiltersQuery
-    }
-  )
+  } = useGetDriverRevenueQuery({
+    driverId: driverId!, // This is a known issue that needs to be fixed, auth seems to be duplicated? #134
+    filters: {
+      ...debouncedFilters,
+      status: viewMode === 'potential' ? 'booked,in_transit' : 'completed',
+      dateRange: {
+        from: debouncedFilters.dateRange?.from
+          ? debouncedFilters.dateRange.from.toISOString()
+          : undefined,
+        to: debouncedFilters.dateRange?.to
+          ? debouncedFilters.dateRange.to.toISOString()
+          : undefined,
+      },
+    } as RevenueFiltersQuery,
+  })
 
   const [updateExpenses, { isLoading: isUpdating }] = useUpdateDriverExpensesMutation()
 
@@ -79,15 +86,18 @@ export default function Dashboard() {
     }
   }, [revenue?.expensePreferences])
 
-  const handleSaveGlobalExpenses = useCallback(async (form: ExpensePreferences) => {
-    if (!driverId) return
-    try {
-      await updateExpenses({ driverId, body: form }).unwrap()
-      setGlobalDrawerOpen(false)
-    } catch {
-      // error handled by RTK
-    }
-  }, [driverId, updateExpenses])
+  const handleSaveGlobalExpenses = useCallback(
+    async (form: ExpensePreferences) => {
+      if (!driverId) return
+      try {
+        await updateExpenses({ driverId, body: form }).unwrap()
+        setGlobalDrawerOpen(false)
+      } catch {
+        // error handled by RTK
+      }
+    },
+    [driverId, updateExpenses]
+  )
 
   const { lastManualRefresh, handleRefresh, captureInitialLoad } = useRefreshTimestamp()
   useEffect(() => {
@@ -109,7 +119,7 @@ export default function Dashboard() {
 
   return (
     <PageShell
-        title="Revenue Center"
+      title="Revenue Center"
       subtitle={subtitle}
       tabs={{
         options: [
@@ -122,7 +132,12 @@ export default function Dashboard() {
       stickyBar={<RevenueFilterBar filters={filters} onFiltersChange={setFilters} />}
       actions={
         <>
-          <Button variant="outline" size="icon" onClick={() => setGlobalDrawerOpen(true)} title="Expense Settings">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setGlobalDrawerOpen(true)}
+            title="Expense Settings"
+          >
             <Settings2 />
           </Button>
           <Button variant="outline" size="icon" onClick={onRefresh} title="Refresh">

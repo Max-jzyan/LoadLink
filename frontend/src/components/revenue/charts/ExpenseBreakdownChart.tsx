@@ -15,8 +15,7 @@ interface ExpenseBreakdownChartProps {
   viewMode?: DashboardViewMode
 }
 
-export function ExpenseBreakdownChart({ loadBreakdown, viewMode = 'completed' }: ExpenseBreakdownChartProps) {
-  const isPotential = viewMode === 'potential'
+export function ExpenseBreakdownChart({ loadBreakdown }: ExpenseBreakdownChartProps) {
   const chartData = useMemo(() => {
     if (!loadBreakdown.length) return []
 

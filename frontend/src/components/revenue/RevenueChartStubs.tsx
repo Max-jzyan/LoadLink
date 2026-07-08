@@ -10,28 +10,41 @@ interface RevenueChartStubsProps {
   viewMode?: DashboardViewMode
 }
 
-export function RevenueChartGrid({ loadBreakdown, viewMode = 'completed' }: RevenueChartStubsProps) {
+export function RevenueChartGrid({
+  loadBreakdown,
+  viewMode = 'completed',
+}: RevenueChartStubsProps) {
   const isPotential = viewMode === 'potential'
 
   const charts = [
     {
       title: isPotential ? 'Expected Revenue & Expenses Over Time' : 'Revenue & Expenses Over Time',
-      description: isPotential ? 'Weekly trends showing expected revenue vs estimated expenses' : 'Weekly trends showing revenue vs expenses',
+      description: isPotential
+        ? 'Weekly trends showing expected revenue vs estimated expenses'
+        : 'Weekly trends showing revenue vs expenses',
       component: <RevenueTimeChart loadBreakdown={loadBreakdown} viewMode={viewMode} />,
     },
     {
       title: isPotential ? 'Expected Profit by Route' : 'Profit by Route',
-      description: isPotential ? 'Top routes ranked by expected net profit' : 'Top routes ranked by net profit',
-      component: <ProfitByRouteChart loadBreakdown={loadBreakdown} maxRoutes={10} viewMode={viewMode} />,
+      description: isPotential
+        ? 'Top routes ranked by expected net profit'
+        : 'Top routes ranked by net profit',
+      component: (
+        <ProfitByRouteChart loadBreakdown={loadBreakdown} maxRoutes={10} viewMode={viewMode} />
+      ),
     },
     {
       title: isPotential ? 'Estimated Expense Breakdown' : 'Expense Breakdown',
-      description: isPotential ? 'Distribution of estimated expenses by category' : 'Distribution of expenses by category',
+      description: isPotential
+        ? 'Distribution of estimated expenses by category'
+        : 'Distribution of expenses by category',
       component: <ExpenseBreakdownChart loadBreakdown={loadBreakdown} viewMode={viewMode} />,
     },
     {
       title: isPotential ? 'Distance vs Expected Profit' : 'Distance vs Profit',
-      description: isPotential ? 'Expected profitability analysis by distance' : 'Profitability analysis by distance',
+      description: isPotential
+        ? 'Expected profitability analysis by distance'
+        : 'Profitability analysis by distance',
       component: <DistanceProfitScatterChart loadBreakdown={loadBreakdown} viewMode={viewMode} />,
     },
   ]

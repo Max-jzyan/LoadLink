@@ -13,7 +13,12 @@ interface CompanyLoadTableProps {
   selectedId?: string | null
 }
 
-export default function CompanyLoadTable({ title, loads, onRowClick, selectedId }: CompanyLoadTableProps) {
+export default function CompanyLoadTable({
+  title,
+  loads,
+  onRowClick,
+  selectedId,
+}: CompanyLoadTableProps) {
   const [table, setTable] = useState<Table<LoadWithDetails> | null>(null)
   const [pageIndex, setPageIndex] = useState(0)
 

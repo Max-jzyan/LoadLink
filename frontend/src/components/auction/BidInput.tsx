@@ -37,7 +37,9 @@ export default function BidInput({ loadId, auctionStatus, currentPrice }: BidInp
       return
     }
     if (currentPrice !== undefined && bidAmount < currentPrice) {
-      showError(`Your bid of $${bidAmount.toLocaleString()} is lower than the current accept price of $${currentPrice.toLocaleString()}.`);
+      showError(
+        `Your bid of $${bidAmount.toLocaleString()} is lower than the current accept price of $${currentPrice.toLocaleString()}.`
+      )
       return
     }
     try {

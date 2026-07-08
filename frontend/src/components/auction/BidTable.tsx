@@ -17,20 +17,27 @@ interface BidTableProps {
 }
 
 function getDriverLabel(bid: PopulatedBid, currentDriverId?: string) {
-  const driver =
-    typeof bid.driverId === 'object' ? bid.driverId : null
+  const driver = typeof bid.driverId === 'object' ? bid.driverId : null
   const driverId = driver?._id ?? (typeof bid.driverId === 'string' ? bid.driverId : '')
   const name = driver?.name ?? ''
 
-  const label = driver
-    ? <DriverNameLink name={name} driverId={driverId} />
-    : <span>{`#${driverId.slice(-6).toUpperCase()}`}</span>
+  const label = driver ? (
+    <DriverNameLink name={name} driverId={driverId} />
+  ) : (
+    <span>{`#${driverId.slice(-6).toUpperCase()}`}</span>
+  )
 
   if (!currentDriverId) return label
   const bidDriverId = driverId
   const isMine = bidDriverId === currentDriverId
 
-  return isMine ? <>{label} <span className="text-muted-foreground">(me)</span></> : label
+  return isMine ? (
+    <>
+      {label} <span className="text-muted-foreground">(me)</span>
+    </>
+  ) : (
+    label
+  )
 }
 
 export default function BidTable({ bids, currentDriverId }: BidTableProps) {

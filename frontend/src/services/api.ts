@@ -15,6 +15,13 @@ export const api = createApi({
       return headers
     },
   }),
-  tagTypes: [LoadTag.Load, LoadTag.Bid, LoadTag.AuctionPrice, LoadTag.Truck, LoadTag.Driver, LoadTag.Review],
+  tagTypes: [
+    LoadTag.Load,
+    LoadTag.Bid,
+    LoadTag.AuctionPrice,
+    LoadTag.Truck,
+    LoadTag.Driver,
+    LoadTag.Review,
+  ],
   endpoints: () => ({}),
 })
