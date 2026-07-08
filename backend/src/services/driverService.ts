@@ -8,7 +8,8 @@ import { DriverModel } from '../models/users/Driver'
 import { ApiError } from '../utils/ApiError'
 import * as uploadService from './uploadService'
 
-// ── helpers ──────────────────────────────────────────────────────────────
+// ── helpers ─────────────────────────────────────────────────────────────┐
+//                                                                     │
 
 /**
  * The bucket has no public read access, so stored S3 URLs 403 if fetched
@@ -55,7 +56,8 @@ export const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: numb
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-// ── service functions ────────────────────────────────────────────────────
+// ── service functions ─────────────────────────────────────────────────┐
+//                                                                     │
 
 /**
  * List all bids placed by a driver. Optional status filter.
@@ -202,7 +204,7 @@ export const updateDriverProfile = async (
 
 /**
  * Aggregate completed loads and compute revenue, expenses, and profit.
- * Optional query params: dateFrom, dateTo, truckType, minPayout, maxPayout, origin, destination, minDistance, maxDistance
+ * Optional query params: dateFrom, dateTo, truckType, selectedTruck, minPayout, maxPayout, origin, destination, minDistance, maxDistance
  */
 export const getDriverRevenue = async (driverId: string, queryParams: Record<string, unknown>) => {
   assertValidId(driverId, 'driverId')
@@ -216,10 +218,18 @@ export const getDriverRevenue = async (driverId: string, queryParams: Record<str
   const expensePrefs = driver.expensePreferences || {
     fuelCostPerLiter: 1.5,
     fuelEfficiencyKmPerLiter: 3.5,
-    insurancePerMonth: 500,
     maintenancePerKm: 0.15,
     otherFixedCostsPerMonth: 0,
   }
+
+  // Fetch the driver's trucks to resolve per-truck expense prefs & insurance
+  const trucks = await TruckModel.find({ ownerDriverId: new Types.ObjectId(driverId) }).lean()
+  const truckById = new Map(trucks.map((t) => [t._id.toString(), t]))
+  // Total monthly insurance summed across all trucks owned by the driver
+  const totalFleetInsurance = trucks.reduce(
+    (sum: number, t: any) => sum + (t.expensePreferences?.insurancePerMonth ?? 0),
+    0
+  )
 
   // Build filter query — default to completed, accept comma-separated statuses
   const statusParam = (queryParams.status as string) || LOAD_STATUSES.Completed
@@ -241,6 +251,17 @@ export const getDriverRevenue = async (driverId: string, queryParams: Record<str
   // Truck type filter
   if (queryParams.truckType) {
     filter.truckType = queryParams.truckType as string
+  }
+
+  // Selected truck filter (by load's selectedTruckId)
+  if (queryParams.selectedTruck) {
+    const selectedTruck = queryParams.selectedTruck as string
+    if (selectedTruck === 'none') {
+      filter.selectedTruckId = null
+    } else {
+      assertValidId(selectedTruck, 'selectedTruck')
+      filter.selectedTruckId = new Types.ObjectId(selectedTruck)
+    }
   }
 
   // Origin/destination text search
@@ -292,12 +313,32 @@ export const getDriverRevenue = async (driverId: string, queryParams: Record<str
     if (queryParams.maxDistance !== undefined && distanceKm > Number(queryParams.maxDistance))
       continue
 
-    // Resolve effective expense values: per-load override > driver global default
+    // Resolve effective expense values:
+    // per-load override > truck-specific prefs > driver global default
     const loadOverrides = load.expenseOverrides || {}
-    const effFuelCostPerLiter = loadOverrides.fuelCostPerLiter ?? expensePrefs.fuelCostPerLiter
+    const truckForLoad = load.selectedTruckId
+      ? truckById.get((load.selectedTruckId as any).toString())
+      : undefined
+    const truckExpensePrefs = (truckForLoad as any)?.expensePreferences || {}
+
+    // Insurance: use the selected truck's insurance if a truck is chosen,
+    // otherwise fall back to the sum of all trucks' insurance (fleet total).
+    const effInsurancePerMonth = truckForLoad
+      ? truckExpensePrefs.insurancePerMonth ?? 0
+      : totalFleetInsurance
+
+    const effFuelCostPerLiter =
+      loadOverrides.fuelCostPerLiter ??
+      truckExpensePrefs.fuelCostPerLiter ??
+      expensePrefs.fuelCostPerLiter
     const effFuelEfficiencyKmPerLiter =
-      loadOverrides.fuelEfficiencyKmPerLiter ?? expensePrefs.fuelEfficiencyKmPerLiter
-    const effMaintenancePerKm = loadOverrides.maintenancePerKm ?? expensePrefs.maintenancePerKm
+      loadOverrides.fuelEfficiencyKmPerLiter ??
+      truckExpensePrefs.fuelEfficiencyKmPerLiter ??
+      expensePrefs.fuelEfficiencyKmPerLiter
+    const effMaintenancePerKm =
+      loadOverrides.maintenancePerKm ??
+      truckExpensePrefs.maintenancePerKm ??
+      expensePrefs.maintenancePerKm
 
     // Per-load expense estimates
     const fuelCost =
@@ -327,11 +368,17 @@ export const getDriverRevenue = async (driverId: string, queryParams: Record<str
       effectiveFuelCostPerLiter: effFuelCostPerLiter,
       effectiveFuelEfficiencyKmPerLiter: effFuelEfficiencyKmPerLiter,
       effectiveMaintenancePerKm: effMaintenancePerKm,
+      effectiveInsurancePerMonth: effInsurancePerMonth,
+      selectedTruckId: load.selectedTruckId ? (load.selectedTruckId as any).toString() : null,
+      selectedTruckName: truckForLoad
+        ? `${(truckForLoad as any).year} ${(truckForLoad as any).make} ${(truckForLoad as any).model} (${(truckForLoad as any).trailerLengthFt}ft)`
+        : null,
     })
   }
 
-  // Monthly fixed costs (insurance + other) — prorated by number of completed loads
-  const monthlyFixedCosts = expensePrefs.insurancePerMonth + expensePrefs.otherFixedCostsPerMonth
+  // Monthly fixed costs (insurance + other) — insurance is per-truck only;
+  // the fleet total is used as the fixed-cost baseline here.
+  const monthlyFixedCosts = totalFleetInsurance + (expensePrefs.otherFixedCostsPerMonth ?? 0)
   const totalExpenses =
     loadBreakdown.reduce((sum: number, lb: any) => sum + lb.totalExpenses, 0) + monthlyFixedCosts
 
@@ -365,7 +412,6 @@ export const updateDriverExpenses = async (
   const allowedExpenseFields = [
     'fuelCostPerLiter',
     'fuelEfficiencyKmPerLiter',
-    'insurancePerMonth',
     'maintenancePerKm',
     'otherFixedCostsPerMonth',
   ]

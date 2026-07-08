@@ -8,6 +8,7 @@ import type {
   ClaimResult,
   Bid,
   Truck,
+  TruckExpensePreferences,
   DriverProfile,
   RevenueSummary,
   ExpensePreferences,
@@ -162,6 +163,22 @@ export const driverApi = api.injectEndpoints({
       ],
     }),
 
+    // PATCH /api/driver/:driverId/trucks/:truckId/expenses — update a truck's expense preferences
+    updateTruckExpenses: build.mutation<
+      Truck,
+      { driverId: string; truckId: string; body: Partial<TruckExpensePreferences> }
+    >({
+      query: ({ driverId, truckId, body }) => ({
+        url: `driver/${driverId}/trucks/${truckId}/expenses`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { driverId }) => [
+        { type: LoadTag.Driver, id: `${driverId}-revenue` },
+        { type: LoadTag.Truck, id: driverId },
+      ],
+    }),
+
     // GET /api/driver/:driverId/revenue — fetch revenue summary with optional filters
     getDriverRevenue: build.query<
       RevenueSummary,
@@ -179,6 +196,7 @@ export const driverApi = api.injectEndpoints({
 
         if (filters?.status) params.set('status', filters.status)
         if (filters?.truckType) params.set('truckType', filters.truckType)
+        if (filters?.selectedTruck) params.set('selectedTruck', filters.selectedTruck)
         if (filters?.minPayout != null) params.set('minPayout', String(filters.minPayout))
         if (filters?.maxPayout != null) params.set('maxPayout', String(filters.maxPayout))
         if (filters?.origin) params.set('origin', filters.origin)
@@ -210,6 +228,19 @@ export const driverApi = api.injectEndpoints({
         { type: LoadTag.Driver, id: `${driverId}-revenue` },
       ],
     }),
+
+    // PATCH /api/loads/:loadId/select-truck — assign (or clear) the truck for a load
+    selectTruckForLoad: build.mutation<Load, { loadId: string; truckId: string | null }>({
+      query: ({ loadId, truckId }) => ({
+        url: `loads/${loadId}/select-truck`,
+        method: 'PATCH',
+        body: { truckId },
+      }),
+      invalidatesTags: (_result, _error, { loadId }) => [
+        { type: LoadTag.Load, id: loadId },
+        { type: LoadTag.Load, id: LoadTagId.DriverList },
+      ],
+    }),
   }),
   overrideExisting: false,
 })
@@ -229,4 +260,6 @@ export const {
   useDeleteTruckMutation,
   useGetDriverRevenueQuery,
   useUpdateDriverExpensesMutation,
+  useUpdateTruckExpensesMutation,
+  useSelectTruckForLoadMutation,
 } = driverApi

@@ -89,3 +89,18 @@ export const setPrimaryTruck = async (req: Request, res: Response, next: NextFun
     next(err)
   }
 }
+
+/**
+ * PATCH /api/driver/:driverId/trucks/:truckId/expenses
+ * Update the expense preferences for a specific truck.
+ */
+export const updateTruckExpenses = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const driverId = req.params.driverId as string
+    const truckId = req.params.truckId as string
+    const truck = await truckService.updateTruckExpenses(driverId, truckId, req.body)
+    res.status(StatusCodes.OK).json(truck)
+  } catch (err) {
+    next(err)
+  }
+}

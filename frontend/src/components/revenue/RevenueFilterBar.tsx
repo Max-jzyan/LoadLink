@@ -11,13 +11,14 @@ import { Separator } from '@/components/ui/separator'
 import { X } from 'lucide-react'
 import { TRUCK_TYPES } from '@/types/enums'
 import { DatePickerWithRange } from '@/components/shared/DatePickerWithRange'
-import type { RevenueFilters } from '@/services/driverApi/driverEnum'
+import type { RevenueFilters, Truck } from '@/services/driverApi/driverEnum'
 import { format } from 'date-fns'
 import React from 'react'
 
 interface RevenueFilterBarProps {
   filters: RevenueFilters
   onFiltersChange: (filters: RevenueFilters) => void
+  trucks?: Truck[]
 }
 
 const DEFAULT_FILTERS: RevenueFilters = {
@@ -26,6 +27,7 @@ const DEFAULT_FILTERS: RevenueFilters = {
     to: undefined,
   },
   truckType: '',
+  selectedTruck: '',
   minPayout: null,
   maxPayout: null,
   origin: '',
@@ -34,14 +36,20 @@ const DEFAULT_FILTERS: RevenueFilters = {
   maxDistance: null,
 }
 
+function truckDisplayName(t: Truck) {
+  return `${t.year} ${t.make} ${t.model} (${t.trailerLengthFt}ft)`
+}
+
 function ActiveFiltersNotice({
   filters,
   onRemoveFilter,
   onReset,
+  trucks,
 }: {
   filters: RevenueFilters
   onRemoveFilter: (key: keyof RevenueFilters) => void
   onReset: () => void
+  trucks: Truck[]
 }) {
   const activeFilters: { key: keyof RevenueFilters; label: string; value: string }[] = []
 
@@ -61,6 +69,17 @@ function ActiveFiltersNotice({
     const truckLabel =
       TRUCK_TYPES.find((t) => t.value === filters.truckType)?.label ?? filters.truckType
     activeFilters.push({ key: 'truckType', label: 'Truck', value: truckLabel })
+  }
+
+  if (filters.selectedTruck) {
+    const selectedTruck = trucks.find((t) => t._id === filters.selectedTruck)
+    const truckName =
+      filters.selectedTruck === 'none'
+        ? 'No Truck'
+        : selectedTruck
+          ? truckDisplayName(selectedTruck)
+          : filters.selectedTruck
+    activeFilters.push({ key: 'selectedTruck', label: 'My Truck', value: truckName })
   }
 
   if (filters.origin) {
@@ -125,7 +144,11 @@ function ActiveFiltersNotice({
   )
 }
 
-export default function RevenueFilterBar({ filters, onFiltersChange }: RevenueFilterBarProps) {
+export default function RevenueFilterBar({
+  filters,
+  onFiltersChange,
+  trucks = [],
+}: RevenueFilterBarProps) {
   const updateFilter = <K extends keyof RevenueFilters>(key: K, value: RevenueFilters[K]) => {
     onFiltersChange({ ...filters, [key]: value })
   }
@@ -140,7 +163,8 @@ export default function RevenueFilterBar({ filters, onFiltersChange }: RevenueFi
 
   const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
     if (key === 'dateRange') return value !== undefined
-    if (key === 'truckType' || key === 'origin' || key === 'destination') return value !== ''
+    if (key === 'truckType' || key === 'origin' || key === 'destination' || key === 'selectedTruck')
+      return value !== ''
     if (
       key === 'minPayout' ||
       key === 'maxPayout' ||
@@ -172,6 +196,25 @@ export default function RevenueFilterBar({ filters, onFiltersChange }: RevenueFi
         <Separator orientation="vertical" className="hidden md:block h-6" />
         <Separator className="md:hidden w-full" />
 
+        {/* Origin Filter */}
+        <Input
+          placeholder="Origin city..."
+          className="w-36"
+          value={filters.origin}
+          onChange={(e) => updateFilter('origin', e.target.value)}
+        />
+
+        {/* Destination Filter */}
+        <Input
+          placeholder="Destination city..."
+          className="w-36"
+          value={filters.destination}
+          onChange={(e) => updateFilter('destination', e.target.value)}
+        />
+
+        <Separator orientation="vertical" className="hidden md:block h-6" />
+        <Separator className="md:hidden w-full" />
+
         {/* Truck Type Filter */}
         <Select
           value={filters.truckType || 'all'}
@@ -190,21 +233,26 @@ export default function RevenueFilterBar({ filters, onFiltersChange }: RevenueFi
           </SelectContent>
         </Select>
 
-        {/* Origin Filter */}
-        <Input
-          placeholder="Origin city..."
-          className="w-36"
-          value={filters.origin}
-          onChange={(e) => updateFilter('origin', e.target.value)}
-        />
+        {/* My Truck Filter */}
+        <Select
+          value={filters.selectedTruck || 'all'}
+          onValueChange={(value) => updateFilter('selectedTruck', value === 'all' ? '' : value)}
+        >
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="My Truck" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Trucks</SelectItem>
+            <SelectItem value="none">No Truck</SelectItem>
+            {trucks.map((t) => (
+              <SelectItem key={t._id} value={t._id}>
+                {truckDisplayName(t)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        {/* Destination Filter */}
-        <Input
-          placeholder="Destination city..."
-          className="w-36"
-          value={filters.destination}
-          onChange={(e) => updateFilter('destination', e.target.value)}
-        />
+        <Separator orientation="vertical" className="hidden md:block h-6" />
 
         {/* Distance Range Filter */}
         <div className="flex items-center gap-1.5">
@@ -267,6 +315,7 @@ export default function RevenueFilterBar({ filters, onFiltersChange }: RevenueFi
         filters={filters}
         onRemoveFilter={handleRemoveFilter}
         onReset={handleReset}
+        trucks={trucks}
       />
     </div>
   )

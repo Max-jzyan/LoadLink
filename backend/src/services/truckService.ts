@@ -192,6 +192,58 @@ export const deleteTruck = async (driverId: string, truckId: string) => {
 }
 
 /**
+ * Update the expense preferences for a specific truck.
+ */
+export const updateTruckExpenses = async (
+  driverId: string,
+  truckId: string,
+  expenseData: Record<string, unknown>
+) => {
+  assertValidId(driverId, 'driverId')
+  assertValidId(truckId, 'truckId')
+
+  const allowedFields = [
+    'fuelCostPerLiter',
+    'fuelEfficiencyKmPerLiter',
+    'insurancePerMonth',
+    'maintenancePerKm',
+    'otherFixedCostsPerMonth',
+  ]
+
+  const filteredData: Record<string, unknown> = {}
+  for (const field of allowedFields) {
+    if (expenseData[field] !== undefined) {
+      // Allow null for the nullable (fallback) fields; insurance is not nullable
+      if (field === 'insurancePerMonth') {
+        filteredData[`expensePreferences.${field}`] = expenseData[field]
+      } else {
+        filteredData[`expensePreferences.${field}`] =
+          expenseData[field] === null ? null : expenseData[field]
+      }
+    }
+  }
+
+  if (Object.keys(filteredData).length === 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'No valid expense fields to update')
+  }
+
+  const truck = await TruckModel.findOneAndUpdate(
+    {
+      _id: new Types.ObjectId(truckId),
+      ownerDriverId: new Types.ObjectId(driverId),
+    },
+    { $set: filteredData },
+    { new: true, runValidators: true }
+  )
+
+  if (!truck) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Truck not found')
+  }
+
+  return truck
+}
+
+/**
  * Set a specific truck as the primary truck for a driver.
  */
 export const setPrimaryTruck = async (driverId: string, truckId: string) => {

@@ -41,17 +41,17 @@ export default function LoadsPageLayout({
     <div className="flex flex-col gap-3">
       {/* ── Stats Cards Row ── */}
       {isLoading ? (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-[100px] rounded-xl" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-4 gap-2">{statsCards}</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{statsCards}</div>
       )}
 
       {/* ── Table Row ── */}
-      <div className="min-h-[300px]">{table}</div>
+      <div className="min-h-[300px] min-w-0">{table}</div>
 
       {/* ── Map Row ── */}
       <DynamicCard title="Map" action={mapAction}>

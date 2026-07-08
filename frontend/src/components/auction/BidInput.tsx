@@ -43,7 +43,13 @@ export default function BidInput({ loadId, auctionStatus, currentPrice }: BidInp
       return
     }
     try {
-      await placeBid({ loadId, body: { driverId: mongoId, amount: bidAmount } }).unwrap()
+      await placeBid({
+        loadId,
+        body: {
+          driverId: mongoId,
+          amount: bidAmount,
+        },
+      }).unwrap()
       setBidAmount('')
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to place bid'
@@ -79,7 +85,7 @@ export default function BidInput({ loadId, auctionStatus, currentPrice }: BidInp
         )
       }
     >
-      <Row size={1}>
+      <Row size={1} className="gap-2">
         <Col size={1}>
           <PriceInput
             variant={PriceInputVariant.AMOUNT}

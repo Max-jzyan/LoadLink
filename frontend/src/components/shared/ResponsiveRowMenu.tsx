@@ -56,7 +56,9 @@ export function ResponsiveRowMenu({ load, children, mobileDetails }: ResponsiveR
           </div>
           <p className="truncate">
             {(load as LoadWithDetails).originAddress || (load as Load).originAddress}
-            <ChevronRight className="inline h-3 w-3 mx-0.5 opacity-40" />
+          </p>
+          <p className="truncate">
+            <ChevronRight className="inline h-3 w-3 mr-0.5 opacity-40" />
             {(load as LoadWithDetails).destinationAddress || (load as Load).destinationAddress}
           </p>
           <div className="flex items-center justify-between pt-1">

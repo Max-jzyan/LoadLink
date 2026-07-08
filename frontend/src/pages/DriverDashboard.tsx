@@ -8,7 +8,11 @@ import LoadsPageLayout from '@/components/layout/LoadsPageLayout'
 import PageShell from '@/components/layout/PageShell'
 import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
 import { selectMongoId } from '@/services/authSlice'
-import { useListDriverBidsQuery, useListDriverLoadsQuery } from '@/services/driverApi/driverSlice'
+import {
+  useListDriverBidsQuery,
+  useListDriverLoadsQuery,
+  useListDriverTrucksQuery,
+} from '@/services/driverApi/driverSlice'
 import { selectDriverLoads, setDriverLoads } from '@/services/driverLoadsSlice'
 import type { AppDispatch } from '@/services/store'
 import { LOAD_STATUSES, ACTIVE_STATUSES, HISTORICAL_STATUSES } from '@/types/enums'
@@ -26,6 +30,9 @@ const DEFAULT_FILTERS: DriverLoadFilters = {
   maxWeight: undefined,
   minPrice: undefined,
   maxPrice: undefined,
+  selectedTruck: '',
+  origin: '',
+  destination: '',
 }
 
 export default function DriverDashboard() {
@@ -40,6 +47,9 @@ export default function DriverDashboard() {
     refetch,
     fulfilledTimeStamp,
   } = useListDriverLoadsQuery({ driverId: driverId! }, { skip: !driverId })
+
+  // Fetch the driver's trucks to allow per-load truck assignment
+  const { data: trucks = [] } = useListDriverTrucksQuery(driverId!, { skip: !driverId })
 
   // Sync RTK Query data into local slice on initial fetch and refresh
   const prevRawLoadsRef = useRef(rawLoads)
@@ -108,6 +118,25 @@ export default function DriverDashboard() {
       })
     }
 
+    // My Truck filter (selectedTruckId on load)
+    if (filters.selectedTruck) {
+      if (filters.selectedTruck === 'none') {
+        result = result.filter((load) => !load.selectedTruckId)
+      } else {
+        result = result.filter((load) => load.selectedTruckId === filters.selectedTruck)
+      }
+    }
+
+    // Origin / Destination substring filters
+    if (filters.origin) {
+      const q = filters.origin.toLowerCase()
+      result = result.filter((load) => load.originAddress.toLowerCase().includes(q))
+    }
+    if (filters.destination) {
+      const q = filters.destination.toLowerCase()
+      result = result.filter((load) => load.destinationAddress.toLowerCase().includes(q))
+    }
+
     return result
   }, [availableLoads, filters])
 
@@ -173,7 +202,9 @@ export default function DriverDashboard() {
     <PageShell
       title="My Loads"
       subtitle={subtitle}
-      stickyBar={<DriverLoadFilterBar filters={filters} onFiltersChange={setFilters} />}
+      stickyBar={
+        <DriverLoadFilterBar filters={filters} onFiltersChange={setFilters} trucks={trucks} />
+      }
       actions={
         <Button variant="outline" size="icon" onClick={onRefresh} title="Refresh">
           <RefreshCw className={isFetching ? 'animate-spin' : ''} />
@@ -188,6 +219,7 @@ export default function DriverDashboard() {
           <DriverLoadTable
             title={isLoading ? 'Loading...' : 'Available Loads'}
             loads={filteredLoads}
+            trucks={trucks}
             onRowClick={handleRowClick}
             selectedId={selectedRouteId}
           />

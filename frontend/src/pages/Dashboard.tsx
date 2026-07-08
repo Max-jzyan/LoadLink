@@ -18,6 +18,8 @@ import type {
 import {
   useGetDriverRevenueQuery,
   useUpdateDriverExpensesMutation,
+  useUpdateTruckExpensesMutation,
+  useListDriverTrucksQuery,
 } from '@/services/driverApi/driverSlice'
 import { RefreshCw, Settings2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
@@ -33,6 +35,7 @@ export default function Dashboard() {
       to: undefined,
     },
     truckType: '',
+    selectedTruck: '',
     minPayout: null,
     maxPayout: null,
     origin: '',
@@ -76,6 +79,8 @@ export default function Dashboard() {
   })
 
   const [updateExpenses, { isLoading: isUpdating }] = useUpdateDriverExpensesMutation()
+  const [updateTruckExpenses, { isLoading: isUpdatingTruck }] = useUpdateTruckExpensesMutation()
+  const { data: trucks = [] } = useListDriverTrucksQuery(driverId!, { skip: !driverId })
 
   const [localExpenses, setLocalExpenses] = useState<ExpensePreferences | null>(null)
   const [globalDrawerOpen, setGlobalDrawerOpen] = useState(false)
@@ -86,18 +91,30 @@ export default function Dashboard() {
     }
   }, [revenue?.expensePreferences])
 
-  const handleSaveGlobalExpenses = useCallback(
-    async (form: ExpensePreferences) => {
+  const handleSaveExpenses = useCallback(
+    async (form: ExpensePreferences, scope: string) => {
       if (!driverId) return
       try {
-        await updateExpenses({ driverId, body: form }).unwrap()
+        if (scope === 'global') {
+          await updateExpenses({ driverId, body: form }).unwrap()
+        } else {
+          await updateTruckExpenses({
+            driverId,
+            truckId: scope,
+            body: form,
+          }).unwrap()
+        }
         setGlobalDrawerOpen(false)
       } catch {
         // error handled by RTK
       }
     },
-    [driverId, updateExpenses]
+    [driverId, updateExpenses, updateTruckExpenses]
   )
+
+  const handleDrawerOpenChange = useCallback((open: boolean) => {
+    setGlobalDrawerOpen(open)
+  }, [])
 
   const { lastManualRefresh, handleRefresh, captureInitialLoad } = useRefreshTimestamp()
   useEffect(() => {
@@ -129,7 +146,9 @@ export default function Dashboard() {
         value: viewMode,
         onValueChange: handleViewModeChange,
       }}
-      stickyBar={<RevenueFilterBar filters={filters} onFiltersChange={setFilters} />}
+      stickyBar={
+        <RevenueFilterBar filters={filters} onFiltersChange={setFilters} trucks={trucks} />
+      }
       actions={
         <>
           <Button
@@ -148,10 +167,11 @@ export default function Dashboard() {
     >
       <GlobalExpenseDrawer
         open={globalDrawerOpen}
-        onOpenChange={setGlobalDrawerOpen}
+        onOpenChange={handleDrawerOpenChange}
         localExpenses={localExpenses}
-        onSave={handleSaveGlobalExpenses}
-        isSaving={isUpdating}
+        onSave={handleSaveExpenses}
+        isSaving={isUpdating || isUpdatingTruck}
+        trucks={trucks}
       />
 
       <div className="space-y-6">

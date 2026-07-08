@@ -160,3 +160,28 @@ export const listAvailableLoads = async (req: Request, res: Response, next: Next
     next(err)
   }
 }
+
+/**
+ * PATCH /api/loads/:loadId/select-truck
+ * Assign (or clear) the truck a driver intends to use for a specific load.
+ */
+export const selectTruckForLoad = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const loadId = req.params.loadId as string
+
+    // Resolve the driver id from the authenticated user (firebaseUid -> driver doc)
+    const { DriverModel } = await import('../models/users/Driver')
+    const driver = await DriverModel.findOne({ firebaseUid: req.firebaseUid })
+    if (!driver) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Driver not found')
+    }
+
+    const truckId = req.body.truckId === undefined ? null : (req.body.truckId as string | null)
+    // Cast driver._id to string - use String constructor to ensure proper type
+    const driverId = String(driver._id as Types.ObjectId)
+    const load = await loadService.selectTruckForLoad(loadId, driverId, truckId)
+    res.status(StatusCodes.OK).json(load)
+  } catch (err) {
+    next(err)
+  }
+}

@@ -20,6 +20,7 @@ interface RowProps {
   size?: number
   stackAt?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
   children: React.ReactNode
+  className?: string
 }
 
 const breakpointClasses: Record<string, string> = {
@@ -30,11 +31,14 @@ const breakpointClasses: Record<string, string> = {
   '2xl': '2xl:flex-row',
 }
 
-export default function Row({ size = 16, stackAt = 'md', children }: RowProps) {
+export default function Row({ size = 16, stackAt = 'md', children, className }: RowProps) {
   const responsiveClass = breakpointClasses[stackAt]
 
   return (
-    <div className={`flex flex-col ${responsiveClass} flex-wrap max-h`} style={{ flex: size }}>
+    <div
+      className={`flex flex-col ${responsiveClass} flex-wrap max-h ${className ?? ''}`}
+      style={{ flex: size }}
+    >
       {children}
     </div>
   )

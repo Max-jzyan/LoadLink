@@ -1,7 +1,9 @@
+import { isValidObjectId, Types } from 'mongoose'
 import { StatusCodes } from 'http-status-codes'
 import { LoadModel } from '../models/loads/Load'
 import { AuctionModel } from '../models/loads/Auction'
 import { ReviewModel } from '../models/ratings/Review'
+import { TruckModel } from '../models/trucks/Truck'
 import { LOAD_STATUSES } from '../models/enums'
 import { computeRoute } from '../lib/routing'
 import { emitLoadPosted } from '../events/auctionEvents'
@@ -163,4 +165,50 @@ export const listAvailableLoads = async (status?: string) => {
     .populate('auctionId')
 
   return loads
+}
+
+/**
+ * Assign (or clear) the truck a driver intends to use for a specific load.
+ * Only the assigned driver may set the truck, and the truck must belong to them.
+ */
+export const selectTruckForLoad = async (
+  loadId: string,
+  driverId: string,
+  truckId: string | null
+) => {
+  if (!isValidObjectId(loadId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid loadId')
+  }
+  if (!isValidObjectId(driverId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid driverId')
+  }
+  if (truckId !== null && !isValidObjectId(truckId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid truckId')
+  }
+
+  const load = await LoadModel.findById(loadId)
+  if (!load) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Load not found')
+  }
+
+  // The load must be assigned to this driver
+  if (!load.assignedDriverId || load.assignedDriverId.toString() !== driverId) {
+    throw new ApiError(StatusCodes.FORBIDDEN, 'You are not assigned to this load')
+  }
+
+  // If a truck is supplied, verify ownership
+  if (truckId !== null) {
+    const truck = await TruckModel.findOne({
+      _id: new Types.ObjectId(truckId),
+      ownerDriverId: new Types.ObjectId(driverId),
+    })
+    if (!truck) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Truck not found for this driver')
+    }
+  }
+
+  load.selectedTruckId = truckId === null ? null : new Types.ObjectId(truckId)
+  await load.save()
+
+  return load
 }

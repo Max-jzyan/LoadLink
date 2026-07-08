@@ -41,6 +41,7 @@ export interface Load {
   _id: string
   companyId: string | CompanySummary
   assignedDriverId?: string | null
+  selectedTruckId?: string | null
   originAddress: string
   destinationAddress: string
   originCoords: Coordinate

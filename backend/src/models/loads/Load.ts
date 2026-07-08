@@ -42,6 +42,12 @@ const LoadSchema = new Schema(
       default: null,
     },
 
+    selectedTruckId: {
+      type: Types.ObjectId,
+      ref: 'Truck',
+      default: null,
+    },
+
     originAddress: { type: String, required: true },
     destinationAddress: { type: String, required: true },
 

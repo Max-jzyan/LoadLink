@@ -49,20 +49,6 @@ export const getRecommendedLoads = async (req: Request, res: Response, next: Nex
 }
 
 /**
- * GET /api/driver/:driverId/trucks
- * Fetch all trucks registered to a driver.
- */
-export const listDriverTrucks = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const driverId = req.params.driverId as string
-    const trucks = await driverService.listDriverTrucks(driverId)
-    res.status(StatusCodes.OK).json(trucks)
-  } catch (err) {
-    next(err)
-  }
-}
-
-/**
  * GET /api/driver/:driverId/profile
  * Fetch the full driver profile document with user-level fields merged in.
  */

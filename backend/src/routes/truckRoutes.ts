@@ -6,6 +6,7 @@ import {
   updateTruck,
   deleteTruck,
   setPrimaryTruck,
+  updateTruckExpenses,
 } from '../controllers/truckController'
 import { requireAuth } from '../middleware/requireAuth'
 import { requireRole, requireSelfParam } from '../middleware/authorize'
@@ -22,5 +23,6 @@ router.get('/driver/:driverId/trucks/:truckId', middlewares, getTruck)
 router.patch('/driver/:driverId/trucks/:truckId', middlewares, updateTruck)
 router.delete('/driver/:driverId/trucks/:truckId', middlewares, deleteTruck)
 router.patch('/driver/:driverId/trucks/:truckId/primary', middlewares, setPrimaryTruck)
+router.patch('/driver/:driverId/trucks/:truckId/expenses', middlewares, updateTruckExpenses)
 
 export default router

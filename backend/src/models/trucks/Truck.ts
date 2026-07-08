@@ -13,6 +13,20 @@ const MaintenanceRecordSchema = new Schema(
   { _id: false }
 )
 
+// Per-truck expense preferences. Travel-related fields are nullable so the
+// truck falls back to the driver's global defaults. Insurance is per-truck
+// only (not nullable) since it is a fixed cost specific to each truck.
+const TruckExpensePreferencesSchema = new Schema(
+  {
+    fuelCostPerLiter: { type: Number, default: null, min: 0 },
+    fuelEfficiencyKmPerLiter: { type: Number, default: null, min: 0 },
+    insurancePerMonth: { type: Number, default: 0, min: 0 },
+    maintenancePerKm: { type: Number, default: null, min: 0 },
+    otherFixedCostsPerMonth: { type: Number, default: null, min: 0 },
+  },
+  { _id: false }
+)
+
 const TruckSchema = new Schema(
   {
     ownerDriverId: {
@@ -45,6 +59,8 @@ const TruckSchema = new Schema(
     isPrimary: { type: Boolean, default: false }, // primary truck for owner
 
     maintenanceRecords: { type: [MaintenanceRecordSchema], default: [] },
+
+    expensePreferences: { type: TruckExpensePreferencesSchema, default: () => ({}) },
 
     // Optional notes
     notes: { type: String, default: '' },

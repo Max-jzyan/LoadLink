@@ -185,9 +185,17 @@ export const acceptBid = async (loadId: string, bidId: string) => {
 }
 
 /** Driver places a bid on a live auction. Returns the populated bid. */
-export const placeBid = async (loadId: string, driverId: string, amount: number) => {
+export const placeBid = async (
+  loadId: string,
+  driverId: string,
+  amount: number,
+  selectedTruckId?: string | null
+) => {
   assertValidId(loadId, 'loadId')
   assertValidId(driverId, 'driverId')
+  if (selectedTruckId !== undefined && selectedTruckId !== null) {
+    assertValidId(selectedTruckId, 'selectedTruckId')
+  }
   if (typeof amount !== 'number' || amount < 1) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Bid amount must be at least 1')
   }
@@ -209,6 +217,11 @@ export const placeBid = async (loadId: string, driverId: string, amount: number)
     status: BID_STATUSES.Submitted,
   })
 
+  // Optionally associate a truck with the load at bid time
+  if (selectedTruckId) {
+    await LoadModel.findByIdAndUpdate(loadId, { selectedTruckId })
+  }
+
   // Keep bestBidAmount in sync
   // Track the lowest submitted bid so far
   if (auction.bestBidAmount == null || amount < (auction.bestBidAmount as number)) {
@@ -222,9 +235,16 @@ export const placeBid = async (loadId: string, driverId: string, amount: number)
 }
 
 /** Driver instantly claims a live auction at its current price. Closes + books the load. */
-export const claimLoad = async (loadId: string, driverId: string) => {
+export const claimLoad = async (
+  loadId: string,
+  driverId: string,
+  selectedTruckId?: string | null
+) => {
   assertValidId(loadId, 'loadId')
   assertValidId(driverId, 'driverId')
+  if (selectedTruckId !== undefined && selectedTruckId !== null) {
+    assertValidId(selectedTruckId, 'selectedTruckId')
+  }
 
   const auction = await findAuctionOrThrow(loadId)
   if (auction.status !== AUCTION_STATUSES.Active) {
@@ -245,10 +265,15 @@ export const claimLoad = async (loadId: string, driverId: string) => {
   auction.autoAcceptedBidId = bid._id
   await auction.save()
 
-  await LoadModel.findByIdAndUpdate(loadId, {
+  const loadUpdate: Record<string, unknown> = {
     status: LOAD_STATUSES.Booked,
     assignedDriverId: bid.driverId,
-  })
+  }
+  if (selectedTruckId) {
+    loadUpdate.selectedTruckId = selectedTruckId
+  }
+
+  await LoadModel.findByIdAndUpdate(loadId, loadUpdate)
 
   await emitBidsAndPrice(loadId)
 

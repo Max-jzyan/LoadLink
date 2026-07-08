@@ -7,6 +7,7 @@ import {
   listCompanyLoads,
   listAvailableLoads,
   streamNewLoads,
+  selectTruckForLoad,
 } from '../controllers/loadController'
 import { requireAuth, requireAuthSSE } from '../middleware/requireAuth'
 import {
@@ -30,5 +31,6 @@ router.post('/company/:companyId/loads', requireAuth, requireRole(USER_ROLES.COM
 router.patch('/loads/:loadId', requireAuth, requireRole(USER_ROLES.COMPANY), requireOwns(companyOwnsLoad), updateLoad)
 
 router.patch('/loads/:loadId/expenses', requireAuth, requireRole(USER_ROLES.DRIVER), requireOwns(driverOwnsAssignedLoad), updateLoadExpenses)
+router.patch('/loads/:loadId/select-truck', requireAuth, requireRole(USER_ROLES.DRIVER), requireOwns(driverOwnsAssignedLoad), selectTruckForLoad)
 
 export default router

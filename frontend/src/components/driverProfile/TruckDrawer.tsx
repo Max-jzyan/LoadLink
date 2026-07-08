@@ -20,8 +20,9 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import type { Truck } from '@/services/driverApi/driverEnum'
+import type { Truck, TruckExpensePreferences } from '@/services/driverApi/driverEnum'
 import { CERTIFICATION_OPTIONS, TRUCK_TYPES } from '@/types/enums'
+import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -39,6 +40,12 @@ export interface TruckFormValues {
   certifications: string[]
   isPrimary: boolean
   notes: string
+  // Expense preferences (optional - undefined means use global defaults)
+  fuelCostPerLiter: number | undefined
+  fuelEfficiencyKmPerLiter: number | undefined
+  insurancePerMonth: number | undefined
+  maintenancePerKm: number | undefined
+  otherFixedCostsPerMonth: number | undefined
 }
 
 interface TruckDrawerProps {
@@ -53,6 +60,27 @@ function FieldError({ message }: { message?: string }) {
   if (!message) return null
   return <p className="text-xs text-destructive mt-1">{message}</p>
 }
+
+// Expense fields configuration for the form
+const expenseFields: {
+  key: keyof TruckExpensePreferences
+  label: string
+  suffix: string
+  step: number
+  isMonetary?: boolean
+}[] = [
+  { key: 'fuelCostPerLiter', label: 'Fuel Cost', suffix: 'per L', step: 0.01, isMonetary: true },
+  { key: 'fuelEfficiencyKmPerLiter', label: 'Fuel Efficiency', suffix: 'km/L', step: 0.1 },
+  { key: 'insurancePerMonth', label: 'Insurance', suffix: '/month', step: 1, isMonetary: true },
+  { key: 'maintenancePerKm', label: 'Maintenance', suffix: 'per km', step: 0.01, isMonetary: true },
+  {
+    key: 'otherFixedCostsPerMonth',
+    label: 'Other Fixed Costs',
+    suffix: '/month',
+    step: 1,
+    isMonetary: true,
+  },
+]
 
 export default function TruckDrawer({ open, onOpenChange, editTruck, onSubmit }: TruckDrawerProps) {
   const formId = 'truck-form'
@@ -78,6 +106,11 @@ export default function TruckDrawer({ open, onOpenChange, editTruck, onSubmit }:
       certifications: [],
       isPrimary: false,
       notes: '',
+      fuelCostPerLiter: undefined,
+      fuelEfficiencyKmPerLiter: undefined,
+      insurancePerMonth: undefined,
+      maintenancePerKm: undefined,
+      otherFixedCostsPerMonth: undefined,
     },
   })
 
@@ -96,6 +129,11 @@ export default function TruckDrawer({ open, onOpenChange, editTruck, onSubmit }:
       certifications: [],
       isPrimary: false,
       notes: '',
+      fuelCostPerLiter: undefined,
+      fuelEfficiencyKmPerLiter: undefined,
+      insurancePerMonth: undefined,
+      maintenancePerKm: undefined,
+      otherFixedCostsPerMonth: undefined,
     }
 
     if (!open) {
@@ -129,6 +167,12 @@ export default function TruckDrawer({ open, onOpenChange, editTruck, onSubmit }:
       certifications: editTruck.certifications || [],
       isPrimary: editTruck.isPrimary,
       notes: editTruck.notes || '',
+      // Expense preferences - use existing values or undefined to use global defaults
+      fuelCostPerLiter: editTruck.expensePreferences?.fuelCostPerLiter ?? undefined,
+      fuelEfficiencyKmPerLiter: editTruck.expensePreferences?.fuelEfficiencyKmPerLiter ?? undefined,
+      insurancePerMonth: editTruck.expensePreferences?.insurancePerMonth ?? undefined,
+      maintenancePerKm: editTruck.expensePreferences?.maintenancePerKm ?? undefined,
+      otherFixedCostsPerMonth: editTruck.expensePreferences?.otherFixedCostsPerMonth ?? undefined,
     })
   }, [open, editTruck, reset])
 
@@ -351,6 +395,40 @@ export default function TruckDrawer({ open, onOpenChange, editTruck, onSubmit }:
           />
           <FieldDescription>Optional certifications for this truck</FieldDescription>
         </Field>
+
+        {/* Expense Preferences Section */}
+        <div className="pt-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Expense Preferences
+          </p>
+          <p className="text-xs text-muted-foreground mb-3">
+            Set truck-specific cost estimates. Leave blank to use your global defaults.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {expenseFields.map(({ key, label, suffix, step, isMonetary }) => (
+              <Field key={key}>
+                <FieldLabel>
+                  {label} ({suffix})
+                </FieldLabel>
+                <div className="relative">
+                  {isMonetary && (
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      $
+                    </span>
+                  )}
+                  <Input
+                    type="number"
+                    step={step}
+                    min={0}
+                    placeholder="Use global default"
+                    {...register(key)}
+                    className={cn(inputCls, isMonetary && 'pl-7')}
+                  />
+                </div>
+              </Field>
+            ))}
+          </div>
+        </div>
 
         {/* Primary Truck Toggle */}
         <div className="flex items-center justify-between rounded-lg border p-3">

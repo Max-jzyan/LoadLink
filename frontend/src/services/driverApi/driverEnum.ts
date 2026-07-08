@@ -8,10 +8,12 @@ export interface CertificationDocument {
 export interface PlaceBidPayload {
   driverId: string
   amount: number
+  selectedTruckId?: string
 }
 
 export interface ClaimLoadPayload {
   driverId: string
+  selectedTruckId?: string
 }
 
 export interface ClaimResult {
@@ -32,6 +34,14 @@ export interface Bid {
   updatedAt: string
 }
 
+export interface TruckExpensePreferences {
+  fuelCostPerLiter: number | null
+  fuelEfficiencyKmPerLiter: number | null
+  insurancePerMonth: number
+  maintenancePerKm: number | null
+  otherFixedCostsPerMonth: number | null
+}
+
 export interface Truck {
   _id: string
   ownerDriverId: string
@@ -46,6 +56,7 @@ export interface Truck {
   vin: string
   certifications: string[]
   isPrimary: boolean
+  expensePreferences: TruckExpensePreferences
   notes: string
   createdAt: string
   updatedAt: string
@@ -130,14 +141,16 @@ export interface CreateTruckPayload {
   certifications?: string[]
   isPrimary?: boolean
   notes?: string
+  expensePreferences?: Partial<TruckExpensePreferences>
 }
 
-export interface UpdateTruckPayload extends Partial<CreateTruckPayload> {}
+export interface UpdateTruckPayload extends Partial<CreateTruckPayload> {
+  expensePreferences?: Partial<TruckExpensePreferences>
+}
 
 export interface ExpensePreferences {
   fuelCostPerLiter: number
   fuelEfficiencyKmPerLiter: number
-  insurancePerMonth: number
   maintenancePerKm: number
   otherFixedCostsPerMonth: number
 }
@@ -160,6 +173,9 @@ export interface LoadRevenue {
   effectiveFuelCostPerLiter: number
   effectiveFuelEfficiencyKmPerLiter: number
   effectiveMaintenancePerKm: number
+  effectiveInsurancePerMonth: number
+  selectedTruckId: string | null
+  selectedTruckName: string | null
 }
 
 import { type DateRange } from 'react-day-picker'
@@ -173,6 +189,7 @@ export interface ExpenseOverrideFields {
 export interface RevenueFilters {
   dateRange?: DateRange
   truckType: string
+  selectedTruck: string
   minPayout: number | null
   maxPayout: number | null
   origin: string
@@ -188,6 +205,7 @@ export interface RevenueFiltersQuery {
   }
   status?: string
   truckType: string
+  selectedTruck: string
   minPayout: number | null
   maxPayout: number | null
   origin: string

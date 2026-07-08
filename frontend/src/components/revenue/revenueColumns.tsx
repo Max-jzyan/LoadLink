@@ -22,7 +22,7 @@ import type {
 import type { ColumnDef } from '@tanstack/react-table'
 import { formatCAD, cn } from '@/lib/utils'
 
-// ── Per-load expense dialog component ────────────────────────────────────
+// ── Per-load expense dialog component ─────────────────────────────────────────
 
 const perLoadFields: {
   key: keyof ExpenseOverrideFields
@@ -143,7 +143,7 @@ const statusLabel: Record<string, string> = {
   in_transit: 'In Transit',
 }
 
-// ── Column definitions ───────────────────────────────────────────────────
+// ── Column definitions ──────────────────────────────────────────────────────
 
 export function createColumns(
   onPerLoadSaved: () => void,
@@ -178,6 +178,29 @@ export function createColumns(
       accessorKey: 'destinationAddress',
       header: 'Destination',
       meta: { headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell' },
+    },
+    {
+      id: 'truck',
+      header: 'Truck',
+      cell: ({ row }) => {
+        const lr = row.original
+        if (!lr.selectedTruckId || !lr.selectedTruckName) {
+          return (
+            <span className="text-sm text-muted-foreground" title="No truck assigned">
+              —
+            </span>
+          )
+        }
+        return (
+          <span className="text-sm" title={lr.selectedTruckName}>
+            {lr.selectedTruckName}
+          </span>
+        )
+      },
+      meta: {
+        headerClassName: 'hidden sm:table-cell',
+        cellClassName: 'hidden sm:table-cell',
+      },
     },
   ]
 
@@ -248,6 +271,9 @@ export function createColumns(
               {lr.effectiveFuelEfficiencyKmPerLiter} km/L
             </p>
             <p>Maintenance: {formatCAD(lr.effectiveMaintenancePerKm)}/km</p>
+            {lr.effectiveInsurancePerMonth !== undefined && (
+              <p>Insurance: {formatCAD(lr.effectiveInsurancePerMonth)}/month</p>
+            )}
           </div>
         )
         return (

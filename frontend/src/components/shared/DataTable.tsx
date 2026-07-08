@@ -86,8 +86,8 @@ export function DataTable<TData, TValue>({
 
   // Requires creating a column object as seen in `frontend\src\components\driverLoads\driverColumns.tsx`
   return (
-    <div className="overflow-hidden rounded-md border shadow-sm">
-      <Table>
+    <div className="min-w-0 overflow-hidden rounded-md border shadow-sm">
+      <Table className="max-w-full">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>

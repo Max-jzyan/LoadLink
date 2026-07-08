@@ -20,6 +20,7 @@ import {
   useGetDriverProfileQuery,
   useUpdateDriverProfileMutation,
   useUpdateTruckMutation,
+  useUpdateTruckExpensesMutation,
 } from '@/services/driverApi/driverSlice'
 import { Loader2 } from 'lucide-react'
 import { useCallback, useState } from 'react'
@@ -38,6 +39,7 @@ export default function DriverProfile() {
   const [updateDriverProfile] = useUpdateDriverProfileMutation()
   const [createTruck] = useCreateTruckMutation()
   const [updateTruck] = useUpdateTruckMutation()
+  const [updateTruckExpenses] = useUpdateTruckExpensesMutation()
 
   // Truck drawer state
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -70,22 +72,43 @@ export default function DriverProfile() {
     async (values: TruckFormValues, truckId?: string) => {
       if (!driverId) return
 
-      // RTK mutation expects CreateTruckPayload where trailerLengthFt is required (number).
-      // TruckFormValues may provide undefined, so coerce to a safe default.
-      const body = {
-        ...values,
+      // Basic truck properties (RTK mutation expects required trailerLengthFt/capacityLbs)
+      const basicBody = {
+        make: values.make,
+        model: values.model,
+        year: values.year,
+        truckType: values.truckType,
         trailerLengthFt: values.trailerLengthFt ?? 0,
         capacityLbs: values.capacityLbs ?? 0,
+        maxPayloadLbs: values.maxPayloadLbs,
+        plateNumber: values.plateNumber,
+        vin: values.vin,
+        certifications: values.certifications,
+        isPrimary: values.isPrimary,
+        notes: values.notes,
+      }
+
+      // Expense preferences - extract from form values
+      const expenseBody = {
+        fuelCostPerLiter: values.fuelCostPerLiter ?? null,
+        fuelEfficiencyKmPerLiter: values.fuelEfficiencyKmPerLiter ?? null,
+        insurancePerMonth: values.insurancePerMonth ?? 0,
+        maintenancePerKm: values.maintenancePerKm ?? null,
+        otherFixedCostsPerMonth: values.otherFixedCostsPerMonth ?? null,
       }
 
       if (truckId) {
-        await updateTruck({ driverId, truckId, body }).unwrap()
+        // Update existing truck - separate API calls for basic info and expenses
+        await updateTruck({ driverId, truckId, body: basicBody }).unwrap()
+        // Update expenses (separate endpoint)
+        await updateTruckExpenses({ driverId, truckId, body: expenseBody }).unwrap()
       } else {
-        await createTruck({ driverId, body }).unwrap()
+        // Create new truck with basic properties first
+        await createTruck({ driverId, body: basicBody }).unwrap()
       }
       setDrawerOpen(false)
     },
-    [driverId, createTruck, updateTruck]
+    [driverId, createTruck, updateTruck, updateTruckExpenses]
   )
 
   const handleContactSave = useCallback(

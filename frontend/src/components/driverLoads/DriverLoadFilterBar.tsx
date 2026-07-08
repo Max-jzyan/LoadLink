@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { TRUCK_TYPES } from '@/types/enums'
 import { type DateRange } from 'react-day-picker'
+import type { Truck } from '@/services/driverApi/driverEnum'
 
 export type LoadStatusFilter = 'all' | 'active' | 'historical'
 
@@ -23,11 +24,19 @@ export interface DriverLoadFilters {
   maxWeight: number | undefined
   minPrice: number | undefined
   maxPrice: number | undefined
+  selectedTruck: string
+  origin: string
+  destination: string
 }
 
 interface DriverLoadFilterBarProps {
   filters: DriverLoadFilters
   onFiltersChange: (filters: DriverLoadFilters) => void
+  trucks?: Truck[]
+}
+
+function truckDisplayName(t: Truck) {
+  return `${t.year} ${t.make} ${t.model} (${t.trailerLengthFt}ft)`
 }
 
 const statusOptions: { value: LoadStatusFilter; label: string }[] = [
@@ -39,6 +48,7 @@ const statusOptions: { value: LoadStatusFilter; label: string }[] = [
 export default function DriverLoadFilterBar({
   filters,
   onFiltersChange,
+  trucks = [],
 }: DriverLoadFilterBarProps) {
   const updateFilter = <K extends keyof DriverLoadFilters>(key: K, value: DriverLoadFilters[K]) => {
     onFiltersChange({ ...filters, [key]: value })
@@ -75,6 +85,25 @@ export default function DriverLoadFilterBar({
       <Separator orientation="vertical" className="hidden md:block h-6" />
       <Separator className="md:hidden w-full" />
 
+      {/* Origin Filter */}
+      <Input
+        placeholder="Origin city..."
+        className="w-36"
+        value={filters.origin}
+        onChange={(e) => updateFilter('origin', e.target.value)}
+      />
+
+      {/* Destination Filter */}
+      <Input
+        placeholder="Destination city..."
+        className="w-36"
+        value={filters.destination}
+        onChange={(e) => updateFilter('destination', e.target.value)}
+      />
+
+      <Separator orientation="vertical" className="hidden md:block h-6" />
+      <Separator className="md:hidden w-full" />
+
       {/* Truck Type Filter */}
       <Select
         value={filters.truckType || 'all'}
@@ -92,6 +121,27 @@ export default function DriverLoadFilterBar({
           ))}
         </SelectContent>
       </Select>
+
+      {/* My Truck Filter */}
+      <Select
+        value={filters.selectedTruck || 'all'}
+        onValueChange={(value) => updateFilter('selectedTruck', value === 'all' ? '' : value)}
+      >
+        <SelectTrigger className="w-44">
+          <SelectValue placeholder="My Truck" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Trucks</SelectItem>
+          <SelectItem value="none">No Truck</SelectItem>
+          {trucks.map((t) => (
+            <SelectItem key={t._id} value={t._id}>
+              {truckDisplayName(t)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Separator orientation="vertical" className="hidden md:block h-6" />
 
       {/* Weight Range Filter */}
       <div className="flex items-center gap-1.5">
@@ -156,6 +206,9 @@ export default function DriverLoadFilterBar({
             maxWeight: undefined,
             minPrice: undefined,
             maxPrice: undefined,
+            selectedTruck: '',
+            origin: '',
+            destination: '',
           })
         }
       >

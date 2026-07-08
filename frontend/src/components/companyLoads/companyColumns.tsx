@@ -51,8 +51,8 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
       </span>
     ),
     meta: {
-      headerClassName: 'hidden lg:table-cell',
-      cellClassName: 'hidden lg:table-cell',
+      headerClassName: 'hidden xl:table-cell',
+      cellClassName: 'hidden xl:table-cell',
     },
   },
   {
@@ -69,8 +69,8 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
       )
     },
     meta: {
-      headerClassName: 'hidden lg:table-cell',
-      cellClassName: 'hidden lg:table-cell',
+      headerClassName: 'hidden xl:table-cell',
+      cellClassName: 'hidden xl:table-cell',
     },
   },
   {
@@ -85,8 +85,8 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
       )
     },
     meta: {
-      headerClassName: 'hidden lg:table-cell',
-      cellClassName: 'hidden lg:table-cell',
+      headerClassName: 'hidden xl:table-cell',
+      cellClassName: 'hidden xl:table-cell',
     },
   },
   {
@@ -124,8 +124,8 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
       )
     },
     meta: {
-      headerClassName: 'hidden lg:table-cell',
-      cellClassName: 'hidden lg:table-cell',
+      headerClassName: 'hidden 2xl:table-cell',
+      cellClassName: 'hidden 2xl:table-cell',
     },
   },
   {
@@ -135,7 +135,7 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
       const load = row.original
       const canEdit = !(NON_EDITABLE_STATUSES as readonly string[]).includes(load.status)
       return (
-        <div className="lg:hidden">
+        <div className="2xl:hidden">
           <ResponsiveRowMenu
             load={load}
             mobileDetails={[
@@ -188,8 +188,8 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
       )
     },
     meta: {
-      headerClassName: 'lg:hidden',
-      cellClassName: 'lg:hidden',
+      headerClassName: '2xl:hidden',
+      cellClassName: '2xl:hidden',
     },
   },
 ]

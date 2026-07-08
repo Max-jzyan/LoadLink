@@ -1,16 +1,23 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Load, AuctionSummary } from '@/services/loadApi/loadEnum'
+import type { Truck } from '@/services/driverApi/driverEnum'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { LoadActionsCell } from './LoadActionsCell'
 import { ResponsiveRowMenu } from '@/components/shared/ResponsiveRowMenu'
 import { type LoadStatus } from '@/types/enums'
 import { TRUCK_TYPES } from '@/types/enums'
+import { Badge } from '@/components/ui/badge'
+import { Truck as TruckIcon } from 'lucide-react'
 
 const TRUCK_LABELS: Record<string, string> = Object.fromEntries(
   TRUCK_TYPES.map((t) => [t.value, t.label])
 )
 
-export const columns: ColumnDef<Load>[] = [
+function truckDisplayName(t: Truck) {
+  return `${t.year} ${t.make} ${t.model} (${t.trailerLengthFt}ft)`
+}
+
+export const columns = (trucks: Truck[] = []): ColumnDef<Load>[] => [
   {
     accessorKey: 'commodity',
     header: 'Commodity',
@@ -20,17 +27,45 @@ export const columns: ColumnDef<Load>[] = [
     },
   },
   {
-    id: 'route',
-    header: 'Route',
+    id: 'origin',
+    header: 'Origin',
+    accessorFn: (row) => row.originAddress,
     cell: ({ row }) => {
-      const { originAddress, destinationAddress } = row.original
+      const { originAddress } = row.original
       return (
-        <span className="text-sm text-muted-foreground">
+        <span
+          className="text-sm text-muted-foreground block max-w-[200px] truncate"
+          title={originAddress}
+        >
           {originAddress}
-          <span className="mx-1.5 opacity-40">→</span>
+        </span>
+      )
+    },
+    maxSize: 200,
+    meta: {
+      headerClassName: 'hidden md:table-cell',
+      cellClassName: 'hidden md:table-cell max-w-[200px]',
+    },
+  },
+  {
+    id: 'destination',
+    header: 'Destination',
+    accessorFn: (row) => row.destinationAddress,
+    cell: ({ row }) => {
+      const { destinationAddress } = row.original
+      return (
+        <span
+          className="text-sm text-muted-foreground block max-w-[200px] truncate"
+          title={destinationAddress}
+        >
           {destinationAddress}
         </span>
       )
+    },
+    maxSize: 200,
+    meta: {
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell max-w-[200px]',
     },
   },
   {
@@ -42,8 +77,8 @@ export const columns: ColumnDef<Load>[] = [
       </span>
     ),
     meta: {
-      headerClassName: 'hidden lg:table-cell',
-      cellClassName: 'hidden lg:table-cell',
+      headerClassName: 'hidden xl:table-cell',
+      cellClassName: 'hidden xl:table-cell',
     },
   },
   {
@@ -54,8 +89,8 @@ export const columns: ColumnDef<Load>[] = [
       return weight.toLocaleString()
     },
     meta: {
-      headerClassName: 'hidden lg:table-cell',
-      cellClassName: 'hidden lg:table-cell',
+      headerClassName: 'hidden xl:table-cell',
+      cellClassName: 'hidden xl:table-cell',
     },
   },
   {
@@ -73,8 +108,8 @@ export const columns: ColumnDef<Load>[] = [
       )
     },
     meta: {
-      headerClassName: 'hidden lg:table-cell',
-      cellClassName: 'hidden lg:table-cell',
+      headerClassName: 'hidden 2xl:table-cell',
+      cellClassName: 'hidden 2xl:table-cell',
     },
   },
   {
@@ -92,13 +127,24 @@ export const columns: ColumnDef<Load>[] = [
       )
     },
     meta: {
-      headerClassName: 'hidden lg:table-cell',
-      cellClassName: 'hidden lg:table-cell',
+      headerClassName: 'hidden 2xl:table-cell',
+      cellClassName: 'hidden 2xl:table-cell',
     },
   },
   {
     id: 'currentPrice',
     header: 'My Price',
+    accessorFn: (row) => {
+      const auction = row.auctionId
+      return auction && typeof auction === 'object'
+        ? (auction as AuctionSummary).currentPrice
+        : null
+    },
+    sortingFn: (a, b) => {
+      const av = a.getValue<number | null>('currentPrice') ?? -1
+      const bv = b.getValue<number | null>('currentPrice') ?? -1
+      return av - bv
+    },
     cell: ({ row }) => {
       const auction = row.original.auctionId
       const currentPrice =
@@ -110,8 +156,8 @@ export const columns: ColumnDef<Load>[] = [
       )
     },
     meta: {
-      headerClassName: 'hidden lg:table-cell',
-      cellClassName: 'hidden lg:table-cell',
+      headerClassName: 'hidden md:table-cell',
+      cellClassName: 'hidden md:table-cell',
     },
   },
   {
@@ -123,17 +169,51 @@ export const columns: ColumnDef<Load>[] = [
     },
   },
   {
+    id: 'truck',
+    header: 'My Truck',
+    accessorFn: (row) => {
+      const truck = trucks.find((t) => t._id === row.selectedTruckId)
+      return truck ? truckDisplayName(truck) : ''
+    },
+    cell: ({ row }) => {
+      const load = row.original
+      const truck = trucks.find((t) => t._id === load.selectedTruckId)
+      if (!truck) {
+        return (
+          <Badge
+            variant="outline"
+            className="border-amber-300 text-amber-600 gap-1"
+            title="No truck selected for this load"
+          >
+            <TruckIcon className="h-3 w-3" />
+            No Truck
+          </Badge>
+        )
+      }
+      return (
+        <span className="text-sm block max-w-[200px] truncate" title={truckDisplayName(truck)}>
+          {truckDisplayName(truck)}
+        </span>
+      )
+    },
+    maxSize: 200,
+    meta: {
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell max-w-[200px]',
+    },
+  },
+  {
     id: 'actions',
     header: 'Actions',
     cell: ({ row }) => (
       <div className="w-[140px] min-w-[140px]">
-        <LoadActionsCell load={row.original} />
+        <LoadActionsCell load={row.original} trucks={trucks} />
       </div>
     ),
     size: 140,
     meta: {
-      headerClassName: 'hidden lg:table-cell',
-      cellClassName: 'hidden lg:table-cell',
+      headerClassName: 'hidden 2xl:table-cell',
+      cellClassName: 'hidden 2xl:table-cell',
     },
   },
   {
@@ -141,17 +221,26 @@ export const columns: ColumnDef<Load>[] = [
     header: '',
     cell: ({ row }) => {
       const load = row.original
+      const selTruck = trucks.find((t) => t._id === load.selectedTruckId)
       return (
-        <div className="lg:hidden">
+        <div className="2xl:hidden">
           <ResponsiveRowMenu
             load={load}
             mobileDetails={[
               {
-                label: 'Truck',
+                label: 'Truck Type',
                 value: (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground border border-border">
                     {TRUCK_LABELS[load.truckType] ?? load.truckType}
                   </span>
+                ),
+              },
+              {
+                label: 'Assigned Truck',
+                value: selTruck ? (
+                  <span className="text-sm">{truckDisplayName(selTruck)}</span>
+                ) : (
+                  <span className="text-sm text-amber-600">No Truck Selected</span>
                 ),
               },
               {
@@ -199,14 +288,14 @@ export const columns: ColumnDef<Load>[] = [
               },
             ]}
           >
-            <LoadActionsCell load={load} />
+            <LoadActionsCell load={load} trucks={trucks} />
           </ResponsiveRowMenu>
         </div>
       )
     },
     meta: {
-      headerClassName: 'lg:hidden',
-      cellClassName: 'lg:hidden',
+      headerClassName: '2xl:hidden',
+      cellClassName: '2xl:hidden',
     },
   },
 ]

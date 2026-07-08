@@ -17,6 +17,7 @@ import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
 import { Clock } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
+import { useState } from 'react'
 
 function timeAgo(dateStr: string): string {
   const now = Date.now()
@@ -41,7 +42,6 @@ export default function DriverAuctions() {
   const { data: load, isLoading, isError } = useGetLoadQuery(loadId)
   const { data: bidsPayload } = useStreamBidsQuery(loadId)
   const { data: pricePayload } = useStreamAuctionPriceQuery(loadId)
-
   const [claimLoad, { isLoading: isClaiming }] = useClaimLoadMutation()
 
   const handleClaim = async () => {
@@ -50,7 +50,10 @@ export default function DriverAuctions() {
       return
     }
     try {
-      const result = await claimLoad({ loadId, body: { driverId: mongoId } }).unwrap()
+      const result = await claimLoad({
+        loadId,
+        body: { driverId: mongoId },
+      }).unwrap()
       alert(`Load claimed! Final payout: $${result.finalPayout.toLocaleString()}`)
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to claim load'
