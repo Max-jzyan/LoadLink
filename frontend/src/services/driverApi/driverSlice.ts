@@ -171,6 +171,7 @@ export const driverApi = api.injectEndpoints({
         params.set('dateTo', filters.dateRange.to.split('T')[0])
       }
 
+      if (filters?.status) params.set('status', filters.status)
       if (filters?.truckType) params.set('truckType', filters.truckType)
       if (filters?.minPayout != null) params.set('minPayout', String(filters.minPayout))
       if (filters?.maxPayout != null) params.set('maxPayout', String(filters.maxPayout))

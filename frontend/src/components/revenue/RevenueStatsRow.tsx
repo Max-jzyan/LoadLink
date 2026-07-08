@@ -1,13 +1,15 @@
-import type { RevenueSummary } from '@/services/driverApi/driverEnum'
+import type { DashboardViewMode, RevenueSummary } from '@/services/driverApi/driverEnum'
 import { formatCAD, formatKm } from '@/lib/utils'
 
-export function RevenueStatsRow({ revenue }: { revenue: RevenueSummary | null }) {
+export function RevenueStatsRow({ revenue, viewMode = 'completed' }: { revenue: RevenueSummary | null; viewMode?: DashboardViewMode }) {
   if (!revenue) return null
+
+  const isPotential = viewMode === 'potential'
 
   return (
     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
       <span>
-        Completed Loads: <strong>{revenue.completedLoadsCount}</strong>
+        {isPotential ? 'Active Loads' : 'Completed Loads'}: <strong>{revenue.completedLoadsCount}</strong>
       </span>
       <span>
         Total Distance: <strong>{formatKm(revenue.totalDistanceKm)}</strong>

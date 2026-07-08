@@ -1,25 +1,26 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useSelector } from 'react-redux'
-import { RefreshCw, Settings2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import PageShell from '@/components/layout/PageShell'
+import { GlobalExpenseDrawer } from '@/components/revenue/GlobalExpenseDrawer'
+import { RevenueChartGrid } from '@/components/revenue/RevenueChartStubs'
+import RevenueFilterBar from '@/components/revenue/RevenueFilterBar'
+import { RevenueStatsRow } from '@/components/revenue/RevenueStatsRow'
+import { RevenueSummaryCards } from '@/components/revenue/RevenueSummaryCards'
+import { RevenueTable } from '@/components/revenue/RevenueTable'
+import { Button } from '@/components/ui/button'
 import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
+import { relativeTime } from '@/lib/utils'
 import { selectMongoId } from '@/services/authSlice'
+import type { DashboardViewMode, ExpensePreferences, RevenueFilters, RevenueFiltersQuery } from '@/services/driverApi/driverEnum'
 import {
   useGetDriverRevenueQuery,
   useUpdateDriverExpensesMutation,
 } from '@/services/driverApi/driverSlice'
-import type { ExpensePreferences, RevenueFilters, RevenueFiltersQuery } from '@/services/driverApi/driverEnum'
-import { relativeTime } from '@/lib/utils'
-import { RevenueSummaryCards } from '@/components/revenue/RevenueSummaryCards'
-import { RevenueChartStubs } from '@/components/revenue/RevenueChartStubs'
-import { RevenueStatsRow } from '@/components/revenue/RevenueStatsRow'
-import { RevenueTable } from '@/components/revenue/RevenueTable'
-import { GlobalExpenseDrawer } from '@/components/revenue/GlobalExpenseDrawer'
-import RevenueFilterBar from '@/components/revenue/RevenueFilterBar'
+import { RefreshCw, Settings2 } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 
 export default function Dashboard() {
   const driverId = useSelector(selectMongoId)
+  const [viewMode, setViewMode] = useState<DashboardViewMode>('completed')
 
   const [filters, setFilters] = useState<RevenueFilters>({
     dateRange: {
@@ -43,6 +44,11 @@ export default function Dashboard() {
     return () => clearTimeout(id)
   }, [filters])
 
+  // Clear debounced filters on view mode switch
+  useEffect(() => {
+    setDebouncedFilters(filters)
+  }, [filters, viewMode])
+
   const {
     data: revenue = null,
     isFetching,
@@ -50,16 +56,16 @@ export default function Dashboard() {
     fulfilledTimeStamp,
   } = useGetDriverRevenueQuery(
     {
-      driverId: driverId ?? '',
+      driverId, // This is a known issue that needs to be fixed, auth seems to be duplicated? #134
       filters: {
         ...debouncedFilters,
+        status: viewMode === 'potential' ? 'booked,in_transit' : 'completed',
         dateRange: {
           from: debouncedFilters.dateRange?.from ? debouncedFilters.dateRange.from.toISOString() : undefined,
           to: debouncedFilters.dateRange?.to ? debouncedFilters.dateRange.to.toISOString() : undefined,
         }
       } as RevenueFiltersQuery
-    },
-    { skip: !driverId }
+    }
   )
 
   const [updateExpenses, { isLoading: isUpdating }] = useUpdateDriverExpensesMutation()
@@ -91,14 +97,28 @@ export default function Dashboard() {
   const onRefresh = useCallback(() => handleRefresh(refetch), [handleRefresh, refetch])
   const subtitle = lastManualRefresh ? `Updated ${relativeTime(lastManualRefresh)}` : undefined
 
+  const handleViewModeChange = useCallback((value: string) => {
+    if (value === 'completed' || value === 'potential') {
+      setViewMode(value)
+    }
+  }, [])
+
   const handlePerLoadSaved = useCallback(() => {
     refetch()
   }, [refetch])
 
   return (
     <PageShell
-      title="Revenue Center"
+        title="Revenue Center"
       subtitle={subtitle}
+      tabs={{
+        options: [
+          { value: 'completed', label: 'Completed' },
+          { value: 'potential', label: 'Potential Revenue' },
+        ],
+        value: viewMode,
+        onValueChange: handleViewModeChange,
+      }}
       stickyBar={<RevenueFilterBar filters={filters} onFiltersChange={setFilters} />}
       actions={
         <>
@@ -120,15 +140,16 @@ export default function Dashboard() {
       />
 
       <div className="space-y-6">
-        <RevenueSummaryCards revenue={revenue} />
+        <RevenueSummaryCards revenue={revenue} viewMode={viewMode} />
 
-        {revenue && <RevenueStatsRow revenue={revenue} />}
+        {revenue && <RevenueStatsRow revenue={revenue} viewMode={viewMode} />}
 
-        <RevenueChartStubs />
+        <RevenueChartGrid loadBreakdown={revenue?.loadBreakdown ?? []} viewMode={viewMode} />
 
         <RevenueTable
           loadBreakdown={revenue?.loadBreakdown ?? []}
           onPerLoadSaved={handlePerLoadSaved}
+          viewMode={viewMode}
         />
       </div>
     </PageShell>

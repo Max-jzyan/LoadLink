@@ -181,10 +181,13 @@ export const getDriverRevenue = async (
     otherFixedCostsPerMonth: 0,
   }
 
-  // Build filter query
+  // Build filter query — default to completed, accept comma-separated statuses
+  const statusParam = (queryParams.status as string) || LOAD_STATUSES.Completed
+  const statuses = statusParam.split(',').map((s) => s.trim())
+
   const filter: Record<string, unknown> = {
     assignedDriverId: new Types.ObjectId(driverId),
-    status: LOAD_STATUSES.Completed,
+    status: { $in: statuses },
   }
 
   // Date range filter (by dropoffTime)
@@ -266,6 +269,7 @@ export const getDriverRevenue = async (
 
     loadBreakdown.push({
       loadId: load._id,
+      status: load.status,
       originAddress: load.originAddress,
       destinationAddress: load.destinationAddress,
       distanceKm: Math.round(distanceKm * 10) / 10,

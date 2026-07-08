@@ -134,8 +134,11 @@ export interface ExpensePreferences {
   otherFixedCostsPerMonth: number
 }
 
+export type DashboardViewMode = 'completed' | 'potential'
+
 export interface LoadRevenue {
   loadId: string
+  status?: string
   originAddress: string
   destinationAddress: string
   distanceKm: number
@@ -175,6 +178,7 @@ export interface RevenueFiltersQuery {
     from?: string
     to?: string
   }
+  status?: string
   truckType: string
   minPayout: number | null
   maxPayout: number | null
