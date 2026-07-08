@@ -95,3 +95,54 @@ export const getMe = async (req: Request, res: Response, next: NextFunction) => 
     next(err)
   }
 }
+
+// GET /api/users/:userId/feed-preferences
+// Returns the user's feed preferences (blocklist-driven feed filtering)
+export const getFeedPreferences = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.params.userId as string
+
+    const user = await UserModel.findById(userId).select('feedPreferences')
+
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    return res.status(StatusCodes.OK).json(user.feedPreferences ?? {})
+  } catch (err) {
+    next(err)
+  }
+}
+
+// PATCH /api/users/:userId/feed-preferences
+// Partially update the user's feed preferences
+// Body: { hideBlocked?, hideBelowMinimum?, notifyReview? }
+export const updateFeedPreferences = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.params.userId as string
+    const allowedKeys = ['hideBlocked', 'hideBelowMinimum', 'notifyReview'] as const
+
+    const updates: Record<string, boolean> = {}
+    for (const key of allowedKeys) {
+      if (typeof req.body[key] === 'boolean') {
+        updates[`feedPreferences.${key}`] = req.body[key]
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'No valid preference keys provided')
+    }
+
+    const user = await UserModel.findByIdAndUpdate(userId, { $set: updates }, { new: true }).select(
+      'feedPreferences'
+    )
+
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    return res.status(StatusCodes.OK).json(user.feedPreferences ?? {})
+  } catch (err) {
+    next(err)
+  }
+}

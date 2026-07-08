@@ -6,6 +6,9 @@ export const LoadTag = {
   DriverProfile: 'DriverProfile',
   Driver: 'Driver',
   Review: 'Review',
+  Blocklist: 'Blocklist',
+  Report: 'Report',
+  FeedPrefs: 'FeedPrefs',
 } as const
 
 export type LoadTag = (typeof LoadTag)[keyof typeof LoadTag]

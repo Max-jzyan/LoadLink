@@ -22,6 +22,9 @@ export const api = createApi({
     LoadTag.Truck,
     LoadTag.Driver,
     LoadTag.Review,
+    LoadTag.Blocklist,
+    LoadTag.Report,
+    LoadTag.FeedPrefs,
   ],
   endpoints: () => ({}),
 })

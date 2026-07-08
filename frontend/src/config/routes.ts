@@ -8,6 +8,7 @@ import {
   MapPin,
   PlusCircle,
   Settings,
+  ShieldAlert,
   User,
   type LucideIcon,
 } from 'lucide-react'
@@ -18,6 +19,10 @@ export const RoutePath = {
   Dashboard: '/dashboard',
   DriverLoads: '/driverLoads',
   DriverAuctions: '/driverAuctions',
+  BlocklistPreferences: '/blocklist',
+  Report: '/report',
+  ReportFraud: '/report/fraud',
+  ReportInaccurate: '/report/inaccurate',
   DriverProfile: '/driver/profile',
   DriverPublicProfile: '/driver/profile/:driverId',
   Loads: '/loads',
@@ -80,6 +85,13 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     navGroup: null,
     // accessible to logged-in users regardless of role
   },
+  [RoutePath.Report]: { label: 'My Reports', icon: ShieldAlert, navGroup: null },
+  [RoutePath.ReportFraud]: { label: 'Report Fraud', icon: ShieldAlert, navGroup: null },
+  [RoutePath.ReportInaccurate]: {
+    label: 'Report Inaccurate Details',
+    icon: ShieldAlert,
+    navGroup: null,
+  },
   [RoutePath.Loads]: { label: 'Loads', icon: ClipboardList, navGroup: 'main', roles: ['company'] },
   [RoutePath.AuctionLive]: {
     label: 'Auction Live',
@@ -106,6 +118,11 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     roles: ['company'],
   },
   [RoutePath.Map]: { label: 'Map', icon: MapPin, navGroup: 'main' },
+  [RoutePath.BlocklistPreferences]: {
+    label: 'Blocklist',
+    icon: ShieldAlert,
+    navGroup: 'main',
+  },
   // TODO: Fleet route coming soon — add Fleet: '/fleet' to RoutePath and uncomment below:
   // { label: 'My Fleet', icon: Truck, navGroup: 'main', roles: ['company'] }
   [RoutePath.Settings]: { label: 'Settings', icon: Settings, navGroup: 'bottom' },

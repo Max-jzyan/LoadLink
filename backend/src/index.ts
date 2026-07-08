@@ -25,6 +25,8 @@ import driverRouter from './routes/driverRoutes'
 import userRouter from './routes/userRoutes'
 import truckRouter from './routes/truckRoutes'
 import reviewRouter from './routes/reviewRoutes'
+import blocklistRouter from './routes/blocklistRoutes'
+import reportRouter from './routes/reportRoutes'
 import uploadRouter from './routes/uploadRoutes'
 import { errorHandler } from './middleware/errorHandler'
 import { startHeartbeat } from './services/heartbeatService'
@@ -37,6 +39,8 @@ app.use('/api', companyRouter)
 app.use('/api', driverRouter)
 app.use('/api', truckRouter)
 app.use('/api', reviewRouter)
+app.use('/api', blocklistRouter)
+app.use('/api', reportRouter)
 app.use('/api', uploadRouter)
 
 // Central error handler

@@ -1,5 +1,9 @@
 import { RoutePath } from '@/config/routes'
 import AuctionLive from '@/pages/AuctionLive'
+import BlocklistPreferences from '@/pages/BlocklistPreferences'
+import ReportFraud from '@/pages/ReportFraud'
+import ReportHub from '@/pages/ReportHub'
+import ReportInaccurate from '@/pages/ReportInaccurate'
 import CompanyDashboard from '@/pages/CompanyDashboard'
 import Dashboard from '@/pages/Dashboard'
 import DriverAuction from '@/pages/DriverAuction'
@@ -27,6 +31,10 @@ export default function AppRoutes() {
       <Route path={`${RoutePath.DriverAuctions}/:loadId`} element={<DriverAuction />} />
       <Route path={RoutePath.DriverProfile} element={<DriverProfile />} />
       <Route path={RoutePath.DriverPublicProfile} element={<DriverPublicProfile />} />
+      <Route path={RoutePath.BlocklistPreferences} element={<BlocklistPreferences />} />
+      <Route path={RoutePath.Report} element={<ReportHub />} />
+      <Route path={RoutePath.ReportFraud} element={<ReportFraud />} />
+      <Route path={RoutePath.ReportInaccurate} element={<ReportInaccurate />} />
       <Route path={RoutePath.Loads} element={<Loads />} />
       <Route path={RoutePath.PostLoad} element={<PostLoad />} />
       {/* load detail/edit are stubs -- not yet implemented */}
