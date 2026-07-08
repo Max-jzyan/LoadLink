@@ -130,6 +130,7 @@ export const updateDriverProfile = async (
     'pricingPreferences',
     'notificationPreferences',
     'homeLocation',
+    'certificationDocuments',
   ]
 
   const filteredData: Record<string, unknown> = {}

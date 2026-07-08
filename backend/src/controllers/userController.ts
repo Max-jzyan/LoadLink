@@ -6,19 +6,30 @@ import { CompanyModel } from '../models/users/Company'
 import { USER_ROLES } from '../models/enums'
 import { ApiError } from '../utils/ApiError'
 
+interface UploadedDocument {
+  name: string
+  url: string
+  key: string
+}
+
 // POST /api/users/register
 // Called right after Firebase signup to save the user role in MongoDB
-// Body: { firebaseUid, name, email, role: 'driver' | 'company' }
+// Body: { firebaseUid, name, email, role: 'driver' | 'company', certificationDocuments?, businessDocuments? }
+// certificationDocuments/businessDocuments are already-uploaded S3 file records
+// (see uploadService) collected by the frontend during the signup flow.
 // Creates a Driver or Company discriminator document.
 // Idempotent
 export const registerUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { firebaseUid, name, email, role } = req.body as {
-      firebaseUid: string
-      name: string
-      email: string
-      role: string
-    }
+    const { firebaseUid, name, email, role, certificationDocuments, businessDocuments } =
+      req.body as {
+        firebaseUid: string
+        name: string
+        email: string
+        role: string
+        certificationDocuments?: UploadedDocument[]
+        businessDocuments?: UploadedDocument[]
+      }
 
     if (!firebaseUid || !name || !email || !role) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'firebaseUid, name, email, and role are required')
@@ -39,7 +50,12 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
 
     let user
     if (role === USER_ROLES.DRIVER) {
-      user = await DriverModel.create({ firebaseUid, name, email })
+      user = await DriverModel.create({
+        firebaseUid,
+        name,
+        email,
+        certificationDocuments: certificationDocuments ?? [],
+      })
     } else {
       user = await CompanyModel.create({
         firebaseUid,
@@ -47,6 +63,7 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
         email,
         companyName: name,
         contactName: name,
+        businessDocuments: businessDocuments ?? [],
       })
     }
 

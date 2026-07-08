@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
-import { signInWithPopup } from 'firebase/auth'
+import { signInWithPopup, signOut, type User } from 'firebase/auth'
 import { auth, googleProvider } from '@/lib/firebase'
 import { type UserRole } from '@/hooks/useRole'
 import { registerAndFetchUser, setUser } from '@/services/authSlice'
@@ -18,8 +18,10 @@ import {
   FieldSeparator,
 } from '@/components/ui/field'
 import Logo from '@/components/Logo'
+import FileUploadField from '@/components/shared/FileUploadField'
 import { RoutePath } from '@/config/routes'
 import type { AppDispatch } from '@/services/store'
+import { uploadDocuments } from '@/lib/uploadDocuments'
 
 const ROLE_HOME: Record<UserRole, string> = {
   driver: RoutePath.DriverLoads,
@@ -40,6 +42,10 @@ export default function SignupPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [globalError, setGlobalError] = useState<string | null>(null)
 
+  const [certificationFiles, setCertificationFiles] = useState<File[]>([])
+  const [businessDocFiles, setBusinessDocFiles] = useState<File[]>([])
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
   function validate(): Record<string, string> {
     const errs: Record<string, string> = {}
     if (!name.trim()) errs.name = 'This field is required.'
@@ -59,7 +65,14 @@ export default function SignupPage() {
     setGlobalError(null)
     setLoading(true)
     try {
-      const authUser = await registerAndFetchUser(email, password, name.trim(), role)
+      const documentFiles = role === 'driver' ? certificationFiles : businessDocFiles
+      const authUser = await registerAndFetchUser(
+        email,
+        password,
+        name.trim(),
+        role,
+        documentFiles
+      )
       dispatch(setUser(authUser))
       setStoredRole(role)
       navigate(ROLE_HOME[role])
@@ -82,9 +95,26 @@ export default function SignupPage() {
   async function handleGoogle() {
     setLoading(true)
     setGlobalError(null)
+
+    let fbUser: User | null = null
     try {
       const result = await signInWithPopup(auth, googleProvider)
-      const fbUser = result.user
+      fbUser = result.user
+
+      // Upload any selected certification/business documents directly to S3
+      // before creating the Mongo profile, so the doc URLs can be saved in
+      // the same request.
+      const documentFiles = role === 'driver' ? certificationFiles : businessDocFiles
+      let uploadedDocuments: Awaited<ReturnType<typeof uploadDocuments>> = []
+      if (documentFiles.length > 0) {
+        try {
+          const idToken = await fbUser.getIdToken()
+          const docType = role === 'driver' ? 'driverDocuments' : 'companyDocuments'
+          uploadedDocuments = await uploadDocuments(idToken, fbUser.uid, docType, documentFiles)
+        } catch {
+          throw new Error('Failed to upload one or more documents. Please try again.')
+        }
+      }
 
       // Register in MongoDB
       const dbUser = await registerUser({
@@ -92,6 +122,9 @@ export default function SignupPage() {
         name: fbUser.displayName ?? fbUser.email ?? 'Unknown',
         email: fbUser.email,
         role,
+        ...(role === 'driver'
+          ? { certificationDocuments: uploadedDocuments }
+          : { businessDocuments: uploadedDocuments }),
       }).unwrap()
       dispatch(
         setUser({ uid: fbUser.uid, email: fbUser.email, mongoId: dbUser._id, role: dbUser.role })
@@ -99,8 +132,18 @@ export default function SignupPage() {
       setStoredRole(dbUser.role)
       navigate(ROLE_HOME[dbUser.role])
     } catch (err: unknown) {
+      const code = (err as { code?: string })?.code
+
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        return
+      }
+
+      if (fbUser) {
+        await signOut(auth)
+      }
+
       const msg = err instanceof Error ? err.message : ''
-      setGlobalError(msg || 'Google sign-up failed.')
+      setGlobalError(msg || 'Google sign-up failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -206,6 +249,42 @@ export default function SignupPage() {
                     </FieldDescription>
                   )}
                 </Field>
+
+                {/* Role-specific document upload */}
+                {role === 'driver' ? (
+                  <Field>
+                    <FieldLabel>Certifications</FieldLabel>
+                    <FileUploadField
+                      files={certificationFiles}
+                      onChange={setCertificationFiles}
+                      onError={setUploadError}
+                      multiple
+                      disabled={loading}
+                      buttonLabel="Upload certification"
+                    />
+                    <FieldDescription>
+                      Upload proof of any certifications.
+                    </FieldDescription>
+                  </Field>
+                ) : (
+                  <Field>
+                    <FieldLabel>Business registration document</FieldLabel>
+                    <FileUploadField
+                      files={businessDocFiles}
+                      onChange={setBusinessDocFiles}
+                      onError={setUploadError}
+                      disabled={loading}
+                      buttonLabel="Upload document"
+                    />
+                    <FieldDescription>
+                      Upload your business registration or incorporation document.
+                    </FieldDescription>
+                  </Field>
+                )}
+
+                {uploadError && (
+                  <p className="text-center text-sm text-destructive">{uploadError}</p>
+                )}
 
                 {/* Global error */}
                 {globalError && (

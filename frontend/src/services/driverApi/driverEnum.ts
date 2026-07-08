@@ -1,3 +1,10 @@
+export interface CertificationDocument {
+  name: string
+  url: string
+  key: string
+  uploadedAt: string
+}
+
 export interface PlaceBidPayload {
   driverId: string
   amount: number
@@ -98,6 +105,7 @@ export interface DriverProfile {
   profilePictureUrl: string
   trucks: Truck[]
   certifications: string[]
+  certificationDocuments: CertificationDocument[]
   availableForLoads: boolean
   pricingPreferences: PricingPreferences
   notificationPreferences: NotificationPreferences
@@ -209,4 +217,5 @@ export interface UpdateDriverProfilePayload {
   pricingPreferences?: Partial<PricingPreferences>
   notificationPreferences?: Partial<NotificationPreferences>
   availableForLoads?: boolean
+  certificationDocuments?: CertificationDocument[]
 }

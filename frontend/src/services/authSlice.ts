@@ -9,6 +9,7 @@ import { auth } from '@/lib/firebase'
 import type { AppDispatch, RootState } from './store'
 import { setStoredRole, type UserRole } from '@/hooks/useRole'
 import { showSuccess, showError, getHttpErrorMessage, getErrorStatus } from '@/lib/toast'
+import { uploadDocuments, type UploadedDocument } from '@/lib/uploadDocuments'
 
 export interface AuthUser {
   uid: string
@@ -108,15 +109,39 @@ export async function registerAndFetchUser(
   email: string,
   password: string,
   name: string,
-  role: UserRole
+  role: UserRole,
+  documentFiles: File[] = []
 ): Promise<AuthUser> {
   try {
     const { user: fbUser } = await createUserWithEmailAndPassword(auth, email, password)
 
+    // Upload any selected certification/business documents directly to S3
+    // before creating the Mongo profile, so the doc URLs can be saved in the
+    // same request.
+    let uploadedDocuments: UploadedDocument[] = []
+    if (documentFiles.length > 0) {
+      try {
+        const idToken = await fbUser.getIdToken()
+        const docType = role === 'driver' ? 'driverDocuments' : 'companyDocuments'
+        uploadedDocuments = await uploadDocuments(idToken, fbUser.uid, docType, documentFiles)
+      } catch (uploadError) {
+        await signOut(auth)
+        throw uploadError
+      }
+    }
+
     const res = await fetch('/api/users/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firebaseUid: fbUser.uid, name, email, role }),
+      body: JSON.stringify({
+        firebaseUid: fbUser.uid,
+        name,
+        email,
+        role,
+        ...(role === 'driver'
+          ? { certificationDocuments: uploadedDocuments }
+          : { businessDocuments: uploadedDocuments }),
+      }),
     })
 
     if (!res.ok) {

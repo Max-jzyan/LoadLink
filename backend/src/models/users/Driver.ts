@@ -42,12 +42,23 @@ const HomeLocationSchema = new Schema(
   { _id: false }
 )
 
+const CertificationDocumentSchema = new Schema(
+  {
+    name: { type: String, required: true },
+    url: { type: String, required: true },
+    key: { type: String, required: true },
+    uploadedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+)
+
 const DriverSchema = new Schema({
   professionalTitle: { type: String, default: '', trim: true },
   profilePictureUrl: { type: String, default: '' },
 
   trucks: [{ type: Types.ObjectId, ref: 'Truck', index: true }],
   certifications: [{ type: String, enum: CERTIFICATION_VALUES, trim: true }],
+  certificationDocuments: [CertificationDocumentSchema],
 
   availableForLoads: { type: Boolean, default: true },
   pricingPreferences: { type: PricingPreferencesSchema, default: () => ({}) },
