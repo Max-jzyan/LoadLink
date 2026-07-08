@@ -18,9 +18,21 @@ import {
 } from '@/components/ui/field'
 import Logo from '@/components/Logo'
 import FileUploadField from '@/components/shared/FileUploadField'
+import AvatarUploadField from '@/components/shared/AvatarUploadField'
 import { ROLE_HOME } from '@/config/routes'
 import type { AppDispatch } from '@/services/store'
 import { uploadDocuments } from '@/lib/uploadDocuments'
+
+function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
 
 export default function SignupPage() {
   const navigate = useNavigate()
@@ -38,6 +50,7 @@ export default function SignupPage() {
 
   const [certificationFiles, setCertificationFiles] = useState<File[]>([])
   const [businessDocFiles, setBusinessDocFiles] = useState<File[]>([])
+  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
 
   function validate(): Record<string, string> {
@@ -60,7 +73,14 @@ export default function SignupPage() {
     setLoading(true)
     try {
       const documentFiles = role === 'driver' ? certificationFiles : businessDocFiles
-      const authUser = await registerAndFetchUser(email, password, name.trim(), role, documentFiles)
+      const authUser = await registerAndFetchUser(
+        email,
+        password,
+        name.trim(),
+        role,
+        documentFiles,
+        role === 'driver' ? profilePictureFile : null
+      )
       dispatch(setUser(authUser))
       navigate(ROLE_HOME[role])
     } catch (err: unknown) {
@@ -88,18 +108,30 @@ export default function SignupPage() {
       const result = await signInWithPopup(auth, googleProvider)
       fbUser = result.user
 
-      // Upload any selected certification/business documents directly to S3
-      // before creating the Mongo profile, so the doc URLs can be saved in
-      // the same request.
+      // Upload any selected certification/business documents (and profile
+      // picture) directly to S3 before creating the Mongo profile, so the
+      // resulting URLs can be saved in the same request. Both share the same
+      // per-role folder (driverDocuments/companyDocuments) as other documents.
       const documentFiles = role === 'driver' ? certificationFiles : businessDocFiles
       let uploadedDocuments: Awaited<ReturnType<typeof uploadDocuments>> = []
-      if (documentFiles.length > 0) {
+      let profilePictureUrl: string | undefined
+      const docType = role === 'driver' ? 'driverDocuments' : 'companyDocuments'
+      if (documentFiles.length > 0 || (role === 'driver' && profilePictureFile)) {
         try {
           const idToken = await fbUser.getIdToken()
-          const docType = role === 'driver' ? 'driverDocuments' : 'companyDocuments'
-          uploadedDocuments = await uploadDocuments(idToken, fbUser.uid, docType, documentFiles)
+
+          if (documentFiles.length > 0) {
+            uploadedDocuments = await uploadDocuments(idToken, fbUser.uid, docType, documentFiles)
+          }
+
+          if (role === 'driver' && profilePictureFile) {
+            const [uploaded] = await uploadDocuments(idToken, fbUser.uid, docType, [
+              profilePictureFile,
+            ])
+            profilePictureUrl = uploaded.url
+          }
         } catch {
-          throw new Error('Failed to upload one or more documents. Please try again.')
+          throw new Error('Failed to upload one or more files. Please try again.')
         }
       }
 
@@ -109,7 +141,10 @@ export default function SignupPage() {
         email: fbUser.email,
         role,
         ...(role === 'driver'
-          ? { certificationDocuments: uploadedDocuments }
+          ? {
+              certificationDocuments: uploadedDocuments,
+              ...(profilePictureUrl ? { profilePictureUrl } : {}),
+            }
           : { businessDocuments: uploadedDocuments }),
       }).unwrap()
       dispatch(
@@ -136,9 +171,9 @@ export default function SignupPage() {
 
   return (
     <div className="grid h-svh lg:grid-cols-2">
-      <div className="flex flex-col gap-4 h-full p-6 md:p-10">
+      <div className="flex flex-col gap-4 h-full overflow-y-auto p-6 md:p-10">
         <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
+          <div className="w-full max-w-xs py-4">
             <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
               <FieldGroup>
                 <div className="flex flex-col items-center gap-1 text-center">
@@ -163,6 +198,21 @@ export default function SignupPage() {
                     </button>
                   ))}
                 </div>
+
+                {role === 'driver' && (
+                  <div className="flex flex-col items-center gap-2">
+                    <AvatarUploadField
+                      file={profilePictureFile}
+                      onFileChange={setProfilePictureFile}
+                      fallbackText={getInitials(name) || '?'}
+                      onError={setUploadError}
+                      disabled={loading}
+                    />
+                    <FieldDescription className="text-center">
+                      Optional: Add a profile picture
+                    </FieldDescription>
+                  </div>
+                )}
 
                 <Field>
                   <FieldLabel htmlFor="name">

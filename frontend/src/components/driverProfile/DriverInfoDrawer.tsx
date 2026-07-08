@@ -1,19 +1,28 @@
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { useEffect, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
 import DrawerShell from '@/components/layout/DrawerShell'
-import type { DriverProfile } from '@/services/driverApi/driverEnum'
-import { Loader2 } from 'lucide-react'
+import type { CertificationDocument, DriverProfile } from '@/services/driverApi/driverEnum'
+import { FileText, Loader2 } from 'lucide-react'
 
-import EditPencilButton from '@/components/shared/EditPencilButton'
+import AvatarUploadField from '@/components/shared/AvatarUploadField'
+import FileUploadField from '@/components/shared/FileUploadField'
+import { auth } from '@/lib/firebase'
+import { uploadDocuments } from '@/lib/uploadDocuments'
 
 export interface DriverInfoFormValues {
   name: string
   professionalTitle: string
   profilePictureUrl: string
+  certificationDocuments: CertificationDocument[]
+}
+
+interface DriverInfoFormFields {
+  name: string
+  professionalTitle: string
 }
 
 interface DriverInfoDrawerProps {
@@ -36,24 +45,23 @@ export default function DriverInfoDrawer({
 }: DriverInfoDrawerProps) {
   const formId = 'driver-info-form'
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null)
+  const [pictureError, setPictureError] = useState<string | null>(null)
+  const [certificationFiles, setCertificationFiles] = useState<File[]>([])
+  const [certError, setCertError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+
   const {
     register,
     handleSubmit,
-
     reset,
-    watch,
-    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<DriverInfoFormValues>({
+  } = useForm<DriverInfoFormFields>({
     defaultValues: {
       name: '',
       professionalTitle: '',
-      profilePictureUrl: '',
     },
   })
-
-  const profilePictureUrl = watch('profilePictureUrl')
 
   // Reset form when drawer opens with driver data; clear when it closes
   useEffect(() => {
@@ -61,52 +69,67 @@ export default function DriverInfoDrawer({
       reset({
         name: driver.name,
         professionalTitle: driver.professionalTitle,
-        profilePictureUrl: driver.profilePictureUrl,
       })
     }
 
     if (!open) {
-      reset({
-        name: '',
-        professionalTitle: '',
-        profilePictureUrl: '',
-      })
+      reset({ name: '', professionalTitle: '' })
+      setProfilePictureFile(null)
+      setCertificationFiles([])
+      setPictureError(null)
+      setCertError(null)
     }
   }, [open, driver, reset])
 
-  const onFormSubmit = async (values: DriverInfoFormValues) => {
-    await onSubmit(values)
-  }
+  const onFormSubmit = async (values: DriverInfoFormFields) => {
+    let profilePictureUrl = driver.profilePictureUrl
+    let certificationDocuments = driver.certificationDocuments ?? []
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    if (profilePictureFile || certificationFiles.length > 0) {
+      const user = auth.currentUser
+      if (user) {
+        setUploading(true)
+        try {
+          const idToken = await user.getIdToken()
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file')
-      return
+          if (profilePictureFile) {
+            const [uploaded] = await uploadDocuments(idToken, user.uid, 'driverDocuments', [
+              profilePictureFile,
+            ])
+            profilePictureUrl = uploaded.url
+          }
+
+          if (certificationFiles.length > 0) {
+            const uploaded = await uploadDocuments(
+              idToken,
+              user.uid,
+              'driverDocuments',
+              certificationFiles
+            )
+            certificationDocuments = [...certificationDocuments, ...uploaded]
+          }
+        } catch {
+          setPictureError('Failed to upload one or more files. Please try again.')
+          setUploading(false)
+          return
+        }
+        setUploading(false)
+      }
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be less than 5MB')
-      return
-    }
-
-    // Convert to base64
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const base64String = reader.result as string
-      setValue('profilePictureUrl', base64String)
-    }
-    reader.readAsDataURL(file)
+    await onSubmit({
+      ...values,
+      profilePictureUrl,
+      certificationDocuments,
+    })
+    setProfilePictureFile(null)
+    setCertificationFiles([])
   }
 
   const inputCls = 'bg-background border-border placeholder:text-muted-foreground/50'
 
   const getButtonContent = () => {
-    if (isSubmitting) {
+    if (isSubmitting || uploading) {
       return (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -131,17 +154,17 @@ export default function DriverInfoDrawer({
       open={open}
       onOpenChange={onOpenChange}
       title="Edit Personal Information"
-      description="Update your name, professional title, and profile picture."
+      description="Update your name, professional title, profile picture, and certifications."
       size="md"
       footer={
         <>
-          <Button type="submit" size="lg" disabled={isSubmitting} form={formId}>
+          <Button type="submit" size="lg" disabled={isSubmitting || uploading} form={formId}>
             {getButtonContent()}
           </Button>
           <Button
             variant="outline"
             size="lg"
-            disabled={isSubmitting}
+            disabled={isSubmitting || uploading}
             onClick={() => onOpenChange(false)}
           >
             Cancel
@@ -152,36 +175,18 @@ export default function DriverInfoDrawer({
       <form id={formId} onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         {/* Profile Picture Preview */}
         <div className="flex flex-col items-center">
-          <div className="relative">
-            {profilePictureUrl ? (
-              <img
-                src={profilePictureUrl}
-                alt="Profile preview"
-                className="h-24 w-24 rounded-full object-cover ring-2 ring-muted"
-              />
-            ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-3xl font-bold text-primary ring-2 ring-muted">
-                {getInitials(driver.name)}
-              </div>
-            )}
-            <div className="absolute bottom-0 right-0">
-              <EditPencilButton
-                onClick={() => fileInputRef.current?.click()}
-                ariaLabel="Upload profile picture"
-                title="Upload profile picture"
-              />
-            </div>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
+          <AvatarUploadField
+            file={profilePictureFile}
+            onFileChange={setProfilePictureFile}
+            existingUrl={driver.profilePictureUrl}
+            fallbackText={getInitials(driver.name)}
+            onError={setPictureError}
+            disabled={isSubmitting || uploading}
           />
           <FieldDescription className="mt-2 text-center">
             Click the pencil icon to upload a profile picture
           </FieldDescription>
+          <FieldError message={pictureError ?? undefined} />
         </div>
 
         {/* Name */}
@@ -209,8 +214,33 @@ export default function DriverInfoDrawer({
           <FieldDescription>Optional: Add a professional title or certification</FieldDescription>
         </Field>
 
-        {/* Profile Picture URL (hidden, used for base64 storage) */}
-        <input type="hidden" {...register('profilePictureUrl')} />
+        {/* Certifications */}
+        <Field>
+          <FieldLabel>Certifications</FieldLabel>
+          {driver.certificationDocuments && driver.certificationDocuments.length > 0 && (
+            <ul className="space-y-1.5 mb-2">
+              {driver.certificationDocuments.map((doc) => (
+                <li
+                  key={doc.key}
+                  className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm"
+                >
+                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="truncate">{doc.name}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <FileUploadField
+            files={certificationFiles}
+            onChange={setCertificationFiles}
+            onError={setCertError}
+            multiple
+            disabled={isSubmitting || uploading}
+            buttonLabel="Upload certification"
+          />
+          <FieldDescription>Optional: Add proof of any certifications</FieldDescription>
+          <FieldError message={certError ?? undefined} />
+        </Field>
       </form>
     </DrawerShell>
   )

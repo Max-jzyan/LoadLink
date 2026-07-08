@@ -41,10 +41,7 @@ export default function FileUploadField({
 
     if (multiple) {
       const existingKeys = new Set(files.map((f) => `${f.name}-${f.size}`))
-      const merged = [
-        ...files,
-        ...selected.filter((f) => !existingKeys.has(`${f.name}-${f.size}`)),
-      ]
+      const merged = [...files, ...selected.filter((f) => !existingKeys.has(`${f.name}-${f.size}`))]
       onChange(merged)
     } else {
       onChange([selected[0]])

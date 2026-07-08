@@ -124,6 +124,7 @@ export default function DriverProfile() {
           name: values.name,
           professionalTitle: values.professionalTitle,
           profilePictureUrl: values.profilePictureUrl,
+          certificationDocuments: values.certificationDocuments,
         },
       }).unwrap()
       setDriverInfoDrawerOpen(false)

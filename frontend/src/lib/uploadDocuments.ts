@@ -4,7 +4,7 @@ export interface UploadedDocument {
   key: string
 }
 
-export type UploadDocType = 'driverDocuments' | 'companyDocuments'
+export type UploadDocType = 'driverDocuments' | 'companyDocuments' | 'loadDocuments'
 
 async function getPresignedUrl(
   idToken: string,
@@ -18,7 +18,7 @@ async function getPresignedUrl(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${idToken}`,
     },
-    // firebaseUID used for local dev mode. when firebase admin credentials are set, 
+    // firebaseUID used for local dev mode. when firebase admin credentials are set,
     // backend uses the verified uid instead of the one sent in the request body.
     body: JSON.stringify({ firebaseUid, docType, fileName: file.name, contentType: file.type }),
   })

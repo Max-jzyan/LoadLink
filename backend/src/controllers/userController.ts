@@ -14,20 +14,23 @@ interface UploadedDocument {
 
 // POST /api/users/register
 // Called right after Firebase signup to save the user role in MongoDB
-// Body: { firebaseUid, name, email, role: 'driver' | 'company', certificationDocuments?, businessDocuments? }
-// certificationDocuments/businessDocuments are already-uploaded S3 file records
-// (see uploadService) collected by the frontend during the signup flow.
+// Body: { firebaseUid, name, email, role: 'driver' | 'company', certificationDocuments?, businessDocuments?, profilePictureUrl? }
+// certificationDocuments/businessDocuments/profilePictureUrl are already-uploaded
+// S3 file records (see uploadService) collected by the frontend during the
+// signup flow.
 // Creates a Driver or Company discriminator document.
 // Idempotent
 export const registerUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, email, role, certificationDocuments, businessDocuments } = req.body as {
-      name: string
-      email: string
-      role: string
-      certificationDocuments?: UploadedDocument[]
-      businessDocuments?: UploadedDocument[]
-    }
+    const { name, email, role, certificationDocuments, businessDocuments, profilePictureUrl } =
+      req.body as {
+        name: string
+        email: string
+        role: string
+        certificationDocuments?: UploadedDocument[]
+        businessDocuments?: UploadedDocument[]
+        profilePictureUrl?: string
+      }
 
     const firebaseUid = req.firebaseUid
 
@@ -55,6 +58,7 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
         name,
         email,
         certificationDocuments: certificationDocuments ?? [],
+        ...(profilePictureUrl ? { profilePictureUrl } : {}),
       })
     } else {
       user = await CompanyModel.create({

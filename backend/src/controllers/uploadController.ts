@@ -11,8 +11,10 @@ import { ApiError } from '../utils/ApiError'
 /**
  * POST /api/uploads/presign
  * Body: { docType: 'driverDocuments' | 'companyDocuments' | 'loadDocuments', fileName, contentType, firebaseUid?, loadId? }
- * Returns a presigned S3 URL the client can PUT the file to directly.
- * driverDocuments/companyDocuments are linked to ownder firebaseUid
+ * Returns a presigned S3 URL the client can PUT the file to directly. Profile
+ * pictures are uploaded here too, sharing the driverDocuments/companyDocuments
+ * folder rather than getting a dedicated docType.
+ * driverDocuments/companyDocuments are linked to the caller's own firebaseUid.
  * loadDocuments are linked to loadId instead (requires the caller to be the
  * posting company or assigned driver on that load).
  */

@@ -6,8 +6,37 @@ import { LoadModel } from '../models/loads/Load'
 import { TruckModel } from '../models/trucks/Truck'
 import { DriverModel } from '../models/users/Driver'
 import { ApiError } from '../utils/ApiError'
+import * as uploadService from './uploadService'
 
 // ── helpers ──────────────────────────────────────────────────────────────
+
+/**
+ * The bucket has no public read access, so stored S3 URLs 403 if fetched
+ * directly — swap them for short-lived presigned GET URLs before returning
+ * the driver document to the client.
+ */
+const withViewableUrls = async (
+  driver: Record<string, unknown>
+): Promise<Record<string, unknown>> => {
+  const profilePictureUrl = driver.profilePictureUrl as string | undefined
+  if (profilePictureUrl) {
+    driver.profilePictureUrl = await uploadService.toViewableUrl(profilePictureUrl)
+  }
+
+  const certificationDocuments = driver.certificationDocuments as
+    | { name: string; url: string; key: string; uploadedAt: string }[]
+    | undefined
+  if (certificationDocuments?.length) {
+    driver.certificationDocuments = await Promise.all(
+      certificationDocuments.map(async (doc) => ({
+        ...doc,
+        url: await uploadService.createDownloadUrl(doc.key),
+      }))
+    )
+  }
+
+  return driver
+}
 
 const assertValidId = (id: string, label: string) => {
   if (!isValidObjectId(id)) {
@@ -111,7 +140,7 @@ export const getDriverProfile = async (driverId: string) => {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Driver not found')
   }
 
-  return driver
+  return withViewableUrls(driver)
 }
 
 /**
@@ -144,6 +173,18 @@ export const updateDriverProfile = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, 'No valid fields to update')
   }
 
+  // Only one profile picture exists at a time, so replacing it should clean up
+  // the old S3 object rather than leaving it orphaned (unlike certification
+  // documents, which intentionally accumulate as a growing list).
+  if (typeof filteredData.profilePictureUrl === 'string' && filteredData.profilePictureUrl) {
+    const existing = await DriverModel.findById(new Types.ObjectId(driverId))
+      .select('profilePictureUrl')
+      .lean()
+    if (existing?.profilePictureUrl && existing.profilePictureUrl !== filteredData.profilePictureUrl) {
+      await uploadService.deleteObjectByUrl(existing.profilePictureUrl)
+    }
+  }
+
   const driver = await DriverModel.findByIdAndUpdate(
     new Types.ObjectId(driverId),
     { $set: filteredData },
@@ -156,7 +197,7 @@ export const updateDriverProfile = async (
     throw new ApiError(StatusCodes.NOT_FOUND, 'Driver not found')
   }
 
-  return driver
+  return withViewableUrls(driver)
 }
 
 /**
