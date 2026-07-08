@@ -11,7 +11,6 @@ import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { usePlaceBidMutation } from '@/services/driverApi/driverSlice'
 import { selectMongoId } from '@/services/authSlice'
-import { showError } from '@/lib/toast'
 
 interface BidInputProps {
   loadId: string
@@ -37,7 +36,9 @@ export default function BidInput({ loadId, auctionStatus, currentPrice }: BidInp
       return
     }
     if (currentPrice !== undefined && bidAmount < currentPrice) {
-      showError(`Your bid of $${bidAmount.toLocaleString()} is lower than the current accept price of $${currentPrice.toLocaleString()}.`);
+      alert(
+        `Your bid of $${bidAmount.toLocaleString()} is lower than the current accept price of $${currentPrice.toLocaleString()}. Consider using the "Accept $${currentPrice.toLocaleString()} Now" button instead.`
+      )
       return
     }
     try {
