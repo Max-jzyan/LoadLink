@@ -1,9 +1,8 @@
 import { DriverMap, type RouteCoordinate } from '@/components/driverLoads/Map'
 import PageShell from '@/components/layout/PageShell'
-import { selectMongoId } from '@/services/authSlice'
+import { selectMongoId, selectRole } from '@/services/authSlice'
 import { useListCompanyLoadsQuery } from '@/services/loadApi/loadSlice'
 import { useListDriverLoadsQuery } from '@/services/driverApi/driverSlice'
-import { getStoredRole } from '@/hooks/useRole'
 import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 
@@ -41,7 +40,7 @@ async function fetchRoadPositions(
 
 export default function MapPage() {
   const mongoId = useSelector(selectMongoId)
-  const role = getStoredRole()
+  const role = useSelector(selectRole)
 
   // Pick the right query based on user role
   const isCompany = role === 'company'

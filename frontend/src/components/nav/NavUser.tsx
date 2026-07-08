@@ -27,10 +27,9 @@ import {
 import { SidebarMenu, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
-import { clearStoredRole, getStoredRole } from '@/hooks/useRole'
 import { applyTheme, getStoredTheme, type Theme } from '@/hooks/useTheme'
 import { auth } from '@/lib/firebase'
-import { selectMongoId } from '@/services/authSlice'
+import { selectMongoId, selectRole } from '@/services/authSlice'
 import { useGetDriverProfileQuery } from '@/services/driverApi/driverSlice'
 
 const THEME_ICONS: Record<Theme, React.ReactNode> = {
@@ -46,10 +45,10 @@ export function NavUser() {
   const [theme, setTheme] = useState<Theme>(getStoredTheme)
 
   const mongoId = useSelector(selectMongoId)
+  const role = useSelector(selectRole)
   const { data: driver } = useGetDriverProfileQuery(mongoId!, { skip: !mongoId })
 
   async function handleLogout() {
-    clearStoredRole()
     await signOut(auth)
     navigate('/login')
   }
@@ -63,11 +62,6 @@ export function NavUser() {
   const displayName =
     driver?.name ??
     (typeof driver?.email === 'string' && driver.email ? driver.email.split('@')[0] : 'User')
-
-  const fallbackRole = getStoredRole()
-  let roleLabel = ''
-  if (driver?.role === 'driver' || fallbackRole === 'driver') roleLabel = 'Driver'
-  if (driver?.role === 'company' || fallbackRole === 'company') roleLabel = 'Company'
 
   const initials = displayName.slice(0, 2).toUpperCase()
   const profilePictureUrl = driver?.profilePictureUrl ?? ''
@@ -89,7 +83,7 @@ export function NavUser() {
               <div className="grid flex-1 min-w-0 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{displayName}</span>
                 <span className="truncate text-xs capitalize text-muted-foreground">
-                  {roleLabel}
+                  {role}
                 </span>
               </div>
             </>
@@ -140,7 +134,7 @@ export function NavUser() {
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-semibold">{displayName}</span>
-                      <span className="truncate text-xs capitalize">{roleLabel}</span>
+                      <span className="truncate text-xs capitalize">{role}</span>
                     </div>
                   </div>
                 </DropdownMenuLabel>

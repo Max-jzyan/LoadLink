@@ -13,7 +13,7 @@ import { NavMain } from '@/components/nav/NavMain'
 import { NavUser } from '@/components/nav/NavUser'
 import Logo from '@/components/Logo'
 import { getNavItems, RoutePath } from '@/config/routes'
-import type { UserRole } from '@/hooks/useRole'
+import type { UserRole } from '@/types/enums'
 
 interface AppSidebarProps {
   role: UserRole

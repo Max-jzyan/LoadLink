@@ -1,19 +1,10 @@
-import { useEffect, useState } from 'react'
-import { onAuthStateChanged, type User } from 'firebase/auth'
-import { auth } from '../lib/firebase'
+import { useSelector } from 'react-redux'
+import { selectCurrentUser, selectAuthLoading } from '@/services/authSlice'
+
 
 const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user)
-      setLoading(false)
-    })
-    return unsubscribe
-  }, [])
-
+  const user = useSelector(selectCurrentUser)
+  const loading = useSelector(selectAuthLoading)
   return { user, loading }
 }
 

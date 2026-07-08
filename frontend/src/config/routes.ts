@@ -1,4 +1,4 @@
-import type { UserRole } from '@/hooks/useRole'
+import type { UserRole } from '@/types/enums'
 import {
   ClipboardList,
   Gavel,
@@ -128,6 +128,11 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
   [RoutePath.Settings]: { label: 'Settings', icon: Settings, navGroup: 'bottom' },
   [RoutePath.Help]: { label: 'Help', icon: HelpCircle, navGroup: 'bottom' },
   [RoutePath.Logout]: { label: 'Logout', icon: LogOut, navGroup: null },
+}
+
+export const ROLE_HOME: Record<UserRole, RoutePath> = {
+  driver: RoutePath.DriverLoads,
+  company: RoutePath.Loads,
 }
 
 /** Get label for any path (used by breadcrumbs). Falls back to Title Case of the segment. */

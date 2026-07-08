@@ -3,10 +3,9 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { signInWithPopup, signOut, type User } from 'firebase/auth'
 import { auth, googleProvider } from '@/lib/firebase'
-import { type UserRole } from '@/hooks/useRole'
+import { type UserRole } from '@/types/enums'
 import { registerAndFetchUser, setUser } from '@/services/authSlice'
 import { useRegisterUserMutation } from '@/services/userApi/userSlice'
-import { setStoredRole } from '@/hooks/useRole'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,14 +18,9 @@ import {
 } from '@/components/ui/field'
 import Logo from '@/components/Logo'
 import FileUploadField from '@/components/shared/FileUploadField'
-import { RoutePath } from '@/config/routes'
+import { ROLE_HOME } from '@/config/routes'
 import type { AppDispatch } from '@/services/store'
 import { uploadDocuments } from '@/lib/uploadDocuments'
-
-const ROLE_HOME: Record<UserRole, string> = {
-  driver: RoutePath.DriverLoads,
-  company: RoutePath.Loads,
-}
 
 export default function SignupPage() {
   const navigate = useNavigate()
@@ -66,15 +60,8 @@ export default function SignupPage() {
     setLoading(true)
     try {
       const documentFiles = role === 'driver' ? certificationFiles : businessDocFiles
-      const authUser = await registerAndFetchUser(
-        email,
-        password,
-        name.trim(),
-        role,
-        documentFiles
-      )
+      const authUser = await registerAndFetchUser(email, password, name.trim(), role, documentFiles)
       dispatch(setUser(authUser))
-      setStoredRole(role)
       navigate(ROLE_HOME[role])
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
@@ -118,7 +105,6 @@ export default function SignupPage() {
 
       // Register in MongoDB
       const dbUser = await registerUser({
-        firebaseUid: fbUser.uid,
         name: fbUser.displayName ?? fbUser.email ?? 'Unknown',
         email: fbUser.email,
         role,
@@ -129,7 +115,6 @@ export default function SignupPage() {
       dispatch(
         setUser({ uid: fbUser.uid, email: fbUser.email, mongoId: dbUser._id, role: dbUser.role })
       )
-      setStoredRole(dbUser.role)
       navigate(ROLE_HOME[dbUser.role])
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code
@@ -262,9 +247,7 @@ export default function SignupPage() {
                       disabled={loading}
                       buttonLabel="Upload certification"
                     />
-                    <FieldDescription>
-                      Upload proof of any certifications.
-                    </FieldDescription>
+                    <FieldDescription>Upload proof of any certifications.</FieldDescription>
                   </Field>
                 ) : (
                   <Field>

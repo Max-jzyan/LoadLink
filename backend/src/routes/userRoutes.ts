@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { requireAuth, requireFirebaseToken } from '../middleware/requireAuth'
 import {
   registerUser,
   getMe,
@@ -8,11 +9,11 @@ import {
 
 const router = Router()
 
-// POST /api/users/register iz called only once after Firebase signup
-router.post('/users/register', registerUser)
+// POST /api/users/register is called only once after Firebase signup
+router.post('/users/register', requireFirebaseToken, registerUser)
 
-// GET  /api/users/me?firebaseUid=<uid> resolves Firebase UID tp a MongoDB doc
-router.get('/users/me', getMe)
+// GET /api/users/me
+router.get('/users/me', requireAuth, getMe)
 
 // Feed preferences (blocklist-driven feed filtering)
 router.get('/users/:userId/feed-preferences', getFeedPreferences)

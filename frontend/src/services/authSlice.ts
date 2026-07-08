@@ -7,7 +7,7 @@ import {
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import type { AppDispatch, RootState } from './store'
-import { setStoredRole, type UserRole } from '@/hooks/useRole'
+import { type UserRole } from '@/types/enums'
 import { showSuccess, showError, getHttpErrorMessage, getErrorStatus } from '@/lib/toast'
 import { uploadDocuments, type UploadedDocument } from '@/lib/uploadDocuments'
 
@@ -53,11 +53,16 @@ export const selectAuthLoading = (state: RootState) => state.auth.loading
 export const selectMongoId = (state: RootState) => state.auth.user?.mongoId ?? null
 export const selectRole = (state: RootState) => state.auth.user?.role ?? null
 
-// Fetch the MongoDB user profile for a given Firebase UID
-// Returns null when the user hasn't been registered in the DB yet
-async function fetchDbUser(firebaseUid: string): Promise<{ _id: string; role: UserRole } | null> {
+// Fetch the MongoDB user profile for the current Firebase user.
+// The backend derives identity from the verified token.
+// Returns null when the user hasn't been registered in the DB yet.
+async function fetchDbUser(): Promise<{ _id: string; role: UserRole } | null> {
   try {
-    const res = await fetch(`/api/users/me?firebaseUid=${encodeURIComponent(firebaseUid)}`)
+    const token = await auth.currentUser?.getIdToken()
+    if (!token) return null
+    const res = await fetch('/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
     if (!res.ok) return null
     return await res.json()
   } catch {
@@ -73,7 +78,8 @@ async function fetchDbUser(firebaseUid: string): Promise<{ _id: string; role: Us
  *  1. Firebase tells us who is logged in.
  *  2. We immediately keep loading=true and hit GET /api/users/me to retrieve
  *     the MongoDB _id and role.
- *  3. We dispatch setUser with the complete profile and sync localStorage.
+ *  3. We dispatch setUser with the complete profile (Redux is the single
+ *     source of truth for role — nothing role-related is persisted client-side).
  *
  * Flow on logout: dispatch setUser(null).
  */
@@ -87,7 +93,7 @@ export function subscribeToAuthChanges(dispatch: AppDispatch) {
     // Keep loading while we fetch mongoId + role from the backend.
     dispatch(setAuthLoading())
 
-    const dbUser = await fetchDbUser(firebaseUser.uid)
+    const dbUser = await fetchDbUser()
 
     dispatch(
       setUser({
@@ -97,10 +103,6 @@ export function subscribeToAuthChanges(dispatch: AppDispatch) {
         role: dbUser?.role ?? null,
       })
     )
-
-    if (dbUser?.role) {
-      setStoredRole(dbUser.role)
-    }
   })
 }
 
@@ -114,6 +116,7 @@ export async function registerAndFetchUser(
 ): Promise<AuthUser> {
   try {
     const { user: fbUser } = await createUserWithEmailAndPassword(auth, email, password)
+    const token = await fbUser.getIdToken()
 
     // Upload any selected certification/business documents directly to S3
     // before creating the Mongo profile, so the doc URLs can be saved in the
@@ -121,9 +124,8 @@ export async function registerAndFetchUser(
     let uploadedDocuments: UploadedDocument[] = []
     if (documentFiles.length > 0) {
       try {
-        const idToken = await fbUser.getIdToken()
         const docType = role === 'driver' ? 'driverDocuments' : 'companyDocuments'
-        uploadedDocuments = await uploadDocuments(idToken, fbUser.uid, docType, documentFiles)
+        uploadedDocuments = await uploadDocuments(token, fbUser.uid, docType, documentFiles)
       } catch (uploadError) {
         await signOut(auth)
         throw uploadError
@@ -132,9 +134,8 @@ export async function registerAndFetchUser(
 
     const res = await fetch('/api/users/register', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
-        firebaseUid: fbUser.uid,
         name,
         email,
         role,
@@ -169,7 +170,7 @@ export async function loginAndFetchUser(email: string, password: string): Promis
   try {
     const { user: fbUser } = await signInWithEmailAndPassword(auth, email, password)
 
-    const dbUser = await fetchDbUser(fbUser.uid)
+    const dbUser = await fetchDbUser()
 
     showSuccess('Welcome back!')
 

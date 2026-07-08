@@ -1,8 +1,7 @@
-import type { UserRole } from '@/hooks/useRole'
+import type { UserRole } from '@/types/enums'
 import type { UploadedDocument } from '@/lib/uploadDocuments'
 
 export interface RegisterUserPayload {
-  firebaseUid: string
   name: string
   email: string | null
   role: UserRole

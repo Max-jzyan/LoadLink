@@ -22,7 +22,7 @@ import { relativeTime } from '@/lib/utils'
 
 export default function CompanyDashboard() {
   const { user } = useAuth()
-  const companyName = user?.displayName ?? user?.email?.split('@')[0] ?? null
+  const companyName = user?.email?.split('@')[0] ?? null
   const companyId = useSelector(selectMongoId)
 
   const {

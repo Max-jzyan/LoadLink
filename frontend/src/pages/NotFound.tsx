@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 import { RoutePath } from '@/config/routes'
 import { Button } from '@/components/ui/button'
 import { FileQuestion } from 'lucide-react'
-import { getStoredRole } from '@/hooks/useRole'
+import { selectRole } from '@/services/authSlice'
 import PageShell from '@/components/layout/PageShell'
 
 export default function NotFound() {
-  const role = getStoredRole()
+  const role = useSelector(selectRole)
   const dashboardPath = role === 'company' ? RoutePath.CompanyDashboard : RoutePath.Dashboard
 
   return (

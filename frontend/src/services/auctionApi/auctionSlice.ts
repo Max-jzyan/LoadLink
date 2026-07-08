@@ -16,6 +16,7 @@ import {
   getHttpErrorMessage,
   getErrorStatus,
 } from '@/lib/toast'
+import { withSSEToken } from '@/lib/sse'
 
 export const auctionApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -104,7 +105,7 @@ export const auctionApi = api.injectEndpoints({
       async onCacheEntryAdded(loadId, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) {
         await cacheDataLoaded
 
-        const es = new EventSource(`/api/auctions/${loadId}/bids`)
+        const es = new EventSource(await withSSEToken(`/api/auctions/${loadId}/bids`))
 
         es.onmessage = (e) => {
           try {
@@ -139,7 +140,7 @@ export const auctionApi = api.injectEndpoints({
       async onCacheEntryAdded(loadId, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) {
         await cacheDataLoaded
 
-        const es = new EventSource(`/api/auctions/${loadId}/price`)
+        const es = new EventSource(await withSSEToken(`/api/auctions/${loadId}/price`))
 
         es.onmessage = (e) => {
           try {

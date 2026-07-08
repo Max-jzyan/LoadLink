@@ -21,15 +21,15 @@ interface UploadedDocument {
 // Idempotent
 export const registerUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { firebaseUid, name, email, role, certificationDocuments, businessDocuments } =
-      req.body as {
-        firebaseUid: string
-        name: string
-        email: string
-        role: string
-        certificationDocuments?: UploadedDocument[]
-        businessDocuments?: UploadedDocument[]
-      }
+    const { name, email, role, certificationDocuments, businessDocuments } = req.body as {
+      name: string
+      email: string
+      role: string
+      certificationDocuments?: UploadedDocument[]
+      businessDocuments?: UploadedDocument[]
+    }
+
+    const firebaseUid = req.firebaseUid
 
     if (!firebaseUid || !name || !email || !role) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'firebaseUid, name, email, and role are required')
@@ -73,15 +73,16 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
   }
 }
 
-// GET /api/users/me?firebaseUid=<uid>
-// Returns the MongoDB user document for the given Firebase UID
-// Used by the frontend to get the mongoId and role after auth state restores
+// GET /api/users/me
+// Returns the MongoDB user document for the authenticated caller.
+// Identity comes from the verified token (req.firebaseUid), not a query param.
+// Used by the frontend to get the mongoId and role after auth state restores.
 export const getMe = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { firebaseUid } = req.query as { firebaseUid: string }
+    const firebaseUid = req.firebaseUid
 
     if (!firebaseUid) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'firebaseUid query param is required')
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Authentication required')
     }
 
     const user = await UserModel.findOne({ firebaseUid })

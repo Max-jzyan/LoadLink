@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
+import { useSelector } from 'react-redux'
 import './App.css'
 import { auth } from '@/lib/firebase'
 import { initTheme } from '@/hooks/useTheme'
@@ -12,25 +13,27 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
 import PageLayout from '@/components/PageLayout'
 import AppRoutes from '@/routes'
-import { getStoredRole } from '@/hooks/useRole'
+import { selectRole, selectAuthLoading } from '@/services/authSlice'
 import Spinner from '@/components/shared/Spinner'
 
-// Picks the correct sidebar based on the stored role
-// If authed but no role stored (localStorage cleared, different device, private tab)
-// then sign out and let the person go through the full login flow again
+// Picks the correct sidebar based on the server-resolved role (Redux is the
+// single source of truth). If we finish loading and still have no role
+// (unregistered account, cleared session), sign out and send the user back
+// through the login flow.
 
 function RoleLayout() {
-  const role = getStoredRole()
+  const role = useSelector(selectRole)
+  const loading = useSelector(selectAuthLoading)
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (!role) {
+    if (!loading && !role) {
       signOut(auth).then(() => navigate('/login', { replace: true }))
     }
-  }, [role, navigate])
+  }, [loading, role, navigate])
 
   // prevents flashbang
-  if (!role) {
+  if (loading || !role) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <Spinner />

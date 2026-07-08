@@ -85,3 +85,5 @@ export const USER_ROLES = {
 } as const
 
 export type USER_ROLES = (typeof USER_ROLES)[keyof typeof USER_ROLES]
+
+export type UserRole = Exclude<USER_ROLES, 'admin'>

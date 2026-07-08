@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { withSSEToken } from '@/lib/sse'
 
 export type SSEStatus = 'connecting' | 'connected' | 'disconnected'
 
@@ -41,13 +42,19 @@ export function useEventSource<T>(url: string | null): UseEventSourceResult<T> {
     }
 
     // Connect
-    const connect = () => {
+    const connect = async () => {
       if (cancelled || !url) {
         return
       }
       closeSource()
 
-      const source = new EventSource(url)
+      // EventSource can't send an Authorization header, so the Firebase token is appended as ?access_token=
+      const tokenizedUrl = await withSSEToken(url)
+      if (cancelled) {
+        return
+      }
+
+      const source = new EventSource(tokenizedUrl)
       sourceRef.current = source
 
       source.onopen = () => {

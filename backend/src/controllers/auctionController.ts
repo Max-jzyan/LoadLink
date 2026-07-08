@@ -22,12 +22,13 @@ export const createAuction = async (req: Request, res: Response, next: NextFunct
 /**
  * POST /api/auctions/:loadId/bids
  * Place a bid on an auction load as a driver.
- * Body: { driverId: string, amount: number }
+ * Body: { amount: number }
  */
 export const placeBid = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const loadId = req.params.loadId as string
-    const { driverId, amount } = req.body
+    const { amount } = req.body
+    const driverId = req.user!._id
     const bid = await auctionService.placeBid(loadId, driverId, amount)
     res.status(StatusCodes.CREATED).json(bid)
   } catch (err) {
@@ -38,12 +39,11 @@ export const placeBid = async (req: Request, res: Response, next: NextFunction) 
 /**
  * POST /api/auctions/:loadId/claim
  * Instantly claim a load at the current ticking auction price.
- * Body: { driverId: string }
  */
 export const claimLoad = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const loadId = req.params.loadId as string
-    const { driverId } = req.body
+    const driverId = req.user!._id
     const result = await auctionService.claimLoad(loadId, driverId)
     res.status(StatusCodes.OK).json(result)
   } catch (err) {

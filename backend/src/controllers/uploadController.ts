@@ -5,6 +5,7 @@ import * as uploadService from '../services/uploadService'
 import { LoadModel } from '../models/loads/Load'
 import { CompanyModel } from '../models/users/Company'
 import { DriverModel } from '../models/users/Driver'
+import { USER_ROLES } from '../models/enums'
 import { ApiError } from '../utils/ApiError'
 
 /**
@@ -17,25 +18,19 @@ import { ApiError } from '../utils/ApiError'
  */
 export const createUploadUrl = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { docType, fileName, contentType, firebaseUid: bodyFirebaseUid, loadId } = req.body as {
+    const { docType, fileName, contentType, loadId } = req.body as {
       docType: string
       fileName: string
       contentType: string
-      firebaseUid?: string
       loadId?: string
     }
 
-    // fall back to the uid the client already has from the Firebase client SDK
-    // if Firebase admin key is not set
-    const firebaseUid = req.firebaseUid ?? bodyFirebaseUid
-
-    if (!firebaseUid) {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Authentication required')
-    }
+    const firebaseUid = req.firebaseUid!
 
     if (!docType || !fileName || !contentType) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'docType, fileName, and contentType are required')
     }
+
 
     let ownerId = firebaseUid
 
@@ -49,17 +44,14 @@ export const createUploadUrl = async (req: Request, res: Response, next: NextFun
         throw new ApiError(StatusCodes.NOT_FOUND, 'Load not found')
       }
 
-      // Only enforced once requireAuth has actually verified a token
-      if (req.firebaseUid) {
-        const [company, driver] = await Promise.all([
-          CompanyModel.findOne({ firebaseUid, _id: load.companyId }).select('_id'),
-          load.assignedDriverId
-            ? DriverModel.findOne({ firebaseUid, _id: load.assignedDriverId }).select('_id')
-            : null,
-        ])
-        if (!company && !driver) {
-          throw new ApiError(StatusCodes.FORBIDDEN, 'Access denied')
-        }
+      const [company, driver] = await Promise.all([
+        CompanyModel.findOne({ firebaseUid, _id: load.companyId }).select('_id'),
+        load.assignedDriverId
+          ? DriverModel.findOne({ firebaseUid, _id: load.assignedDriverId }).select('_id')
+          : null,
+      ])
+      if (!company && !driver) {
+        throw new ApiError(StatusCodes.FORBIDDEN, 'Access denied')
       }
 
       ownerId = loadId

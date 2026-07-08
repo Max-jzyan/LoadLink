@@ -10,7 +10,8 @@ import * as reviewService from '../services/reviewService'
  */
 export const createReview = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const review = await reviewService.createCompanyReview(req.body)
+    const reviewerId = req.user!._id
+    const review = await reviewService.createCompanyReview({ ...req.body, reviewerId })
     res.status(StatusCodes.CREATED).json(review)
   } catch (err) {
     next(err)

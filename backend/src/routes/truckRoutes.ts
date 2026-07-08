@@ -7,15 +7,20 @@ import {
   deleteTruck,
   setPrimaryTruck,
 } from '../controllers/truckController'
+import { requireAuth } from '../middleware/requireAuth'
+import { requireRole, requireSelfParam } from '../middleware/authorize'
+import { USER_ROLES } from '../models/enums'
 
 const router = Router()
 
-// Full CRUD for a driver's truck fleet
-router.get('/driver/:driverId/trucks', listDriverTrucks)
-router.post('/driver/:driverId/trucks', createTruck)
-router.get('/driver/:driverId/trucks/:truckId', getTruck)
-router.patch('/driver/:driverId/trucks/:truckId', updateTruck)
-router.delete('/driver/:driverId/trucks/:truckId', deleteTruck)
-router.patch('/driver/:driverId/trucks/:truckId/primary', setPrimaryTruck)
+// Every truck route is scoped to the authenticated driver's own :driverId.
+const middlewares = [requireAuth, requireRole(USER_ROLES.DRIVER), requireSelfParam('driverId')]
+
+router.get('/driver/:driverId/trucks', middlewares, listDriverTrucks)
+router.post('/driver/:driverId/trucks', middlewares, createTruck)
+router.get('/driver/:driverId/trucks/:truckId', middlewares, getTruck)
+router.patch('/driver/:driverId/trucks/:truckId', middlewares, updateTruck)
+router.delete('/driver/:driverId/trucks/:truckId', middlewares, deleteTruck)
+router.patch('/driver/:driverId/trucks/:truckId/primary', middlewares, setPrimaryTruck)
 
 export default router

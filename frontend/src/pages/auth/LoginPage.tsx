@@ -5,19 +5,14 @@ import { useDispatch } from 'react-redux'
 import { auth, googleProvider } from '@/lib/firebase'
 import { loginAndFetchUser, setUser } from '@/services/authSlice'
 import { useLazyGetUserByFirebaseUidQuery } from '@/services/userApi/userSlice'
-import { setStoredRole, type UserRole } from '@/hooks/useRole'
+import { type UserRole } from '@/types/enums'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Logo from '@/components/Logo'
-import { RoutePath } from '@/config/routes'
+import { ROLE_HOME } from '@/config/routes'
 import type { AppDispatch } from '@/services/store'
-
-const ROLE_HOME: Record<UserRole, string> = {
-  driver: RoutePath.DriverLoads,
-  company: RoutePath.Loads,
-}
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -31,7 +26,6 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
 
   function afterLogin(dbRole: UserRole) {
-    setStoredRole(dbRole)
     navigate(ROLE_HOME[dbRole])
   }
 

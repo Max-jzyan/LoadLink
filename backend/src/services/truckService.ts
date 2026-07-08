@@ -15,8 +15,6 @@ const assertValidId = (id: string, label: string) => {
  * Fetch all trucks belonging to a driver, sorted by primary first then newest.
  */
 export const listTrucks = async (driverId: string) => {
-  assertValidId(driverId, 'driverId')
-
   const trucks = await TruckModel.find({ ownerDriverId: new Types.ObjectId(driverId) }).sort({
     isPrimary: -1,
     createdAt: -1,
@@ -29,7 +27,6 @@ export const listTrucks = async (driverId: string) => {
  * Fetch a single truck by its ID (scoped to the owner driver).
  */
 export const getTruck = async (driverId: string, truckId: string) => {
-  assertValidId(driverId, 'driverId')
   assertValidId(truckId, 'truckId')
 
   const truck = await TruckModel.findOne({
@@ -74,8 +71,6 @@ export const createTruck = async (
       }
     }
   }
-  assertValidId(driverId, 'driverId')
-
   // Count existing trucks to decide primary status
   const existingCount = await TruckModel.countDocuments({
     ownerDriverId: new Types.ObjectId(driverId),
@@ -136,7 +131,6 @@ export const updateTruck = async (
       }
     }
   }
-  assertValidId(driverId, 'driverId')
   assertValidId(truckId, 'truckId')
 
   const truck = await TruckModel.findOne({
@@ -168,7 +162,6 @@ export const updateTruck = async (
  * If it was the primary truck, reassign primary to the next available.
  */
 export const deleteTruck = async (driverId: string, truckId: string) => {
-  assertValidId(driverId, 'driverId')
   assertValidId(truckId, 'truckId')
 
   const truck = await TruckModel.findOneAndDelete({
@@ -202,7 +195,6 @@ export const deleteTruck = async (driverId: string, truckId: string) => {
  * Set a specific truck as the primary truck for a driver.
  */
 export const setPrimaryTruck = async (driverId: string, truckId: string) => {
-  assertValidId(driverId, 'driverId')
   assertValidId(truckId, 'truckId')
 
   const truck = await TruckModel.findOne({
