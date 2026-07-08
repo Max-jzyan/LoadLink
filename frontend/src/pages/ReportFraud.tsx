@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { RoutePath } from '@/config/routes'
-import { getStoredRole } from '@/hooks/useRole'
+import { selectRole } from '@/services/authSlice'
 import { selectMongoId } from '@/services/authSlice'
 import { useCreateReportMutation } from '@/services/reportApi/reportSlice'
 import { Loader2, ShieldAlert } from 'lucide-react'
@@ -40,7 +40,7 @@ const COMPANY_FRAUD_TYPES = [
 ]
 
 export default function ReportFraud() {
-  const role = getStoredRole()
+  const role = useSelector(selectRole)
   const isCompany = role === 'company'
   const navigate = useNavigate()
   const location = useLocation()

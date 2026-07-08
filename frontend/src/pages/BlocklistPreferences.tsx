@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { RoutePath } from '@/config/routes'
-import { getStoredRole } from '@/hooks/useRole'
+import { selectRole } from '@/services/authSlice'
 import { cn } from '@/lib/utils'
 import {
   AlertTriangle,
@@ -158,7 +158,7 @@ function BlockedItemRow({
 }
 
 export default function BlocklistPreferences() {
-  const role = getStoredRole()
+  const role = useSelector(selectRole)
   const isCompany = role === 'company'
   const navigate = useNavigate()
   const userId = useSelector(selectMongoId)

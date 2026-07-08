@@ -3,7 +3,7 @@ import PageShell from '@/components/layout/PageShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RoutePath } from '@/config/routes'
-import { getStoredRole } from '@/hooks/useRole'
+import { selectRole } from '@/services/authSlice'
 import { cn } from '@/lib/utils'
 import {
   AlertTriangle,
@@ -86,7 +86,7 @@ function ReportRow({ report }: { report: Report }) {
 }
 
 export default function ReportHub() {
-  const role = getStoredRole()
+  const role = useSelector(selectRole)
   const isCompany = role === 'company'
   const navigate = useNavigate()
   const userId = useSelector(selectMongoId)

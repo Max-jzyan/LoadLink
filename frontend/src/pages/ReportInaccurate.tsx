@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { RoutePath } from '@/config/routes'
-import { getStoredRole } from '@/hooks/useRole'
+import { selectRole } from '@/services/authSlice'
 import { selectMongoId } from '@/services/authSlice'
 import { useCreateReportMutation } from '@/services/reportApi/reportSlice'
 import { AlertTriangle, Loader2 } from 'lucide-react'
@@ -41,7 +41,7 @@ const DRIVER_INACCURACY_TYPES = [
 ]
 
 export default function ReportInaccurate() {
-  const role = getStoredRole()
+  const role = useSelector(selectRole)
   const isCompany = role === 'company'
   const navigate = useNavigate()
   const location = useLocation()
