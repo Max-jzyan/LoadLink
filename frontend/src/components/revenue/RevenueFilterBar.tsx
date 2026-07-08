@@ -22,8 +22,8 @@ interface RevenueFilterBarProps {
 
 const DEFAULT_FILTERS: RevenueFilters = {
   dateRange: {
-    from: new Date(),
-    to: new Date()
+    from: undefined,
+    to: undefined
   },
   truckType: '',
   minPayout: null,

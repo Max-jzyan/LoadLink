@@ -1,22 +1,22 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useSelector } from 'react-redux'
-import { RefreshCw, Settings2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import PageShell from '@/components/layout/PageShell'
+import { GlobalExpenseDrawer } from '@/components/revenue/GlobalExpenseDrawer'
+import { RevenueChartGrid } from '@/components/revenue/RevenueChartStubs'
+import RevenueFilterBar from '@/components/revenue/RevenueFilterBar'
+import { RevenueStatsRow } from '@/components/revenue/RevenueStatsRow'
+import { RevenueSummaryCards } from '@/components/revenue/RevenueSummaryCards'
+import { RevenueTable } from '@/components/revenue/RevenueTable'
+import { Button } from '@/components/ui/button'
 import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
+import { relativeTime } from '@/lib/utils'
 import { selectMongoId } from '@/services/authSlice'
+import type { ExpensePreferences, RevenueFilters, RevenueFiltersQuery } from '@/services/driverApi/driverEnum'
 import {
   useGetDriverRevenueQuery,
   useUpdateDriverExpensesMutation,
 } from '@/services/driverApi/driverSlice'
-import type { ExpensePreferences, RevenueFilters, RevenueFiltersQuery } from '@/services/driverApi/driverEnum'
-import { relativeTime } from '@/lib/utils'
-import { RevenueSummaryCards } from '@/components/revenue/RevenueSummaryCards'
-import { RevenueChartStubs } from '@/components/revenue/RevenueChartStubs'
-import { RevenueStatsRow } from '@/components/revenue/RevenueStatsRow'
-import { RevenueTable } from '@/components/revenue/RevenueTable'
-import { GlobalExpenseDrawer } from '@/components/revenue/GlobalExpenseDrawer'
-import RevenueFilterBar from '@/components/revenue/RevenueFilterBar'
+import { RefreshCw, Settings2 } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 
 export default function Dashboard() {
   const driverId = useSelector(selectMongoId)
@@ -124,7 +124,7 @@ export default function Dashboard() {
 
         {revenue && <RevenueStatsRow revenue={revenue} />}
 
-        <RevenueChartStubs />
+        <RevenueChartGrid loadBreakdown={revenue?.loadBreakdown ?? []} />
 
         <RevenueTable
           loadBreakdown={revenue?.loadBreakdown ?? []}
