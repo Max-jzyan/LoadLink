@@ -19,7 +19,7 @@ export async function seedUsers() {
 
   const testCompany1 = await CompanyModel.create({
     _id: TEST_COMPANY1_ID,
-    firebaseUid: '7XXAaQ6HvvNGk8pk07NZ7bP19de2',
+    firebaseUid: 'VpHHpa2DUAOuZNCGpYKsE6gkYhm1',
     name: 'testCompany1',
     email: 'testcompany1@example.com',
     companyName: 'testCompany1',
@@ -28,7 +28,7 @@ export async function seedUsers() {
 
   const testCompany2 = await CompanyModel.create({
     _id: TEST_COMPANY2_ID,
-    firebaseUid: 'uHB2IDSPKETMuVStfEI3gbNh4ky1',
+    firebaseUid: 'x4QlHTLijEg4YwZGi0rt68xP0iB3',
     name: 'testCompany2',
     email: 'testcompany2@example.com',
     companyName: 'testCompany2',
@@ -37,35 +37,35 @@ export async function seedUsers() {
 
   const testUser1 = await DriverModel.create({
     _id: TEST_USER1_ID,
-    firebaseUid: 'TvOVchr9RFe6p1cnibkkEsxMH473',
+    firebaseUid: '64HOtArwogXs2H4nXD4kyxRw2wk2',
     name: 'testUser1',
     email: 'testuser1@example.com',
   })
 
   const testUser2 = await DriverModel.create({
     _id: TEST_USER2_ID,
-    firebaseUid: 'Q9PZSRdPG2eYRIiUE2RTf1Y2dWk2',
+    firebaseUid: '4Y6LYPl2kyQpyPtR99FaeaVOph62',
     name: 'testUser2',
     email: 'testuser2@example.com',
   })
 
   const testUser3 = await DriverModel.create({
     _id: TEST_USER3_ID,
-    firebaseUid: 'tuJLp8qN6WO1eY2Bq0rgTmJ3x4p2',
+    firebaseUid: 'qYIxX5L2P5UoEBgDOh9UUHOX5HU2',
     name: 'testUser3',
     email: 'testuser3@example.com',
   })
 
   const testUser4 = await DriverModel.create({
     _id: TEST_USER4_ID,
-    firebaseUid: 'aT4XwmUqIiTZbxcCrfrnKlVPOzN2',
+    firebaseUid: 'XsbV0iBLkKhuxPHgChqBlel0Bg63',
     name: 'testUser4',
     email: 'testuser4@example.com',
   })
 
   const testUser5 = await DriverModel.create({
     _id: TEST_USER5_ID,
-    firebaseUid: 'Eoqv2IXuDoNYzrFXzCeBFjS6RAz2',
+    firebaseUid: 'F6pMHcjeqXQCxSmpCrHnmraXa6p1',
     name: 'testUser5',
     email: 'testuser5@example.com',
   })
