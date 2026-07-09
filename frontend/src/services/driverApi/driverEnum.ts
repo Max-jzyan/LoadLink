@@ -1,3 +1,4 @@
+import type { MyProfile, NotificationPreferences } from '../userApi/userEnum'
 export interface CertificationDocument {
   name: string
   url: string
@@ -68,12 +69,6 @@ export interface PricingPreferences {
   preferredMaxDeadheadMiles: number
 }
 
-export interface NotificationPreferences {
-  email: boolean
-  sms: boolean
-  workNotifications: boolean
-}
-
 export interface HomeLocation {
   city: string
   province: string
@@ -105,27 +100,16 @@ export interface RatingSummary {
   lastUpdatedAt: string | null
 }
 
-export interface DriverProfile {
-  _id: string
-  firebaseUid: string
-  name: string
-  email: string
-  phone: string
-  role: string
+export interface DriverProfile extends MyProfile {
   professionalTitle: string
-  profilePictureUrl: string
   trucks: Truck[]
   certifications: string[]
   certificationDocuments: CertificationDocument[]
   availableForLoads: boolean
   pricingPreferences: PricingPreferences
-  notificationPreferences: NotificationPreferences
   homeLocation: HomeLocation
   ratingSummary: RatingSummary
   completedLoadsCount: number
-  lastActiveAt: string | null
-  createdAt: string
-  updatedAt: string
 }
 
 export interface CreateTruckPayload {

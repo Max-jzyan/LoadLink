@@ -155,6 +155,8 @@ export const updateDriverProfile = async (
   assertValidId(driverId, 'driverId')
 
   const allowedFields = [
+    'name',
+    'phone',
     'professionalTitle',
     'profilePictureUrl',
     'availableForLoads',

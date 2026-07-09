@@ -3,8 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { signInWithPopup } from 'firebase/auth'
 import { useDispatch } from 'react-redux'
 import { auth, googleProvider } from '@/lib/firebase'
-import { loginAndFetchUser, setUser } from '@/services/authSlice'
-import { useLazyGetUserByFirebaseUidQuery } from '@/services/userApi/userSlice'
+import { loginAndFetchUser, setUser, fetchDbUser } from '@/services/authSlice'
 import { type UserRole } from '@/types/enums'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -21,7 +20,6 @@ export default function LoginPage() {
   const [role, setRole] = useState<UserRole>('driver')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [getUser] = useLazyGetUserByFirebaseUidQuery()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -68,10 +66,14 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, googleProvider)
       const fbUser = result.user
 
-      let dbUser: { _id: string; role: UserRole }
+      let dbUser: { _id: string; role: UserRole } | null
       try {
-        dbUser = await getUser(fbUser.uid).unwrap()
+        dbUser = await fetchDbUser()
       } catch {
+        throw new Error('Account not found. Please sign up first.')
+      }
+
+      if (!dbUser) {
         throw new Error('Account not found. Please sign up first.')
       }
 

@@ -3,6 +3,7 @@ import DeliveryTimeline from '@/components/driverLoads/DeliveryTimeline'
 import { DriverMap } from '@/components/driverLoads/Map'
 import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 import { Search, SlidersHorizontal, Calendar, AlertTriangle, X } from 'lucide-react'
 import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
@@ -16,14 +17,12 @@ import {
 } from '@/services/driverApi/driverSlice'
 import type { Load } from '@/services/loadApi/loadEnum'
 import { useListAvailableLoadsQuery } from '@/services/loadApi/loadSlice'
-
-// TODO: replace with auth context once firebase auth is wired up
-const PLACEHOLDER_DRIVER_ID = '6a30df19f9e53fd472dd8954'
+import { selectMongoId } from '@/services/authSlice'
 
 type MapLayer = 'route' | 'fuel' | 'rest'
 
 export default function DriverAuctions() {
-  const driverId = PLACEHOLDER_DRIVER_ID
+  const driverId = useSelector(selectMongoId)
 
   const {
     data: availableLoads = [],
@@ -31,8 +30,11 @@ export default function DriverAuctions() {
     refetch: refetchAvailable,
   } = useListAvailableLoadsQuery()
   const { data: recommendedLoads = [], refetch: refetchRecommended } =
-    useGetRecommendedLoadsQuery(driverId)
-  const { data: activeBids = [] } = useListDriverBidsQuery({ driverId, status: 'active' })
+    useGetRecommendedLoadsQuery(driverId ?? '', { skip: !driverId })
+  const { data: activeBids = [] } = useListDriverBidsQuery(
+    { driverId: driverId ?? '', status: 'active' },
+    { skip: !driverId }
+  )
 
   const { data: loadPostedEvent } = useEventSource<{ loadId: string }>('/api/loads/stream')
   useEffect(() => {

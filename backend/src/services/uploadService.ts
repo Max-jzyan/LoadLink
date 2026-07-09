@@ -51,10 +51,13 @@ export const createUploadUrl = async (params: {
 
 const S3_URL_PREFIX = `https://${S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/`
 
-/** Extracts the S3 key back out of a URL previously returned by createUploadUrl. */
+/** Extracts the S3 key back out of a URL, handling both raw and presigned URLs. */
 export const keyFromUrl = (url: string): string | null => {
   if (!url || !url.startsWith(S3_URL_PREFIX)) return null
-  return url.slice(S3_URL_PREFIX.length)
+  // Strip query parameters (presigned URLs have ?X-Amz-... appended)
+  const pathWithQuery = url.slice(S3_URL_PREFIX.length)
+  const key = pathWithQuery.split('?')[0]
+  return key || null
 }
 
 /**

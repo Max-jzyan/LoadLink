@@ -53,7 +53,8 @@ const CertificationDocumentSchema = new Schema(
 
 const DriverSchema = new Schema({
   professionalTitle: { type: String, default: '', trim: true },
-  profilePictureUrl: { type: String, default: '' },
+
+  // profilePictureUrl and notificationPreferences are now inherited from the User base schema
 
   trucks: [{ type: Types.ObjectId, ref: 'Truck', index: true }],
   certifications: [{ type: String, enum: CERTIFICATION_VALUES, trim: true }],
@@ -70,7 +71,7 @@ const DriverSchema = new Schema({
   blockedUsers: [{ type: Types.ObjectId, ref: 'Blocklist' }],
 
   completedLoadsCount: { type: Number, default: 0, min: 0 },
-  lastActiveAt: { type: Date, default: null },
+  // lastActiveAt is now inherited from the User base schema
 })
 
 DriverSchema.virtual('trucksCount').get(function (this: any) {

@@ -104,12 +104,22 @@ export const loadApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
     }),
 
-    // PATCH /api/loads/:loadId — update a load
+// PATCH /api/loads/:loadId — update a load (companies only)
     updateLoad: build.mutation<Load, { loadId: string; body: UpdateLoadPayload }>({
       query: ({ loadId, body }) => ({
         url: `loads/${loadId}`,
         method: 'PATCH',
         body,
+      }),
+      invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
+    }),
+
+    // PATCH /api/driver/:driverId/loads/:loadId/status — update load status (drivers only)
+    updateLoadStatus: build.mutation<Load, { driverId: string; loadId: string; status: string }>({
+      query: ({ driverId, loadId, status }) => ({
+        url: `driver/${driverId}/loads/${loadId}/status`,
+        method: 'PATCH',
+        body: { status },
       }),
       invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
     }),
@@ -139,5 +149,6 @@ export const {
   useCreateLoadMutation,
   useCreateAuctionMutation,
   useUpdateLoadMutation,
+  useUpdateLoadStatusMutation,
   useUpdateLoadExpensesMutation,
 } = loadApi

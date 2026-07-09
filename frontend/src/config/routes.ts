@@ -96,8 +96,7 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
   [RoutePath.AuctionLive]: {
     label: 'Auction Live',
     icon: Gavel,
-    navGroup: 'main',
-    roles: ['company'],
+    navGroup: null, // Not in nav - accessed via /driverAuctions/:loadId
   },
   [RoutePath.PostLoad]: {
     label: 'Post Load',

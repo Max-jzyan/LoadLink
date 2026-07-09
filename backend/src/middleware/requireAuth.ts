@@ -18,6 +18,7 @@ export async function requireFirebaseToken(
   }
 
   const authHeader = req.headers.authorization
+
   if (!authHeader?.startsWith('Bearer ')) {
     return next(new ApiError(StatusCodes.UNAUTHORIZED, 'Authorization header required'))
   }
@@ -26,7 +27,8 @@ export async function requireFirebaseToken(
     const decoded = await auth.verifyIdToken(authHeader.slice(7))
     req.firebaseUid = decoded.uid
     next()
-  } catch {
+  } catch (err) {
+    console.error('[requireAuth] token verification failed:', err)
     next(new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid or expired token'))
   }
 }

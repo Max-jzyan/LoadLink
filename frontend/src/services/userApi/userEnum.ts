@@ -13,3 +13,25 @@ export interface RegisterUserResponse {
   _id: string
   role: UserRole
 }
+
+export interface NotificationPreferences {
+  email: boolean
+  sms: boolean
+  workNotifications: boolean
+}
+
+// Base profile fields shared by both Driver and Company roles,
+// returned by GET /api/users/me/profile (auth via Bearer token)
+export interface MyProfile {
+  _id: string
+  firebaseUid: string
+  name: string
+  email: string
+  phone: string
+  role: string
+  profilePictureUrl: string
+  notificationPreferences: NotificationPreferences
+  lastActiveAt: string | null
+  createdAt: string
+  updatedAt: string
+}

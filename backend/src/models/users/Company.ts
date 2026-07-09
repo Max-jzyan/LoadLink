@@ -26,7 +26,7 @@ const CompanySchema = new Schema({
   blockedUsers: [{ type: Types.ObjectId, ref: 'Blocklist' }],
 
   postedLoadsCount: { type: Number, default: 0, min: 0 },
-  lastActiveAt: { type: Date, default: null },
+  // lastActiveAt is now inherited from the User base schema
 })
 
 export type Company = InferSchemaType<typeof CompanySchema>

@@ -51,12 +51,13 @@ export default authSlice.reducer
 export const selectCurrentUser = (state: RootState) => state.auth.user
 export const selectAuthLoading = (state: RootState) => state.auth.loading
 export const selectMongoId = (state: RootState) => state.auth.user?.mongoId ?? null
+export const selectFirebaseUid = (state: RootState) => state.auth.user?.uid ?? null
 export const selectRole = (state: RootState) => state.auth.user?.role ?? null
 
 // Fetch the MongoDB user profile for the current Firebase user.
 // The backend derives identity from the verified token.
 // Returns null when the user hasn't been registered in the DB yet.
-async function fetchDbUser(): Promise<{ _id: string; role: UserRole } | null> {
+export async function fetchDbUser(): Promise<{ _id: string; role: UserRole } | null> {
   try {
     const token = await auth.currentUser?.getIdToken()
     if (!token) return null

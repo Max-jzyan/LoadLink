@@ -9,7 +9,6 @@ import {
   SunIcon,
 } from 'lucide-react'
 import { useState } from 'react'
-import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -29,8 +28,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 import { applyTheme, getStoredTheme, type Theme } from '@/hooks/useTheme'
 import { auth } from '@/lib/firebase'
-import { selectMongoId, selectRole } from '@/services/authSlice'
-import { useGetDriverProfileQuery } from '@/services/driverApi/driverSlice'
+import { useSelector } from 'react-redux'
+import { selectRole } from '@/services/authSlice'
+import { useGetMyProfileQuery } from '@/services/userApi/userSlice'
 
 const THEME_ICONS: Record<Theme, React.ReactNode> = {
   light: <SunIcon className="h-4 w-4" />,
@@ -44,9 +44,8 @@ export function NavUser() {
   const navigate = useNavigate()
   const [theme, setTheme] = useState<Theme>(getStoredTheme)
 
-  const mongoId = useSelector(selectMongoId)
   const role = useSelector(selectRole)
-  const { data: driver } = useGetDriverProfileQuery(mongoId!, { skip: !mongoId })
+  const { data: profile } = useGetMyProfileQuery()
 
   async function handleLogout() {
     await signOut(auth)
@@ -60,35 +59,35 @@ export function NavUser() {
   }
 
   const displayName =
-    driver?.name ??
-    (typeof driver?.email === 'string' && driver.email ? driver.email.split('@')[0] : 'User')
+    profile?.name ??
+    (typeof profile?.email === 'string' && profile.email ? profile.email.split('@')[0] : 'User')
+
+  let roleLabel = ''
+  if (profile?.role === 'driver' || role === 'driver') roleLabel = 'Driver'
+  if (profile?.role === 'company' || role === 'company') roleLabel = 'Company'
 
   const initials = displayName.slice(0, 2).toUpperCase()
-  const profilePictureUrl = driver?.profilePictureUrl ?? ''
+  const profilePictureUrl = profile?.profilePictureUrl ?? ''
+
+  const avatarTrigger = (
+    <Avatar
+      className={`rounded-lg shrink-0 cursor-pointer hover:opacity-80 transition-opacity ${
+        isCollapsed ? 'h-7 w-7' : 'h-8 w-8'
+      }`}
+    >
+      <AvatarImage src={profilePictureUrl} alt={displayName} />
+      <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+    </Avatar>
+  )
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <div
           className={`flex items-center gap-1 px-2 py-1.5 rounded-md ${
-            isCollapsed ? 'justify-center' : ''
+            isCollapsed ? 'flex-col justify-center' : ''
           }`}
         >
-          {!isCollapsed && (
-            <>
-              <Avatar className="h-8 w-8 rounded-lg shrink-0">
-                <AvatarImage src={profilePictureUrl} alt={displayName} />
-                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 min-w-0 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{displayName}</span>
-                <span className="truncate text-xs capitalize text-muted-foreground">
-                  {role}
-                </span>
-              </div>
-            </>
-          )}
-
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -108,25 +107,68 @@ export function NavUser() {
             </Tooltip>
           </TooltipProvider>
 
-          {!isCollapsed && (
-            <DropdownMenu>
+          <DropdownMenu>
+            {isCollapsed ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        title={displayName}
+                        className="flex shrink-0 cursor-pointer items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                      >
+                        {avatarTrigger}
+                      </button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" sideOffset={8}>
+                    {displayName}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
                   title="Account menu"
-                  className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                  className="flex cursor-pointer items-center gap-2 rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors pr-1"
                 >
-                  <ChevronRightIcon className="size-4" />
+                  {avatarTrigger}
+                  <div className="grid min-w-0 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">{displayName}</span>
+                    <span className="truncate text-xs capitalize text-muted-foreground">
+                      {roleLabel}
+                    </span>
+                  </div>
+                  <ChevronRightIcon className="size-4 shrink-0 text-sidebar-foreground/60" />
                 </button>
               </DropdownMenuTrigger>
+            )}
 
-              <DropdownMenuContent
-                className="w-fit min-w-56 z-[100]"
-                side={isMobile ? 'bottom' : 'right'}
-                align="end"
-                sideOffset={4}
-              >
-                <DropdownMenuLabel className="p-0 font-normal">
+            <DropdownMenuContent
+              className="w-fit min-w-56 z-[100]"
+              side={isMobile ? 'bottom' : 'right'}
+              align="end"
+              sideOffset={4}
+            >
+              <DropdownMenuLabel className="p-0 font-normal">
+                {profile?.role === 'driver' || role === 'driver' ? (
+                  <button
+                    type="button"
+                    className="flex w-full cursor-pointer items-center gap-2 px-1 py-1.5 text-left text-sm hover:bg-accent rounded-sm"
+                    onClick={() => navigate('/driver/profile')}
+                  >
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarImage src={profilePictureUrl} alt={displayName} />
+                      <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-semibold">{displayName}</span>
+                      <span className="truncate text-xs capitalize">{roleLabel}</span>
+                    </div>
+                  </button>
+                ) : (
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg">
                       <AvatarImage src={profilePictureUrl} alt={displayName} />
@@ -137,44 +179,44 @@ export function NavUser() {
                       <span className="truncate text-xs capitalize">{role}</span>
                     </div>
                   </div>
-                </DropdownMenuLabel>
+                )}
+              </DropdownMenuLabel>
 
-                <DropdownMenuSeparator />
+              <DropdownMenuSeparator />
 
-                <DropdownMenuGroup>
-                  <DropdownMenuItem>
-                    <Settings />
-                    Settings
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuLabel className="text-xs text-muted-foreground px-2 py-1">
-                  Theme
-                </DropdownMenuLabel>
-
-                <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
-                  {(['light', 'dark', 'system'] as Theme[]).map((t) => (
-                    <DropdownMenuRadioItem key={t} value={t} className="capitalize">
-                      {THEME_ICONS[t]}
-                      <span className="ml-2 capitalize">{t}</span>
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <LogOutIcon />
-                  Log out
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <Settings />
+                  Settings
                 </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+              </DropdownMenuGroup>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuLabel className="text-xs text-muted-foreground px-2 py-1">
+                Theme
+              </DropdownMenuLabel>
+
+              <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
+                {(['light', 'dark', 'system'] as Theme[]).map((t) => (
+                  <DropdownMenuRadioItem key={t} value={t} className="capitalize">
+                    {THEME_ICONS[t]}
+                    <span className="ml-2 capitalize">{t}</span>
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-destructive focus:text-destructive"
+              >
+                <LogOutIcon />
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </SidebarMenuItem>
     </SidebarMenu>

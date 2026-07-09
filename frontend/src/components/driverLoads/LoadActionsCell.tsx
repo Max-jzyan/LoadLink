@@ -7,15 +7,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
-import { useUpdateLoadMutation } from '@/services/loadApi/loadSlice'
+import { useUpdateLoadStatusMutation } from '@/services/loadApi/loadSlice'
 import { useSelectTruckForLoadMutation } from '@/services/driverApi/driverSlice'
-import { updateLoadInList } from '@/services/driverLoadsSlice'
 import { LOAD_STATUSES, type LoadStatus } from '@/types/enums'
 import type { Load } from '@/services/loadApi/loadEnum'
 import type { Truck } from '@/services/driverApi/driverEnum'
 import { Truck as TruckIcon, CircleCheck, RotateCcw, XCircle, Check } from 'lucide-react'
 import { useCallback } from 'react'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
+import { updateLoadInList } from '@/services/driverLoadsSlice'
+import { selectMongoId } from '@/services/authSlice'
 import type { AppDispatch } from '@/services/store'
 
 interface StatusAction {
@@ -119,18 +120,21 @@ function truckDisplayName(t: Truck) {
 
 export function LoadActionsCell({ load, trucks = [] }: { load: Load; trucks?: Truck[] }) {
   const dispatch = useDispatch<AppDispatch>()
-  const [updateLoad] = useUpdateLoadMutation()
+  const driverId = useSelector(selectMongoId)
+  const [updateLoadStatus] = useUpdateLoadStatusMutation()
   const [selectTruck] = useSelectTruckForLoadMutation()
 
   const handleStatusUpdate = useCallback(
     (newStatus: LoadStatus) => {
+      if (!driverId) return
+
       // 1. Optimistic update to local slice
       dispatch(updateLoadInList({ loadId: load._id, changes: { status: newStatus } }))
 
-      // 2. Fire the PATCH to the server
-      updateLoad({ loadId: load._id, body: { status: newStatus } })
+      // 2. Fire the PATCH to the server using driver-specific endpoint
+      updateLoadStatus({ driverId, loadId: load._id, status: newStatus })
     },
-    [load._id, dispatch, updateLoad]
+    [load._id, driverId, dispatch, updateLoadStatus]
   )
 
   const handleSelectTruck = useCallback(

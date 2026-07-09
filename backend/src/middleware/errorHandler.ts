@@ -8,10 +8,11 @@ import { ApiError } from '../utils/ApiError'
  */
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof ApiError) {
+    console.error(`[ApiError ${err.statusCode}]`, err.message)
     res.status(err.statusCode).json({ message: err.message })
     return
   }
 
-  console.error(err)
+  console.error('[UnhandledError]', err)
   res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' })
 }

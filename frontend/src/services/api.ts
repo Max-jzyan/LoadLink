@@ -1,16 +1,24 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { onIdTokenChanged } from 'firebase/auth'
 import { LoadTag } from './apiTypes'
 import { auth } from '@/lib/firebase'
+
+// Module-level token cache populated by onIdTokenChanged listener.
+// This ensures prepareHeaders always has access to a valid token synchronously,
+// avoiding race conditions where auth.currentUser is not yet hydrated.
+let cachedToken: string | null = null
+
+onIdTokenChanged(auth, async (user) => {
+  cachedToken = user ? await user.getIdToken() : null
+})
 
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
     baseUrl: '/api',
-    prepareHeaders: async (headers) => {
-      const user = auth.currentUser
-      if (user) {
-        const token = await user.getIdToken()
-        headers.set('Authorization', `Bearer ${token}`)
+    prepareHeaders: (headers) => {
+      if (cachedToken) {
+        headers.set('Authorization', `Bearer ${cachedToken}`)
       }
       return headers
     },
@@ -25,6 +33,7 @@ export const api = createApi({
     LoadTag.Blocklist,
     LoadTag.Report,
     LoadTag.FeedPrefs,
+    LoadTag.Profile,
   ],
   endpoints: () => ({}),
 })

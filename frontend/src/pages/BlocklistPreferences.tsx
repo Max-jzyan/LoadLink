@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { RoutePath } from '@/config/routes'
-import { selectRole } from '@/services/authSlice'
 import { cn } from '@/lib/utils'
 import {
   AlertTriangle,
@@ -36,7 +35,7 @@ import {
 import { useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { selectMongoId } from '@/services/authSlice'
+import { selectMongoId, selectRole } from '@/services/authSlice'
 import {
   useBlockUserMutation,
   useGetBlocklistQuery,

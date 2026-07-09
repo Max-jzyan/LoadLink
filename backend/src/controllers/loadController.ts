@@ -4,6 +4,7 @@ import { isValidObjectId, Types } from 'mongoose'
 import { LoadModel } from '../models/loads/Load'
 import { ApiError } from '../utils/ApiError'
 import * as loadService from '../services/loadService'
+import { LOAD_STATUSES } from '../models/enums'
 
 /**
  * GET /api/loads/:loadId
@@ -87,9 +88,51 @@ export const listCompanyLoads = async (req: Request, res: Response, next: NextFu
 }
 
 /**
+ * PATCH /api/driver/:driverId/loads/:loadId/status
+ * Update the status of a load assigned to a driver.
+ * Only the assigned driver can update the status.
+ */
+export const updateLoadStatus = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { loadId } = req.params
+    const driverId = req.user._id
+
+    if (!isValidObjectId(loadId)) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid loadId')
+    }
+
+    const load = await LoadModel.findById(loadId)
+    if (!load) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Load not found')
+    }
+
+    // Check if this driver is assigned to this load
+    if (!load.assignedDriverId || load.assignedDriverId.toString() !== driverId) {
+      throw new ApiError(StatusCodes.FORBIDDEN, 'Load is not assigned to this driver')
+    }
+
+    const allowedStatuses = [
+      LOAD_STATUSES.InTransit,
+      LOAD_STATUSES.Completed,
+      LOAD_STATUSES.Booked,
+      LOAD_STATUSES.Cancelled,
+    ]
+    if (!allowedStatuses.includes(req.body.status)) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid status value')
+    }
+
+    const updated = await LoadModel.findByIdAndUpdate(loadId, { status: req.body.status }, { new: true })
+    res.status(StatusCodes.OK).json(updated)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
  * PATCH /api/loads/:loadId/expenses
  * Update per-load expense overrides for a specific load.
  * Only the assigned driver can update these fields.
+ * Note: requireOwns(driverOwnsAssignedLoad) middleware already validates driver ownership.
  */
 export const updateLoadExpenses = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -104,20 +147,9 @@ export const updateLoadExpenses = async (req: Request, res: Response, next: Next
       throw new ApiError(StatusCodes.NOT_FOUND, 'Load not found')
     }
 
-    // Only the assigned driver can update expense overrides
+    // Check if there's an assigned driver (handled by middleware for ownership validation)
     if (!load.assignedDriverId) {
       throw new ApiError(StatusCodes.FORBIDDEN, 'No assigned driver for this load')
-    }
-
-    // Populate to get the driver's firebaseUid for comparison
-    await load.populate({
-      path: 'assignedDriverId',
-      select: 'firebaseUid',
-    })
-
-    if ((load.assignedDriverId as any).firebaseUid !== req.firebaseUid) {
-      // TODO: This is problematic and I'm not sure why.
-      //throw new ApiError(StatusCodes.FORBIDDEN, 'Only the assigned driver can update expense overrides')
     }
 
     const allowedFields = ['fuelCostPerLiter', 'fuelEfficiencyKmPerLiter', 'maintenancePerKm']

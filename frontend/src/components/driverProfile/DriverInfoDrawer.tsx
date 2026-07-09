@@ -82,8 +82,8 @@ export default function DriverInfoDrawer({
   }, [open, driver, reset])
 
   const onFormSubmit = async (values: DriverInfoFormFields) => {
-    let profilePictureUrl = driver.profilePictureUrl
-    let certificationDocuments = driver.certificationDocuments ?? []
+    let profilePictureUrl: string | undefined = undefined
+    let certificationDocuments: CertificationDocument[] | undefined = undefined
 
     if (profilePictureFile || certificationFiles.length > 0) {
       const user = auth.currentUser
@@ -106,7 +106,16 @@ export default function DriverInfoDrawer({
               'driverDocuments',
               certificationFiles
             )
-            certificationDocuments = [...certificationDocuments, ...uploaded]
+            // Convert UploadedDocument to CertificationDocument format
+            certificationDocuments = [
+              ...(driver.certificationDocuments ?? []),
+              ...uploaded.map((doc) => ({
+                name: doc.name,
+                url: doc.url,
+                key: doc.key,
+                uploadedAt: new Date().toISOString(),
+              })),
+            ]
           }
         } catch {
           setPictureError('Failed to upload one or more files. Please try again.')
@@ -117,11 +126,17 @@ export default function DriverInfoDrawer({
       }
     }
 
-    await onSubmit({
+    // Only pass profilePictureUrl if a new file was uploaded, otherwise omit it
+    // to preserve the existing (potentially presigned) URL
+    // Only pass certificationDocuments if new files were uploaded, otherwise omit them
+    // to preserve the existing (potentially presigned) URLs
+    const body: Partial<DriverInfoFormValues> = {
       ...values,
-      profilePictureUrl,
-      certificationDocuments,
-    })
+      ...(profilePictureUrl !== undefined && { profilePictureUrl }),
+      ...(certificationDocuments !== undefined && { certificationDocuments }),
+    }
+
+    await onSubmit(body as DriverInfoFormValues)
     setProfilePictureFile(null)
     setCertificationFiles([])
   }

@@ -9,6 +9,7 @@ export const LoadTag = {
   Blocklist: 'Blocklist',
   Report: 'Report',
   FeedPrefs: 'FeedPrefs',
+  Profile: 'Profile',
 } as const
 
 export type LoadTag = (typeof LoadTag)[keyof typeof LoadTag]

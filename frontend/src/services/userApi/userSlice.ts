@@ -1,12 +1,7 @@
 import { api } from '../api'
-import type { RegisterUserPayload, RegisterUserResponse } from './userEnum'
-import {
-  showSuccess,
-  showError,
-  getSuccessMessage,
-  getHttpErrorMessage,
-  getErrorStatus,
-} from '@/lib/toast'
+import { LoadTag } from '../apiTypes'
+import type { RegisterUserPayload, RegisterUserResponse, MyProfile } from './userEnum'
+import { showSuccess, showError, getSuccessMessage, getHttpErrorMessage, getErrorStatus } from '@/lib/toast'
 
 export const userApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -28,12 +23,13 @@ export const userApi = api.injectEndpoints({
       },
     }),
 
-    // GET /api/users/me?firebaseUid=... -> fetch existing user by Firebase UID
-    getUserByFirebaseUid: build.query<RegisterUserResponse, string>({
-      query: (firebaseUid) => `users/me?firebaseUid=${encodeURIComponent(firebaseUid)}`,
+    // GET /api/users/me/profile -> fetch the full profile (role-agnostic); auth via Bearer token
+    getMyProfile: build.query<MyProfile, void>({
+      query: () => `users/me/profile`,
+      providesTags: [{ type: LoadTag.Profile, id: 'ME' }],
     }),
   }),
   overrideExisting: false,
 })
 
-export const { useRegisterUserMutation, useLazyGetUserByFirebaseUidQuery } = userApi
+export const { useRegisterUserMutation, useGetMyProfileQuery } = userApi

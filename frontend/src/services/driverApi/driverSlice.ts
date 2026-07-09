@@ -119,7 +119,10 @@ export const driverApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (_result, _error, { driverId }) => [{ type: LoadTag.Driver, id: driverId }],
+      invalidatesTags: (_result, _error, { driverId }) => [
+        { type: LoadTag.Driver, id: driverId },
+        { type: LoadTag.Profile, id: 'ME' },
+      ],
     }),
 
     // POST /api/driver/:driverId/trucks — create a new truck

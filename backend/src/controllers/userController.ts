@@ -5,6 +5,7 @@ import { DriverModel } from '../models/users/Driver'
 import { CompanyModel } from '../models/users/Company'
 import { USER_ROLES } from '../models/enums'
 import { ApiError } from '../utils/ApiError'
+import * as uploadService from '../services/uploadService'
 
 interface UploadedDocument {
   name: string
@@ -83,11 +84,8 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
 // Used by the frontend to get the mongoId and role after auth state restores.
 export const getMe = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const firebaseUid = req.firebaseUid
-
-    if (!firebaseUid) {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Authentication required')
-    }
+    // requireAuth middleware guarantees req.firebaseUid is set
+    const firebaseUid = req.firebaseUid!
 
     const user = await UserModel.findOne({ firebaseUid })
 
@@ -114,6 +112,74 @@ export const getFeedPreferences = async (req: Request, res: Response, next: Next
     }
 
     return res.status(StatusCodes.OK).json(user.feedPreferences ?? {})
+  } catch (err) {
+    next(err)
+  }
+}
+
+// GET /api/users/me/profile
+// Returns the full profile (role-agnostic) for the authenticated caller.
+// profilePictureUrl is swapped for a short-lived presigned GET URL
+export const getMyProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // requireAuth middleware guarantees req.firebaseUid is set
+    const firebaseUid = req.firebaseUid!
+
+    // Try Driver first, then Company, to get the full discriminator document
+    const driver = await DriverModel.findOne({ firebaseUid }).populate('trucks').lean()
+    if (driver) {
+      driver.profilePictureUrl = (await uploadService.toViewableUrl(driver.profilePictureUrl)) ?? ''
+      return res.status(StatusCodes.OK).json(driver)
+    }
+
+    const company = await CompanyModel.findOne({ firebaseUid }).lean()
+    if (company) {
+      company.profilePictureUrl =
+        (await uploadService.toViewableUrl(company.profilePictureUrl)) ?? ''
+      return res.status(StatusCodes.OK).json(company)
+    }
+
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+  } catch (err) {
+    next(err)
+  }
+}
+
+// PATCH /api/users/me/profile
+export const updateMyProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // requireAuth middleware guarantees req.firebaseUid is set
+    const firebaseUid = req.firebaseUid!
+
+    const allowedFields = [
+      'name',
+      'phone',
+      'profilePictureUrl',
+      'notificationPreferences',
+    ]
+
+    const updateData = allowedFields.reduce<Record<string, unknown>>((acc, field) => {
+      if (req.body[field] !== undefined) {
+        acc[field] = req.body[field]
+      }
+      return acc
+    }, {})
+
+    if (Object.keys(updateData).length === 0) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'No valid fields to update')
+    }
+
+    const user = await UserModel.findOneAndUpdate(
+      { firebaseUid },
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).lean()
+
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    return res.status(StatusCodes.OK).json(user)
   } catch (err) {
     next(err)
   }
