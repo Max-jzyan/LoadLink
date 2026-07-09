@@ -33,7 +33,6 @@ export const createUploadUrl = async (req: Request, res: Response, next: NextFun
       throw new ApiError(StatusCodes.BAD_REQUEST, 'docType, fileName, and contentType are required')
     }
 
-
     let ownerId = firebaseUid
 
     if (docType === 'loadDocuments') {

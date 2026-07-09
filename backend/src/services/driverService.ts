@@ -184,7 +184,10 @@ export const updateDriverProfile = async (
     const existing = await DriverModel.findById(new Types.ObjectId(driverId))
       .select('profilePictureUrl')
       .lean()
-    if (existing?.profilePictureUrl && existing.profilePictureUrl !== filteredData.profilePictureUrl) {
+    if (
+      existing?.profilePictureUrl &&
+      existing.profilePictureUrl !== filteredData.profilePictureUrl
+    ) {
       await uploadService.deleteObjectByUrl(existing.profilePictureUrl)
     }
   }
@@ -326,7 +329,7 @@ export const getDriverRevenue = async (driverId: string, queryParams: Record<str
     // Insurance: use the selected truck's insurance if a truck is chosen,
     // otherwise fall back to the sum of all trucks' insurance (fleet total).
     const effInsurancePerMonth = truckForLoad
-      ? truckExpensePrefs.insurancePerMonth ?? 0
+      ? (truckExpensePrefs.insurancePerMonth ?? 0)
       : totalFleetInsurance
 
     const effFuelCostPerLiter =

@@ -17,11 +17,7 @@ import { USER_ROLES } from '../models/enums'
 const router = Router()
 
 // Company managing the auction for a load it owns.
-const middlewares = [
-  requireAuth,
-  requireRole(USER_ROLES.COMPANY),
-  requireOwns(companyOwnsLoad),
-]
+const middlewares = [requireAuth, requireRole(USER_ROLES.COMPANY), requireOwns(companyOwnsLoad)]
 
 router.post('/auctions/:loadId', middlewares, createAuction)
 router.patch('/auctions/:loadId/bids/:bidId', middlewares, acceptBid)

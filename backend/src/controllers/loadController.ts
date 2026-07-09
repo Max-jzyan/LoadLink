@@ -95,7 +95,7 @@ export const listCompanyLoads = async (req: Request, res: Response, next: NextFu
 export const updateLoadStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { loadId } = req.params
-    const driverId = req.user._id
+    const driverId = req.user!._id
 
     if (!isValidObjectId(loadId)) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid loadId')
@@ -121,7 +121,11 @@ export const updateLoadStatus = async (req: Request, res: Response, next: NextFu
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid status value')
     }
 
-    const updated = await LoadModel.findByIdAndUpdate(loadId, { status: req.body.status }, { new: true })
+    const updated = await LoadModel.findByIdAndUpdate(
+      loadId,
+      { status: req.body.status },
+      { new: true }
+    )
     res.status(StatusCodes.OK).json(updated)
   } catch (err) {
     next(err)

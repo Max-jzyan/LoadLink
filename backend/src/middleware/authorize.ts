@@ -38,7 +38,7 @@ export const requireRole =
 export const requireSelfParam =
   (paramName: string) => (req: Request, _res: Response, next: NextFunction) => {
     try {
-      const user : AuthedUser = ensureUser(req)
+      const user: AuthedUser = ensureUser(req)
       if (req.params[paramName] !== user._id) {
         return next(new ApiError(StatusCodes.FORBIDDEN, 'Forbidden: not your resource'))
       }
@@ -66,7 +66,6 @@ export const requireOwns =
       next(err)
     }
   }
-
 
 /** Owner of the load at `:loadId` is its company. */
 export const companyOwnsLoad = async (req: Request): Promise<string | null> => {

@@ -151,12 +151,7 @@ export const updateMyProfile = async (req: Request, res: Response, next: NextFun
     // requireAuth middleware guarantees req.firebaseUid is set
     const firebaseUid = req.firebaseUid!
 
-    const allowedFields = [
-      'name',
-      'phone',
-      'profilePictureUrl',
-      'notificationPreferences',
-    ]
+    const allowedFields = ['name', 'phone', 'profilePictureUrl', 'notificationPreferences']
 
     const updateData = allowedFields.reduce<Record<string, unknown>>((acc, field) => {
       if (req.body[field] !== undefined) {

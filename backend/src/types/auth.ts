@@ -1,6 +1,5 @@
 import type { UserRole } from '../models/enums'
 
-
 export interface AuthedUser {
   _id: string
   role: UserRole

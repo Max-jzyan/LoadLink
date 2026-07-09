@@ -1,12 +1,10 @@
 import { Schema, model, InferSchemaType } from 'mongoose'
 
-const NotificationPreferencesSchema = new Schema(
-  {
-    email: { type: Boolean, default: true },
-    sms: { type: Boolean, default: false },
-    workNotifications: { type: Boolean, default: true },
-  }
-)
+const NotificationPreferencesSchema = new Schema({
+  email: { type: Boolean, default: true },
+  sms: { type: Boolean, default: false },
+  workNotifications: { type: Boolean, default: true },
+})
 
 // How the user's blocklist affects their feed. Shared by drivers and companies;
 // each role's UI only surfaces the keys relevant to it.

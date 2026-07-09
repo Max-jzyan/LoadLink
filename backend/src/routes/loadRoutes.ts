@@ -26,15 +26,51 @@ router.get('/loads', requireAuth, listAvailableLoads)
 router.get('/loads/stream', requireAuthSSE, streamNewLoads)
 router.get('/loads/:loadId', requireAuth, getLoad)
 
-router.get('/company/:companyId/loads', requireAuth, requireRole(USER_ROLES.COMPANY), requireSelfParam('companyId'), listCompanyLoads)
-router.post('/company/:companyId/loads', requireAuth, requireRole(USER_ROLES.COMPANY), requireSelfParam('companyId'), createLoad)
+router.get(
+  '/company/:companyId/loads',
+  requireAuth,
+  requireRole(USER_ROLES.COMPANY),
+  requireSelfParam('companyId'),
+  listCompanyLoads
+)
+router.post(
+  '/company/:companyId/loads',
+  requireAuth,
+  requireRole(USER_ROLES.COMPANY),
+  requireSelfParam('companyId'),
+  createLoad
+)
 
-router.patch('/loads/:loadId', requireAuth, requireRole(USER_ROLES.COMPANY), requireOwns(companyOwnsLoad), updateLoad)
+router.patch(
+  '/loads/:loadId',
+  requireAuth,
+  requireRole(USER_ROLES.COMPANY),
+  requireOwns(companyOwnsLoad),
+  updateLoad
+)
 
 // Driver-specific load status updates - only the assigned driver can update
-router.patch('/driver/:driverId/loads/:loadId/status', requireAuth, requireRole(USER_ROLES.DRIVER), requireSelfParam('driverId'), updateLoadStatus)
+router.patch(
+  '/driver/:driverId/loads/:loadId/status',
+  requireAuth,
+  requireRole(USER_ROLES.DRIVER),
+  requireSelfParam('driverId'),
+  updateLoadStatus
+)
 
-router.patch('/loads/:loadId/expenses', requireAuth, requireRole(USER_ROLES.DRIVER), requireOwns(driverOwnsAssignedLoad), updateLoadExpenses)
-router.patch('/loads/:loadId/select-truck', requireAuth, requireRole(USER_ROLES.DRIVER), requireOwns(driverOwnsAssignedLoad), selectTruckForLoad)
+router.patch(
+  '/loads/:loadId/expenses',
+  requireAuth,
+  requireRole(USER_ROLES.DRIVER),
+  requireOwns(driverOwnsAssignedLoad),
+  updateLoadExpenses
+)
+router.patch(
+  '/loads/:loadId/select-truck',
+  requireAuth,
+  requireRole(USER_ROLES.DRIVER),
+  requireOwns(driverOwnsAssignedLoad),
+  selectTruckForLoad
+)
 
 export default router

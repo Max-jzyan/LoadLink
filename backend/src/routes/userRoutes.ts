@@ -6,7 +6,7 @@ import {
   getFeedPreferences,
   updateFeedPreferences,
   getMyProfile,
-  updateMyProfile
+  updateMyProfile,
 } from '../controllers/userController'
 
 const router = Router()
