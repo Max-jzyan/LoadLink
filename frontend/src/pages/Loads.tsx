@@ -1,28 +1,21 @@
 import { Link } from 'react-router-dom'
 import { Plus, Truck } from 'lucide-react'
-import { useSelector } from 'react-redux'
 import { Button } from '@/components/ui/button'
 import { LoadCard } from '@/components/shared/LoadCard'
 import PageShell from '@/components/layout/PageShell'
 import { RoutePath } from '@/config/routes'
 import { useListCompanyLoadsQuery } from '@/services/loadApi/loadSlice'
-import { selectMongoId } from '@/services/authSlice'
+import { useRequiredMongoId } from '@/hooks/useAuth'
 import Spinner from '@/components/shared/Spinner'
 
 export default function Loads() {
-  const companyId = useSelector(selectMongoId)
+  const companyId = useRequiredMongoId()
 
   const {
     data: loads,
     isLoading,
     isError,
-  } = useListCompanyLoadsQuery(companyId!, {
-    skip: !companyId,
-  })
-
-  if (!companyId) {
-    return <Spinner fullPage />
-  }
+  } = useListCompanyLoadsQuery(companyId)
 
   const count = loads?.length ?? 0
 

@@ -3,7 +3,6 @@ import PageShell from '@/components/layout/PageShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RoutePath } from '@/config/routes'
-import { selectRole } from '@/services/authSlice'
 import { cn } from '@/lib/utils'
 import {
   AlertTriangle,
@@ -17,7 +16,8 @@ import {
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { selectMongoId } from '@/services/authSlice'
+import { selectRole } from '@/services/authSlice'
+import { useRequiredMongoId } from '@/hooks/useAuth'
 import { useGetMyReportsQuery } from '@/services/reportApi/reportSlice'
 import type { Report, ReportStatus } from '@/services/reportApi/reportEnum'
 
@@ -89,8 +89,8 @@ export default function ReportHub() {
   const role = useSelector(selectRole)
   const isCompany = role === 'company'
   const navigate = useNavigate()
-  const userId = useSelector(selectMongoId)
-  const { data: reports = [], isLoading } = useGetMyReportsQuery(userId ?? '', { skip: !userId })
+  const userId = useRequiredMongoId()
+  const { data: reports = [], isLoading } = useGetMyReportsQuery(userId)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
 
   const filters: { key: StatusFilter; label: string; count: number }[] = [

@@ -7,7 +7,7 @@ import DynamicCard from '@/components/layout/DynamicCard'
 import LoadsPageLayout from '@/components/layout/LoadsPageLayout'
 import PageShell from '@/components/layout/PageShell'
 import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
-import { selectMongoId } from '@/services/authSlice'
+import { useRequiredMongoId } from '@/hooks/useAuth'
 import {
   useListDriverBidsQuery,
   useListDriverLoadsQuery,
@@ -36,7 +36,7 @@ const DEFAULT_FILTERS: DriverLoadFilters = {
 }
 
 export default function DriverDashboard() {
-  const driverId = useSelector(selectMongoId)
+  const driverId = useRequiredMongoId()
   const dispatch = useDispatch<AppDispatch>()
 
   // Fetch all loads currently on the auction board
@@ -46,10 +46,10 @@ export default function DriverDashboard() {
     isFetching,
     refetch,
     fulfilledTimeStamp,
-  } = useListDriverLoadsQuery({ driverId: driverId! }, { skip: !driverId })
+  } = useListDriverLoadsQuery({ driverId })
 
   // Fetch the driver's trucks to allow per-load truck assignment
-  const { data: trucks = [] } = useListDriverTrucksQuery(driverId!, { skip: !driverId })
+  const { data: trucks = [] } = useListDriverTrucksQuery(driverId)
 
   // Sync RTK Query data into local slice on initial fetch and refresh
   const prevRawLoadsRef = useRef(rawLoads)
@@ -143,10 +143,7 @@ export default function DriverDashboard() {
   const loadsInTransit = availableLoads.filter((load) => load.status === LOAD_STATUSES.InTransit)
   const completedLoads = availableLoads.filter((load) => load.status === LOAD_STATUSES.Completed)
 
-  const { data: activeBids = [] } = useListDriverBidsQuery(
-    { driverId: driverId! },
-    { skip: !driverId }
-  )
+  const { data: activeBids = [] } = useListDriverBidsQuery({ driverId })
 
   // Only count bids whose auction is still open (status === auction_live)
   const openAuctionLoadIds = useMemo(() => {

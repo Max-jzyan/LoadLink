@@ -7,8 +7,8 @@ import { RevenueSummaryCards } from '@/components/revenue/RevenueSummaryCards'
 import { RevenueTable } from '@/components/revenue/RevenueTable'
 import { Button } from '@/components/ui/button'
 import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
+import { useRequiredMongoId } from '@/hooks/useAuth'
 import { relativeTime } from '@/lib/utils'
-import { selectMongoId } from '@/services/authSlice'
 import type {
   DashboardViewMode,
   ExpensePreferences,
@@ -23,10 +23,9 @@ import {
 } from '@/services/driverApi/driverSlice'
 import { RefreshCw, Settings2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
 
 export default function Dashboard() {
-  const driverId = useSelector(selectMongoId)
+  const driverId = useRequiredMongoId()
   const [viewMode, setViewMode] = useState<DashboardViewMode>('completed')
 
   const [filters, setFilters] = useState<RevenueFilters>({
@@ -63,7 +62,7 @@ export default function Dashboard() {
     refetch,
     fulfilledTimeStamp,
   } = useGetDriverRevenueQuery({
-    driverId: driverId!, // This is a known issue that needs to be fixed, auth seems to be duplicated? #134
+    driverId,
     filters: {
       ...debouncedFilters,
       status: viewMode === 'potential' ? 'booked,in_transit' : 'completed',
@@ -80,7 +79,7 @@ export default function Dashboard() {
 
   const [updateExpenses, { isLoading: isUpdating }] = useUpdateDriverExpensesMutation()
   const [updateTruckExpenses, { isLoading: isUpdatingTruck }] = useUpdateTruckExpensesMutation()
-  const { data: trucks = [] } = useListDriverTrucksQuery(driverId!, { skip: !driverId })
+  const { data: trucks = [] } = useListDriverTrucksQuery(driverId)
 
   const [localExpenses, setLocalExpenses] = useState<ExpensePreferences | null>(null)
   const [globalDrawerOpen, setGlobalDrawerOpen] = useState(false)
@@ -93,7 +92,6 @@ export default function Dashboard() {
 
   const handleSaveExpenses = useCallback(
     async (form: ExpensePreferences, scope: string) => {
-      if (!driverId) return
       try {
         if (scope === 'global') {
           await updateExpenses({ driverId, body: form }).unwrap()

@@ -12,10 +12,9 @@ import { haversineDistanceKm } from '@/lib/geo'
 import type { Auction, PopulatedBid } from '@/services/auctionApi/auctionEnum'
 import { AUCTION_STATUSES } from '@/services/auctionApi/auctionEnum'
 import { useStreamAuctionPriceQuery, useStreamBidsQuery } from '@/services/auctionApi/auctionSlice'
-import { selectMongoId } from '@/services/authSlice'
+import { useRequiredMongoId } from '@/hooks/useAuth'
 import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
 import { Clock } from 'lucide-react'
-import { useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
 
 function timeAgo(dateStr: string): string {
@@ -37,7 +36,7 @@ export default function DriverAuctions() {
   // TODO: fix the fixed value
   const loadId = useParams<{ loadId: string }>().loadId ?? ''
 
-  const mongoId = useSelector(selectMongoId)
+  const mongoId = useRequiredMongoId()
   const { data: load, isLoading, isError } = useGetLoadQuery(loadId)
   const { data: bidsPayload } = useStreamBidsQuery(loadId)
   const { data: pricePayload } = useStreamAuctionPriceQuery(loadId)
@@ -271,7 +270,7 @@ export default function DriverAuctions() {
             }
             titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
           >
-            <BidTable bids={bids} currentDriverId={mongoId ?? undefined} />
+            <BidTable bids={bids} currentDriverId={mongoId || undefined} />
           </DynamicCard>
         </div>
       </div>

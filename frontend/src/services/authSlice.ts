@@ -51,6 +51,13 @@ export default authSlice.reducer
 export const selectCurrentUser = (state: RootState) => state.auth.user
 export const selectAuthLoading = (state: RootState) => state.auth.loading
 export const selectMongoId = (state: RootState) => state.auth.user?.mongoId ?? null
+/**
+ * Non-nullable variant intended for call sites that are already behind
+ * ProtectedRoute/RoleLayout (which gate on loading + user). Returns an empty
+ * string at the type level when no user is present, but in practice this only
+ * fires after auth has resolved.
+ */
+export const selectRequiredMongoId = (state: RootState): string => state.auth.user?.mongoId ?? ''
 export const selectFirebaseUid = (state: RootState) => state.auth.user?.uid ?? null
 export const selectRole = (state: RootState) => state.auth.user?.role ?? null
 

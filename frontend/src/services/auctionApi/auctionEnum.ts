@@ -85,6 +85,7 @@ export interface PriceStreamPayload {
 
 export interface AcceptBidResult {
   loadId: string
+  driverId: string
   finalPayout: number
   rateConfirmationUrl: string
 }

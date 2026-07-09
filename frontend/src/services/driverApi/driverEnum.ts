@@ -19,6 +19,7 @@ export interface ClaimLoadPayload {
 
 export interface ClaimResult {
   loadId: string
+  driverId: string
   finalPayout: number
   rateConfirmationUrl: string
 }

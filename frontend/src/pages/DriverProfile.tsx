@@ -13,7 +13,7 @@ import TruckInfoCard from '@/components/driverProfile/TruckInfoCard'
 import Col from '@/components/layout/Col'
 import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
-import { selectMongoId } from '@/services/authSlice'
+import { useRequiredMongoId } from '@/hooks/useAuth'
 import type { Truck } from '@/services/driverApi/driverEnum'
 import {
   useCreateTruckMutation,
@@ -24,17 +24,14 @@ import {
 } from '@/services/driverApi/driverSlice'
 import { Loader2 } from 'lucide-react'
 import { useCallback, useState } from 'react'
-import { useSelector } from 'react-redux'
 
 export default function DriverProfile() {
-  const driverId = useSelector(selectMongoId)
+  const driverId = useRequiredMongoId()
   const {
     data: driver,
     isLoading,
     isError,
-  } = useGetDriverProfileQuery(driverId!, {
-    skip: !driverId,
-  })
+  } = useGetDriverProfileQuery(driverId)
 
   const [updateDriverProfile] = useUpdateDriverProfileMutation()
   const [createTruck] = useCreateTruckMutation()
@@ -70,8 +67,6 @@ export default function DriverProfile() {
 
   const handleTruckSubmit = useCallback(
     async (values: TruckFormValues, truckId?: string) => {
-      if (!driverId) return
-
       // Basic truck properties (RTK mutation expects required trailerLengthFt/capacityLbs)
       const basicBody = {
         make: values.make,
@@ -113,7 +108,6 @@ export default function DriverProfile() {
 
   const handleContactSave = useCallback(
     async (values: ContactFormValues) => {
-      if (!driverId) return
       await updateDriverProfile({
         driverId,
         body: {
@@ -127,7 +121,6 @@ export default function DriverProfile() {
 
   const handlePricingSave = useCallback(
     async (values: PricingFormValues) => {
-      if (!driverId) return
       await updateDriverProfile({
         driverId,
         body: {
@@ -140,7 +133,6 @@ export default function DriverProfile() {
 
   const handleDriverInfoSubmit = useCallback(
     async (values: DriverInfoFormValues) => {
-      if (!driverId) return
       await updateDriverProfile({
         driverId,
         body: {
@@ -154,16 +146,6 @@ export default function DriverProfile() {
     },
     [driverId, updateDriverProfile]
   )
-
-  if (!driverId) {
-    return (
-      <PageShell title="My Profile">
-        <div className="flex items-center justify-center py-20 text-muted-foreground">
-          Please log in to view your profile.
-        </div>
-      </PageShell>
-    )
-  }
 
   if (isLoading) {
     return (

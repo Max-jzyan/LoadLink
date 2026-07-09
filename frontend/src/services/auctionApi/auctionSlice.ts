@@ -1,5 +1,5 @@
 import { api } from '../api'
-import { LoadTag } from '../apiTypes'
+import { LoadTag, LoadTagId } from '../apiTypes'
 import type {
   AcceptBidResult,
   BidsStreamPayload,
@@ -25,7 +25,13 @@ export const auctionApi = api.injectEndpoints({
         url: `auctions/${loadId}/bids/${bidId}`,
         method: 'PATCH',
       }),
-      invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
+      invalidatesTags: (result) => {
+        const tags: any[] = [{ type: LoadTag.Load, id: result?.loadId }]
+        if (result?.driverId) {
+          tags.push({ type: LoadTag.Driver, id: `${result.driverId}-revenue` })
+        }
+        return tags
+      },
       async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           await queryFulfilled

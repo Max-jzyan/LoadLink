@@ -3,7 +3,6 @@ import DeliveryTimeline from '@/components/driverLoads/DeliveryTimeline'
 import { DriverMap } from '@/components/driverLoads/Map'
 import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useSelector } from 'react-redux'
 import { Search, SlidersHorizontal, Calendar, AlertTriangle, X } from 'lucide-react'
 import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
@@ -17,12 +16,12 @@ import {
 } from '@/services/driverApi/driverSlice'
 import type { Load } from '@/services/loadApi/loadEnum'
 import { useListAvailableLoadsQuery } from '@/services/loadApi/loadSlice'
-import { selectMongoId } from '@/services/authSlice'
+import { useRequiredMongoId } from '@/hooks/useAuth'
 
 type MapLayer = 'route' | 'fuel' | 'rest'
 
 export default function DriverAuctions() {
-  const driverId = useSelector(selectMongoId)
+  const driverId = useRequiredMongoId()
 
   const {
     data: availableLoads = [],
@@ -30,10 +29,9 @@ export default function DriverAuctions() {
     refetch: refetchAvailable,
   } = useListAvailableLoadsQuery()
   const { data: recommendedLoads = [], refetch: refetchRecommended } =
-    useGetRecommendedLoadsQuery(driverId ?? '', { skip: !driverId })
+    useGetRecommendedLoadsQuery(driverId)
   const { data: activeBids = [] } = useListDriverBidsQuery(
-    { driverId: driverId ?? '', status: 'active' },
-    { skip: !driverId }
+    { driverId, status: 'active' }
   )
 
   const { data: loadPostedEvent } = useEventSource<{ loadId: string }>('/api/loads/stream')

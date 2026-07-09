@@ -104,14 +104,20 @@ export const loadApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
     }),
 
-// PATCH /api/loads/:loadId — update a load (companies only)
+    // PATCH /api/loads/:loadId — update a load (companies only)
     updateLoad: build.mutation<Load, { loadId: string; body: UpdateLoadPayload }>({
       query: ({ loadId, body }) => ({
         url: `loads/${loadId}`,
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
+      invalidatesTags: (result) => {
+        const tags: any[] = [{ type: LoadTag.Load, id: result?._id }]
+        if (result?.assignedDriverId) {
+          tags.push({ type: LoadTag.Driver, id: `${result.assignedDriverId}-revenue` })
+        }
+        return tags
+      },
     }),
 
     // PATCH /api/driver/:driverId/loads/:loadId/status — update load status (drivers only)
@@ -121,7 +127,13 @@ export const loadApi = api.injectEndpoints({
         method: 'PATCH',
         body: { status },
       }),
-      invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
+      invalidatesTags: (result, _error, { driverId }) => {
+        const tags: any[] = [{ type: LoadTag.Load, id: result?._id }]
+        if (driverId) {
+          tags.push({ type: LoadTag.Driver, id: `${driverId}-revenue` })
+        }
+        return tags
+      },
     }),
 
     // PATCH /api/loads/:loadId/expenses — update per-load expense overrides
@@ -131,11 +143,13 @@ export const loadApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (_result, _error, { loadId }) => [
-        { type: LoadTag.Load, id: loadId },
-        // Invalidate all Driver tags (revenue cache uses driverId-revenue)
-        { type: LoadTag.Driver, id: LoadTagId.List },
-      ],
+      invalidatesTags: (result) => {
+        const tags: any[] = [{ type: LoadTag.Load, id: result?._id }]
+        if (result?.assignedDriverId) {
+          tags.push({ type: LoadTag.Driver, id: `${result.assignedDriverId}-revenue` })
+        }
+        return tags
+      },
     }),
   }),
   overrideExisting: false,

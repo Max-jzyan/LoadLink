@@ -178,6 +178,7 @@ export const acceptBid = async (loadId: string, bidId: string) => {
 
   return {
     loadId,
+    driverId: bid.driverId.toString(),
     finalPayout: bid.amount,
     // TODO: generate a real rate-confirmation PDF and upload to S3.
     rateConfirmationUrl: `${RATE_CONFIRMATION_URL_BASE}/rc_${bidId}.pdf`,
@@ -279,6 +280,7 @@ export const claimLoad = async (
 
   return {
     loadId,
+    driverId: bid.driverId.toString(),
     finalPayout: auction.currentPrice,
     // TODO: generate a real rate-confirmation PDF and upload to S3.
     rateConfirmationUrl: `${RATE_CONFIRMATION_URL_BASE}/rc_${bid._id}.pdf`,

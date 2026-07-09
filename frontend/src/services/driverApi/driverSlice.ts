@@ -50,12 +50,18 @@ export const driverApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (_result, _error, { loadId }) => [
-        { type: LoadTag.Load, id: loadId },
-        { type: LoadTag.Bid, id: loadId },
-        { type: LoadTag.AuctionPrice, id: loadId },
-        { type: LoadTag.Load, id: LoadTagId.DriverList },
-      ],
+      invalidatesTags: (result) => {
+        const tags: any[] = [
+          { type: LoadTag.Load, id: result?.loadId },
+          { type: LoadTag.Bid, id: result?.loadId },
+          { type: LoadTag.AuctionPrice, id: result?.loadId },
+          { type: LoadTag.Load, id: LoadTagId.DriverList },
+        ]
+        if (result?.driverId) {
+          tags.push({ type: LoadTag.Driver, id: `${result.driverId}-revenue` })
+        }
+        return tags
+      },
       async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           const { data } = await queryFulfilled
@@ -239,10 +245,16 @@ export const driverApi = api.injectEndpoints({
         method: 'PATCH',
         body: { truckId },
       }),
-      invalidatesTags: (_result, _error, { loadId }) => [
-        { type: LoadTag.Load, id: loadId },
-        { type: LoadTag.Load, id: LoadTagId.DriverList },
-      ],
+      invalidatesTags: (result) => {
+        const tags: any[] = [
+          { type: LoadTag.Load, id: result?._id },
+          { type: LoadTag.Load, id: LoadTagId.DriverList },
+        ]
+        if (result?.assignedDriverId) {
+          tags.push({ type: LoadTag.Driver, id: `${result.assignedDriverId}-revenue` })
+        }
+        return tags
+      },
     }),
   }),
   overrideExisting: false,

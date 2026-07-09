@@ -14,13 +14,12 @@ import { Button } from '@/components/ui/button'
 import { RoutePath } from '@/config/routes'
 import useAuth from '@/hooks/useAuth'
 import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
+import { useRequiredMongoId } from '@/hooks/useAuth'
 import { deriveSpendLoads, summarizeSpend } from '@/lib/companySpend'
-import { selectMongoId } from '@/services/authSlice'
 import { useGetCompanyDashboardQuery } from '@/services/companyApi/companyApi'
 import { ACTIVE_STATUSES, HISTORICAL_STATUSES } from '@/types/enums'
 import { Hammer, Package2, Plus, RefreshCw, TrendingUp, Truck } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { relativeTime } from '@/lib/utils'
 
@@ -29,7 +28,8 @@ type DashboardTab = 'overview' | 'spending'
 export default function CompanyDashboard() {
   const { user } = useAuth()
   const companyName = user?.email?.split('@')[0] ?? null
-  const companyId = useSelector(selectMongoId)
+
+  const companyId = useRequiredMongoId()
   const [tab, setTab] = useState<DashboardTab>('overview')
 
   const {
@@ -38,8 +38,7 @@ export default function CompanyDashboard() {
     isFetching,
     refetch,
     fulfilledTimeStamp,
-  } = useGetCompanyDashboardQuery(companyId ?? '', {
-    skip: !companyId,
+  } = useGetCompanyDashboardQuery(companyId, {
     pollingInterval: 60000,
   })
 

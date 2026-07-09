@@ -35,7 +35,7 @@ import {
 import { useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { selectMongoId, selectRole } from '@/services/authSlice'
+import { selectRole } from '@/services/authSlice'
 import {
   useBlockUserMutation,
   useGetBlocklistQuery,
@@ -44,6 +44,7 @@ import {
   useUpdateFeedPreferencesMutation,
 } from '@/services/blocklistApi/blocklistSlice'
 import type { BlockedTargetType, BlocklistEntry } from '@/services/blocklistApi/blocklistEnum'
+import { useRequiredMongoId } from '@/hooks/useAuth'
 
 const DRIVER_BLOCK_REASONS = [
   { value: 'low_offers', label: 'Consistently low offers' },
@@ -160,15 +161,15 @@ export default function BlocklistPreferences() {
   const role = useSelector(selectRole)
   const isCompany = role === 'company'
   const navigate = useNavigate()
-  const userId = useSelector(selectMongoId)
+  const userId = useRequiredMongoId()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const blockReasons = isCompany ? COMPANY_BLOCK_REASONS : DRIVER_BLOCK_REASONS
   const feedPrefs = isCompany ? COMPANY_FEED_PREFS : DRIVER_FEED_PREFS
   const entityNoun = isCompany ? 'driver' : 'company'
 
-  const { data: blocked = [], isLoading } = useGetBlocklistQuery(userId ?? '', { skip: !userId })
-  const { data: prefs = {} } = useGetFeedPreferencesQuery(userId ?? '', { skip: !userId })
+  const { data: blocked = [], isLoading } = useGetBlocklistQuery(userId)
+  const { data: prefs = {} } = useGetFeedPreferencesQuery(userId)
   const [blockUser, { isLoading: isBlocking }] = useBlockUserMutation()
   const [unblockUser] = useUnblockUserMutation()
   const [updateFeedPreferences] = useUpdateFeedPreferencesMutation()
@@ -187,12 +188,11 @@ export default function BlocklistPreferences() {
   const [activeTab, setActiveTab] = useState(tabs[0].key)
 
   const togglePref = (key: FeedPref['key'], value: boolean) => {
-    if (!userId) return
     updateFeedPreferences({ userId, body: { [key]: value } })
   }
 
   const confirmUnblock = async () => {
-    if (!pendingUnblock || !userId || !pendingUnblock.targetId) return
+    if (!pendingUnblock || !pendingUnblock.targetId) return
     try {
       await unblockUser({ userId, targetId: pendingUnblock.targetId._id }).unwrap()
     } finally {
@@ -205,7 +205,7 @@ export default function BlocklistPreferences() {
   }
 
   const handleBlock = async () => {
-    if (!searchQuery.trim() || !userId) return
+    if (!searchQuery.trim()) return
     try {
       await blockUser({
         userId,
