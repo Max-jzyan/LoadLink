@@ -6,12 +6,10 @@ import { Badge } from '@/components/ui/badge'
 import { AUCTION_STATUSES } from '@/services/auctionApi/auctionEnum'
 import { PriceInputVariant } from '@/types/enums'
 import { BadgeAlert } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
-import { usePlaceBidMutation } from '@/services/driverApi/driverSlice'
 import { selectMongoId } from '@/services/authSlice'
-import { showError } from '@/lib/toast'
+import PlaceBidDialog from '@/components/auction/PlaceBidDialog'
 
 interface BidInputProps {
   loadId: string
@@ -21,7 +19,6 @@ interface BidInputProps {
 
 export default function BidInput({ loadId, auctionStatus, currentPrice }: BidInputProps) {
   const [bidAmount, setBidAmount] = useState<number | ''>('')
-  const [placeBid, { isLoading: isPlacing }] = usePlaceBidMutation()
   const mongoId = useSelector(selectMongoId)
   const isAuctionLive = auctionStatus === AUCTION_STATUSES.Active
 
@@ -30,32 +27,8 @@ export default function BidInput({ loadId, auctionStatus, currentPrice }: BidInp
     setBidAmount(value === '' ? '' : Number(value))
   }
 
-  const handlePlaceBid = async () => {
-    if (typeof bidAmount !== 'number' || bidAmount <= 0) return
-    if (!mongoId) {
-      alert('You must be logged in to place a bid.')
-      return
-    }
-    if (currentPrice !== undefined && bidAmount < currentPrice) {
-      showError(
-        `Your bid of $${bidAmount.toLocaleString()} is lower than the current accept price of $${currentPrice.toLocaleString()}.`
-      )
-      return
-    }
-    try {
-      await placeBid({
-        loadId,
-        body: {
-          driverId: mongoId,
-          amount: bidAmount,
-        },
-      }).unwrap()
-      setBidAmount('')
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to place bid'
-      alert(message)
-    }
-  }
+  const isBelowCurrentPrice =
+    typeof bidAmount === 'number' && currentPrice !== undefined && bidAmount < currentPrice
 
   return (
     <DynamicCard
@@ -95,16 +68,21 @@ export default function BidInput({ loadId, auctionStatus, currentPrice }: BidInp
             fullWidth
             disabled={!isAuctionLive}
           />
+          {isBelowCurrentPrice && (
+            <p className="text-xs text-destructive mt-1">
+              Bid must be at least the current accept price.
+            </p>
+          )}
         </Col>
         <div className="flex-shrink-0 flex items-center">
-          <Button
-            variant="default"
-            size="lg"
-            onClick={handlePlaceBid}
-            disabled={isPlacing || !isAuctionLive}
-          >
-            {isPlacing ? 'Placing…' : 'Place Bid'}
-          </Button>
+          <PlaceBidDialog
+            loadId={loadId}
+            driverId={mongoId}
+            bidAmount={typeof bidAmount === 'number' ? bidAmount : 0}
+            currentPrice={currentPrice}
+            isAuctionLive={isAuctionLive}
+            onPlaced={() => setBidAmount('')}
+          />
         </div>
       </Row>
     </DynamicCard>
