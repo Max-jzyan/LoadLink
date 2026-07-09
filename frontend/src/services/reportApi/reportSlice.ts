@@ -21,7 +21,7 @@ export const reportApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { reporterId }) => [
         { type: LoadTag.Report, id: reporterId },
       ],
-      async onQueryStarted(arg, { queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           await queryFulfilled
           showSuccess('Report submitted — our trust & safety team will review it')

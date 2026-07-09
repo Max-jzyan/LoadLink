@@ -48,7 +48,7 @@ export const blocklistApi = api.injectEndpoints({
         method: 'DELETE',
       }),
       invalidatesTags: (_result, _error, { userId }) => [{ type: LoadTag.Blocklist, id: userId }],
-      async onQueryStarted(arg, { queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           await queryFulfilled
           showSuccess('Unblocked successfully')
