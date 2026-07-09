@@ -31,7 +31,7 @@ interface PageShellProps {
  * - `title` scrolls away naturally as the user scrolls down.
  * - `stickyBar` sticks to the top of the viewport once the title scrolls past.
  * - `actions` are rendered on the right side of the sticky bar row.
- * - `tabs` renders a segmented-button tab bar above stickyBar in the sticky area.
+ * - `tabs` renders a tab bar above stickyBar in the sticky area.
  *
  * @example
  * <PageShell
@@ -73,18 +73,19 @@ export default function PageShell({
           <div className="sticky top-0 z-[9999] bg-background border-b shadow-sm mb-3">
             {/* Tab bar (optional) */}
             {tabs && (
-              <div className="px-4 pt-2 pb-1">
-                <div className="flex gap-0.5 p-0.5 bg-muted/60 rounded-lg w-fit">
+              <div className="px-4 pt-1 pb-0">
+                <div className="flex w-fit -mb-px">
                   {tabs.options.map((option) => (
                     <Button
                       key={option.value}
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        'rounded-md px-3.5 border',
+                        'rounded-none px-4 border-b-2 border-transparent -mb-px',
+                        'hover:bg-transparent hover:text-foreground',
                         tabs.value === option.value
-                          ? 'bg-primary text-primary-foreground border-primary/30 shadow-sm hover:bg-primary/90'
-                          : 'text-muted-foreground border-transparent hover:bg-muted-foreground/10'
+                          ? 'text-primary border-b-primary font-medium'
+                          : 'text-muted-foreground'
                       )}
                       onClick={() => tabs.onValueChange(option.value)}
                     >
