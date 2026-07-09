@@ -55,7 +55,7 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
   const breadcrumbItems =
     segments.length === 0
       ? [{ path: RoutePath.Dashboard, label: getRouteLabel(RoutePath.Dashboard) }]
-      : segments.map((seg, i) => {
+      : segments.map((_seg, i) => {
           const path = '/' + segments.slice(0, i + 1).join('/')
           const isLast = i === segments.length - 1
           const isIdSegment = isIdRoute(path) && isLast && loadId !== null
@@ -72,7 +72,9 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
               label = `${origin} → ${destination}`
             }
           } else {
-            label = getRouteLabel('/' + seg)
+            // Prefer the full cumulative path so e.g. /company/dashboard resolves to
+            // "Dashboard" rather than matching /dashboard ("Revenue Center")
+            label = getRouteLabel(path)
           }
 
           return { path, label }

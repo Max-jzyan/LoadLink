@@ -3,6 +3,9 @@ import CompanyLoadFilterBar, {
   DEFAULT_FILTERS,
 } from '@/components/companyLoads/CompanyLoadFilterBar'
 import CompanyLoadTable from '@/components/companyLoads/companyLoadTable'
+import { CompanySpendCards } from '@/components/companyRevenue/CompanySpendCards'
+import { SpendByRouteChart } from '@/components/companyRevenue/SpendByRouteChart'
+import { SpendTimeChart } from '@/components/companyRevenue/SpendTimeChart'
 import { DriverMap } from '@/components/driverLoads/Map'
 import DynamicCard from '@/components/layout/DynamicCard'
 import LoadsPageLayout from '@/components/layout/LoadsPageLayout'
@@ -11,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { RoutePath } from '@/config/routes'
 import useAuth from '@/hooks/useAuth'
 import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
+import { deriveSpendLoads, summarizeSpend } from '@/lib/companySpend'
 import { selectMongoId } from '@/services/authSlice'
 import { useGetCompanyDashboardQuery } from '@/services/companyApi/companyApi'
 import { ACTIVE_STATUSES, HISTORICAL_STATUSES } from '@/types/enums'
@@ -20,10 +24,13 @@ import { useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { relativeTime } from '@/lib/utils'
 
+type DashboardTab = 'overview' | 'spending'
+
 export default function CompanyDashboard() {
   const { user } = useAuth()
   const companyName = user?.email?.split('@')[0] ?? null
   const companyId = useSelector(selectMongoId)
+  const [tab, setTab] = useState<DashboardTab>('overview')
 
   const {
     data: dashboard,
@@ -94,6 +101,16 @@ export default function CompanyDashboard() {
     }))
   }, [loads])
 
+  // Spend analytics derived from auction prices on completed/booked/in-transit loads
+  const spendLoads = useMemo(() => deriveSpendLoads(loads), [loads])
+  const spendSummary = useMemo(() => summarizeSpend(spendLoads), [spendLoads])
+
+  const handleTabChange = useCallback((value: string) => {
+    if (value === 'overview' || value === 'spending') {
+      setTab(value)
+    }
+  }, [])
+
   // ── Stats cards (bare DynamicCards — no Col wrappers) ──
   const statsCards = (
     <>
@@ -114,9 +131,21 @@ export default function CompanyDashboard() {
 
   return (
     <PageShell
-      title="Active Loads"
+      title="Company Dashboard"
       subtitle={subtitle}
-      stickyBar={<CompanyLoadFilterBar filters={filters} onFiltersChange={setFilters} />}
+      tabs={{
+        options: [
+          { value: 'overview', label: 'Overview' },
+          { value: 'spending', label: 'Spending Analytics' },
+        ],
+        value: tab,
+        onValueChange: handleTabChange,
+      }}
+      stickyBar={
+        tab === 'overview' ? (
+          <CompanyLoadFilterBar filters={filters} onFiltersChange={setFilters} />
+        ) : undefined
+      }
       actions={
         <>
           <Button variant="outline" size="icon" onClick={onRefresh} title="Refresh">
@@ -131,27 +160,49 @@ export default function CompanyDashboard() {
         </>
       }
     >
-      <LoadsPageLayout
-        isLoading={isLoading}
-        statsCards={statsCards}
-        mapHeight={600}
-        table={
-          <CompanyLoadTable
-            title={isLoading ? 'Loading...' : 'Loads'}
-            loads={filteredLoads}
-            onRowClick={(load) => setSelectedLoadId(load._id)}
-            selectedId={selectedLoadId}
-          />
-        }
-        map={<DriverMap routes={transitRoutes} selectedRouteId={selectedLoadId} height="100%" />}
-        mapAction={
-          selectedLoadId ? (
-            <Button variant="ghost" size="sm" onClick={handleResetView}>
-              Reset View
-            </Button>
-          ) : undefined
-        }
-      />
+      {tab === 'overview' ? (
+        <LoadsPageLayout
+          isLoading={isLoading}
+          statsCards={statsCards}
+          mapHeight={600}
+          table={
+            <CompanyLoadTable
+              title={isLoading ? 'Loading...' : 'Loads'}
+              loads={filteredLoads}
+              onRowClick={(load) => setSelectedLoadId(load._id)}
+              selectedId={selectedLoadId}
+            />
+          }
+          map={<DriverMap routes={transitRoutes} selectedRouteId={selectedLoadId} height="100%" />}
+          mapAction={
+            selectedLoadId ? (
+              <Button variant="ghost" size="sm" onClick={handleResetView}>
+                Reset View
+              </Button>
+            ) : undefined
+          }
+        />
+      ) : (
+        <div className="space-y-6">
+          <CompanySpendCards summary={spendSummary} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-full">
+            <DynamicCard
+              title="Spend Over Time"
+              description="Weekly totals — money spent on completed loads vs committed to active loads"
+              expand
+            >
+              <SpendTimeChart spendLoads={spendLoads} />
+            </DynamicCard>
+            <DynamicCard
+              title="Spend by Route"
+              description="Top routes ranked by total auction spend"
+              expand
+            >
+              <SpendByRouteChart spendLoads={spendLoads} />
+            </DynamicCard>
+          </div>
+        </div>
+      )}
     </PageShell>
   )
 }
