@@ -1,4 +1,5 @@
 import BidInput from '@/components/auction/BidInput'
+import ClaimLoadDialog from '@/components/auction/ClaimLoadDialog'
 import PriceTracker from '@/components/auction/PriceTracker'
 import BidTable from '@/components/auction/BidTable'
 import { DriverMap } from '@/components/driverLoads/Map'
@@ -12,12 +13,10 @@ import type { Auction, PopulatedBid } from '@/services/auctionApi/auctionEnum'
 import { AUCTION_STATUSES } from '@/services/auctionApi/auctionEnum'
 import { useStreamAuctionPriceQuery, useStreamBidsQuery } from '@/services/auctionApi/auctionSlice'
 import { selectMongoId } from '@/services/authSlice'
-import { useClaimLoadMutation } from '@/services/driverApi/driverSlice'
 import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
 import { Clock } from 'lucide-react'
 import { useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
-import { useState } from 'react'
 
 function timeAgo(dateStr: string): string {
   const now = Date.now()
@@ -42,24 +41,6 @@ export default function DriverAuctions() {
   const { data: load, isLoading, isError } = useGetLoadQuery(loadId)
   const { data: bidsPayload } = useStreamBidsQuery(loadId)
   const { data: pricePayload } = useStreamAuctionPriceQuery(loadId)
-  const [claimLoad, { isLoading: isClaiming }] = useClaimLoadMutation()
-
-  const handleClaim = async () => {
-    if (!mongoId) {
-      alert('You must be logged in to claim a load.')
-      return
-    }
-    try {
-      const result = await claimLoad({
-        loadId,
-        body: { driverId: mongoId },
-      }).unwrap()
-      alert(`Load claimed! Final payout: $${result.finalPayout.toLocaleString()}`)
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to claim load'
-      alert(message)
-    }
-  }
 
   // Derive bids from SSE payload, falling back to empty array
   const bids: PopulatedBid[] = bidsPayload?.bids ?? []
@@ -241,17 +222,14 @@ export default function DriverAuctions() {
           </div>
 
           {/* Claim button */}
-          <button
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={handleClaim}
-            disabled={isClaiming || !mongoId || !isAuctionLive}
-          >
-            {isClaiming
-              ? 'Claiming…'
-              : isAuctionLive
-                ? `Accept $${livePrice.toLocaleString()} Now`
-                : 'Auction Closed'}
-          </button>
+          <ClaimLoadDialog
+            loadId={loadId}
+            driverId={mongoId}
+            livePrice={livePrice}
+            originAddress={load.originAddress}
+            destinationAddress={load.destinationAddress}
+            isAuctionLive={isAuctionLive}
+          />
 
           <SeparatorWithText />
 
