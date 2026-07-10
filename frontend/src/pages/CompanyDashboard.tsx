@@ -12,9 +12,8 @@ import LoadsPageLayout from '@/components/layout/LoadsPageLayout'
 import PageShell from '@/components/layout/PageShell'
 import { Button } from '@/components/ui/button'
 import { RoutePath } from '@/config/routes'
-import useAuth from '@/hooks/useAuth'
+import useAuth, { useRequiredMongoId } from '@/hooks/useAuth'
 import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
-import { useRequiredMongoId } from '@/hooks/useAuth'
 import { deriveSpendLoads, summarizeSpend } from '@/lib/companySpend'
 import { useGetCompanyDashboardQuery } from '@/services/companyApi/companyApi'
 import { ACTIVE_STATUSES, HISTORICAL_STATUSES } from '@/types/enums'
@@ -28,7 +27,6 @@ type DashboardTab = 'overview' | 'spending'
 export default function CompanyDashboard() {
   const { user } = useAuth()
   const companyName = user?.email?.split('@')[0] ?? null
-
   const companyId = useRequiredMongoId()
   const [tab, setTab] = useState<DashboardTab>('overview')
 
@@ -82,6 +80,16 @@ export default function CompanyDashboard() {
     if (dateRange?.to) {
       const to = dateRange.to
       result = result.filter((l) => new Date(l.createdAt) <= to)
+    }
+
+    // Origin / destination substring filters (case-insensitive)
+    const origin = filters.origin.trim().toLowerCase()
+    if (origin) {
+      result = result.filter((l) => l.originAddress.toLowerCase().includes(origin))
+    }
+    const destination = filters.destination.trim().toLowerCase()
+    if (destination) {
+      result = result.filter((l) => l.destinationAddress.toLowerCase().includes(destination))
     }
 
     return result

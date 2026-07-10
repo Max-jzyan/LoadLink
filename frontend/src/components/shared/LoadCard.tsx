@@ -51,6 +51,8 @@ interface LoadCardProps {
   load: Load
   onClick?: () => void
   viewAuctionHref?: string
+  /** Navigate here when the card itself is clicked (e.g. the load details page) */
+  href?: string
   eligibilityFlags?: EligibilityFlags
   recommendationScore?: number
 }
@@ -59,6 +61,7 @@ export function LoadCard({
   load,
   onClick,
   viewAuctionHref,
+  href,
   eligibilityFlags,
   recommendationScore,
 }: LoadCardProps) {
@@ -66,13 +69,14 @@ export function LoadCard({
   const auction = isPopulatedAuction(load.auctionId) ? load.auctionId : null
   const company = isPopulatedCompany(load.companyId) ? load.companyId : null
   const badge = STATUS_BADGE[load.status] ?? STATUS_BADGE.draft
+  const cardTarget = href ?? viewAuctionHref
 
   const hasScore = eligibilityFlags !== undefined && recommendationScore !== undefined
 
   return (
     <Card
       className={`rounded-xl overflow-hidden transition-colors cursor-pointer hover:bg-muted/40`}
-      onClick={() => viewAuctionHref && navigate(viewAuctionHref)}
+      onClick={() => cardTarget && navigate(cardTarget)}
     >
       <CardContent className="px-4 py-3 flex flex-row items-stretch gap-0">
         <div className="flex flex-col gap-1.5 flex-1 min-w-0 justify-center">

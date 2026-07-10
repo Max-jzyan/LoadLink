@@ -206,6 +206,7 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
                   <AddressField
                     label="Origin"
                     placeholder="Enter origin address..."
+                    initialValue={initialValues?.originAddress}
                     onValueChange={(v) => setValue('originAddress', v, { shouldValidate: true })}
                     onSelect={(opt) =>
                       setValue(
@@ -229,6 +230,7 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
                   <AddressField
                     label="Destination"
                     placeholder="Enter destination address..."
+                    initialValue={initialValues?.destinationAddress}
                     onValueChange={(v) =>
                       setValue('destinationAddress', v, { shouldValidate: true })
                     }
@@ -253,6 +255,7 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
                 <div>
                   <DatePicker
                     label="Pickup Date"
+                    initialValue={initialValues?.pickupTime}
                     onDateTimeChange={(v) => {
                       setValue('pickupTime', v, { shouldValidate: true })
                       trigger('dropoffTime')
@@ -263,6 +266,7 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
                 <div>
                   <DatePicker
                     label="Delivery Date"
+                    initialValue={initialValues?.dropoffTime}
                     onDateTimeChange={(v) => setValue('dropoffTime', v, { shouldValidate: true })}
                   />
                   <FieldError message={errors.dropoffTime?.message} />

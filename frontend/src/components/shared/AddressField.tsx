@@ -55,6 +55,8 @@ export interface AddressFieldProps {
   className?: string
   label?: string
   description?: string
+  /** Prefill with an existing address (e.g. when editing a load) */
+  initialValue?: string
   onValueChange?: (value: string) => void
   onSelect?: (option: AddressOption) => void
 }
@@ -65,10 +67,11 @@ export function AddressField({
   className,
   label,
   description,
+  initialValue,
   onValueChange,
   onSelect,
 }: AddressFieldProps) {
-  const [address, setAddress] = useState<string>('')
+  const [address, setAddress] = useState<string>(initialValue ?? '')
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -116,10 +119,10 @@ export function AddressField({
             aria-expanded={open}
             className="w-full font-normal overflow-hidden"
           >
-            {selected && selected.value.length > 0 ? (
-              <div className="truncate mr-auto min-w-0">
-                {options.find((item) => item.value === selected.value)?.label}
-              </div>
+            {address.length > 0 ? (
+              // Fall back to the raw address so prefilled values (not in the
+              // options list) still display when editing
+              <div className="truncate mr-auto min-w-0">{selected?.label ?? address}</div>
             ) : (
               <div className="text-muted-foreground mr-auto">{placeholder ?? 'Select'}</div>
             )}

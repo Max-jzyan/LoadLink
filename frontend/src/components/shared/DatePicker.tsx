@@ -12,13 +12,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 
 interface DatePickerProps {
   label?: string
+  /** Prefill with an existing ISO datetime (e.g. when editing a load) */
+  initialValue?: string
   onDateTimeChange?: (isoString: string) => void
 }
 
-export function DatePicker({ label, onDateTimeChange }: DatePickerProps) {
+export function DatePicker({ label, initialValue, onDateTimeChange }: DatePickerProps) {
+  const initialDate = initialValue ? new Date(initialValue) : undefined
   const [open, setOpen] = React.useState(false)
-  const [date, setDate] = React.useState<Date | undefined>(undefined)
-  const [time, setTime] = React.useState('10:30:00')
+  const [date, setDate] = React.useState<Date | undefined>(initialDate)
+  const [time, setTime] = React.useState(initialDate ? format(initialDate, 'HH:mm:ss') : '10:30:00')
 
   const emit = (nextDate: Date | undefined, nextTime: string) => {
     if (!nextDate || !onDateTimeChange) return

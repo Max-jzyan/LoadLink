@@ -1,9 +1,11 @@
-import { useParams } from 'react-router-dom'
-import { Trophy, WifiOff } from 'lucide-react'
+import { Link, useParams } from 'react-router-dom'
+import { Gavel, Trophy, WifiOff } from 'lucide-react'
 import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { RoutePath } from '@/config/routes'
 import { Skeleton } from '@/components/ui/skeleton'
 import AuctionControls from '@/components/auction/AuctionControls'
 import BidList from '@/components/auction/BidList'
@@ -21,19 +23,16 @@ import NotFound from '@/pages/NotFound'
 
 /**
  * Pass a load id in the URL: http://localhost:3000/auctionLive/<loadId>
- * Visiting /auctionLive with no id falls back to DEMO_LOAD_ID (a seeded live auction).
- *
- * TODO: remove DEMO_LOAD_ID + the bare /auctionLive route after MVP
+ * Visiting /auctionLive with no id shows a "no auction selected" prompt.
  */
-const DEMO_LOAD_ID = '000000000000000000000102'
 const MONGO_ID_RE = /^[a-f\d]{24}$/i
 
 export default function AuctionLive() {
   const { loadId: loadIdParam } = useParams()
-  const loadId = loadIdParam ?? DEMO_LOAD_ID
+  const loadId = loadIdParam ?? ''
 
-  // If a param was provided but isn't a valid ObjectId, skip the call entirely and render 404
-  const isValidId = !loadIdParam || MONGO_ID_RE.test(loadIdParam)
+  // Only query when a valid ObjectId was provided in the URL
+  const isValidId = !!loadIdParam && MONGO_ID_RE.test(loadIdParam)
 
   const { data: load, isLoading, isError } = useGetLoadQuery(loadId, { skip: !isValidId })
 
@@ -68,6 +67,25 @@ export default function AuctionLive() {
   // If any SSE stream has lost its connection
   const sseDisconnected = bidsStatus === 'disconnected' || priceStatus === 'disconnected'
 
+  // No load id in the URL — prompt the user to pick an auction instead of
+  // silently defaulting to a seeded demo load
+  if (!loadIdParam) {
+    return (
+      <PageShell title="Live Auction">
+        <div className="flex flex-col items-center gap-3 py-20 text-center">
+          <Gavel className="h-10 w-10 text-muted-foreground/50" />
+          <p className="text-sm font-medium">No auction selected</p>
+          <p className="text-xs text-muted-foreground max-w-sm">
+            Open an auction from your loads list — each live load has a View Auction action.
+          </p>
+          <Button variant="outline" asChild>
+            <Link to={RoutePath.Loads}>Go to Loads</Link>
+          </Button>
+        </div>
+      </PageShell>
+    )
+  }
+
   if (!isValidId || isError) {
     return <NotFound />
   }
@@ -86,14 +104,15 @@ export default function AuctionLive() {
         </div>
       )}
 
-      {isAuctionOver && (
+      {isAuctionOver && isCancelled && (
+        <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-4 py-2 text-sm text-muted-foreground">
+          <Badge variant="destructive">Cancelled</Badge>
+          <span>This auction is cancelled</span>
+        </div>
+      )}
+      {isAuctionOver && !isCancelled && (
         <>
-          {isCancelled ? (
-            <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-4 py-2 text-sm text-muted-foreground">
-              <Badge variant="destructive">Cancelled</Badge>
-              <span>This auction is cancelled</span>
-            </div>
-          ) : winnerBid ? (
+          {winnerBid ? (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
               <div className="flex items-center gap-3">
                 <Trophy className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />

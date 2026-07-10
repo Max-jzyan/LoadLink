@@ -99,17 +99,70 @@ export const createLoad = async (companyId: string, data: CreateLoadData) => {
   return load
 }
 
+// Pricing fields submitted by the load form that live on the Auction doc, not the Load
+const AUCTION_FIELD_KEYS = [
+  'startPrice',
+  'capPrice',
+  'priceCreepAmount',
+  'priceCreepIntervalHours',
+  'autoAcceptPercent',
+  'autoAcceptTriggerHours',
+  'expiresAt',
+] as const
+
 /**
- * Update editable fields on an existing load.
+ * Update editable fields on an existing load. Auction pricing fields are
+ * split out and applied to the load's auction document.
  */
 export const updateLoad = async (loadId: string, updateData: Record<string, unknown>) => {
-  const load = await LoadModel.findByIdAndUpdate(loadId, updateData, {
+  const auctionChanges: Record<string, unknown> = {}
+  const loadChanges: Record<string, unknown> = { ...updateData }
+  for (const key of AUCTION_FIELD_KEYS) {
+    if (key in loadChanges) {
+      auctionChanges[key] = loadChanges[key]
+      delete loadChanges[key]
+    }
+  }
+
+  const load = await LoadModel.findByIdAndUpdate(loadId, loadChanges, {
     new: true,
     runValidators: true,
   })
 
   if (!load) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Load not found')
+  }
+
+  if (load.auctionId && Object.keys(auctionChanges).length > 0) {
+    const auction = await AuctionModel.findById(load.auctionId)
+    if (auction) {
+      if (typeof auctionChanges.startPrice === 'number') {
+        auction.startPrice = auctionChanges.startPrice
+        // The live price never sits below the (possibly raised) start price
+        if (auction.currentPrice < auctionChanges.startPrice) {
+          auction.currentPrice = auctionChanges.startPrice
+        }
+      }
+      if (typeof auctionChanges.capPrice === 'number') {
+        auction.capPrice = auctionChanges.capPrice
+      }
+      if (typeof auctionChanges.priceCreepAmount === 'number') {
+        auction.priceCreepAmount = auctionChanges.priceCreepAmount
+      }
+      if (typeof auctionChanges.priceCreepIntervalHours === 'number') {
+        auction.priceCreepIntervalHours = auctionChanges.priceCreepIntervalHours
+      }
+      if (typeof auctionChanges.autoAcceptPercent === 'number') {
+        auction.autoAcceptPercent = auctionChanges.autoAcceptPercent
+      }
+      if (typeof auctionChanges.autoAcceptTriggerHours === 'number') {
+        auction.autoAcceptTriggerHours = auctionChanges.autoAcceptTriggerHours
+      }
+      if (auctionChanges.expiresAt) {
+        auction.expiresAt = new Date(auctionChanges.expiresAt as string)
+      }
+      await auction.save()
+    }
   }
 
   return load

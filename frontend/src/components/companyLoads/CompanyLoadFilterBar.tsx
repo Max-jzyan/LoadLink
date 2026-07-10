@@ -1,5 +1,6 @@
 import { DatePickerWithRange } from '@/components/shared/DatePickerWithRange'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { type DateRange } from 'react-day-picker'
 
@@ -8,6 +9,8 @@ export type CompanyLoadStatusFilter = 'all' | 'active' | 'historical'
 export interface CompanyLoadFilters {
   loadStatus: CompanyLoadStatusFilter
   dateRange: DateRange | undefined
+  origin: string
+  destination: string
 }
 
 interface CompanyLoadFilterBarProps {
@@ -24,6 +27,8 @@ const statusOptions: { value: CompanyLoadStatusFilter; label: string }[] = [
 const DEFAULT_FILTERS: CompanyLoadFilters = {
   loadStatus: 'all',
   dateRange: undefined,
+  origin: '',
+  destination: '',
 }
 
 export { DEFAULT_FILTERS }
@@ -63,6 +68,22 @@ export default function CompanyLoadFilterBar({
       <DatePickerWithRange
         label="Date Range"
         onRangeChange={(range) => updateFilter('dateRange', range)}
+      />
+
+      {/* Origin Filter */}
+      <Input
+        placeholder="Origin city..."
+        className="w-36"
+        value={filters.origin}
+        onChange={(e) => updateFilter('origin', e.target.value)}
+      />
+
+      {/* Destination Filter */}
+      <Input
+        placeholder="Destination city..."
+        className="w-36"
+        value={filters.destination}
+        onChange={(e) => updateFilter('destination', e.target.value)}
       />
 
       {/* Reset Filters Button */}

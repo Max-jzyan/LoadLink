@@ -114,8 +114,8 @@ export default function LoadDetail() {
 
   return (
     <PageShell
-      title={`${originShort} → ${destinationShort}`}
-      subtitle={`Load №${load._id.slice(-7)}`}
+      title="Load Details"
+      subtitle={`${originShort} → ${destinationShort} · Load #${load._id.slice(-6).toUpperCase()}`}
       actions={
         <>
           <Button variant="outline" size="sm" asChild>

@@ -22,6 +22,7 @@ const NON_EDITABLE_STATUSES = [
 export const companyColumns: ColumnDef<LoadWithDetails>[] = [
   {
     id: 'load',
+    accessorKey: 'commodity',
     header: 'Load / Commodity',
     cell: ({ row }) => {
       const { commodity } = row.original
@@ -29,18 +30,24 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
     },
   },
   {
-    id: 'route',
-    header: 'Route',
-    cell: ({ row }) => {
-      const { originAddress, destinationAddress } = row.original
-      return (
-        <span className="text-sm text-muted-foreground">
-          {originAddress}
-          <span className="mx-1.5 opacity-40">→</span>
-          {destinationAddress}
-        </span>
-      )
-    },
+    id: 'origin',
+    accessorKey: 'originAddress',
+    header: 'Origin',
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground" title={row.original.originAddress}>
+        {row.original.originAddress.split(',')[0].trim()}
+      </span>
+    ),
+  },
+  {
+    id: 'destination',
+    accessorKey: 'destinationAddress',
+    header: 'Destination',
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground" title={row.original.destinationAddress}>
+        {row.original.destinationAddress.split(',')[0].trim()}
+      </span>
+    ),
   },
   {
     accessorKey: 'truckType',
@@ -75,6 +82,7 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
   },
   {
     id: 'currentPrice',
+    accessorFn: (row) => row.auctionId?.currentPrice ?? 0,
     header: 'Current Price',
     cell: ({ row }) => {
       const auction = row.original.auctionId

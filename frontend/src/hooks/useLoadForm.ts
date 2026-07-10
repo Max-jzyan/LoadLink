@@ -53,11 +53,14 @@ export function useLoadForm(
       destinationCoords: initialValues?.destinationCoords ?? null,
       pickupTime: initialValues?.pickupTime ?? '',
       dropoffTime: initialValues?.dropoffTime ?? '',
-      minPrice: '',
-      maxPrice: '',
-      escalationRate: '',
-      tolerance: '',
-      trigger: '',
+      minPrice: String(initialValues?.startPrice ?? ''),
+      maxPrice: String(initialValues?.capPrice ?? ''),
+      escalationRate: String(initialValues?.priceCreepAmount ?? ''),
+      // 0 means "not set" for auto-accept fields — leave them blank
+      tolerance: initialValues?.autoAcceptPercent ? String(initialValues.autoAcceptPercent) : '',
+      trigger: initialValues?.autoAcceptTriggerHours
+        ? String(initialValues.autoAcceptTriggerHours)
+        : '',
       notes: '',
     },
   })

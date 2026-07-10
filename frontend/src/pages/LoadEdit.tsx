@@ -45,6 +45,7 @@ export default function LoadEdit() {
       priceCreepAmount: auction?.priceCreepAmount,
       priceCreepIntervalHours: auction?.priceCreepIntervalHours,
       autoAcceptPercent: auction?.autoAcceptPercent,
+      autoAcceptTriggerHours: auction?.autoAcceptTriggerHours,
       expiresAt: auction?.expiresAt,
     }
   }, [load])
@@ -107,7 +108,7 @@ export default function LoadEdit() {
   return (
     <PageShell
       title="Edit Load"
-      subtitle={`Load №${load._id.slice(-7)}`}
+      subtitle={`Load #${load._id.slice(-6).toUpperCase()}`}
       actions={
         <Button variant="outline" size="sm" asChild>
           <Link to={`/loads/${load._id}`}>

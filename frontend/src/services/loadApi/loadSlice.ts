@@ -111,8 +111,12 @@ export const loadApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (result): TagDescription[] => {
-        const tags: TagDescription[] = [{ type: LoadTag.Load, id: result?._id }]
+      invalidatesTags: (result, _error, { loadId }): TagDescription[] => {
+        const tags: TagDescription[] = [
+          { type: LoadTag.Load, id: loadId },
+          // Dashboard shows auction prices, so refetch it after edits
+          { type: LoadTag.Load, id: LoadTagId.CompanyList },
+        ]
         if (result?.assignedDriverId) {
           tags.push({ type: LoadTag.Driver, id: `${result.assignedDriverId}-revenue` })
         }

@@ -20,6 +20,8 @@ const ID_ROUTE_PREFIXES = [
   `${RoutePath.AuctionLive}/`,
 ]
 
+const MONGO_ID_RE = /^[a-f\d]{24}$/i
+
 function isIdRoute(pathname: string): boolean {
   return ID_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix))
 }
@@ -27,8 +29,10 @@ function isIdRoute(pathname: string): boolean {
 function extractLoadId(pathname: string): string | null {
   for (const prefix of ID_ROUTE_PREFIXES) {
     if (pathname.startsWith(prefix)) {
-      const id = pathname.slice(prefix.length)
-      if (id) return id
+      // Take only the id segment (drop trailing /edit etc.) and require a real
+      // ObjectId so paths like /loads/post never hit the API
+      const id = pathname.slice(prefix.length).split('/')[0]
+      if (MONGO_ID_RE.test(id)) return id
     }
   }
   return null
@@ -55,10 +59,11 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
   const breadcrumbItems =
     segments.length === 0
       ? [{ path: RoutePath.Dashboard, label: getRouteLabel(RoutePath.Dashboard) }]
-      : segments.map((_seg, i) => {
+      : segments.map((seg, i) => {
           const path = '/' + segments.slice(0, i + 1).join('/')
-          const isLast = i === segments.length - 1
-          const isIdSegment = isIdRoute(path) && isLast && loadId !== null
+          // Match the segment itself so the id crumb renders origin → destination
+          // even when it isn't last (e.g. /loads/<id>/edit)
+          const isIdSegment = loadId !== null && seg === loadId && isIdRoute(path)
 
           let label: string
           if (isIdSegment) {

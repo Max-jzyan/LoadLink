@@ -68,7 +68,7 @@ export default function Loads() {
       {!isLoading && !isError && count > 0 && (
         <div className="flex flex-col gap-3">
           {loads!.map((load) => (
-            <LoadCard key={load._id} load={load} />
+            <LoadCard key={load._id} load={load} href={`/loads/${load._id}`} />
           ))}
         </div>
       )}
