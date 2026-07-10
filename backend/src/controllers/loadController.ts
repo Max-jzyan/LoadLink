@@ -212,7 +212,10 @@ export const updateLoadExpenses = async (req: Request, res: Response, next: Next
 export const listAvailableLoads = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const status = req.query.status as string | undefined
-    const loads = await loadService.listAvailableLoads(status)
+    // Use the authenticated user's id (req.user) when available so that
+    // loads from companies they have blocked are excluded server-side.
+    const driverId = req.user?._id?.toString()
+    const loads = await loadService.listAvailableLoads(status, driverId)
     res.status(StatusCodes.OK).json(loads)
   } catch (err) {
     next(err)

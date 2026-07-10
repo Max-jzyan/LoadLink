@@ -316,7 +316,7 @@ describe('listAvailableLoads', () => {
 
     await listAvailableLoads(req, res, next)
 
-    expect(listAvailableLoadsMock).toHaveBeenCalledWith(LOAD_STATUSES.Booked)
+    expect(listAvailableLoadsMock).toHaveBeenCalledWith(LOAD_STATUSES.Booked, undefined)
   })
 })
 

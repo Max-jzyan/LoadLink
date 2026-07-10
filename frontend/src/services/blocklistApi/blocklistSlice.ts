@@ -1,6 +1,6 @@
 import { getHttpErrorMessage, showError, showSuccess, getErrorStatus } from '@/lib/toast'
 import { api } from '../api'
-import { LoadTag } from '../apiTypes'
+import { LoadTag, LoadTagId } from '../apiTypes'
 import type {
   BlocklistEntry,
   BlockUserPayload,
@@ -30,7 +30,14 @@ export const blocklistApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (_result, _error, { userId }) => [{ type: LoadTag.Blocklist, id: userId }],
+      invalidatesTags: (_result, _error, { userId }) => [
+        { type: LoadTag.Blocklist, id: userId },
+        // Force the driver's live auction board (and scored/recommended lists) to refetch
+        // so loads from the newly-blocked company disappear immediately.
+        { type: LoadTag.Load, id: LoadTagId.List },
+        { type: LoadTag.Load, id: `${userId}-scored` },
+        { type: LoadTag.Load, id: `${userId}-recommended` },
+      ],
       async onQueryStarted(arg, { queryFulfilled }) {
         try {
           const { data } = await queryFulfilled
@@ -47,7 +54,14 @@ export const blocklistApi = api.injectEndpoints({
         url: `blocklist/${userId}/${targetId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (_result, _error, { userId }) => [{ type: LoadTag.Blocklist, id: userId }],
+      invalidatesTags: (_result, _error, { userId }) => [
+        { type: LoadTag.Blocklist, id: userId },
+        // Force the driver's live auction board (and scored/recommended lists) to refetch
+        // so loads from the newly-unblocked company reappear immediately.
+        { type: LoadTag.Load, id: LoadTagId.List },
+        { type: LoadTag.Load, id: `${userId}-scored` },
+        { type: LoadTag.Load, id: `${userId}-recommended` },
+      ],
       async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           await queryFulfilled

@@ -5,6 +5,7 @@ import { AuctionModel } from '../../models/loads/Auction'
 import { BidModel } from '../../models/loads/Bid'
 import { LoadModel } from '../../models/loads/Load'
 import { emitBidsUpdate, emitPriceUpdate } from '../../events/auctionEvents'
+import { generateRateConfirmationPdf } from '../pdfService'
 import {
   createAuction,
   placeBid,
@@ -22,6 +23,8 @@ jest.mock('../../models/loads/Auction')
 jest.mock('../../models/loads/Bid')
 jest.mock('../../models/loads/Load')
 jest.mock('../../events/auctionEvents')
+jest.mock('../pdfService')
+jest.mock('../notificationService')
 
 const findAuctionOneMock = jest.mocked(AuctionModel.findOne)
 const createAuctionMock = jest.mocked(AuctionModel.create)
@@ -30,10 +33,11 @@ const createBidMock = jest.mocked(BidModel.create)
 const findBidMock = jest.mocked(BidModel.find)
 const findBidOneMock = jest.mocked(BidModel.findOne)
 const updateManyBidMock = jest.mocked(BidModel.updateMany)
-const findLoadByIdMock = jest.mocked(LoadModel.findById)
 const findLoadByIdAndUpdateMock = jest.mocked(LoadModel.findByIdAndUpdate)
+const findLoadByIdMock = jest.mocked(LoadModel.findById)
 const emitBidsUpdateMock = jest.mocked(emitBidsUpdate)
 const emitPriceUpdateMock = jest.mocked(emitPriceUpdate)
+const generatePdfMock = jest.mocked(generateRateConfirmationPdf)
 
 const LOAD_ID = '000000000000000000000101'
 const DRIVER_ID = '000000000000000000000011'
@@ -94,6 +98,11 @@ function stubEmit() {
 beforeEach(() => {
   jest.resetAllMocks()
   stubEmit()
+  findLoadByIdMock.mockReturnValue({
+    populate: jest.fn().mockReturnValue({
+      populate: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(undefined) }),
+    }),
+  } as never)
 })
 
 describe('createAuction', () => {
@@ -339,6 +348,31 @@ describe('acceptBid', () => {
     findAuctionOneMock.mockResolvedValue(auction as never)
     const bid = fakeBid({ amount: 640 })
     findBidByIdMock.mockResolvedValue(bid as never)
+
+    // Mock load lookup for PDF generation
+    findLoadByIdMock.mockReturnValue({
+      populate: jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue({
+            companyId: { companyName: 'Test Co', businessAddress: '123 St' },
+            assignedDriverId: { name: 'Test Driver', email: 'driver@test.com' },
+            originAddress: 'Origin',
+            destinationAddress: 'Dest',
+            pickupTime: new Date(),
+            dropoffTime: new Date(),
+            commodity: 'Goods',
+            weightLbs: 1000,
+            truckType: 'Flatbed',
+          }),
+        }),
+      }),
+    } as never)
+
+    // Mock PDF generation to return URL containing BID_ID
+    generatePdfMock.mockResolvedValue({
+      url: `https://s3.example.com/rate-confirmations/${BID_ID}.pdf`,
+      key: 'rate-confirmations/test-key.pdf',
+    })
 
     const result = await acceptBid(LOAD_ID, BID_ID)
 

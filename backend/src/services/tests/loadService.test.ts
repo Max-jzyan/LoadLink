@@ -1,8 +1,10 @@
+/// <reference types="jest" />
 import { StatusCodes } from 'http-status-codes'
 import { LoadModel } from '../../models/loads/Load'
 import { AuctionModel } from '../../models/loads/Auction'
 import { ReviewModel } from '../../models/ratings/Review'
 import { TruckModel } from '../../models/trucks/Truck'
+import { BlocklistModel } from '../../models/blocklist/Blocklist'
 import { LOAD_STATUSES } from '../../models/enums'
 import { computeRoute } from '../../lib/routing'
 import { emitLoadPosted } from '../../events/auctionEvents'
@@ -19,6 +21,10 @@ jest.mock('../../models/loads/Load')
 jest.mock('../../models/loads/Auction')
 jest.mock('../../models/ratings/Review')
 jest.mock('../../models/trucks/Truck', () => ({ TruckModel: { findOne: jest.fn() } }))
+jest.mock('../../models/blocklist/Blocklist', () => ({
+  BlocklistModel: { find: jest.fn() },
+  TARGET_TYPES: { DRIVER: 'driver', COMPANY: 'company' },
+}))
 jest.mock('../../lib/routing')
 jest.mock('../../events/auctionEvents')
 
@@ -29,6 +35,7 @@ const findLoadMock = jest.mocked(LoadModel.find)
 const createAuctionMock = jest.mocked(AuctionModel.create)
 const distinctReviewMock = jest.mocked(ReviewModel.distinct)
 const findTruckOneMock = jest.mocked(TruckModel.findOne)
+const blocklistFindMock = jest.mocked(BlocklistModel.find)
 const computeRouteMock = jest.mocked(computeRoute)
 const emitLoadPostedMock = jest.mocked(emitLoadPosted)
 
@@ -185,6 +192,95 @@ describe('listAvailableLoads', () => {
     await listAvailableLoads(LOAD_STATUSES.Booked)
 
     expect(findLoadMock).toHaveBeenCalledWith({ status: LOAD_STATUSES.Booked })
+  })
+
+  it('excludes loads from companies the driver has blocked', async () => {
+    findLoadMock.mockReturnValue(chain([]))
+    blocklistFindMock
+      .mockReturnValueOnce({
+        distinct: jest.fn().mockResolvedValue(['000000000000000000000999']),
+      } as never)
+      .mockReturnValueOnce({
+        distinct: jest.fn().mockResolvedValue([]),
+      } as never)
+
+    await listAvailableLoads(LOAD_STATUSES.AuctionLive, DRIVER_ID)
+
+    expect(blocklistFindMock).toHaveBeenNthCalledWith(1, {
+      userId: expect.any(Object),
+      targetType: 'company',
+      isActive: true,
+    })
+    expect(blocklistFindMock).toHaveBeenNthCalledWith(2, {
+      targetId: expect.any(Object),
+      targetType: 'driver',
+      isActive: true,
+    })
+    expect(findLoadMock).toHaveBeenCalledWith({
+      status: LOAD_STATUSES.AuctionLive,
+      companyId: { $nin: ['000000000000000000000999'] },
+    })
+  })
+
+  it('excludes loads from companies that have blocked the driver', async () => {
+    findLoadMock.mockReturnValue(chain([]))
+    blocklistFindMock
+      .mockReturnValueOnce({
+        distinct: jest.fn().mockResolvedValue([]),
+      } as never)
+      .mockReturnValueOnce({
+        distinct: jest.fn().mockResolvedValue(['000000000000000000000888']),
+      } as never)
+
+    await listAvailableLoads(LOAD_STATUSES.AuctionLive, DRIVER_ID)
+
+    expect(blocklistFindMock).toHaveBeenNthCalledWith(1, {
+      userId: expect.any(Object),
+      targetType: 'company',
+      isActive: true,
+    })
+    expect(blocklistFindMock).toHaveBeenNthCalledWith(2, {
+      targetId: expect.any(Object),
+      targetType: 'driver',
+      isActive: true,
+    })
+    expect(findLoadMock).toHaveBeenCalledWith({
+      status: LOAD_STATUSES.AuctionLive,
+      companyId: { $nin: ['000000000000000000000888'] },
+    })
+  })
+
+  it('merges both directions when both exist', async () => {
+    findLoadMock.mockReturnValue(chain([]))
+    blocklistFindMock
+      .mockReturnValueOnce({
+        distinct: jest.fn().mockResolvedValue(['000000000000000000000999']),
+      } as never)
+      .mockReturnValueOnce({
+        distinct: jest.fn().mockResolvedValue(['000000000000000000000888']),
+      } as never)
+
+    await listAvailableLoads(LOAD_STATUSES.AuctionLive, DRIVER_ID)
+
+    expect(findLoadMock).toHaveBeenCalledWith({
+      status: LOAD_STATUSES.AuctionLive,
+      companyId: { $nin: expect.arrayContaining(['000000000000000000000999', '000000000000000000000888']) },
+    })
+  })
+
+  it('does not add a companyId filter when no blocks exist', async () => {
+    findLoadMock.mockReturnValue(chain([]))
+    blocklistFindMock
+      .mockReturnValueOnce({
+        distinct: jest.fn().mockResolvedValue([]),
+      } as never)
+      .mockReturnValueOnce({
+        distinct: jest.fn().mockResolvedValue([]),
+      } as never)
+
+    await listAvailableLoads(LOAD_STATUSES.AuctionLive, DRIVER_ID)
+
+    expect(findLoadMock).toHaveBeenCalledWith({ status: LOAD_STATUSES.AuctionLive })
   })
 })
 

@@ -4,6 +4,8 @@ import { LoadModel } from '../models/loads/Load'
 import { AuctionModel } from '../models/loads/Auction'
 import { ReviewModel } from '../models/ratings/Review'
 import { TruckModel } from '../models/trucks/Truck'
+import { BlocklistModel } from '../models/blocklist/Blocklist'
+import { TARGET_TYPES } from '../models/blocklist/Blocklist'
 import { LOAD_STATUSES } from '../models/enums'
 import { computeRoute } from '../lib/routing'
 import { emitLoadPosted } from '../events/auctionEvents'
@@ -201,8 +203,14 @@ export const listCompanyLoads = async (
 /**
  * List loads that are currently live on the auction board.
  * Supports optional status filter.
+ *
+ * When `driverId` is provided, loads posted by companies the driver has
+ * blocked are excluded (server-side blocklist enforcement).
  */
-export const listAvailableLoads = async (status?: string) => {
+export const listAvailableLoads = async (
+  status?: string,
+  driverId?: string
+) => {
   const filter: Record<string, unknown> = {}
 
   // Default to auction_live; allow override via query param
@@ -210,6 +218,32 @@ export const listAvailableLoads = async (status?: string) => {
     filter.status = status
   } else {
     filter.status = LOAD_STATUSES.AuctionLive
+  }
+
+  // Exclude loads from companies this driver has blocked
+  if (driverId) {
+    const driversBlocks = await BlocklistModel.find({
+      userId: new Types.ObjectId(driverId),
+      targetType: TARGET_TYPES.COMPANY,
+      isActive: true,
+    }).distinct('targetId')
+
+    // Also exclude loads from companies that have blocked this driver
+    const companiesBlockingDriver = await BlocklistModel.find({
+      targetId: new Types.ObjectId(driverId),
+      targetType: TARGET_TYPES.DRIVER,
+      isActive: true,
+    }).distinct('userId')
+
+    // Merge both sets of company ids
+    const allBlockedCompanyIds = [
+      ...(driversBlocks as Types.ObjectId[]).map((id) => id.toString()),
+      ...(companiesBlockingDriver as Types.ObjectId[]).map((id) => id.toString()),
+    ]
+
+    if (allBlockedCompanyIds.length > 0) {
+      filter.companyId = { $nin: [...new Set(allBlockedCompanyIds)] }
+    }
   }
 
   const loads = await LoadModel.find(filter)
