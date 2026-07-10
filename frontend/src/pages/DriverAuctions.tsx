@@ -1,8 +1,10 @@
 import { useEventSource } from '@/components/auction/useEventSource'
 import DeliveryTimeline from '@/components/driverLoads/DeliveryTimeline'
 import { DriverMap } from '@/components/driverLoads/Map'
+import { DetailedEligibilityPanel } from '@/components/driverLoads/DetailedEligibilityPanel'
 import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import type { DateRange } from 'react-day-picker'
 import { AlertTriangle } from 'lucide-react'
 import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
@@ -19,6 +21,11 @@ import type { ScoredLoad } from '@/services/driverApi/driverEnum'
 import { DriverLoadFilters } from '@/components/driverLoads/DriverLoadFilters'
 
 type MapLayer = 'route' | 'fuel' | 'rest'
+
+// Load enriched with scoring metadata from driver profile analysis
+export interface EnrichedLoad extends Load {
+  _scored?: ScoredLoad
+}
 
 import type { SortKey, EligibilityFilter } from '@/components/driverLoads/DriverLoadFilters.types'
 
@@ -40,11 +47,12 @@ export default function DriverAuctions() {
     refetchScored()
   }, [loadPostedEvent, refetchAvailable, refetchScored])
 
-  const [selectedLoad, setSelectedLoad] = useState<Load | null>(null)
+  const [selectedLoad, setSelectedLoad] = useState<EnrichedLoad | null>(null)
   const [searchText, setSearchText] = useState('')
   const [activeLayer, setActiveLayer] = useState<MapLayer>('route')
   const [sortKey, setSortKey] = useState<SortKey>('recommended')
   const [eligibilityFilter, setEligibilityFilter] = useState<EligibilityFilter>('all')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
 
   // Build a map from loadId → ScoredLoad for quick lookup
   const scoredMap = useMemo(() => {
@@ -56,7 +64,7 @@ export default function DriverAuctions() {
   }, [scoredLoads])
 
   // Merge Load data with ScoredLoad metadata
-  const enrichedLoads = useMemo(() => {
+  const enrichedLoads = useMemo((): EnrichedLoad[] => {
     return availableLoads.map((load) => ({
       ...load,
       _scored: scoredMap.get(load._id),
@@ -75,14 +83,43 @@ export default function DriverAuctions() {
     )
   }, [enrichedLoads, searchText])
 
+  // Apply date filter (filter by pickupTime within date range)
+  const dateFiltered = useMemo(() => {
+    if (!dateRange?.from && !dateRange?.to) return textFiltered
+    return textFiltered.filter((l) => {
+      const pickupDate = new Date(l.pickupTime)
+      if (dateRange.from && pickupDate < dateRange.from) return false
+      if (dateRange.to) {
+        const endDate = new Date(dateRange.to)
+        endDate.setHours(23, 59, 59, 999) // Include the entire end date
+        if (pickupDate > endDate) return false
+      }
+      return true
+    })
+  }, [textFiltered, dateRange])
+
   // Apply eligibility filter
   const eligibilityFiltered = useMemo(() => {
-    if (eligibilityFilter === 'all') return textFiltered
-    return textFiltered.filter((l) => {
-      const isEligible = l._scored?.eligibilityFlags?.isEligible ?? true
-      return eligibilityFilter === 'eligible' ? isEligible : !isEligible
+    if (eligibilityFilter === 'all') return dateFiltered
+    return dateFiltered.filter((l) => {
+      const scored = l._scored
+      if (!scored) return false
+      const isEligible = scored.eligibilityFlags.isEligible
+      const score = scored.recommendationScore
+      switch (eligibilityFilter) {
+        case 'eligible':
+          return isEligible
+        case 'high-score':
+          return score >= 80
+        case 'issues-critical':
+          return !isEligible && scored.eligibilitySeverity === 'critical'
+        case 'issues-minor':
+          return !isEligible && scored.eligibilitySeverity === 'minor'
+        default:
+          return true
+      }
     })
-  }, [textFiltered, eligibilityFilter])
+  }, [dateFiltered, eligibilityFilter])
 
   // Sort
   const sorted = useMemo(() => {
@@ -148,6 +185,7 @@ export default function DriverAuctions() {
       const scored = load._scored
       const flags = scored?.eligibilityFlags
       const isIneligible = flags && !flags.isEligible
+      const isCriticalIneligible = !flags?.isEligible && scored?.eligibilitySeverity === 'critical'
 
       return (
         <div
@@ -155,7 +193,8 @@ export default function DriverAuctions() {
           className={cn(
             'rounded-xl transition-shadow',
             selectedLoad?._id === load._id && 'ring-2 ring-primary ring-offset-1',
-            isIneligible && 'opacity-65 hover:opacity-85 transition-opacity'
+            isIneligible && 'opacity-65 hover:opacity-85 transition-opacity',
+            isCriticalIneligible && 'hover:opacity-90'
           )}
         >
           <LoadCard
@@ -164,22 +203,42 @@ export default function DriverAuctions() {
             viewAuctionHref={`/driverAuctions/${load._id}`}
             eligibilityFlags={flags}
             recommendationScore={scored?.recommendationScore}
+            severity={scored?.eligibilitySeverity}
+            highScoreHighlights={scored?.highScoreHighlights}
           />
         </div>
       )
     })
 
-  // Counts for the filter buttons
+  // Counts for the filter buttons - based on dateFiltered to reflect date filtering
   const visibleCounts = useMemo(() => {
     let eligible = 0,
-      issues = 0
-    for (const l of textFiltered) {
-      const isEligible = l._scored?.eligibilityFlags?.isEligible ?? true
-      if (isEligible) eligible++
-      else issues++
+      issues = 0,
+      highScore = 0,
+      critical = 0,
+      minor = 0
+    for (const l of dateFiltered) {
+      const scored = l._scored
+      if (!scored) continue
+      const isEligible = scored.eligibilityFlags.isEligible
+      if (isEligible) {
+        eligible++
+        if (scored.recommendationScore >= 80) highScore++
+      } else {
+        issues++
+        if (scored.eligibilitySeverity === 'critical') critical++
+        else minor++
+      }
     }
-    return { eligible, issues }
-  }, [textFiltered])
+    return { all: dateFiltered.length, eligible, issues, highScore, critical, minor }
+  }, [dateFiltered])
+
+  // Reset all filters
+  const handleResetFilters = () => {
+    setSearchText('')
+    setEligibilityFilter('all')
+    setDateRange(undefined)
+  }
 
   return (
     <PageShell
@@ -194,11 +253,17 @@ export default function DriverAuctions() {
             onSortChange={setSortKey}
             eligibilityFilter={eligibilityFilter}
             onEligibilityChange={setEligibilityFilter}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
             counts={{
-              all: textFiltered.length,
+              all: visibleCounts.all,
               eligible: visibleCounts.eligible,
               issues: visibleCounts.issues,
+              highScore: visibleCounts.highScore,
+              critical: visibleCounts.critical,
+              minor: visibleCounts.minor,
             }}
+            onReset={handleResetFilters}
           />
           {activeBids.length > 0 && (
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 text-amber-800 text-xs mt-2">
@@ -214,7 +279,7 @@ export default function DriverAuctions() {
     >
       <div className="flex gap-2 min-h-0">
         {/* left panel: scrollable load feed */}
-        <div className="flex-[5] min-w-[400px] overflow-y-auto space-y-2 pl-1 pr-1">
+        <div className="flex-[5] min-w-[400px] overflow-y-auto space-y-2 pl-1 pr-1 pt-2 pb-2">
           {isLoading && (
             <div className="space-y-2">
               {[0, 1, 2].map((i) => (
@@ -228,7 +293,7 @@ export default function DriverAuctions() {
           {!isLoading && sorted.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-muted-foreground text-sm">No loads found</p>
-              {(searchText || eligibilityFilter !== 'all') && (
+              {(searchText || eligibilityFilter !== 'all' || dateRange?.from || dateRange?.to) && (
                 <div className="flex gap-2 mt-1">
                   {searchText && (
                     <button
@@ -243,7 +308,15 @@ export default function DriverAuctions() {
                       className="text-xs text-primary hover:underline"
                       onClick={() => setEligibilityFilter('all')}
                     >
-                      Show all
+                      Clear eligibility filter
+                    </button>
+                  )}
+                  {(dateRange?.from || dateRange?.to) && (
+                    <button
+                      className="text-xs text-primary hover:underline"
+                      onClick={() => setDateRange(undefined)}
+                    >
+                      Clear date filter
                     </button>
                   )}
                 </div>
@@ -253,7 +326,7 @@ export default function DriverAuctions() {
         </div>
 
         {/* right panel: map + timeline */}
-        <div className="flex-[11] min-w-0 space-y-2">
+        <div className="flex-[11] min-w-0 space-y-2 pt-2 pb-2">
           <DynamicCard
             title="Shipment route overview"
             description={mapDescription}
@@ -300,6 +373,28 @@ export default function DriverAuctions() {
               </div>
             )}
           </DynamicCard>
+
+          {/* Detailed Eligibility Panel */}
+          {selectedLoad?._scored && (
+            <DynamicCard
+              title="Eligibility Details"
+              description={
+                selectedLoad._scored.recommendationScore >= 80
+                  ? 'This load is a top match for your profile'
+                  : selectedLoad._scored.eligibilityFlags.isEligible
+                    ? 'You meet all eligibility requirements'
+                    : 'Some requirements need attention'
+              }
+              rounded="sm"
+            >
+              <DetailedEligibilityPanel
+                flags={selectedLoad._scored.eligibilityFlags}
+                score={selectedLoad._scored.recommendationScore}
+                severity={selectedLoad._scored.eligibilitySeverity}
+                highlights={selectedLoad._scored.highScoreHighlights}
+              />
+            </DynamicCard>
+          )}
         </div>
       </div>
     </PageShell>

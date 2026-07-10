@@ -55,6 +55,8 @@ interface LoadCardProps {
   href?: string
   eligibilityFlags?: EligibilityFlags
   recommendationScore?: number
+  severity?: 'critical' | 'minor'
+  highScoreHighlights?: string[]
 }
 
 export function LoadCard({
@@ -64,6 +66,8 @@ export function LoadCard({
   href,
   eligibilityFlags,
   recommendationScore,
+  severity,
+  highScoreHighlights,
 }: LoadCardProps) {
   const navigate = useNavigate()
   const auction = isPopulatedAuction(load.auctionId) ? load.auctionId : null
@@ -75,7 +79,7 @@ export function LoadCard({
 
   return (
     <Card
-      className={`rounded-xl overflow-hidden transition-colors cursor-pointer hover:bg-muted/40`}
+      className={`rounded-xl transition-colors cursor-pointer hover:bg-muted/40`}
       onClick={() => cardTarget && navigate(cardTarget)}
     >
       <CardContent className="px-4 py-3 flex flex-row items-stretch gap-0">
@@ -187,7 +191,12 @@ export function LoadCard({
           )}
 
           {hasScore && (
-            <EligibilityBadge flags={eligibilityFlags!} recommendationScore={recommendationScore} />
+            <EligibilityBadge
+              flags={eligibilityFlags!}
+              recommendationScore={recommendationScore}
+              severity={severity}
+              highScoreHighlights={highScoreHighlights}
+            />
           )}
         </div>
       </CardContent>

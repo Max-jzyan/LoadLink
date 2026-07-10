@@ -1,3 +1,5 @@
+import { type DateRange } from 'react-day-picker'
+
 export type SortKey =
   | 'recommended'
   | 'pickup_asc'
@@ -7,7 +9,12 @@ export type SortKey =
   | 'rate'
   | 'distance'
 
-export type EligibilityFilter = 'all' | 'eligible' | 'issues'
+export type EligibilityFilter = 'all' | 'eligible' | 'high-score' | 'issues-critical' | 'issues-minor'
+
+// Filter types for date range
+export interface DateFilter {
+  dateRange?: DateRange
+}
 
 export const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'recommended', label: 'Recommended' },
@@ -22,5 +29,7 @@ export const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 export const FILTER_OPTIONS: { value: EligibilityFilter; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'eligible', label: 'Eligible' },
-  { value: 'issues', label: 'Issues' },
+  { value: 'high-score', label: 'High Score' },
+  { value: 'issues-critical', label: 'Critical Issues' },
+  { value: 'issues-minor', label: 'Minor Issues' },
 ]

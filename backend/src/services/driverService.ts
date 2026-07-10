@@ -73,7 +73,9 @@ interface EligibilityFlags {
 interface ScoredLoad {
   loadId: string
   eligibilityFlags: EligibilityFlags
+  eligibilitySeverity: 'critical' | 'minor' // severity when ineligible
   recommendationScore: number // 0–100
+  highScoreHighlights?: string[] // populated when score ≥ 80
 }
 
 // ── service functions ─────────────────────────────────────────────────┐
@@ -617,7 +619,6 @@ export const getScoredLoads = async (driverId: string) => {
     minimumLoadValue: 0,
     preferredMaxDeadheadMiles: 0,
   }
-  const homeLocation = driver.homeLocation ?? { city: '', province: '', country: '' }
 
   // ── 2. Fetch driver's trucks (certs live per-truck, not on Driver) ────
   const trucks = await TruckModel.find({ ownerDriverId: new Types.ObjectId(driverId) }).lean()
@@ -740,6 +741,13 @@ export const getScoredLoads = async (driverId: string) => {
       eligibleMinValue &&
       eligibleDeadhead
 
+    // Severity: schedule conflicts and missing certs are critical; others are minor
+    const eligibilitySeverity: 'critical' | 'minor' = !isEligible
+      ? !eligibleSchedule || !eligibleCertifications
+        ? 'critical'
+        : 'minor'
+      : 'minor'
+
     // ── Scoring ──────────────────────────────────────────────────────────
 
     // Rate score: how much the effective rate exceeds the minimum (capped at 2x)
@@ -822,6 +830,39 @@ export const getScoredLoads = async (driverId: string) => {
       competitionScore * SCORE_WEIGHTS.competition
     )
 
+    // Generate highlights for high-scoring loads (≥ 80)
+    const highScoreHighlights: string[] = []
+    if (recommendationScore >= 80) {
+      if (rateScore >= 80) {
+        const pctAbove = prefs.minimumRatePerMile > 0
+          ? Math.round(((effectiveRatePerMile - prefs.minimumRatePerMile) / prefs.minimumRatePerMile) * 100)
+          : 0
+        highScoreHighlights.push(
+          `Excellent rate: $${effectiveRatePerMile.toFixed(2)}/mi${pctAbove > 0 ? ` (${pctAbove}% above minimum)` : ''}`
+        )
+      }
+      if (deadheadMiles === 0 && driverLocation) {
+        highScoreHighlights.push('Zero deadhead — load originates near your location')
+      } else if (deadheadMiles <= 50) {
+        highScoreHighlights.push(`Low deadhead: ${Math.round(deadheadMiles)} miles from your location`)
+      }
+      if (temporalScore >= 80) {
+        highScoreHighlights.push('Perfect schedule fit — follows your current load seamlessly')
+      }
+      if (proximityScore >= 80) {
+        highScoreHighlights.push('Geographically convenient pickup location')
+      }
+      if (competitionScore >= 80) {
+        highScoreHighlights.push('Low competition — fewer bids than similar loads')
+      }
+      if (valueScore >= 75) {
+        const valueMultiple = prefs.minimumLoadValue > 0 
+          ? (currentPrice / prefs.minimumLoadValue).toFixed(1) 
+          : 'N/A'
+        highScoreHighlights.push(`High value: ${valueMultiple}x your minimum load value`)
+      }
+    }
+
     return {
       loadId: load._id.toString(),
       eligibilityFlags: {
@@ -834,7 +875,9 @@ export const getScoredLoads = async (driverId: string) => {
         eligibleDeadhead,
         isEligible,
       },
+      eligibilitySeverity,
       recommendationScore,
+      highScoreHighlights: highScoreHighlights.length > 0 ? highScoreHighlights : undefined,
     }
   })
 

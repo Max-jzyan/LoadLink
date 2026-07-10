@@ -267,11 +267,17 @@ export interface EligibilityFlags {
   isEligible: boolean
 }
 
+export type EligibilitySeverity = 'critical' | 'minor'
+
 export interface ScoredLoad {
   loadId: string
   eligibilityFlags: EligibilityFlags
+  eligibilitySeverity: EligibilitySeverity
   recommendationScore: number
+  highScoreHighlights?: string[]
 }
+
+export type EligibilityBadgeType = 'high-score' | 'eligible' | 'ineligible'
 
 export interface UpdateDriverProfilePayload {
   name?: string

@@ -32,6 +32,19 @@ const BID_SPECS_BY_LOAD: Record<
     { id: '000000000000000000000309', driverKey: 'testUser3', amount: 1225 },
     { id: '000000000000000000000310', driverKey: 'testUser5', amount: 1190 },
   ],
+  '000000000000000000000106': [
+    { id: '000000000000000000000311', driverKey: 'testUser2', amount: 1050 },
+    { id: '000000000000000000000312', driverKey: 'testUser4', amount: 1080 },
+  ],
+  '000000000000000000000107': [
+    { id: '000000000000000000000313', driverKey: 'testUser3', amount: 3194 },
+    { id: '000000000000000000000314', driverKey: 'testUser5', amount: 3299 },
+  ],
+  '000000000000000000000108': [
+    { id: '000000000000000000000315', driverKey: 'testUser2', amount: 2952 },
+    { id: '000000000000000000000316', driverKey: 'testUser4', amount: 3056 },
+    { id: '000000000000000000000317', driverKey: 'testUser5', amount: 3126 },
+  ],
 }
 
 async function main() {
