@@ -2,9 +2,31 @@ import { Request, Response, NextFunction } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import { isValidObjectId, Types } from 'mongoose'
 import { LoadModel } from '../models/loads/Load'
+import { BidModel } from '../models/loads/Bid'
 import { ApiError } from '../utils/ApiError'
 import * as loadService from '../services/loadService'
-import { LOAD_STATUSES } from '../models/enums'
+import { LOAD_STATUSES, BID_STATUSES } from '../models/enums'
+
+/**
+ * GET /api/loads/:loadId/accepted-bid
+ * Return the accepted bid (including rateConfirmationUrl) for a load.
+ * Returns null if no bid has been accepted yet.
+ * Accessible to authenticated users (company, driver, admin).
+ */
+export const getAcceptedBid = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const loadId = req.params.loadId as string
+    if (!isValidObjectId(loadId)) throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid loadId')
+
+    const bid = await BidModel.findOne({ loadId: new Types.ObjectId(loadId), status: BID_STATUSES.Accepted })
+      .select('_id driverId amount acceptedAt rateConfirmationUrl rateConfirmationKey')
+      .lean()
+
+    res.status(StatusCodes.OK).json(bid ?? null)
+  } catch (err) {
+    next(err)
+  }
+}
 
 /**
  * GET /api/loads/:loadId

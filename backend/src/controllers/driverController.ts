@@ -2,6 +2,37 @@ import { NextFunction, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import * as driverService from '../services/driverService'
 
+/**
+ * DELETE /api/driver/:driverId/documents/:docKey
+ * Remove a certification document from the driver's profile (by S3 key).
+ */
+export const removeCertificationDocument = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const driverId = req.params.driverId as string
+    const docKey = decodeURIComponent(req.params.docKey as string)
+    await driverService.removeCertificationDocument(driverId, docKey)
+    res.status(StatusCodes.NO_CONTENT).send()
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * DELETE /api/driver/:driverId/insurance/:idx
+ * Remove an insurance certificate by array index.
+ */
+export const removeInsuranceCertificate = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const driverId = req.params.driverId as string
+    const idx = parseInt(req.params.idx as string, 10)
+    await driverService.removeInsuranceCertificate(driverId, idx)
+    res.status(StatusCodes.NO_CONTENT).send()
+  } catch (err) {
+    next(err)
+  }
+}
+
+
 // ── endpoints ────────────────────────────────────────────────────────────
 
 /**

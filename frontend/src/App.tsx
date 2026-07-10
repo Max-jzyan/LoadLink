@@ -9,6 +9,7 @@ import PublicRoute from './components/auth/PublicRoute'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
+import AdminLoginPage from './pages/auth/AdminLoginPage'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
 import PageLayout from '@/components/PageLayout'
@@ -75,6 +76,15 @@ function App() {
           element={
             <PublicRoute>
               <SignupPage />
+            </PublicRoute>
+          }
+        />
+        {/* Admin portal — separate login page, not in the public signup flow */}
+        <Route
+          path="/admin"
+          element={
+            <PublicRoute>
+              <AdminLoginPage />
             </PublicRoute>
           }
         />

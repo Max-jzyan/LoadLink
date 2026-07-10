@@ -5,6 +5,7 @@ import ReportFraud from '@/pages/ReportFraud'
 import ReportHub from '@/pages/ReportHub'
 import ReportInaccurate from '@/pages/ReportInaccurate'
 import CompanyDashboard from '@/pages/CompanyDashboard'
+import CompanyAuctions from '@/pages/CompanyAuctions'
 import Dashboard from '@/pages/Dashboard'
 import DriverAuction from '@/pages/DriverAuction'
 import DriverAuctions from '@/pages/DriverAuctions'
@@ -18,6 +19,10 @@ import MapPage from '@/pages/Map'
 import NotFound from '@/pages/NotFound'
 import PostLoad from '@/pages/PostLoad'
 import Test from '@/pages/Test'
+import AdminDashboard from '@/pages/admin/AdminDashboard'
+import AdminDocuments from '@/pages/admin/AdminDocuments'
+import AdminUsers from '@/pages/admin/AdminUsers'
+import AdminRateConfirmations from '@/pages/admin/AdminRateConfirmations'
 import RoleRoute from '@/components/auth/RoleRoute'
 import { selectRole } from '@/services/authSlice'
 import { useSelector } from 'react-redux'
@@ -33,6 +38,8 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<RoleHomeRedirect />} />
+
+      {/* Driver routes */}
       <Route
         path={RoutePath.Dashboard}
         element={
@@ -41,15 +48,6 @@ export default function AppRoutes() {
           </RoleRoute>
         }
       />
-      <Route
-        path={RoutePath.CompanyDashboard}
-        element={
-          <RoleRoute path={RoutePath.CompanyDashboard}>
-            <CompanyDashboard />
-          </RoleRoute>
-        }
-      />
-      <Route path={RoutePath.Test} element={<Test />} />
       <Route
         path={RoutePath.DriverLoads}
         element={
@@ -82,8 +80,24 @@ export default function AppRoutes() {
           </RoleRoute>
         }
       />
-      {/* Public driver profile — visible to any authenticated user (no role gate). */}
-      <Route path={RoutePath.DriverPublicProfile} element={<DriverPublicProfile />} />
+
+      {/* Company routes */}
+      <Route
+        path={RoutePath.CompanyDashboard}
+        element={
+          <RoleRoute path={RoutePath.CompanyDashboard}>
+            <CompanyDashboard />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path={RoutePath.CompanyAuctions}
+        element={
+          <RoleRoute path={RoutePath.CompanyAuctions}>
+            <CompanyAuctions />
+          </RoleRoute>
+        }
+      />
       <Route
         path={RoutePath.Loads}
         element={
@@ -100,10 +114,6 @@ export default function AppRoutes() {
           </RoleRoute>
         }
       />
-      <Route path={RoutePath.BlocklistPreferences} element={<BlocklistPreferences />} />
-      <Route path={RoutePath.Report} element={<ReportHub />} />
-      <Route path={RoutePath.ReportFraud} element={<ReportFraud />} />
-      <Route path={RoutePath.ReportInaccurate} element={<ReportInaccurate />} />
       <Route
         path={RoutePath.LoadDetail}
         element={
@@ -120,7 +130,42 @@ export default function AppRoutes() {
           </RoleRoute>
         }
       />
-      {/* TODO: remove the bare AuctionLive route after MVP -- used for sidebar testing */}
+
+      {/* Admin routes */}
+      <Route
+        path={RoutePath.AdminDashboard}
+        element={
+          <RoleRoute path={RoutePath.AdminDashboard}>
+            <AdminDashboard />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path={RoutePath.AdminDocuments}
+        element={
+          <RoleRoute path={RoutePath.AdminDocuments}>
+            <AdminDocuments />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path={RoutePath.AdminUsers}
+        element={
+          <RoleRoute path={RoutePath.AdminUsers}>
+            <AdminUsers />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path={RoutePath.AdminRateConfirmations}
+        element={
+          <RoleRoute path={RoutePath.AdminRateConfirmations}>
+            <AdminRateConfirmations />
+          </RoleRoute>
+        }
+      />
+
+      {/* Auction live — used by both company and driver */}
       <Route
         path={RoutePath.AuctionLive}
         element={
@@ -137,7 +182,15 @@ export default function AppRoutes() {
           </RoleRoute>
         }
       />
+
+      {/* Public / shared routes */}
+      <Route path={RoutePath.DriverPublicProfile} element={<DriverPublicProfile />} />
+      <Route path={RoutePath.BlocklistPreferences} element={<BlocklistPreferences />} />
+      <Route path={RoutePath.Report} element={<ReportHub />} />
+      <Route path={RoutePath.ReportFraud} element={<ReportFraud />} />
+      <Route path={RoutePath.ReportInaccurate} element={<ReportInaccurate />} />
       <Route path={RoutePath.Map} element={<MapPage />} />
+      <Route path={RoutePath.Test} element={<Test />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   )

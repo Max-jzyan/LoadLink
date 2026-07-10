@@ -24,6 +24,9 @@ export const USER_ROLES = {
   ADMIN: 'admin',
 } as const
 
+/** Roles that have access to rate confirmation documents */
+export const DOCUMENT_ROLES = [USER_ROLES.ADMIN, USER_ROLES.COMPANY, USER_ROLES.DRIVER] as const
+
 export const BID_STATUSES = {
   Draft: 'draft',
   Pending: 'pending',

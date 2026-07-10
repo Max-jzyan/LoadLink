@@ -90,7 +90,7 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
       {/* Full-width breadcrumb bar */}
       <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
         <SidebarTrigger className="shrink-0 cursor-pointer rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:hidden" />
-        <Breadcrumb>
+        <Breadcrumb className="flex-1">
           <BreadcrumbList>
             {breadcrumbItems.map((item, index) => {
               const isLast = index === breadcrumbItems.length - 1

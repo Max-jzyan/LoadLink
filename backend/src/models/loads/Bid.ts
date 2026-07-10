@@ -41,6 +41,18 @@ const BidSchema = new Schema(
       type: Date,
       default: null,
     },
+
+    // S3 key for the rate confirmation PDF (set when bid is accepted/load is claimed)
+    rateConfirmationKey: {
+      type: String,
+      default: null,
+    },
+
+    // Presigned URL returned to the client (short-lived; re-generated on demand)
+    rateConfirmationUrl: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 )

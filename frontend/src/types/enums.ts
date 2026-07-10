@@ -86,4 +86,5 @@ export const USER_ROLES = {
 
 export type USER_ROLES = (typeof USER_ROLES)[keyof typeof USER_ROLES]
 
-export type UserRole = Exclude<USER_ROLES, 'admin'>
+/** All three roles — driver, company, admin */
+export type UserRole = USER_ROLES

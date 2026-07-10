@@ -4,6 +4,7 @@ import {
   cancelAuction,
   claimLoad,
   createAuction,
+  getCompanyAuctions,
   placeBid,
   reopenAuction,
   streamBids,
@@ -11,7 +12,7 @@ import {
   updateAuction,
 } from '../controllers/auctionController'
 import { requireAuth, requireAuthSSE } from '../middleware/requireAuth'
-import { requireRole, requireOwns, companyOwnsLoad } from '../middleware/authorize'
+import { requireRole, requireOwns, requireSelfParam, companyOwnsLoad } from '../middleware/authorize'
 import { USER_ROLES } from '../models/enums'
 
 const router = Router()
@@ -32,5 +33,14 @@ router.get('/auctions/:loadId/price', requireAuthSSE, streamPrice)
 // Auction actions (driver-initiated)
 router.post('/auctions/:loadId/bids', requireAuth, requireRole(USER_ROLES.DRIVER), placeBid)
 router.post('/auctions/:loadId/claim', requireAuth, requireRole(USER_ROLES.DRIVER), claimLoad)
+
+// Company viewing all their auctions
+router.get(
+  '/company/:companyId/auctions',
+  requireAuth,
+  requireRole(USER_ROLES.COMPANY),
+  requireSelfParam('companyId'),
+  getCompanyAuctions
+)
 
 export default router

@@ -8,11 +8,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RoutePath } from '@/config/routes'
 import { formatMoney } from '@/lib/format'
-import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
+import useAuth from '@/hooks/useAuth'
+import { useGetLoadQuery, useGetAcceptedBidQuery } from '@/services/loadApi/loadSlice'
 import { LOAD_STATUSES } from '@/types/enums'
 import {
   ArrowLeft,
   Calendar,
+  Download,
   Gavel,
   Loader2,
   MapPin,
@@ -63,6 +65,14 @@ function DetailField({
 export default function LoadDetail() {
   const { loadId } = useParams<{ loadId: string }>()
   const { data: load, isLoading, isError } = useGetLoadQuery(loadId ?? '', { skip: !loadId })
+  const { user } = useAuth()
+  const isBooked = load?.status === LOAD_STATUSES.Booked ||
+    load?.status === LOAD_STATUSES.InTransit ||
+    load?.status === LOAD_STATUSES.Completed
+  const showRcButton = (user?.role === 'company' || user?.role === 'admin') && isBooked
+  const { data: acceptedBid } = useGetAcceptedBidQuery(loadId ?? '', {
+    skip: !loadId || !showRcButton,
+  })
 
   const auction = load?.auctionId ?? null
   const canEdit = load ? !NON_EDITABLE_STATUSES.includes(load.status) : false
@@ -138,6 +148,14 @@ export default function LoadDetail() {
                 <Gavel className="h-4 w-4" />
                 {isAuctionLive ? 'View Live Auction' : 'View Auction'}
               </Link>
+            </Button>
+          )}
+          {showRcButton && acceptedBid?.rateConfirmationUrl && (
+            <Button size="sm" variant="outline" asChild>
+              <a href={acceptedBid.rateConfirmationUrl} target="_blank" rel="noopener noreferrer">
+                <Download className="h-4 w-4" />
+                Rate Confirmation
+              </a>
             </Button>
           )}
         </>

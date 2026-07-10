@@ -8,6 +8,8 @@ import {
   listDriverLoads,
   updateDriverExpenses,
   updateDriverProfile,
+  removeCertificationDocument,
+  removeInsuranceCertificate,
 } from '../controllers/driverController'
 import { requireAuth } from '../middleware/requireAuth'
 import { requireRole, requireSelfParam } from '../middleware/authorize'
@@ -25,5 +27,7 @@ router.get('/driver/:driverId/revenue', middlewares, getDriverRevenue)
 router.patch('/driver/:driverId/profile', middlewares, updateDriverProfile)
 router.patch('/driver/:driverId/expenses', middlewares, updateDriverExpenses)
 router.get('/driver/:driverId/profile', requireAuth, getDriverProfile)
+router.delete('/driver/:driverId/documents/:docKey', middlewares, removeCertificationDocument)
+router.delete('/driver/:driverId/insurance/:idx', middlewares, removeInsuranceCertificate)
 
 export default router

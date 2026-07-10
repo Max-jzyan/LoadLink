@@ -1,6 +1,8 @@
 import type { UserRole } from '@/types/enums'
 import {
+  Bell,
   ClipboardList,
+  FileText,
   Gavel,
   HelpCircle,
   LayoutDashboard,
@@ -9,12 +11,15 @@ import {
   PlusCircle,
   Settings,
   ShieldAlert,
+  ShieldCheck,
   User,
+  Users,
   type LucideIcon,
 } from 'lucide-react'
 
 export const RoutePath = {
   CompanyDashboard: '/company/dashboard',
+  CompanyAuctions: '/company/auctions',
   Test: '/test',
   Dashboard: '/dashboard',
   DriverLoads: '/driverLoads',
@@ -34,6 +39,12 @@ export const RoutePath = {
   Settings: '/settings',
   Help: '/help',
   Logout: '/logout',
+  Notifications: '/notifications',
+  // Admin paths
+  AdminDashboard: '/admin/dashboard',
+  AdminDocuments: '/admin/documents',
+  AdminUsers: '/admin/users',
+  AdminRateConfirmations: '/admin/rate-confirmations',
 } as const
 
 export type RoutePath = (typeof RoutePath)[keyof typeof RoutePath]
@@ -60,6 +71,12 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     navGroup: 'main',
     roles: ['company'],
   },
+  [RoutePath.CompanyAuctions]: {
+    label: 'Auctions',
+    icon: Gavel,
+    navGroup: 'main',
+    roles: ['company'],
+  },
   [RoutePath.Test]: { label: 'Test', icon: LayoutDashboard, navGroup: null },
   [RoutePath.DriverLoads]: {
     label: 'My Loads',
@@ -73,17 +90,17 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     navGroup: 'main',
     roles: ['driver'],
   },
+  /** Driver profile page — accessed via the user dropdown's Settings item, not in the sidebar nav. */
   [RoutePath.DriverProfile]: {
     label: 'My Profile',
     icon: User,
-    navGroup: 'main',
+    navGroup: null,
     roles: ['driver'],
   },
   [RoutePath.DriverPublicProfile]: {
     label: 'Driver Profile',
     icon: User,
     navGroup: null,
-    // accessible to logged-in users regardless of role
   },
   [RoutePath.Report]: { label: 'My Reports', icon: ShieldAlert, navGroup: null },
   [RoutePath.ReportFraud]: { label: 'Report Fraud', icon: ShieldAlert, navGroup: null },
@@ -96,7 +113,7 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
   [RoutePath.AuctionLive]: {
     label: 'Auction Live',
     icon: Gavel,
-    navGroup: null, // Not in nav - accessed via /driverAuctions/:loadId
+    navGroup: null,
   },
   [RoutePath.PostLoad]: {
     label: 'Post Load',
@@ -116,38 +133,65 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     navGroup: null,
     roles: ['company'],
   },
-  [RoutePath.Map]: { label: 'Map', icon: MapPin, navGroup: 'main' },
+  [RoutePath.Map]: { label: 'Map', icon: MapPin, navGroup: 'main', roles: ['driver', 'company'] },
   [RoutePath.BlocklistPreferences]: {
     label: 'Blocklist',
     icon: ShieldAlert,
     navGroup: 'main',
+    roles: ['driver', 'company'],
   },
-  // TODO: Fleet route coming soon — add Fleet: '/fleet' to RoutePath and uncomment below:
-  // { label: 'My Fleet', icon: Truck, navGroup: 'main', roles: ['company'] }
-  [RoutePath.Settings]: { label: 'Settings', icon: Settings, navGroup: 'bottom' },
-  [RoutePath.Help]: { label: 'Help', icon: HelpCircle, navGroup: 'bottom' },
+  [RoutePath.Settings]: { label: 'Settings', icon: Settings, navGroup: null },
+  [RoutePath.Help]: { label: 'Help', icon: HelpCircle, navGroup: null },
   [RoutePath.Logout]: { label: 'Logout', icon: LogOut, navGroup: null },
+  [RoutePath.Notifications]: {
+    label: 'Notifications',
+    icon: Bell,
+    navGroup: null,
+  },
+  // Admin nav items
+  [RoutePath.AdminDashboard]: {
+    label: 'Admin Dashboard',
+    icon: LayoutDashboard,
+    navGroup: 'main',
+    roles: ['admin'],
+  },
+  [RoutePath.AdminDocuments]: {
+    label: 'Document Review',
+    icon: FileText,
+    navGroup: 'main',
+    roles: ['admin'],
+  },
+  [RoutePath.AdminUsers]: {
+    label: 'Users',
+    icon: Users,
+    navGroup: 'main',
+    roles: ['admin'],
+  },
+  [RoutePath.AdminRateConfirmations]: {
+    label: 'Rate Confirmations',
+    icon: ShieldCheck,
+    navGroup: 'main',
+    roles: ['admin'],
+  },
 }
 
 export const ROLE_HOME: Record<UserRole, RoutePath> = {
   driver: RoutePath.DriverLoads,
   company: RoutePath.Loads,
+  admin: RoutePath.AdminDashboard,
 }
 
 /** Get label for any path (used by breadcrumbs). Falls back to Title Case of the segment. */
 export const getRouteLabel = (path: string): string => {
-  // exact match in ROUTE_CONFIG (e.g. '/fleet' -> 'My Fleet')
   if (ROUTE_CONFIG[path as RoutePath]) {
     return ROUTE_CONFIG[path as RoutePath].label
   }
 
-  // extract last segment and try '/'+segment as a route
   const segment = path.split('/').filter(Boolean).pop() ?? path
   if (ROUTE_CONFIG[('/' + segment) as RoutePath]) {
     return ROUTE_CONFIG[('/' + segment) as RoutePath].label
   }
 
-  // fallback: convert camelCase / kebab-case -> Title Case
   return segment
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/-/g, ' ')

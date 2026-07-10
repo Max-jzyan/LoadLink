@@ -1,9 +1,14 @@
 import type { MyProfile, NotificationPreferences } from '../userApi/userEnum'
+
+export type DocVerificationStatus = 'pending' | 'approved' | 'rejected'
+
 export interface CertificationDocument {
   name: string
   url: string
   key: string
   uploadedAt: string
+  verificationStatus?: DocVerificationStatus
+  reviewNotes?: string
 }
 
 export interface PlaceBidPayload {
@@ -111,7 +116,47 @@ export interface DriverProfile extends MyProfile {
   homeLocation: HomeLocation
   ratingSummary: RatingSummary
   completedLoadsCount: number
+  /** FMCSA Motor Carrier number — used on rate confirmations */
+  mcNumber?: string
+  /** USDOT number — used on rate confirmations */
+  dotNumber?: string
+  /** NSC / CVOR number (Canadian equivalent) */
+  nscCvorNumber?: string
 }
+
+export interface Trailer {
+  _id: string
+  ownerDriverId: string
+  unitNumber: string
+  plateNumber: string
+  vin: string
+  trailerType: string
+  lengthFt: number
+  capacityLbs: number
+  year: number | null
+  make: string
+  certifications: string[]
+  notes: string
+  isPrimary: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateTrailerPayload {
+  plateNumber: string
+  trailerType: string
+  lengthFt: number
+  unitNumber?: string
+  vin?: string
+  capacityLbs?: number
+  year?: number
+  make?: string
+  certifications?: string[]
+  notes?: string
+  isPrimary?: boolean
+}
+
+export type UpdateTrailerPayload = Partial<CreateTrailerPayload>
 
 export interface CreateTruckPayload {
   make: string
@@ -238,4 +283,7 @@ export interface UpdateDriverProfilePayload {
   notificationPreferences?: Partial<NotificationPreferences>
   availableForLoads?: boolean
   certificationDocuments?: CertificationDocument[]
+  mcNumber?: string
+  dotNumber?: string
+  nscCvorNumber?: string
 }

@@ -12,7 +12,7 @@ import {
 import { NavMain } from '@/components/nav/NavMain'
 import { NavUser } from '@/components/nav/NavUser'
 import Logo from '@/components/Logo'
-import { getNavItems, RoutePath } from '@/config/routes'
+import { getNavItems, ROLE_HOME } from '@/config/routes'
 import type { UserRole } from '@/types/enums'
 
 interface AppSidebarProps {
@@ -22,7 +22,7 @@ interface AppSidebarProps {
 export function AppSidebar({ role }: AppSidebarProps) {
   const mainNav = getNavItems('main', role)
   const bottomNav = getNavItems('bottom', role)
-  const dashboardPath = role === 'company' ? RoutePath.CompanyDashboard : RoutePath.Dashboard
+  const dashboardPath = ROLE_HOME[role]
 
   return (
     <Sidebar collapsible="icon">

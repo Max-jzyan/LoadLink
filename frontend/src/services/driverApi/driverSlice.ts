@@ -75,7 +75,7 @@ export const driverApi = api.injectEndpoints({
         try {
           const { data } = await queryFulfilled
           const payout = typeof data.finalPayout === 'number' ? data.finalPayout.toFixed(2) : '0.00'
-          showSuccess(`Load claimed successfully for $${payout}`)
+          showSuccess(`Load claimed for $${payout}. Check your notifications for the rate confirmation.`)
         } catch (error) {
           const status = getErrorStatus(error)
           showError(getHttpErrorMessage(status))
@@ -279,6 +279,23 @@ export const driverApi = api.injectEndpoints({
         return tags
       },
     }),
+    // DELETE /api/driver/:driverId/documents/:docKey — remove a certification doc
+    removeCertificationDocument: build.mutation<void, { driverId: string; docKey: string }>({
+      query: ({ driverId, docKey }) => ({
+        url: `driver/${driverId}/documents/${encodeURIComponent(docKey)}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (_r, _e, { driverId }) => [{ type: LoadTag.Profile, id: driverId }],
+    }),
+
+    // DELETE /api/driver/:driverId/insurance/:idx — remove an insurance cert
+    removeInsuranceCertificate: build.mutation<void, { driverId: string; idx: number }>({
+      query: ({ driverId, idx }) => ({
+        url: `driver/${driverId}/insurance/${idx}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (_r, _e, { driverId }) => [{ type: LoadTag.Profile, id: driverId }],
+    }),
   }),
   overrideExisting: false,
 })
@@ -301,4 +318,6 @@ export const {
   useUpdateDriverExpensesMutation,
   useUpdateTruckExpensesMutation,
   useSelectTruckForLoadMutation,
+  useRemoveCertificationDocumentMutation,
+  useRemoveInsuranceCertificateMutation,
 } = driverApi

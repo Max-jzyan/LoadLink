@@ -184,6 +184,10 @@ export const updateDriverProfile = async (
     'notificationPreferences',
     'homeLocation',
     'certificationDocuments',
+    // Carrier regulatory identifiers — used on rate confirmations & FMCSA lookups
+    'mcNumber',
+    'dotNumber',
+    'nscCvorNumber',
   ]
 
   const filteredData: Record<string, unknown> = {}
@@ -225,6 +229,52 @@ export const updateDriverProfile = async (
   }
 
   return withViewableUrls(driver)
+}
+
+/**
+ * Remove a certification document by its S3 key.
+ * Also cleans up the S3 object.
+ */
+export const removeCertificationDocument = async (driverId: string, docKey: string) => {
+  assertValidId(driverId, 'driverId')
+
+  const driver = await DriverModel.findById(new Types.ObjectId(driverId))
+  if (!driver) throw new ApiError(StatusCodes.NOT_FOUND, 'Driver not found')
+
+  const idx = driver.certificationDocuments.findIndex((d) => d.key === docKey)
+  if (idx === -1) throw new ApiError(StatusCodes.NOT_FOUND, 'Document not found')
+
+  try {
+    await uploadService.deleteObjectByUrl(driver.certificationDocuments[idx].url)
+  } catch (err) {
+    console.warn('[driverService] Failed to delete S3 object (continuing):', err)
+  }
+
+  driver.certificationDocuments.splice(idx, 1)
+  await driver.save()
+}
+
+/**
+ * Remove an insurance certificate by array index.
+ */
+export const removeInsuranceCertificate = async (driverId: string, idx: number) => {
+  assertValidId(driverId, 'driverId')
+
+  const driver = await DriverModel.findById(new Types.ObjectId(driverId))
+  if (!driver) throw new ApiError(StatusCodes.NOT_FOUND, 'Driver not found')
+
+  if (isNaN(idx) || idx < 0 || idx >= (driver.insuranceCertificates?.length ?? 0)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid certificate index')
+  }
+
+  try {
+    await uploadService.deleteObjectByUrl(driver.insuranceCertificates[idx].url)
+  } catch (err) {
+    console.warn('[driverService] Failed to delete S3 object (continuing):', err)
+  }
+
+  driver.insuranceCertificates.splice(idx, 1)
+  await driver.save()
 }
 
 /**

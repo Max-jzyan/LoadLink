@@ -13,8 +13,9 @@ import type { Auction, PopulatedBid } from '@/services/auctionApi/auctionEnum'
 import { AUCTION_STATUSES } from '@/services/auctionApi/auctionEnum'
 import { useStreamAuctionPriceQuery, useStreamBidsQuery } from '@/services/auctionApi/auctionSlice'
 import { useRequiredMongoId } from '@/hooks/useAuth'
-import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
-import { Clock } from 'lucide-react'
+import { useGetLoadQuery, useGetAcceptedBidQuery } from '@/services/loadApi/loadSlice'
+import { Button } from '@/components/ui/button'
+import { Clock, Download, Calendar } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 
 function timeAgo(dateStr: string): string {
@@ -31,7 +32,7 @@ function truncateId(id: string): string {
   return `#${id.slice(-6).toUpperCase()}`
 }
 // Use 6a30df1af9e53fd472dd8960 as an example load
-export default function DriverAuctions() {
+export default function DriverAuction() {
   // For testing, navigate to /driverAuctions/<valid-mongo-id>
   // TODO: fix the fixed value
   const loadId = useParams<{ loadId: string }>().loadId ?? ''
@@ -59,6 +60,14 @@ export default function DriverAuctions() {
       : undefined
 
   const isAuctionLive = auctionStatus === AUCTION_STATUSES.Active
+  const auctionClosed = !isAuctionLive && auctionStatus !== undefined
+
+  // Fetch the accepted bid only when auction is closed (to show RC download)
+  const { data: acceptedBid } = useGetAcceptedBidQuery(loadId, {
+    skip: !auctionClosed || !loadId,
+  })
+  const isWinner = acceptedBid?.driverId === mongoId
+  const rcUrl = isWinner ? acceptedBid?.rateConfirmationUrl : null
 
   // Derive the full auction object from the populated load
   const auction: Auction | null =
@@ -80,10 +89,20 @@ export default function DriverAuctions() {
     )
   }
 
-  // Format helper for weight
+  // Format helpers
   const weightLabel = `${load.weightLbs.toLocaleString()} lbs`
   const trailerLabel = `${load.trailerLengthFt} ft`
   const driverAssistLabel = load.driverAssist ? 'Required' : 'Not Required'
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleString('en-CA', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
   const certs =
     load.certifications && load.certifications.length > 0
       ? load.certifications.map((cert) => (
@@ -169,6 +188,32 @@ export default function DriverAuctions() {
             </DynamicCard>
           </div>
 
+          {/* Pickup & Dropoff dates */}
+          <div className="grid grid-cols-2 gap-2">
+            <DynamicCard
+              title="Pickup"
+              noBorder
+              size="sm"
+              titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+            >
+              <span className="flex items-center gap-1 text-sm">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                {formatDate(load.pickupTime)}
+              </span>
+            </DynamicCard>
+            <DynamicCard
+              title="Dropoff"
+              noBorder
+              size="sm"
+              titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+            >
+              <span className="flex items-center gap-1 text-sm">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                {formatDate(load.dropoffTime)}
+              </span>
+            </DynamicCard>
+          </div>
+
           <div className="grid grid-cols-3 gap-2">
             <DynamicCard
               title="Commodity"
@@ -219,6 +264,25 @@ export default function DriverAuctions() {
               <p className="text-sm text-muted-foreground">No auction data available</p>
             )}
           </div>
+
+          {/* Rate Confirmation banner — shown to the winning driver after auction closes */}
+          {auctionClosed && isWinner && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
+              <p className="text-sm font-semibold text-primary">🎉 You won this load!</p>
+              {rcUrl ? (
+                <a href={rcUrl} target="_blank" rel="noopener noreferrer">
+                  <Button size="sm" className="gap-1.5">
+                    <Download className="h-4 w-4" />
+                    Download Rate Confirmation
+                  </Button>
+                </a>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Rate confirmation is being generated — check your notifications shortly.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Claim button */}
           <ClaimLoadDialog

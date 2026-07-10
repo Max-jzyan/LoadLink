@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import {
   getLoad,
+  getAcceptedBid,
   createLoad,
   updateLoad,
   updateLoadStatus,
@@ -25,6 +26,7 @@ const router = Router()
 router.get('/loads', requireAuth, listAvailableLoads)
 router.get('/loads/stream', requireAuthSSE, streamNewLoads)
 router.get('/loads/:loadId', requireAuth, getLoad)
+router.get('/loads/:loadId/accepted-bid', requireAuth, getAcceptedBid)
 
 router.get(
   '/company/:companyId/loads',

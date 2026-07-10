@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { useEffect, useState } from 'react'
@@ -6,30 +7,46 @@ import { useForm } from 'react-hook-form'
 
 import DrawerShell from '@/components/layout/DrawerShell'
 import type { CertificationDocument, DriverProfile } from '@/services/driverApi/driverEnum'
-import { FileText, Loader2 } from 'lucide-react'
+import { FileText, Loader2, Trash2 } from 'lucide-react'
 
 import AvatarUploadField from '@/components/shared/AvatarUploadField'
 import FileUploadField from '@/components/shared/FileUploadField'
 import { auth } from '@/lib/firebase'
 import { uploadDocuments } from '@/lib/uploadDocuments'
+import { useRequiredMongoId } from '@/hooks/useAuth'
+import { useRemoveCertificationDocumentMutation } from '@/services/driverApi/driverSlice'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 export interface DriverInfoFormValues {
   name: string
   professionalTitle: string
   profilePictureUrl: string
   certificationDocuments: CertificationDocument[]
+  mcNumber?: string
+  dotNumber?: string
+  nscCvorNumber?: string
 }
 
 interface DriverInfoFormFields {
   name: string
   professionalTitle: string
+  mcNumber: string
+  dotNumber: string
+  nscCvorNumber: string
 }
 
 interface DriverInfoDrawerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   driver: DriverProfile
-  onSubmit: (values: DriverInfoFormValues) => Promise<void>
+  onSubmit: (values: DriverInfoFormValues) => void
 }
 
 function FieldError({ message }: { message?: string }) {
@@ -44,12 +61,15 @@ export default function DriverInfoDrawer({
   onSubmit,
 }: DriverInfoDrawerProps) {
   const formId = 'driver-info-form'
+  const driverId = useRequiredMongoId()
 
   const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null)
   const [pictureError, setPictureError] = useState<string | null>(null)
   const [certificationFiles, setCertificationFiles] = useState<File[]>([])
   const [certError, setCertError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [docToDelete, setDocToDelete] = useState<CertificationDocument | null>(null)
+  const [removeCertDoc, { isLoading: isRemoving }] = useRemoveCertificationDocumentMutation()
 
   const {
     register,
@@ -60,6 +80,9 @@ export default function DriverInfoDrawer({
     defaultValues: {
       name: '',
       professionalTitle: '',
+      mcNumber: '',
+      dotNumber: '',
+      nscCvorNumber: '',
     },
   })
 
@@ -69,11 +92,14 @@ export default function DriverInfoDrawer({
       reset({
         name: driver.name,
         professionalTitle: driver.professionalTitle,
+        mcNumber: driver.mcNumber ?? '',
+        dotNumber: driver.dotNumber ?? '',
+        nscCvorNumber: driver.nscCvorNumber ?? '',
       })
     }
 
     if (!open) {
-      reset({ name: '', professionalTitle: '' })
+      reset({ name: '', professionalTitle: '', mcNumber: '', dotNumber: '', nscCvorNumber: '' })
       setProfilePictureFile(null)
       setCertificationFiles([])
       setPictureError(null)
@@ -126,14 +152,13 @@ export default function DriverInfoDrawer({
       }
     }
 
-    // Only pass profilePictureUrl if a new file was uploaded, otherwise omit it
-    // to preserve the existing (potentially presigned) URL
-    // Only pass certificationDocuments if new files were uploaded, otherwise omit them
-    // to preserve the existing (potentially presigned) URLs
     const body: Partial<DriverInfoFormValues> = {
       ...values,
       ...(profilePictureUrl !== undefined && { profilePictureUrl }),
       ...(certificationDocuments !== undefined && { certificationDocuments }),
+      mcNumber: values.mcNumber || undefined,
+      dotNumber: values.dotNumber || undefined,
+      nscCvorNumber: values.nscCvorNumber || undefined,
     }
 
     await onSubmit(body as DriverInfoFormValues)
@@ -164,7 +189,14 @@ export default function DriverInfoDrawer({
       .slice(0, 2)
   }
 
+  function docStatusVariant(s: string): 'default' | 'destructive' | 'secondary' {
+    if (s === 'approved') return 'default'
+    if (s === 'rejected') return 'destructive'
+    return 'secondary'
+  }
+
   return (
+    <>
     <DrawerShell
       open={open}
       onOpenChange={onOpenChange}
@@ -229,20 +261,73 @@ export default function DriverInfoDrawer({
           <FieldDescription>Optional: Add a professional title or certification</FieldDescription>
         </Field>
 
+        {/* Carrier Credentials */}
+        <div className="pt-1">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Carrier Credentials
+          </p>
+          <p className="text-xs text-muted-foreground mb-3">
+            These appear on rate confirmations and allow verification against FMCSA records.
+          </p>
+          <div className="grid grid-cols-1 gap-3">
+            <Field>
+              <FieldLabel>MC # (FMCSA Motor Carrier)</FieldLabel>
+              <Input
+                className={inputCls}
+                placeholder="e.g. MC-123456"
+                {...register('mcNumber')}
+              />
+            </Field>
+            <Field>
+              <FieldLabel>US DOT #</FieldLabel>
+              <Input
+                className={inputCls}
+                placeholder="e.g. 1234567"
+                {...register('dotNumber')}
+              />
+            </Field>
+            <Field>
+              <FieldLabel>NSC / CVOR # (Canada)</FieldLabel>
+              <Input
+                className={inputCls}
+                placeholder="e.g. NSC-987654"
+                {...register('nscCvorNumber')}
+              />
+            </Field>
+          </div>
+        </div>
+
         {/* Certifications */}
         <Field>
           <FieldLabel>Certifications</FieldLabel>
           {driver.certificationDocuments && driver.certificationDocuments.length > 0 && (
             <ul className="space-y-1.5 mb-2">
-              {driver.certificationDocuments.map((doc) => (
-                <li
-                  key={doc.key}
-                  className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm"
-                >
-                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="truncate">{doc.name}</span>
-                </li>
-              ))}
+              {driver.certificationDocuments.map((doc) => {
+                const status = doc.verificationStatus ?? 'pending'
+                return (
+                  <li
+                    key={doc.key}
+                    className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm"
+                  >
+                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate flex-1">{doc.name}</span>
+                    <Badge variant={docStatusVariant(status)} className="text-xs shrink-0">
+                      {status === 'approved' && 'Verified'}
+                      {status === 'rejected' && 'Rejected'}
+                      {status === 'pending' && 'Pending Review'}
+                      {!['approved', 'rejected', 'pending'].includes(status) && 'Pending Review'}
+                    </Badge>
+                    <button
+                      type="button"
+                      onClick={() => setDocToDelete(doc)}
+                      className="shrink-0 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                      title="Remove document"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           )}
           <FileUploadField
@@ -258,5 +343,35 @@ export default function DriverInfoDrawer({
         </Field>
       </form>
     </DrawerShell>
+
+    {/* Confirm delete document dialog */}
+    <Dialog open={!!docToDelete} onOpenChange={(v) => { if (!v) setDocToDelete(null) }} >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Remove document?</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to remove <strong>{docToDelete?.name}</strong>? This action cannot
+            be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setDocToDelete(null)} disabled={isRemoving}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={isRemoving}
+            onClick={async () => {
+              if (!docToDelete) return
+              await removeCertDoc({ driverId, docKey: docToDelete.key })
+              setDocToDelete(null)
+            }}
+          >
+            {isRemoving ? 'Removing…' : 'Remove'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }

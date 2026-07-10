@@ -2,6 +2,10 @@ import { Types } from 'mongoose'
 import { UserModel } from '../../models/users/User'
 import { DriverModel } from '../../models/users/Driver'
 import { CompanyModel } from '../../models/users/Company'
+import { AdminModel } from '../../models/users/Admin'
+
+const TEST_ADMIN_ID = new Types.ObjectId('000000000000000000000099')
+const ADMIN_FIREBASE_UID = 'ZuHtRq6w4sX1gDXD5XdT7fS8xyR2'
 
 const TEST_COMPANY1_ID = new Types.ObjectId('000000000000000000000001')
 const TEST_COMPANY2_ID = new Types.ObjectId('000000000000000000000002')
@@ -95,8 +99,18 @@ export async function seedUsers() {
     },
   })
 
+  const admin = await AdminModel.create({
+    _id: TEST_ADMIN_ID,
+    firebaseUid: ADMIN_FIREBASE_UID,
+    name: 'Platform Admin',
+    email: 'admin@example.com',
+    canProcessDocuments: true,
+    adminNotes: 'Seeded admin account.',
+  })
+
   return {
     companies: { testCompany1, testCompany2 },
     drivers: { testUser1, testUser2, testUser3, testUser4, testUser5 },
+    admin,
   }
 }

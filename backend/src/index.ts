@@ -24,10 +24,13 @@ import companyRouter from './routes/companyRoutes'
 import driverRouter from './routes/driverRoutes'
 import userRouter from './routes/userRoutes'
 import truckRouter from './routes/truckRoutes'
+import trailerRouter from './routes/trailerRoutes'
 import reviewRouter from './routes/reviewRoutes'
 import blocklistRouter from './routes/blocklistRoutes'
 import reportRouter from './routes/reportRoutes'
 import uploadRouter from './routes/uploadRoutes'
+import notificationRouter from './routes/notificationRoutes'
+import adminRouter from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
 import { startHeartbeat } from './services/heartbeatService'
 
@@ -38,10 +41,13 @@ app.use('/api', auctionRouter)
 app.use('/api', companyRouter)
 app.use('/api', driverRouter)
 app.use('/api', truckRouter)
+app.use('/api', trailerRouter)
 app.use('/api', reviewRouter)
 app.use('/api', blocklistRouter)
 app.use('/api', reportRouter)
 app.use('/api', uploadRouter)
+app.use('/api', notificationRouter)
+app.use('/api', adminRouter)
 
 // Central error handler
 app.use(errorHandler)

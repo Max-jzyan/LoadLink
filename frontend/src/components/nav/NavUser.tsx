@@ -1,6 +1,5 @@
 import { signOut } from 'firebase/auth'
 import {
-  BellIcon,
   ChevronRightIcon,
   LogOutIcon,
   MonitorIcon,
@@ -10,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import NotificationBell from '@/components/shared/NotificationBell'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -88,24 +88,7 @@ export function NavUser() {
             isCollapsed ? 'flex-col justify-center' : ''
           }`}
         >
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  title="Notifications"
-                  className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-                >
-                  <BellIcon className="size-4" />
-                </button>
-              </TooltipTrigger>
-              {isCollapsed && (
-                <TooltipContent side="right" sideOffset={8}>
-                  Notifications
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
+          <NotificationBell />
 
           <DropdownMenu>
             {isCollapsed ? (
@@ -185,7 +168,13 @@ export function NavUser() {
               <DropdownMenuSeparator />
 
               <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                <DropdownMenuItem
+                  onClick={() =>
+                    navigate(
+                      role === 'driver' ? '/driver/profile' : '/settings'
+                    )
+                  }
+                >
                   <Settings />
                   Settings
                 </DropdownMenuItem>

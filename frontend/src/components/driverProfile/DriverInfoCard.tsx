@@ -1,7 +1,6 @@
 import DynamicCard from '@/components/layout/DynamicCard'
 import type { DriverProfile } from '@/services/driverApi/driverEnum'
-import { BadgeCheck, CalendarDays } from 'lucide-react'
-
+import { BadgeCheck, CalendarDays, Shield } from 'lucide-react'
 import EditPencilButton from '@/components/shared/EditPencilButton'
 
 interface DriverInfoCardProps {
@@ -22,6 +21,8 @@ export default function DriverInfoCard({ driver, onEdit }: DriverInfoCardProps) 
     .join('')
     .toUpperCase()
     .slice(0, 2)
+
+  const hasCredentials = driver.mcNumber || driver.dotNumber || driver.nscCvorNumber
 
   return (
     <DynamicCard noPadding>
@@ -64,6 +65,42 @@ export default function DriverInfoCard({ driver, onEdit }: DriverInfoCardProps) 
             <span>Member since {memberSinceStr}</span>
           </div>
         </div>
+
+        {/* Carrier Credentials */}
+        {hasCredentials && (
+          <div className="mt-4 rounded-lg bg-muted/50 px-3 py-2.5 space-y-1.5">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Shield className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Carrier Credentials
+              </span>
+            </div>
+            {driver.mcNumber && (
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground font-medium">MC #</span>
+                <span className="font-mono">{driver.mcNumber}</span>
+              </div>
+            )}
+            {driver.dotNumber && (
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground font-medium">US DOT #</span>
+                <span className="font-mono">{driver.dotNumber}</span>
+              </div>
+            )}
+            {driver.nscCvorNumber && (
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground font-medium">NSC/CVOR #</span>
+                <span className="font-mono">{driver.nscCvorNumber}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!hasCredentials && (
+          <p className="mt-4 text-center text-xs text-muted-foreground/60 italic">
+            No carrier credentials on file. Add MC#, DOT# or NSC/CVOR# by editing your profile.
+          </p>
+        )}
       </div>
     </DynamicCard>
   )

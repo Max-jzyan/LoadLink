@@ -7,7 +7,13 @@ import '../models/users/Driver'
 import { AUCTION_STATUSES, BID_STATUSES, LOAD_STATUSES } from '../models/enums'
 import { emitBidsUpdate, emitPriceUpdate } from '../events/auctionEvents'
 import { ApiError } from '../utils/ApiError'
-import { MS_PER_MINUTE, MS_PER_HOUR, RATE_CONFIRMATION_URL_BASE } from '../constants/auction'
+import { MS_PER_MINUTE, MS_PER_HOUR } from '../constants/auction'
+import { generateRateConfirmationPdf } from './pdfService'
+import {
+  notifyBidAccepted,
+  notifyRateConfirmationReady,
+  notifyLoadClaimed,
+} from './notificationService'
 
 const assertValidId = (id: string, label: string) => {
   if (!isValidObjectId(id)) {
@@ -176,12 +182,65 @@ export const acceptBid = async (loadId: string, bidId: string) => {
   await settleAuctionWithBid(auction, bid)
   await emitBidsAndPrice(loadId)
 
+  // Generate rate confirmation PDF
+  let rateConfirmationUrl: string | null = null
+  try {
+    const load = await LoadModel.findById(loadId)
+      .populate<{ companyId: { companyName: string; businessAddress?: string } }>('companyId')
+      .populate<{ assignedDriverId: { name: string; email: string } | null }>('assignedDriverId')
+      .lean()
+
+    if (load) {
+      const company = load.companyId as any
+      const driver = load.assignedDriverId as any
+      const pdfResult = await generateRateConfirmationPdf({
+        loadId,
+        bidId,
+        companyName: company?.companyName ?? 'Unknown Company',
+        companyAddress: company?.businessAddress,
+        driverName: driver?.name ?? 'Unknown Driver',
+        driverEmail: driver?.email,
+        originAddress: load.originAddress,
+        destinationAddress: load.destinationAddress,
+        pickupTime: new Date(load.pickupTime),
+        dropoffTime: new Date(load.dropoffTime),
+        commodity: load.commodity,
+        weightLbs: load.weightLbs,
+        truckType: load.truckType,
+        finalPayout: bid.amount,
+        currency: auction.currency ?? 'CAD',
+        confirmedAt: new Date(),
+      })
+      rateConfirmationUrl = pdfResult.url
+      await BidModel.findByIdAndUpdate(bidId, {
+        rateConfirmationKey: pdfResult.key,
+        rateConfirmationUrl: pdfResult.url,
+      })
+    }
+  } catch (err) {
+    console.error('[auctionService] Rate confirmation PDF generation failed:', err)
+  }
+
+  // Notify the driver their bid was accepted (includes RC download URL if available)
+  await notifyBidAccepted(bid.driverId.toString(), {
+    loadId,
+    amount: bid.amount,
+    rateConfirmationUrl,
+  })
+
+  if (rateConfirmationUrl) {
+    await notifyRateConfirmationReady(bid.driverId.toString(), {
+      loadId,
+      bidId,
+      url: rateConfirmationUrl,
+    })
+  }
+
   return {
     loadId,
     driverId: bid.driverId.toString(),
     finalPayout: bid.amount,
-    // TODO: generate a real rate-confirmation PDF and upload to S3.
-    rateConfirmationUrl: `${RATE_CONFIRMATION_URL_BASE}/rc_${bidId}.pdf`,
+    rateConfirmationUrl,
   }
 }
 
@@ -278,12 +337,73 @@ export const claimLoad = async (
 
   await emitBidsAndPrice(loadId)
 
+  // Generate rate confirmation PDF
+  let rateConfirmationUrl: string | null = null
+  try {
+    const load = await LoadModel.findById(loadId)
+      .populate<{ companyId: { companyName: string; businessAddress?: string } }>('companyId')
+      .populate<{ assignedDriverId: { name: string; email: string } | null }>('assignedDriverId')
+      .lean()
+
+    if (load) {
+      const company = load.companyId as any
+      const driver = load.assignedDriverId as any
+      const bidIdStr = bid._id.toString()
+      const pdfResult = await generateRateConfirmationPdf({
+        loadId,
+        bidId: bidIdStr,
+        companyName: company?.companyName ?? 'Unknown Company',
+        companyAddress: company?.businessAddress,
+        driverName: driver?.name ?? driverId,
+        driverEmail: driver?.email,
+        originAddress: load.originAddress,
+        destinationAddress: load.destinationAddress,
+        pickupTime: new Date(load.pickupTime),
+        dropoffTime: new Date(load.dropoffTime),
+        commodity: load.commodity,
+        weightLbs: load.weightLbs,
+        truckType: load.truckType,
+        finalPayout: auction.currentPrice,
+        currency: auction.currency ?? 'CAD',
+        confirmedAt: new Date(),
+      })
+      rateConfirmationUrl = pdfResult.url
+      await BidModel.findByIdAndUpdate(bidIdStr, {
+        rateConfirmationKey: pdfResult.key,
+        rateConfirmationUrl: pdfResult.url,
+      })
+    }
+  } catch (err) {
+    console.error('[auctionService] Rate confirmation PDF generation failed (claim):', err)
+  }
+
+  // Notify driver their claim succeeded (include RC link if generated)
+  await notifyBidAccepted(driverId, {
+    loadId,
+    amount: auction.currentPrice,
+    rateConfirmationUrl,
+  })
+
+  if (rateConfirmationUrl) {
+    await notifyRateConfirmationReady(driverId, {
+      loadId,
+      bidId: bid._id.toString(),
+      url: rateConfirmationUrl,
+    })
+  }
+
+  // Notify the company their load was claimed
+  await notifyLoadClaimed(auction.companyId.toString(), {
+    loadId,
+    driverName: driverId, // will be enriched with real name in a real implementation
+    payout: auction.currentPrice,
+  })
+
   return {
     loadId,
     driverId: bid.driverId.toString(),
     finalPayout: auction.currentPrice,
-    // TODO: generate a real rate-confirmation PDF and upload to S3.
-    rateConfirmationUrl: `${RATE_CONFIRMATION_URL_BASE}/rc_${bid._id}.pdf`,
+    rateConfirmationUrl,
   }
 }
 
@@ -380,4 +500,32 @@ export const reopenAuction = async (loadId: string, extendByHours: number) => {
   await emitBidsAndPrice(loadId)
 
   return { loadId, newExpiresAt: auction.expiresAt }
+}
+
+/**
+ * Return all auctions for a given company, enriched with load + bid-count data.
+ * Sorted newest first.
+ */
+export const getCompanyAuctions = async (companyId: string) => {
+  assertValidId(companyId, 'companyId')
+
+  const auctions = await AuctionModel.find({ companyId })
+    .populate('loadId')
+    .sort({ createdAt: -1 })
+    .lean()
+
+  // Fetch bid counts for all auctions in one aggregation query
+  const loadIds = auctions.map((a) => (a.loadId as any)?._id ?? a.loadId)
+  const bidCounts = await BidModel.aggregate([
+    { $match: { loadId: { $in: loadIds } } },
+    { $group: { _id: '$loadId', count: { $sum: 1 } } },
+  ])
+  const bidCountMap = new Map<string, number>(
+    bidCounts.map((bc) => [bc._id.toString(), bc.count as number])
+  )
+
+  return auctions.map((a) => ({
+    ...a,
+    bidCount: bidCountMap.get(((a.loadId as any)?._id ?? a.loadId).toString()) ?? 0,
+  }))
 }

@@ -41,12 +41,43 @@ const HomeLocationSchema = new Schema(
   { _id: false }
 )
 
+export const DOC_VERIFICATION_STATUSES = ['pending', 'approved', 'rejected'] as const
+export type DocVerificationStatus = (typeof DOC_VERIFICATION_STATUSES)[number]
+
 const CertificationDocumentSchema = new Schema(
   {
     name: { type: String, required: true },
     url: { type: String, required: true },
     key: { type: String, required: true },
     uploadedAt: { type: Date, default: Date.now },
+    verificationStatus: {
+      type: String,
+      enum: DOC_VERIFICATION_STATUSES,
+      default: 'pending',
+    },
+    reviewNotes: { type: String, default: '' },
+  },
+  { _id: false }
+)
+
+/**
+ * Insurance certificate uploaded by the driver (e.g. commercial auto policy).
+ * Future: can be cross-referenced with FMCSA API using the carrier MC/DOT number.
+ */
+const InsuranceCertificateSchema = new Schema(
+  {
+    insurer: { type: String, required: true },
+    policyNumber: { type: String, required: true },
+    expiresAt: { type: Date, required: true },
+    url: { type: String, required: true },
+    key: { type: String, required: true },
+    uploadedAt: { type: Date, default: Date.now },
+    verificationStatus: {
+      type: String,
+      enum: DOC_VERIFICATION_STATUSES,
+      default: 'pending',
+    },
+    reviewNotes: { type: String, default: '' },
   },
   { _id: false }
 )
@@ -59,6 +90,22 @@ const DriverSchema = new Schema({
   trucks: [{ type: Types.ObjectId, ref: 'Truck', index: true }],
   certifications: [{ type: String, enum: CERTIFICATION_VALUES, trim: true }],
   certificationDocuments: [CertificationDocumentSchema],
+
+  // ── Regulatory / carrier identity ────────────────────────────────────────
+  /**
+   * Motor Carrier (MC) number issued by FMCSA. Used for rate confirmations and
+   * future FMCSA SaferBus API lookups.
+   */
+  mcNumber: { type: String, default: '', trim: true },
+
+  /**
+   * USDOT number assigned by FMCSA. Paired with MC number for carrier lookup.
+   * Future: automate validation via https://mobile.fmcsa.dot.gov/QCDevsite/docs
+   */
+  dotNumber: { type: String, default: '', trim: true },
+
+  /** Insurance certificates uploaded by the driver for admin review. */
+  insuranceCertificates: { type: [InsuranceCertificateSchema], default: () => [] },
 
   availableForLoads: { type: Boolean, default: true },
   pricingPreferences: { type: PricingPreferencesSchema, default: () => ({}) },

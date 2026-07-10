@@ -5,6 +5,20 @@ import { onBidsUpdate, onPriceUpdate } from '../events/auctionEvents'
 import * as auctionService from '../services/auctionService'
 
 /**
+ * GET /api/company/:companyId/auctions
+ * List all auctions (with load + bid counts) for the authenticated company.
+ */
+export const getCompanyAuctions = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const companyId = req.params.companyId as string
+    const result = await auctionService.getCompanyAuctions(companyId)
+    res.status(StatusCodes.OK).json(result)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
  * POST /api/auctions/:loadId
  * Create an auction for an existing load.
  * Body: { startPrice, capPrice, priceCreepAmount, autoAcceptPercent?, autoAcceptTriggerHours?, hoursBeforeDropoff? }

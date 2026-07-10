@@ -10,11 +10,13 @@ import PricingPreferencesCard from '@/components/driverProfile/PricingPreference
 import type { TruckFormValues } from '@/components/driverProfile/TruckDrawer'
 import TruckDrawer from '@/components/driverProfile/TruckDrawer'
 import TruckInfoCard from '@/components/driverProfile/TruckInfoCard'
+import TrailerInfoCard from '@/components/driverProfile/TrailerInfoCard'
+import TrailerDrawer, { type TrailerFormValues } from '@/components/driverProfile/TrailerDrawer'
 import Col from '@/components/layout/Col'
 import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
 import { useRequiredMongoId } from '@/hooks/useAuth'
-import type { Truck } from '@/services/driverApi/driverEnum'
+import type { Trailer, Truck } from '@/services/driverApi/driverEnum'
 import {
   useCreateTruckMutation,
   useGetDriverProfileQuery,
@@ -22,24 +24,53 @@ import {
   useUpdateTruckMutation,
   useUpdateTruckExpensesMutation,
 } from '@/services/driverApi/driverSlice'
+import {
+  useListDriverTrailersQuery,
+  useCreateTrailerMutation,
+  useUpdateTrailerMutation,
+} from '@/services/trailerApi/trailerSlice'
 import { Loader2 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 export default function DriverProfile() {
   const driverId = useRequiredMongoId()
   const { data: driver, isLoading, isError } = useGetDriverProfileQuery(driverId)
 
+  const { data: trailers = [] } = useListDriverTrailersQuery(driverId, { skip: !driverId })
+
   const [updateDriverProfile] = useUpdateDriverProfileMutation()
+  const [updateDriverProfileForInfo, { isSuccess: infoSaved }] = useUpdateDriverProfileMutation()
   const [createTruck] = useCreateTruckMutation()
   const [updateTruck] = useUpdateTruckMutation()
   const [updateTruckExpenses] = useUpdateTruckExpensesMutation()
+  const [createTrailer, { isSuccess: trailerCreated, isLoading: isCreatingTrailer }] = useCreateTrailerMutation()
+  const [updateTrailer, { isSuccess: trailerUpdated, isLoading: isUpdatingTrailer }] = useUpdateTrailerMutation()
 
   // Truck drawer state
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editTruck, setEditTruck] = useState<Truck | null>(null)
 
+  // Trailer drawer state
+  const [trailerDrawerOpen, setTrailerDrawerOpen] = useState(false)
+  const [editTrailer, setEditTrailer] = useState<Trailer | null>(null)
+
   // Driver info drawer state
   const [driverInfoDrawerOpen, setDriverInfoDrawerOpen] = useState(false)
+
+  // Close driver info drawer when profile update succeeds
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (infoSaved) setDriverInfoDrawerOpen(false)
+  }, [infoSaved])
+
+  // Close trailer drawer when create or update succeeds
+  useEffect(() => {
+    if (trailerCreated || trailerUpdated) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTrailerDrawerOpen(false)
+      setEditTrailer(null)
+    }
+  }, [trailerCreated, trailerUpdated])
 
   const handleAddTruck = useCallback(() => {
     setEditTruck(null)
@@ -48,12 +79,7 @@ export default function DriverProfile() {
 
   const handleTruckDrawerOpenChange = useCallback((nextOpen: boolean) => {
     setDrawerOpen(nextOpen)
-
-    // Explicitly reset all drawer state when closing, so reopening for "Add New Truck"
-    // can never display stale Truck123 values.
-    if (!nextOpen) {
-      setEditTruck(null)
-    }
+    if (!nextOpen) setEditTruck(null)
   }, [])
 
   const handleEditTruck = useCallback((truck: Truck) => {
@@ -63,7 +89,6 @@ export default function DriverProfile() {
 
   const handleTruckSubmit = useCallback(
     async (values: TruckFormValues, truckId?: string) => {
-      // Basic truck properties (RTK mutation expects required trailerLengthFt/capacityLbs)
       const basicBody = {
         make: values.make,
         model: values.model,
@@ -79,7 +104,6 @@ export default function DriverProfile() {
         notes: values.notes,
       }
 
-      // Expense preferences - extract from form values
       const expenseBody = {
         fuelCostPerLiter: values.fuelCostPerLiter ?? null,
         fuelEfficiencyKmPerLiter: values.fuelEfficiencyKmPerLiter ?? null,
@@ -89,58 +113,76 @@ export default function DriverProfile() {
       }
 
       if (truckId) {
-        // Update existing truck - separate API calls for basic info and expenses
-        await updateTruck({ driverId, truckId, body: basicBody }).unwrap()
-        // Update expenses (separate endpoint)
-        await updateTruckExpenses({ driverId, truckId, body: expenseBody }).unwrap()
+        await updateTruck({ driverId, truckId, body: basicBody })
+        await updateTruckExpenses({ driverId, truckId, body: expenseBody })
       } else {
-        // Create new truck with basic properties first
-        await createTruck({ driverId, body: basicBody }).unwrap()
+        await createTruck({ driverId, body: basicBody })
       }
       setDrawerOpen(false)
     },
     [driverId, createTruck, updateTruck, updateTruckExpenses]
   )
 
+  // Trailer handlers
+  const handleAddTrailer = useCallback(() => {
+    setEditTrailer(null)
+    setTrailerDrawerOpen(true)
+  }, [])
+
+  const handleTrailerDrawerOpenChange = useCallback((nextOpen: boolean) => {
+    setTrailerDrawerOpen(nextOpen)
+    if (!nextOpen) setEditTrailer(null)
+  }, [])
+
+  const handleEditTrailer = useCallback((trailer: Trailer) => {
+    setEditTrailer(trailer)
+    setTrailerDrawerOpen(true)
+  }, [])
+
+  const handleTrailerSubmit = useCallback(
+    (values: TrailerFormValues, trailerId?: string) => {
+      if (trailerId) {
+        updateTrailer({ driverId, trailerId, body: values })
+      } else {
+        createTrailer({ driverId, body: values })
+      }
+    },
+    [driverId, createTrailer, updateTrailer]
+  )
+
   const handleContactSave = useCallback(
     async (values: ContactFormValues) => {
       await updateDriverProfile({
         driverId,
-        body: {
-          phone: values.phone,
-          homeLocation: values.homeLocation,
-        },
-      }).unwrap()
+        body: { phone: values.phone, homeLocation: values.homeLocation },
+      })
     },
     [driverId, updateDriverProfile]
   )
 
   const handlePricingSave = useCallback(
     async (values: PricingFormValues) => {
-      await updateDriverProfile({
-        driverId,
-        body: {
-          pricingPreferences: values,
-        },
-      }).unwrap()
+      await updateDriverProfile({ driverId, body: { pricingPreferences: values } })
     },
     [driverId, updateDriverProfile]
   )
 
   const handleDriverInfoSubmit = useCallback(
-    async (values: DriverInfoFormValues) => {
-      await updateDriverProfile({
+    (values: DriverInfoFormValues) => {
+      updateDriverProfileForInfo({
         driverId,
         body: {
           name: values.name,
           professionalTitle: values.professionalTitle,
           profilePictureUrl: values.profilePictureUrl,
           certificationDocuments: values.certificationDocuments,
+          mcNumber: values.mcNumber,
+          dotNumber: values.dotNumber,
+          nscCvorNumber: values.nscCvorNumber,
         },
-      }).unwrap()
-      setDriverInfoDrawerOpen(false)
+      })
     },
-    [driverId, updateDriverProfile]
+    [driverId, updateDriverProfileForInfo]
   )
 
   if (isLoading) {
@@ -166,7 +208,7 @@ export default function DriverProfile() {
   return (
     <PageShell title="My Profile">
       <Row>
-        {/* Column 1 — 25% width (4/16) */}
+        {/* Column 1 — 25% */}
         <Col size={4}>
           <Row>
             <Col size={16}>
@@ -185,7 +227,7 @@ export default function DriverProfile() {
           </Row>
         </Col>
 
-        {/* Column 2 — 75% width (12/16) */}
+        {/* Column 2 — 75% */}
         <Col size={12}>
           <Row>
             <Col size={16}>
@@ -193,6 +235,15 @@ export default function DriverProfile() {
                 driver={driver}
                 onAddTruck={handleAddTruck}
                 onEditTruck={handleEditTruck}
+              />
+            </Col>
+          </Row>
+          <Row>
+            <Col size={16}>
+              <TrailerInfoCard
+                trailers={trailers}
+                onAddTrailer={handleAddTrailer}
+                onEditTrailer={handleEditTrailer}
               />
             </Col>
           </Row>
@@ -215,6 +266,15 @@ export default function DriverProfile() {
         onOpenChange={handleTruckDrawerOpenChange}
         editTruck={editTruck}
         onSubmit={handleTruckSubmit}
+      />
+
+      {/* Trailer Add/Edit Drawer */}
+      <TrailerDrawer
+        open={trailerDrawerOpen}
+        onOpenChange={handleTrailerDrawerOpenChange}
+        editTrailer={editTrailer}
+        isLoading={isCreatingTrailer || isUpdatingTrailer}
+        onSubmit={handleTrailerSubmit}
       />
 
       {/* Driver Info Edit Drawer */}
