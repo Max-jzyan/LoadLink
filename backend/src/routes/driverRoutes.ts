@@ -3,6 +3,7 @@ import {
   getDriverProfile,
   getRecommendedLoads,
   getDriverRevenue,
+  getScoredLoads,
   listDriverBids,
   listDriverLoads,
   updateDriverExpenses,
@@ -19,6 +20,7 @@ const middlewares = [requireAuth, requireRole(USER_ROLES.DRIVER), requireSelfPar
 router.get('/driver/:driverId/bids', middlewares, listDriverBids)
 router.get('/driver/:driverId/loads', middlewares, listDriverLoads)
 router.get('/driver/:driverId/recommended-loads', middlewares, getRecommendedLoads)
+router.get('/driver/:driverId/loads/scored', middlewares, getScoredLoads)
 router.get('/driver/:driverId/revenue', middlewares, getDriverRevenue)
 router.patch('/driver/:driverId/profile', middlewares, updateDriverProfile)
 router.patch('/driver/:driverId/expenses', middlewares, updateDriverExpenses)

@@ -3,22 +3,24 @@ import DeliveryTimeline from '@/components/driverLoads/DeliveryTimeline'
 import { DriverMap } from '@/components/driverLoads/Map'
 import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, SlidersHorizontal, Calendar, AlertTriangle, X } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
 import { LoadCard } from '@/components/shared/LoadCard'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import {
-  useGetRecommendedLoadsQuery,
-  useListDriverBidsQuery,
-} from '@/services/driverApi/driverSlice'
+import { useGetScoredLoadsQuery, useListDriverBidsQuery } from '@/services/driverApi/driverSlice'
 import type { Load } from '@/services/loadApi/loadEnum'
 import { useListAvailableLoadsQuery } from '@/services/loadApi/loadSlice'
+import { getAuctionPrice } from '@/lib/loadHelpers'
+import { estimateKm } from '@/lib/geo'
 import { useRequiredMongoId } from '@/hooks/useAuth'
+import type { ScoredLoad } from '@/services/driverApi/driverEnum'
+import { DriverLoadFilters } from '@/components/driverLoads/DriverLoadFilters'
 
 type MapLayer = 'route' | 'fuel' | 'rest'
+
+import type { SortKey, EligibilityFilter } from '@/components/driverLoads/DriverLoadFilters.types'
 
 export default function DriverAuctions() {
   const driverId = useRequiredMongoId()
@@ -28,40 +30,96 @@ export default function DriverAuctions() {
     isLoading,
     refetch: refetchAvailable,
   } = useListAvailableLoadsQuery()
-  const { data: recommendedLoads = [], refetch: refetchRecommended } =
-    useGetRecommendedLoadsQuery(driverId)
-  const { data: activeBids = [] } = useListDriverBidsQuery(
-    { driverId, status: 'active' }
-  )
+  const { data: scoredLoads = [], refetch: refetchScored } = useGetScoredLoadsQuery(driverId)
+  const { data: activeBids = [] } = useListDriverBidsQuery({ driverId, status: 'active' })
 
   const { data: loadPostedEvent } = useEventSource<{ loadId: string }>('/api/loads/stream')
   useEffect(() => {
     if (!loadPostedEvent) return
     refetchAvailable()
-    refetchRecommended()
-  }, [loadPostedEvent, refetchAvailable, refetchRecommended])
+    refetchScored()
+  }, [loadPostedEvent, refetchAvailable, refetchScored])
 
   const [selectedLoad, setSelectedLoad] = useState<Load | null>(null)
   const [searchText, setSearchText] = useState('')
   const [activeLayer, setActiveLayer] = useState<MapLayer>('route')
+  const [sortKey, setSortKey] = useState<SortKey>('recommended')
+  const [eligibilityFilter, setEligibilityFilter] = useState<EligibilityFilter>('all')
 
-  // client-side text search on origin, destination, and commodity
-  const filtered = useMemo(() => {
-    if (!searchText.trim()) return availableLoads
+  // Build a map from loadId → ScoredLoad for quick lookup
+  const scoredMap = useMemo(() => {
+    const map = new Map<string, ScoredLoad>()
+    for (const s of scoredLoads) {
+      map.set(s.loadId, s)
+    }
+    return map
+  }, [scoredLoads])
+
+  // Merge Load data with ScoredLoad metadata
+  const enrichedLoads = useMemo(() => {
+    return availableLoads.map((load) => ({
+      ...load,
+      _scored: scoredMap.get(load._id),
+    }))
+  }, [availableLoads, scoredMap])
+
+  // Client-side text search on origin, destination, and commodity
+  const textFiltered = useMemo(() => {
+    if (!searchText.trim()) return enrichedLoads
     const q = searchText.toLowerCase()
-    return availableLoads.filter(
+    return enrichedLoads.filter(
       (l) =>
         l.originAddress.toLowerCase().includes(q) ||
         l.destinationAddress.toLowerCase().includes(q) ||
         l.commodity.toLowerCase().includes(q)
     )
-  }, [availableLoads, searchText])
+  }, [enrichedLoads, searchText])
 
-  const recIds = useMemo(() => new Set(recommendedLoads.map((l) => l._id)), [recommendedLoads])
-  const recommended = useMemo(() => filtered.filter((l) => recIds.has(l._id)), [filtered, recIds])
-  const other = useMemo(() => filtered.filter((l) => !recIds.has(l._id)), [filtered, recIds])
+  // Apply eligibility filter
+  const eligibilityFiltered = useMemo(() => {
+    if (eligibilityFilter === 'all') return textFiltered
+    return textFiltered.filter((l) => {
+      const isEligible = l._scored?.eligibilityFlags?.isEligible ?? true
+      return eligibilityFilter === 'eligible' ? isEligible : !isEligible
+    })
+  }, [textFiltered, eligibilityFilter])
 
-  // show only the selected load's route, or up to 20 available loads when none is selected
+  // Sort
+  const sorted = useMemo(() => {
+    const arr = [...eligibilityFiltered]
+    switch (sortKey) {
+      case 'recommended':
+        arr.sort(
+          (a, b) => (b._scored?.recommendationScore ?? 0) - (a._scored?.recommendationScore ?? 0)
+        )
+        break
+      case 'pickup_asc':
+        arr.sort((a, b) => new Date(a.pickupTime).getTime() - new Date(b.pickupTime).getTime())
+        break
+      case 'pickup_desc':
+        arr.sort((a, b) => new Date(b.pickupTime).getTime() - new Date(a.pickupTime).getTime())
+        break
+      case 'dropoff_asc':
+        arr.sort((a, b) => new Date(a.dropoffTime).getTime() - new Date(b.dropoffTime).getTime())
+        break
+      case 'dropoff_desc':
+        arr.sort((a, b) => new Date(b.dropoffTime).getTime() - new Date(a.dropoffTime).getTime())
+        break
+      case 'rate':
+        arr.sort((a, b) => getAuctionPrice(b) - getAuctionPrice(a))
+        break
+      case 'distance':
+        arr.sort((a, b) => {
+          const distA = a.route?.distanceKm ?? estimateKm(a)
+          const distB = b.route?.distanceKm ?? estimateKm(b)
+          return distA - distB
+        })
+        break
+    }
+    return arr
+  }, [eligibilityFiltered, sortKey])
+
+  // show only the selected load's route, or up to 20 loads when none is selected
   const mapRoutes = useMemo(() => {
     const source = selectedLoad ? [selectedLoad] : availableLoads.slice(0, 20)
     return source.map((l) => ({
@@ -85,64 +143,63 @@ export default function DriverAuctions() {
         .join('  ·  ')
     : 'Select a load to view route details'
 
-  const renderLoadGroup = (loads: Load[]) =>
-    loads.map((load) => (
-      <div
-        key={load._id}
-        className={cn(
-          'rounded-xl transition-shadow',
-          selectedLoad?._id === load._id && 'ring-2 ring-primary ring-offset-1'
-        )}
-      >
-        <LoadCard
-          load={load}
-          onClick={() => setSelectedLoad(load)}
-          viewAuctionHref={`/driverAuctions/${load._id}`}
-        />
-      </div>
-    ))
+  const renderLoadGroup = (loads: typeof sorted) =>
+    loads.map((load) => {
+      const scored = load._scored
+      const flags = scored?.eligibilityFlags
+      const isIneligible = flags && !flags.isEligible
 
-  // Search bar + filter controls — becomes the sticky bar content
-  const searchControls = (
-    <div className="flex items-center gap-1.5">
-      <div className="relative flex-1 max-w-md">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-        <Input
-          className="pl-8 h-8 text-sm"
-          placeholder="Search loads, companies..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-        />
-        {searchText && (
-          <button
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            onClick={() => setSearchText('')}
-            aria-label="Clear search"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
-      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0">
-        <SlidersHorizontal className="w-3.5 h-3.5" />
-      </Button>
-      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0">
-        <Calendar className="w-3.5 h-3.5" />
-      </Button>
-    </div>
-  )
+      return (
+        <div
+          key={load._id}
+          className={cn(
+            'rounded-xl transition-shadow',
+            selectedLoad?._id === load._id && 'ring-2 ring-primary ring-offset-1',
+            isIneligible && 'opacity-65 hover:opacity-85 transition-opacity'
+          )}
+        >
+          <LoadCard
+            load={load}
+            onClick={() => setSelectedLoad(load)}
+            viewAuctionHref={`/driverAuctions/${load._id}`}
+            eligibilityFlags={flags}
+            recommendationScore={scored?.recommendationScore}
+          />
+        </div>
+      )
+    })
+
+  // Counts for the filter buttons
+  const visibleCounts = useMemo(() => {
+    let eligible = 0,
+      issues = 0
+    for (const l of textFiltered) {
+      const isEligible = l._scored?.eligibilityFlags?.isEligible ?? true
+      if (isEligible) eligible++
+      else issues++
+    }
+    return { eligible, issues }
+  }, [textFiltered])
 
   return (
     <PageShell
       title="Available Loads"
-      subtitle={
-        !isLoading
-          ? `${availableLoads.length} load${availableLoads.length !== 1 ? 's' : ''}`
-          : undefined
-      }
+      subtitle={!isLoading ? `${sorted.length} load${sorted.length !== 1 ? 's' : ''}` : undefined}
       stickyBar={
         <>
-          {searchControls}
+          <DriverLoadFilters
+            searchText={searchText}
+            onSearchChange={setSearchText}
+            sortKey={sortKey}
+            onSortChange={setSortKey}
+            eligibilityFilter={eligibilityFilter}
+            onEligibilityChange={setEligibilityFilter}
+            counts={{
+              all: textFiltered.length,
+              eligible: visibleCounts.eligible,
+              issues: visibleCounts.issues,
+            }}
+          />
           {activeBids.length > 0 && (
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 text-amber-800 text-xs mt-2">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-500" />
@@ -166,32 +223,30 @@ export default function DriverAuctions() {
             </div>
           )}
 
-          {!isLoading && recommended.length > 0 && (
-            <>
-              <p className="text-xs font-medium text-muted-foreground px-1">Recommended</p>
-              {renderLoadGroup(recommended)}
-            </>
-          )}
+          {!isLoading && sorted.length > 0 && <>{renderLoadGroup(sorted)}</>}
 
-          {!isLoading && other.length > 0 && (
-            <>
-              <p className="text-xs font-medium text-muted-foreground px-1 mt-2">
-                {recommended.length > 0 ? 'Other loads' : 'Available loads'}
-              </p>
-              {renderLoadGroup(other)}
-            </>
-          )}
-
-          {!isLoading && filtered.length === 0 && (
+          {!isLoading && sorted.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-muted-foreground text-sm">No loads found</p>
-              {searchText && (
-                <button
-                  className="text-xs text-primary mt-1 hover:underline"
-                  onClick={() => setSearchText('')}
-                >
-                  Clear search
-                </button>
+              {(searchText || eligibilityFilter !== 'all') && (
+                <div className="flex gap-2 mt-1">
+                  {searchText && (
+                    <button
+                      className="text-xs text-primary hover:underline"
+                      onClick={() => setSearchText('')}
+                    >
+                      Clear search
+                    </button>
+                  )}
+                  {eligibilityFilter !== 'all' && (
+                    <button
+                      className="text-xs text-primary hover:underline"
+                      onClick={() => setEligibilityFilter('all')}
+                    >
+                      Show all
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )}

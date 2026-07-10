@@ -35,6 +35,21 @@ export async function seedTrucks(drivers: Record<SeedDriverKey, DriverDoc>) {
     vin: string
     certifications: Certification[]
     isPrimary: boolean
+    expensePreferences: {
+      fuelCostPerLiter: number | null
+      fuelEfficiencyKmPerLiter: number | null
+      insurancePerMonth: number
+      maintenancePerKm: number | null
+      otherFixedCostsPerMonth: number | null
+    }
+    maintenanceRecords: {
+      date: Date
+      type: string
+      notes: string
+      costCents: number
+      serviceProvider: string
+    }[]
+    notes: string
   }> = [
     {
       id: TRUCK_IDS.testUser1_1,
@@ -50,6 +65,30 @@ export async function seedTrucks(drivers: Record<SeedDriverKey, DriverDoc>) {
       vin: '1FUJGLD52NL123456',
       certifications: [],
       isPrimary: true,
+      expensePreferences: {
+        fuelCostPerLiter: 1.65,
+        fuelEfficiencyKmPerLiter: 3.2,
+        insurancePerMonth: 750,
+        maintenancePerKm: 0.15,
+        otherFixedCostsPerMonth: 150,
+      },
+      maintenanceRecords: [
+        {
+          date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          type: 'oil change',
+          notes: 'Full synthetic oil and filter replacement',
+          costCents: 35000,
+          serviceProvider: 'West Coast Truck Repair',
+        },
+        {
+          date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+          type: 'brakes',
+          notes: 'Replaced front brake pads and rotors',
+          costCents: 82500,
+          serviceProvider: 'West Coast Truck Repair',
+        },
+      ],
+      notes: 'Primary long-haul dry van unit',
     },
     {
       id: TRUCK_IDS.testUser1_2,
@@ -65,6 +104,23 @@ export async function seedTrucks(drivers: Record<SeedDriverKey, DriverDoc>) {
       vin: '4V4NC9EH4RN345678',
       certifications: [CERTIFICATIONS.ReeferHACCP],
       isPrimary: false,
+      expensePreferences: {
+        fuelCostPerLiter: 1.7,
+        fuelEfficiencyKmPerLiter: 3.0,
+        insurancePerMonth: 950,
+        maintenancePerKm: 0.18,
+        otherFixedCostsPerMonth: 250,
+      },
+      maintenanceRecords: [
+        {
+          date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+          type: 'reefer maintenance',
+          notes: 'Annual reefer unit inspection and coolant flush',
+          costCents: 120000,
+          serviceProvider: 'Cold Chain Services AB',
+        },
+      ],
+      notes: 'Dedicated reefer for perishable food grade loads',
     },
     {
       id: TRUCK_IDS.testUser2_1,
@@ -80,6 +136,30 @@ export async function seedTrucks(drivers: Record<SeedDriverKey, DriverDoc>) {
       vin: '1XKYD49X9MJ654321',
       certifications: [CERTIFICATIONS.Hazmat],
       isPrimary: true,
+      expensePreferences: {
+        fuelCostPerLiter: 1.72,
+        fuelEfficiencyKmPerLiter: 3.4,
+        insurancePerMonth: 800,
+        maintenancePerKm: 0.16,
+        otherFixedCostsPerMonth: 200,
+      },
+      maintenanceRecords: [
+        {
+          date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
+          type: 'tarp system replacement',
+          notes: 'Replaced worn tarp rails and winch straps',
+          costCents: 42000,
+          serviceProvider: 'Pacific Flatbed Specialists',
+        },
+        {
+          date: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
+          type: 'oil change',
+          notes: 'Full synthetic oil and filter replacement',
+          costCents: 38000,
+          serviceProvider: 'Pacific Flatbed Specialists',
+        },
+      ],
+      notes: 'Hauls lumber and construction materials',
     },
     {
       id: TRUCK_IDS.testUser3_1,
@@ -95,6 +175,23 @@ export async function seedTrucks(drivers: Record<SeedDriverKey, DriverDoc>) {
       vin: '1XPBDP9X8LJ987654',
       certifications: [],
       isPrimary: true,
+      expensePreferences: {
+        fuelCostPerLiter: 1.6,
+        fuelEfficiencyKmPerLiter: 3.5,
+        insurancePerMonth: 700,
+        maintenancePerKm: 0.14,
+        otherFixedCostsPerMonth: 120,
+      },
+      maintenanceRecords: [
+        {
+          date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+          type: 'tire rotation',
+          notes: 'Rotated all drive and trailer tires',
+          costCents: 25000,
+          serviceProvider: 'Prairie Truck Works',
+        },
+      ],
+      notes: 'Reliable Prairie hauler for general freight',
     },
     {
       id: TRUCK_IDS.testUser4_1,
@@ -110,6 +207,30 @@ export async function seedTrucks(drivers: Record<SeedDriverKey, DriverDoc>) {
       vin: '1M2AG09C3NM112233',
       certifications: [CERTIFICATIONS.ReeferHACCP, CERTIFICATIONS.Hazmat],
       isPrimary: true,
+      expensePreferences: {
+        fuelCostPerLiter: 1.8,
+        fuelEfficiencyKmPerLiter: 3.1,
+        insurancePerMonth: 1050,
+        maintenancePerKm: 0.17,
+        otherFixedCostsPerMonth: 220,
+      },
+      maintenanceRecords: [
+        {
+          date: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000),
+          type: 'reefer maintenance',
+          notes: 'Quarterly reefer unit inspection and temperature calibration',
+          costCents: 85000,
+          serviceProvider: 'Great Lakes Fleet Services',
+        },
+        {
+          date: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000),
+          type: 'brakes',
+          notes: 'Replaced all wheel seals and brake drums',
+          costCents: 98000,
+          serviceProvider: 'Great Lakes Fleet Services',
+        },
+      ],
+      notes: 'Primary cross-border reefer with hazmat endorsement',
     },
     {
       id: TRUCK_IDS.testUser4_2,
@@ -125,6 +246,23 @@ export async function seedTrucks(drivers: Record<SeedDriverKey, DriverDoc>) {
       vin: '3HSDZTBR1NN445566',
       certifications: [],
       isPrimary: false,
+      expensePreferences: {
+        fuelCostPerLiter: 1.75,
+        fuelEfficiencyKmPerLiter: 3.3,
+        insurancePerMonth: 800,
+        maintenancePerKm: 0.16,
+        otherFixedCostsPerMonth: 100,
+      },
+      maintenanceRecords: [
+        {
+          date: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000),
+          type: 'oil change',
+          notes: 'Full synthetic oil and filter replacement',
+          costCents: 36000,
+          serviceProvider: 'Ontario Truck Clinic',
+        },
+      ],
+      notes: 'Short-haul flatbed for Ontario construction freight',
     },
     {
       id: TRUCK_IDS.testUser5_1,
@@ -140,6 +278,30 @@ export async function seedTrucks(drivers: Record<SeedDriverKey, DriverDoc>) {
       vin: '2WJDT3CV9RK778899',
       certifications: [],
       isPrimary: true,
+      expensePreferences: {
+        fuelCostPerLiter: 1.85,
+        fuelEfficiencyKmPerLiter: 2.9,
+        insurancePerMonth: 1100,
+        maintenancePerKm: 0.19,
+        otherFixedCostsPerMonth: 280,
+      },
+      maintenanceRecords: [
+        {
+          date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+          type: 'pre-trip inspection',
+          notes: 'Annual safety inspection and step deck hydraulic check',
+          costCents: 55000,
+          serviceProvider: 'Manitoba Heavy Truck Services',
+        },
+        {
+          date: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000),
+          type: 'oil change',
+          notes: 'Full synthetic oil and filter replacement',
+          costCents: 38000,
+          serviceProvider: 'Manitoba Heavy Truck Services',
+        },
+      ],
+      notes: 'Flagship step deck for oversized and specialized loads',
     },
   ]
 
@@ -158,6 +320,9 @@ export async function seedTrucks(drivers: Record<SeedDriverKey, DriverDoc>) {
       vin: t.vin,
       certifications: t.certifications,
       isPrimary: t.isPrimary,
+      expensePreferences: t.expensePreferences,
+      maintenanceRecords: t.maintenanceRecords,
+      notes: t.notes,
     }))
   )
 

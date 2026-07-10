@@ -2,6 +2,8 @@ import { ArrowRight, CalendarClock, MapPin, Truck, Weight } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import type { AuctionSummary, CompanySummary, Load, LoadStatus } from '@/services/loadApi/loadEnum'
+import type { EligibilityFlags } from '@/services/driverApi/driverEnum'
+import { EligibilityBadge } from '@/components/driverLoads/EligibilityBadge'
 
 const STATUS_BADGE: Record<LoadStatus, { label: string; className: string }> = {
   draft: { label: 'Draft', className: 'bg-muted text-muted-foreground' },
@@ -49,13 +51,23 @@ interface LoadCardProps {
   load: Load
   onClick?: () => void
   viewAuctionHref?: string
+  eligibilityFlags?: EligibilityFlags
+  recommendationScore?: number
 }
 
-export function LoadCard({ load, onClick, viewAuctionHref }: LoadCardProps) {
+export function LoadCard({
+  load,
+  onClick,
+  viewAuctionHref,
+  eligibilityFlags,
+  recommendationScore,
+}: LoadCardProps) {
   const navigate = useNavigate()
   const auction = isPopulatedAuction(load.auctionId) ? load.auctionId : null
   const company = isPopulatedCompany(load.companyId) ? load.companyId : null
   const badge = STATUS_BADGE[load.status] ?? STATUS_BADGE.draft
+
+  const hasScore = eligibilityFlags !== undefined && recommendationScore !== undefined
 
   return (
     <Card
@@ -168,6 +180,10 @@ export function LoadCard({ load, onClick, viewAuctionHref }: LoadCardProps) {
             >
               Quick View
             </Link>
+          )}
+
+          {hasScore && (
+            <EligibilityBadge flags={eligibilityFlags!} recommendationScore={recommendationScore} />
           )}
         </div>
       </CardContent>

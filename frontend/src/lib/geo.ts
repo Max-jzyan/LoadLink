@@ -19,3 +19,16 @@ export function haversineDistanceKm(
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return Math.round(R * c)
 }
+
+import type { Load } from '@/services/loadApi/loadEnum'
+
+/** Estimate distance in km using loose haversine (returns raw float, not rounded). */
+export function estimateKm(a: Pick<Load, 'originCoords' | 'destinationCoords'>): number {
+  if (!a.originCoords || !a.destinationCoords) return 0
+  return haversineDistanceKm(
+    a.originCoords.lat,
+    a.originCoords.lng,
+    a.destinationCoords.lat,
+    a.destinationCoords.lng
+  )
+}

@@ -1,7 +1,13 @@
 import { api } from '../api'
 import { LoadTag } from '../apiTypes'
 import type { RegisterUserPayload, RegisterUserResponse, MyProfile } from './userEnum'
-import { showSuccess, showError, getSuccessMessage, getHttpErrorMessage, getErrorStatus } from '@/lib/toast'
+import {
+  showSuccess,
+  showError,
+  getSuccessMessage,
+  getHttpErrorMessage,
+  getErrorStatus,
+} from '@/lib/toast'
 
 export const userApi = api.injectEndpoints({
   endpoints: (build) => ({

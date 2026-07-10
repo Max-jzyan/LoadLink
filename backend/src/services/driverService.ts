@@ -56,6 +56,26 @@ export const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: numb
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
+// ── scoring types ────────────────────────────────────────────────────┐
+//                                                                     │
+
+interface EligibilityFlags {
+  eligibleTruckType: boolean
+  eligibleTrailerLength: boolean
+  eligibleCertifications: boolean
+  eligibleSchedule: boolean
+  eligibleMinRate: boolean
+  eligibleMinValue: boolean
+  eligibleDeadhead: boolean
+  isEligible: boolean
+}
+
+interface ScoredLoad {
+  loadId: string
+  eligibilityFlags: EligibilityFlags
+  recommendationScore: number // 0–100
+}
+
 // ── service functions ─────────────────────────────────────────────────┐
 //                                                                     │
 
@@ -443,4 +463,320 @@ export const updateDriverExpenses = async (
 
   const driver = driverDoc.toObject()
   return driver
+}
+
+// ── scoring logic ────────────────────────────────────────────────────┐
+//                                                                     │
+
+/** Default-scope scoring weights (hardcoded for v1; extract to config later). */
+const SCORE_WEIGHTS = {
+  rate: 0.25,
+  value: 0.10,
+  deadhead: 0.20,
+  geographicProximity: 0.20,
+  temporalAdjacency: 0.15,
+  truckTypeMatch: 0.05,
+  competition: 0.05,
+}
+
+/**
+ * Static coordinate map for major Canadian cities.
+ * Used as a fallback when no completed-load history exists.
+ */
+const CANADIAN_CITY_COORDS: Record<string, [number, number]> = {
+  'Vancouver, BC': [49.2827, -123.1207],
+  'Calgary, AB': [51.0447, -114.0719],
+  'Edmonton, AB': [53.5461, -113.4938],
+  'Regina, SK': [50.4452, -104.6189],
+  'Saskatoon, SK': [52.1579, -106.6702],
+  'Winnipeg, MB': [49.8951, -97.1384],
+  'Toronto, ON': [43.6532, -79.3832],
+  'Ottawa, ON': [45.4215, -75.6972],
+  'Hamilton, ON': [43.2557, -79.8711],
+  'London, ON': [42.9849, -81.2453],
+  'Montreal, QC': [45.5017, -73.5673],
+  'Quebec City, QC': [46.8139, -71.2080],
+  'Fredericton, NB': [45.9636, -66.6431],
+  'Halifax, NS': [44.6488, -63.5752],
+  'Charlottetown, PE': [46.2382, -63.1311],
+  "St. John's, NL": [47.5615, -52.7126],
+}
+
+interface LatLng {
+  lat: number
+  lng: number
+}
+
+/**
+ * Resolve the driver's current location for deadhead calculation.
+ *
+ * Priority order:
+ *   1. Most recent completed load's destination coords
+ *   2. Home city via CANADIAN_CITY_COORDS lookup
+ *   3. null (deadhead treated as 0 — no penalty)
+ */
+function getCurrentLocation(
+  completedLoads: any[],
+  driver: Record<string, any>
+): LatLng | null {
+  // Priority 1: newest completed load's destination
+  if (completedLoads.length > 0) {
+    const last = completedLoads[0] as any
+    if (last.destinationCoords?.lat != null && last.destinationCoords?.lng != null) {
+      return { lat: last.destinationCoords.lat, lng: last.destinationCoords.lng }
+    }
+  }
+
+  // Priority 2: home city lookup
+  const city = driver.homeLocation?.city
+  const province = driver.homeLocation?.province
+  if (city && province) {
+    const key = `${city}, ${province}`
+    const coords = CANADIAN_CITY_COORDS[key]
+    if (coords) {
+      return { lat: coords[0], lng: coords[1] }
+    }
+  }
+
+  return null
+}
+
+/**
+ * Compute per-load eligibility flags and a recommendation score (0–100).
+ * Returns a flat array of ScoredLoad items, one per available load.
+ */
+export const getScoredLoads = async (driverId: string) => {
+  assertValidId(driverId, 'driverId')
+
+  // ── 1. Fetch driver data ──────────────────────────────────────────────
+  const driver = await DriverModel.findById(new Types.ObjectId(driverId))
+    .select('pricingPreferences homeLocation')
+    .lean()
+  if (!driver) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Driver not found')
+  }
+
+  const prefs = driver.pricingPreferences ?? {
+    minimumRatePerMile: 0,
+    minimumLoadValue: 0,
+    preferredMaxDeadheadMiles: 0,
+  }
+  const homeLocation = driver.homeLocation ?? { city: '', province: '', country: '' }
+
+  // ── 2. Fetch driver's trucks (certs live per-truck, not on Driver) ────
+  const trucks = await TruckModel.find({ ownerDriverId: new Types.ObjectId(driverId) }).lean()
+  const truckTypes = [...new Set(trucks.map((t) => t.truckType))]
+  const maxTrailerLength = trucks.reduce((max, t) => Math.max(max, t.trailerLengthFt ?? 0), 0)
+  // Collect each truck's certification set; used to check whether at least
+  // one truck can satisfy all of a load's required certifications.
+  const truckCertSets: Set<string>[] = trucks.map((t) => new Set(t.certifications ?? []))
+
+  // ── 3. Fetch driver's existing assigned loads (for schedule overlap) ──
+  const assignedLoads = await LoadModel.find({
+    assignedDriverId: new Types.ObjectId(driverId),
+    status: { $in: ['booked', 'in_transit'] },
+  })
+    .select('pickupTime dropoffTime destinationAddress destinationCoords originAddress originCoords')
+    .lean()
+
+  // ── 3b. Fetch completed loads (newest first) for deadhead / proximity ──
+  const completedLoads = await LoadModel.find({
+    assignedDriverId: new Types.ObjectId(driverId),
+    status: { $in: ['completed'] },
+  })
+    .select('destinationCoords dropoffTime')
+    .sort({ dropoffTime: -1 })
+    .lean()
+
+  // Resolve the driver's current location for deadhead & proximity scoring.
+  const driverLocation = getCurrentLocation(completedLoads, driver)
+
+  // ── 4. Fetch all available loads ──────────────────────────────────────
+  const availableLoads: any[] = await LoadModel.find({ status: LOAD_STATUSES.AuctionLive })
+    .populate('auctionId')
+    .populate('companyId')
+    .sort({ createdAt: -1 })
+    .lean()
+
+  // ── 5. Count existing bids per load for competition metric ────────────
+  const loadIds = availableLoads.map((l) => l._id)
+  const bidCounts: Record<string, number> = {}
+  if (loadIds.length > 0) {
+    const agg = await BidModel.aggregate([
+      { $match: { loadId: { $in: loadIds.map((id: any) => new Types.ObjectId(id)) } } },
+      { $group: { _id: '$loadId', count: { $sum: 1 } } },
+    ])
+    for (const row of agg) {
+      bidCounts[row._id.toString()] = row.count
+    }
+  }
+
+  // ── 6. Compute for each load ──────────────────────────────────────────
+  const kmPerMile = 1.60934
+  const maxBidCount = Math.max(1, ...Object.values(bidCounts))
+
+  const results: ScoredLoad[] = availableLoads.map((load: any) => {
+    const auction = load.auctionId as any ?? {}
+    const currentPrice = auction.currentPrice ?? auction.capPrice ?? 0
+
+    // Distance (prefer route, fall back to haversine)
+    let routeKm = load.route?.distanceKm ?? 0
+    if (routeKm <= 0 && load.originCoords && load.destinationCoords) {
+      routeKm = haversineKm(
+        load.originCoords.lat,
+        load.originCoords.lng,
+        load.destinationCoords.lat,
+        load.destinationCoords.lng
+      )
+    }
+    const routeMiles = routeKm / kmPerMile
+
+    // ── Eligibility ──────────────────────────────────────────────────────
+    const eligibleTruckType = truckTypes.length === 0 || truckTypes.includes(load.truckType)
+    const eligibleTrailerLength = maxTrailerLength === 0 || (load.trailerLengthFt ?? 0) <= maxTrailerLength
+    // At least one truck must possess ALL of the load's required certifications.
+    const eligibleCertifications =
+      !load.certifications?.length ||
+      truckCertSets.some((truckCerts) =>
+        (load.certifications as string[]).every((c: string) => truckCerts.has(c))
+      )
+
+    // Schedule overlap check
+    const loadPickup = new Date(load.pickupTime).getTime()
+    const loadDropoff = new Date(load.dropoffTime).getTime()
+    const eligibleSchedule = !assignedLoads.some((aLoad: any) => {
+      const aPickup = new Date(aLoad.pickupTime).getTime()
+      const aDropoff = new Date(aLoad.dropoffTime).getTime()
+      return loadPickup < aDropoff && loadDropoff > aPickup
+    })
+
+    // Minimum rate per mile (rate preference is in $/mile → convert routeKm to miles)
+    const effectiveRatePerMile = routeMiles > 0 ? currentPrice / routeMiles : currentPrice
+    const eligibleMinRate = prefs.minimumRatePerMile <= 0 || effectiveRatePerMile >= prefs.minimumRatePerMile
+    const eligibleMinValue = prefs.minimumLoadValue <= 0 || currentPrice >= prefs.minimumLoadValue
+
+    // Deadhead: haversine distance (in miles) from the driver's current
+    // location to this load's origin.  `driverLocation` resolves via
+    // priority: last completed-load dropoff → home city → null (no penalty).
+    let deadheadMiles = 0
+    if (driverLocation && load.originCoords) {
+      const deadheadKm = haversineKm(
+        driverLocation.lat,
+        driverLocation.lng,
+        load.originCoords.lat,
+        load.originCoords.lng
+      )
+      deadheadMiles = deadheadKm / kmPerMile
+    }
+    const eligibleDeadhead =
+      prefs.preferredMaxDeadheadMiles <= 0 || deadheadMiles <= prefs.preferredMaxDeadheadMiles
+
+    const isEligible =
+      eligibleTruckType &&
+      eligibleTrailerLength &&
+      eligibleCertifications &&
+      eligibleSchedule &&
+      eligibleMinRate &&
+      eligibleMinValue &&
+      eligibleDeadhead
+
+    // ── Scoring ──────────────────────────────────────────────────────────
+
+    // Rate score: how much the effective rate exceeds the minimum (capped at 2x)
+    let rateScore = 0
+    if (prefs.minimumRatePerMile > 0 && routeMiles > 0) {
+      const ratio = effectiveRatePerMile / prefs.minimumRatePerMile
+      rateScore = Math.min(100, Math.max(0, ((ratio - 1) / 1) * 100))
+    } else if (routeMiles > 0) {
+      rateScore = 50 // neutral when no minimum set
+    }
+
+    // Value score: logarithmic scale so high-value loads differentiate better.
+    //   At minLoadValue (ratio=1):  log2(1)*25  = 0
+    //   At 2x min (ratio=2):        log2(2)*25  = 25
+    //   At 4x min (ratio=4):        log2(4)*25  = 50
+    //   At 8x min (ratio=8):        log2(8)*25  = 75
+    //   At 16x min (ratio=16):      log2(16)*25 = 100 (cap)
+    let valueScore = 0
+    if (prefs.minimumLoadValue > 0) {
+      const ratio = currentPrice / prefs.minimumLoadValue
+      valueScore = Math.min(100, Math.max(0, Math.log2(ratio) * 25))
+    } else {
+      valueScore = 50
+    }
+
+    // Deadhead score: inverse — lower deadhead is better
+    const deadheadScore = deadheadMiles <= 0
+      ? 100
+      : Math.max(0, 100 - (deadheadMiles / (prefs.preferredMaxDeadheadMiles || 100)) * 100)
+
+    // Geographic proximity: distance from the driver's known location to this
+    // load's origin — uses the same `driverLocation` as the deadhead check.
+    let proximityScore = 50
+    if (driverLocation && load.originCoords) {
+      const distKm = haversineKm(
+        driverLocation.lat,
+        driverLocation.lng,
+        load.originCoords.lat,
+        load.originCoords.lng
+      )
+      proximityScore = Math.max(0, 100 - (distKm / 500) * 100) // 500km = 0 score
+    }
+
+    // Temporal adjacency: if an existing load ends near this load's origin and pickup time
+    let temporalScore = 0
+    if (assignedLoads.length > 0) {
+      const adjacentLoads = assignedLoads.filter((aLoad: any) => {
+        const aDropoff = new Date(aLoad.dropoffTime).getTime()
+        const aDest = (aLoad as any).destinationAddress ?? ''
+        const lOrigin = load.originAddress ?? ''
+        // Check if same city AND dropoff is within 48h of this load's pickup
+        const timeDelta = loadPickup - aDropoff
+        const sameRegion =
+          aDest.toLowerCase().includes(lOrigin.split(',')[0]?.trim().toLowerCase() ?? '') ||
+          lOrigin.toLowerCase().includes(aDest.split(',')[0]?.trim().toLowerCase() ?? '')
+        return sameRegion && timeDelta >= 0 && timeDelta <= 48 * 60 * 60 * 1000
+      })
+      temporalScore = adjacentLoads.length > 0 ? 100 : 0
+    } else {
+      temporalScore = 0
+    }
+
+    // Truck-type match bonus
+    const truckMatchScore = eligibleTruckType ? 100 : 0
+
+    // Competition score: fewer existing bids = higher score
+    const bidCount = bidCounts[load._id.toString()] ?? 0
+    const competitionScore = maxBidCount > 0
+      ? Math.max(0, 100 - (bidCount / maxBidCount) * 100)
+      : 100
+
+    // Weighted total
+    const recommendationScore = Math.round(
+      rateScore * SCORE_WEIGHTS.rate +
+      valueScore * SCORE_WEIGHTS.value +
+      deadheadScore * SCORE_WEIGHTS.deadhead +
+      proximityScore * SCORE_WEIGHTS.geographicProximity +
+      temporalScore * SCORE_WEIGHTS.temporalAdjacency +
+      truckMatchScore * SCORE_WEIGHTS.truckTypeMatch +
+      competitionScore * SCORE_WEIGHTS.competition
+    )
+
+    return {
+      loadId: load._id.toString(),
+      eligibilityFlags: {
+        eligibleTruckType,
+        eligibleTrailerLength,
+        eligibleCertifications,
+        eligibleSchedule,
+        eligibleMinRate,
+        eligibleMinValue,
+        eligibleDeadhead,
+        isEligible,
+      },
+      recommendationScore,
+    }
+  })
+
+  return results
 }

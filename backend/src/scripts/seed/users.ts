@@ -40,6 +40,11 @@ export async function seedUsers() {
     firebaseUid: '64HOtArwogXs2H4nXD4kyxRw2wk2',
     name: 'testUser1',
     email: 'testuser1@example.com',
+    pricingPreferences: {
+      minimumRatePerMile: 2.25,
+      minimumLoadValue: 400,
+      preferredMaxDeadheadMiles: 75,
+    },
   })
 
   const testUser2 = await DriverModel.create({
@@ -47,6 +52,11 @@ export async function seedUsers() {
     firebaseUid: '4Y6LYPl2kyQpyPtR99FaeaVOph62',
     name: 'testUser2',
     email: 'testuser2@example.com',
+    pricingPreferences: {
+      minimumRatePerMile: 3.25,
+      minimumLoadValue: 600,
+      preferredMaxDeadheadMiles: 50,
+    },
   })
 
   const testUser3 = await DriverModel.create({
@@ -54,6 +64,11 @@ export async function seedUsers() {
     firebaseUid: 'qYIxX5L2P5UoEBgDOh9UUHOX5HU2',
     name: 'testUser3',
     email: 'testuser3@example.com',
+    pricingPreferences: {
+      minimumRatePerMile: 2.25,
+      minimumLoadValue: 400,
+      preferredMaxDeadheadMiles: 75,
+    },
   })
 
   const testUser4 = await DriverModel.create({
@@ -61,6 +76,11 @@ export async function seedUsers() {
     firebaseUid: 'XsbV0iBLkKhuxPHgChqBlel0Bg63',
     name: 'testUser4',
     email: 'testuser4@example.com',
+    pricingPreferences: {
+      minimumRatePerMile: 2.75,
+      minimumLoadValue: 500,
+      preferredMaxDeadheadMiles: 60,
+    },
   })
 
   const testUser5 = await DriverModel.create({
@@ -68,6 +88,11 @@ export async function seedUsers() {
     firebaseUid: 'F6pMHcjeqXQCxSmpCrHnmraXa6p1',
     name: 'testUser5',
     email: 'testuser5@example.com',
+    pricingPreferences: {
+      minimumRatePerMile: 3.5,
+      minimumLoadValue: 700,
+      preferredMaxDeadheadMiles: 80,
+    },
   })
 
   return {

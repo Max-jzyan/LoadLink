@@ -211,6 +211,23 @@ export interface RevenueSummary {
   expensePreferences: ExpensePreferences
 }
 
+export interface EligibilityFlags {
+  eligibleTruckType: boolean
+  eligibleTrailerLength: boolean
+  eligibleCertifications: boolean
+  eligibleSchedule: boolean
+  eligibleMinRate: boolean
+  eligibleMinValue: boolean
+  eligibleDeadhead: boolean
+  isEligible: boolean
+}
+
+export interface ScoredLoad {
+  loadId: string
+  eligibilityFlags: EligibilityFlags
+  recommendationScore: number
+}
+
 export interface UpdateDriverProfilePayload {
   name?: string
   professionalTitle?: string

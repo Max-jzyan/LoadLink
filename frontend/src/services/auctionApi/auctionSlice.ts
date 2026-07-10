@@ -1,5 +1,6 @@
 import { api } from '../api'
-import { LoadTag, LoadTagId } from '../apiTypes'
+import { LoadTag } from '../apiTypes'
+import type { TagDescription } from '../apiTypes'
 import type {
   AcceptBidResult,
   BidsStreamPayload,
@@ -25,8 +26,8 @@ export const auctionApi = api.injectEndpoints({
         url: `auctions/${loadId}/bids/${bidId}`,
         method: 'PATCH',
       }),
-      invalidatesTags: (result) => {
-        const tags: any[] = [{ type: LoadTag.Load, id: result?.loadId }]
+      invalidatesTags: (result): TagDescription[] => {
+        const tags: TagDescription[] = [{ type: LoadTag.Load, id: result?.loadId }]
         if (result?.driverId) {
           tags.push({ type: LoadTag.Driver, id: `${result.driverId}-revenue` })
         }

@@ -1,9 +1,5 @@
 import { useSelector } from 'react-redux'
-import {
-  selectCurrentUser,
-  selectAuthLoading,
-  selectRequiredMongoId,
-} from '@/services/authSlice'
+import { selectCurrentUser, selectAuthLoading, selectRequiredMongoId } from '@/services/authSlice'
 
 const useAuth = () => {
   const user = useSelector(selectCurrentUser)

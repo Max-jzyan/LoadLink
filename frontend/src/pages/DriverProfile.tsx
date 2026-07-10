@@ -27,11 +27,7 @@ import { useCallback, useState } from 'react'
 
 export default function DriverProfile() {
   const driverId = useRequiredMongoId()
-  const {
-    data: driver,
-    isLoading,
-    isError,
-  } = useGetDriverProfileQuery(driverId)
+  const { data: driver, isLoading, isError } = useGetDriverProfileQuery(driverId)
 
   const [updateDriverProfile] = useUpdateDriverProfileMutation()
   const [createTruck] = useCreateTruckMutation()

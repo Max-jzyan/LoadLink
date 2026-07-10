@@ -95,6 +95,20 @@ export const getDriverRevenue = async (req: Request, res: Response, next: NextFu
 }
 
 /**
+ * GET /api/driver/:driverId/loads/scored
+ * Fetch all available loads with eligibility flags and recommendation scores.
+ */
+export const getScoredLoads = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const driverId = req.params.driverId as string
+    const scored = await driverService.getScoredLoads(driverId)
+    res.status(StatusCodes.OK).json(scored)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
  * PATCH /api/driver/:driverId/expenses
  * Update the driver's expense preferences.
  */

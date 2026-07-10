@@ -1,5 +1,13 @@
+import {
+  getErrorStatus,
+  getHttpErrorMessage,
+  getSuccessMessage,
+  showError,
+  showSuccess,
+} from '@/lib/toast'
 import { api } from '../api'
-import { LoadTag, LoadTagId } from '../apiTypes'
+import { LoadTag, LoadTagId, type TagDescription } from '../apiTypes'
+import type { ExpenseOverrideFields } from '../driverApi/driverEnum'
 import type {
   CreateAuctionPayload,
   CreateLoadPayload,
@@ -8,14 +16,6 @@ import type {
   PopulatedLoad,
   UpdateLoadPayload,
 } from './loadEnum'
-import {
-  showSuccess,
-  showError,
-  getSuccessMessage,
-  getHttpErrorMessage,
-  getErrorStatus,
-} from '@/lib/toast'
-import type { ExpenseOverrideFields } from '../driverApi/driverEnum'
 
 export const loadApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -111,8 +111,8 @@ export const loadApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (result) => {
-        const tags: any[] = [{ type: LoadTag.Load, id: result?._id }]
+      invalidatesTags: (result): TagDescription[] => {
+        const tags: TagDescription[] = [{ type: LoadTag.Load, id: result?._id }]
         if (result?.assignedDriverId) {
           tags.push({ type: LoadTag.Driver, id: `${result.assignedDriverId}-revenue` })
         }
@@ -127,10 +127,11 @@ export const loadApi = api.injectEndpoints({
         method: 'PATCH',
         body: { status },
       }),
-      invalidatesTags: (result, _error, { driverId }) => {
-        const tags: any[] = [{ type: LoadTag.Load, id: result?._id }]
+      invalidatesTags: (result, _error, { driverId }): TagDescription[] => {
+        const tags: TagDescription[] = [{ type: LoadTag.Load, id: result?._id }]
         if (driverId) {
           tags.push({ type: LoadTag.Driver, id: `${driverId}-revenue` })
+          tags.push({ type: LoadTag.Load, id: `${driverId}-scored` })
         }
         return tags
       },
@@ -143,8 +144,8 @@ export const loadApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (result) => {
-        const tags: any[] = [{ type: LoadTag.Load, id: result?._id }]
+      invalidatesTags: (result): TagDescription[] => {
+        const tags: TagDescription[] = [{ type: LoadTag.Load, id: result?._id }]
         if (result?.assignedDriverId) {
           tags.push({ type: LoadTag.Driver, id: `${result.assignedDriverId}-revenue` })
         }

@@ -3,7 +3,6 @@ export const LoadTag = {
   Bid: 'Bid',
   AuctionPrice: 'AuctionPrice',
   Truck: 'Truck',
-  DriverProfile: 'DriverProfile',
   Driver: 'Driver',
   Review: 'Review',
   Blocklist: 'Blocklist',
@@ -21,3 +20,7 @@ export const LoadTagId = {
 } as const
 
 export type LoadTagId = (typeof LoadTagId)[keyof typeof LoadTagId]
+
+// Tag description type for RTK Query tagging system
+// The id can be a string, LoadTagId, or undefined when result is potentially null
+export type TagDescription = { type: LoadTag; id?: string | LoadTagId }

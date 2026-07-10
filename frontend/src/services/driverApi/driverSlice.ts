@@ -1,6 +1,7 @@
 import { getHttpErrorMessage, showError, showSuccess, getErrorStatus } from '@/lib/toast'
 import { api } from '../api'
 import { LoadTag, LoadTagId } from '../apiTypes'
+import type { TagDescription } from '../apiTypes'
 import type { Load } from '../loadApi/loadEnum'
 import type {
   PlaceBidPayload,
@@ -12,6 +13,7 @@ import type {
   DriverProfile,
   RevenueSummary,
   ExpensePreferences,
+  ScoredLoad,
   CreateTruckPayload,
   UpdateTruckPayload,
   UpdateDriverProfilePayload,
@@ -27,10 +29,16 @@ export const driverApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (_result, _error, { loadId }) => [
-        { type: LoadTag.Bid, id: loadId },
-        { type: LoadTag.AuctionPrice, id: loadId },
-      ],
+      invalidatesTags: (_result, _error, { loadId, body }): TagDescription[] => {
+        const tags: TagDescription[] = [
+          { type: LoadTag.Bid, id: loadId },
+          { type: LoadTag.AuctionPrice, id: loadId },
+        ]
+        if (body?.driverId) {
+          tags.push({ type: LoadTag.Load, id: `${body.driverId}-scored` })
+        }
+        return tags
+      },
       async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           const { data } = await queryFulfilled
@@ -50,8 +58,8 @@ export const driverApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (result) => {
-        const tags: any[] = [
+      invalidatesTags: (result): TagDescription[] => {
+        const tags: TagDescription[] = [
           { type: LoadTag.Load, id: result?.loadId },
           { type: LoadTag.Bid, id: result?.loadId },
           { type: LoadTag.AuctionPrice, id: result?.loadId },
@@ -59,6 +67,7 @@ export const driverApi = api.injectEndpoints({
         ]
         if (result?.driverId) {
           tags.push({ type: LoadTag.Driver, id: `${result.driverId}-revenue` })
+          tags.push({ type: LoadTag.Load, id: `${result.driverId}-scored` })
         }
         return tags
       },
@@ -103,6 +112,14 @@ export const driverApi = api.injectEndpoints({
       ],
     }),
 
+    // GET /api/driver/:driverId/loads/scored — fetch all loads with eligibility + score
+    getScoredLoads: build.query<ScoredLoad[], string>({
+      query: (driverId) => `driver/${driverId}/loads/scored`,
+      providesTags: (_result, _error, driverId) => [
+        { type: LoadTag.Load, id: `${driverId}-scored` },
+      ],
+    }),
+
     // GET /api/driver/:driverId/trucks — list driver's trucks
     listDriverTrucks: build.query<Truck[], string>({
       query: (driverId) => `driver/${driverId}/trucks`,
@@ -128,6 +145,7 @@ export const driverApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { driverId }) => [
         { type: LoadTag.Driver, id: driverId },
         { type: LoadTag.Profile, id: 'ME' },
+        { type: LoadTag.Load, id: `${driverId}-scored` },
       ],
     }),
 
@@ -141,6 +159,7 @@ export const driverApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { driverId }) => [
         { type: LoadTag.Driver, id: driverId },
         { type: LoadTag.Truck, id: driverId },
+        { type: LoadTag.Load, id: `${driverId}-scored` },
       ],
     }),
 
@@ -157,6 +176,7 @@ export const driverApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { driverId }) => [
         { type: LoadTag.Driver, id: driverId },
         { type: LoadTag.Truck, id: driverId },
+        { type: LoadTag.Load, id: `${driverId}-scored` },
       ],
     }),
 
@@ -169,6 +189,7 @@ export const driverApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { driverId }) => [
         { type: LoadTag.Driver, id: driverId },
         { type: LoadTag.Truck, id: driverId },
+        { type: LoadTag.Load, id: `${driverId}-scored` },
       ],
     }),
 
@@ -235,6 +256,7 @@ export const driverApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { driverId }) => [
         { type: LoadTag.Driver, id: driverId },
         { type: LoadTag.Driver, id: `${driverId}-revenue` },
+        { type: LoadTag.Load, id: `${driverId}-scored` },
       ],
     }),
 
@@ -245,13 +267,14 @@ export const driverApi = api.injectEndpoints({
         method: 'PATCH',
         body: { truckId },
       }),
-      invalidatesTags: (result) => {
-        const tags: any[] = [
+      invalidatesTags: (result): TagDescription[] => {
+        const tags: TagDescription[] = [
           { type: LoadTag.Load, id: result?._id },
           { type: LoadTag.Load, id: LoadTagId.DriverList },
         ]
         if (result?.assignedDriverId) {
           tags.push({ type: LoadTag.Driver, id: `${result.assignedDriverId}-revenue` })
+          tags.push({ type: LoadTag.Load, id: `${result.assignedDriverId}-scored` })
         }
         return tags
       },
@@ -267,6 +290,7 @@ export const {
   useListDriverBidsQuery,
   useListDriverLoadsQuery,
   useGetRecommendedLoadsQuery,
+  useGetScoredLoadsQuery,
   useListDriverTrucksQuery,
   useGetDriverProfileQuery,
   useUpdateDriverProfileMutation,

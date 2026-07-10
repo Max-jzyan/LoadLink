@@ -11,11 +11,7 @@ import Spinner from '@/components/shared/Spinner'
 export default function Loads() {
   const companyId = useRequiredMongoId()
 
-  const {
-    data: loads,
-    isLoading,
-    isError,
-  } = useListCompanyLoadsQuery(companyId)
+  const { data: loads, isLoading, isError } = useListCompanyLoadsQuery(companyId)
 
   const count = loads?.length ?? 0
 
