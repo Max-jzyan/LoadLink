@@ -511,17 +511,23 @@ interface LatLng {
  * Resolve the driver's current location for deadhead calculation.
  *
  * Priority order:
- *   1. Most recent completed load's destination coords
+ *   1. The LATEST dropoff across ALL driver loads (completed, booked, in_transit)
+ *      — this is where the driver will physically be after their last commitment
  *   2. Home city via CANADIAN_CITY_COORDS lookup
  *   3. null (deadhead treated as 0 — no penalty)
+ *
+ * Note: We use all loads (not just completed) because a driver with bookings
+ * through July 28th has a concrete "current location" (that date's destination)
+ * even though those loads aren't completed yet. This lets us correctly compute
+ * deadhead for the _next_ load they'd want to schedule.
  */
 function getCurrentLocation(
-  completedLoads: any[],
+  allDriverLoads: any[],
   driver: Record<string, any>
 ): LatLng | null {
-  // Priority 1: newest completed load's destination
-  if (completedLoads.length > 0) {
-    const last = completedLoads[0] as any
+  // Priority 1: newest load's destination (sorted dropoffTime desc by caller)
+  if (allDriverLoads.length > 0) {
+    const last = allDriverLoads[0] as any
     if (last.destinationCoords?.lat != null && last.destinationCoords?.lng != null) {
       return { lat: last.destinationCoords.lat, lng: last.destinationCoords.lng }
     }
@@ -571,25 +577,29 @@ export const getScoredLoads = async (driverId: string) => {
   // one truck can satisfy all of a load's required certifications.
   const truckCertSets: Set<string>[] = trucks.map((t) => new Set(t.certifications ?? []))
 
-  // ── 3. Fetch driver's existing assigned loads (for schedule overlap) ──
-  const assignedLoads = await LoadModel.find({
+  // ── 3. Fetch ALL driver loads sorted by dropoffTime desc ──────────────
+  //    Used for schedule overlap, deadhead, proximity, and temporal adjacency.
+  //    Combining booked + in_transit + completed into one query ensures the
+  //    deadhead calculation uses the driver's last-known (or last-expected)
+  //    destination — even if that load is still in the future.
+  const driverLoads = await LoadModel.find({
     assignedDriverId: new Types.ObjectId(driverId),
-    status: { $in: ['booked', 'in_transit'] },
+    status: { $in: ['booked', 'in_transit', 'completed'] },
   })
-    .select('pickupTime dropoffTime destinationAddress destinationCoords originAddress originCoords')
-    .lean()
-
-  // ── 3b. Fetch completed loads (newest first) for deadhead / proximity ──
-  const completedLoads = await LoadModel.find({
-    assignedDriverId: new Types.ObjectId(driverId),
-    status: { $in: ['completed'] },
-  })
-    .select('destinationCoords dropoffTime')
+    .select('pickupTime dropoffTime destinationAddress destinationCoords originAddress originCoords status')
     .sort({ dropoffTime: -1 })
     .lean()
 
+  // Split into future / past for separate use in schedule vs deadhead.
+  //  - assignedLoads: future-or-current loads (booked, in_transit) for schedule overlap
+  //  - allLoads: all loads sorted by dropoffTime desc for deadhead / proximity
+  const assignedLoads = driverLoads.filter(
+    (l: any) => l.status === 'booked' || l.status === 'in_transit'
+  )
+
   // Resolve the driver's current location for deadhead & proximity scoring.
-  const driverLocation = getCurrentLocation(completedLoads, driver)
+  // Uses ALL loads so future bookings are respected.
+  const driverLocation = getCurrentLocation(driverLoads, driver)
 
   // ── 4. Fetch all available loads ──────────────────────────────────────
   const availableLoads: any[] = await LoadModel.find({ status: LOAD_STATUSES.AuctionLive })
