@@ -362,7 +362,7 @@ export default function SignupPage() {
         </div>
         <blockquote className="space-y-2 text-right">
           <p className="text-lg leading-relaxed text-slate-300">
-            PUT SOME DESCRIPTION WIHT BUZZWORDS HERE
+            Streamline the logistics of cargo transport
           </p>
           <footer className="text-sm text-slate-500">CPSC 455 Team 5</footer>
         </blockquote>
