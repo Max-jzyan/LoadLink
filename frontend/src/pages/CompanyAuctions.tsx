@@ -94,7 +94,7 @@ export default function CompanyAuctions() {
     <PageShell
       title="My Auctions"
       subtitle={`${live} live · ${closed} closed`}
-      action={
+      actions={
         <Button variant="outline" size="sm" onClick={refetch} disabled={isFetching}>
           <RefreshCw className={`h-4 w-4 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
           Refresh

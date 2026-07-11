@@ -112,7 +112,7 @@ export default function AdminRateConfirmations() {
     <PageShell
       title="Rate Confirmations"
       subtitle={`${filtered.length} PDFs`}
-      action={
+      actions={
         <Button variant="outline" size="sm" onClick={refetch} disabled={isFetching}>
           <RefreshCw className={`h-4 w-4 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
           Refresh

@@ -23,6 +23,8 @@ export interface InsuranceCert {
   url: string
   key: string
   uploadedAt: string
+  verificationStatus?: 'pending' | 'approved' | 'rejected'
+  reviewNotes?: string
 }
 
 export interface CertDoc {
@@ -55,6 +57,7 @@ export interface RateConfirmationBid {
         destinationAddress: string
         pickupTime: string
         dropoffTime: string
+        commodity: string
       }
     | string
   driverId: { _id: string; name: string; email: string } | string

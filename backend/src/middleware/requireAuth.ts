@@ -28,7 +28,6 @@ export async function requireFirebaseToken(
     req.firebaseUid = decoded.uid
     next()
   } catch (err) {
-    console.error('[requireAuth] token verification failed:', err)
     next(new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid or expired token'))
   }
 }

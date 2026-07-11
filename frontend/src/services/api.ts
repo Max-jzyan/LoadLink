@@ -29,6 +29,7 @@ export const api = createApi({
     LoadTag.AuctionPrice,
     LoadTag.Truck,
     LoadTag.Trailer,
+    LoadTag.DriverProfile,
     LoadTag.Driver,
     LoadTag.Review,
     LoadTag.Blocklist,
