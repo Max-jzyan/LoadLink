@@ -73,7 +73,7 @@ Here are some features in our M1 design doc's standard features and their M2 sta
 
 ### Test Plan
 
-[Milestone 2 Test Plan](docs/TestPlan_M2.md)
+[Milestone 2 Test Plan](docs/TestPlan%20M2.md)
 
 ### Things We Still Need To Implement
 
@@ -147,7 +147,7 @@ Here are some features in our M1 design doc's standard features and their M2 sta
 
 ### Test Plan
 
-[Milestone 3 Test Plan](docs/TestPlan_M3.md)
+[Milestone 3 Test Plan](docs/TestPlan%20M3.md)
 
 ### Bug Tracking
 
