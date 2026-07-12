@@ -307,6 +307,7 @@
   - Load 107 originates in Edmonton (same region)
   - Pickup is within 48 hours of load 106 dropoff (temporal adjacency)
   - The combined effect increases the temporal adjacency sub-score, raising the overall weighted recommendation score.
+  - **Confirmed manually:** log in as `testUser1`, claim/book load `106` (Vancouver → Edmonton) — load `107`'s recommendation score then goes above 80 (green "Top Pick" badge).
 
 ### Test Case 3: Same-day cross-country alternative lowers relative score
 
@@ -330,17 +331,57 @@
 
 **Test:**
 
-1. Log in as `testCompany1` and navigate to `/auctionLive/000000000000000000000107` (Furniture, Vancouver, BC → Edmonton, AB, 48ft DryVan, 18,000 lbs).
-2. Observe the current live auction values: Best Bid $3,194, Accept Now $3,056.
-3. Click **Accept bid** on the winning bid to accept the load.
-4. Log in as a driver (e.g. `testUser1`) who has just completed load `000000000000000000000106` (Vancouver → Edmonton, dropoff July 12).
-5. Navigate to `/driverAuctions` and observe the recommended loads. **Expected:**
-  - Load `000000000000000000000108` (Lumber, Edmonton, AB → Winnipeg, MB, 48ft DryVan, 25,000 lbs, current price: $2,847, best bid: $2,952) now appears with a high recommendation score (e.g., 90/100) because:
-    - The driver's current location is Edmonton (from the just-completed load 106)
-    - Load 108 originates in Edmonton (near-zero haversine distance, zero deadhead)
-    - Pickup July 12 aligns with the driver's availability after load 106 dropoff
+1. As driver `testUser1`, place a bid on load `000000000000000000000106` (Furniture, Vancouver, BC → Edmonton, AB, 48ft DryVan, 18,000 lbs) via `/driverAuctions/000000000000000000000106` — e.g. bid at the Accept Now price of $1,020.
+2. Log in as `testCompany1` and navigate to `/auctionLive/000000000000000000000106`. Observe the current live auction values: Accept Now $1,020 (cap $1,450).
+3. Click **Accept bid** on `testUser1`'s bid to accept the load (load 106 is now booked for `testUser1`, with dropoff July 12 in Edmonton).
+4. Log back in as `testUser1` and navigate to `/driverAuctions`. **Expected:**
+  - Load `000000000000000000000107` (Lumber, Edmonton, AB → Winnipeg, MB, 48ft DryVan, 25,000 lbs, current price: $3,056, best bid: $3,194) now appears with a high recommendation score (above 80, "Top Pick" badge) because:
+    - The driver's current location is Edmonton (from the just-booked load 106's destination)
+    - Load 107 originates in Edmonton (near-zero haversine distance, zero deadhead)
+    - Load 106's dropoff (July 12) is within 48 hours of load 107's pickup (July 13) — temporal adjacency
     - Geographic proximity and temporal adjacency significantly boost the recommendation score
   - The `DetailedEligibilityPanel` shows a "Top Pick" badge with "Why This is a Top Pick" highlighting: "Excellent rate", "Zero deadhead", "Perfect schedule fit", etc.
+
+---
+
+## Admin Portal
+
+### Test Case 1: Admin login
+
+**Test:** Navigate to `/admin` and log in with the seeded admin account (`admin@example.com` / `12345678`).
+
+**Expected:** Redirected to `/admin/dashboard`. Logging in with a non-admin account on this page is rejected with "This account does not have admin privileges."
+
+### Test Case 2: Dashboard overview
+
+**Test:** On `/admin/dashboard`, observe the stat cards and the "Recent Rate Confirmations" panel.
+
+**Expected:** Drivers, Companies, Loads, and Bids counts are non-zero and reflect seed data. "Docs to Review" reads 0 until a document is uploaded (Test Case 3). The "Recent Rate Confirmations" panel reads "No rate confirmations yet." until a bid is accepted (Test Case 4); "Document Review" and "User Management" quick-action links navigate to `/admin/documents` and `/admin/users`.
+
+### Test Case 3: View a submitted document
+
+**Test:**
+
+1. As a driver, upload a certification document (`/driver/profile` -&gt; Edit Personal Information -&gt; Upload certification) — seeded drivers have none uploaded by default, so this step is required to have something to review.
+2. As admin, open `/admin/documents`, search for that driver, and expand their row.
+3. Click **View** on the uploaded document.
+
+**Expected:** The document appears under "Certification Documents" (or "Insurance Certificates") with a "Pending Review" badge. **View** opens the file via a presigned S3 URL. **Approve** and **Reject** actions are available on the row.
+
+### Test Case 4: View a generated rate confirmation
+
+**Test:**
+
+1. As `testCompany1`, accept a driver's bid on a live auction (e.g. load `000000000000000000000101`) so a rate confirmation PDF is generated — no seeded bid is accepted by default, so this step is required to have something to view.
+2. As admin, open `/admin/rate-confirmations`.
+
+**Expected:** The accepted bid is listed with load route, pickup date/commodity, driver name, and bid amount, plus a working **Download** link to the generated PDF (no "PDF not generated" badge). The same entry now also appears in the dashboard's "Recent Rate Confirmations" panel.
+
+### Test Case 5: User directory
+
+**Test:** Open `/admin/users`.
+
+**Expected:** Table lists all seeded users (5 drivers, 2 companies, 1 admin) with role badge, joined date, and last active date. The role filter buttons (all/driver/company/admin) narrow the list correctly.
 
 ---
 
