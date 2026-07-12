@@ -69,8 +69,8 @@ export function RevenueTable({
       renderValue: (load) => <span>{formatCAD(load.fuelCost)}</span>,
     },
     {
-      label: isPotential ? 'Est. Expenses' : 'Expenses',
-      renderValue: (load) => <span>{formatCAD(load.totalExpenses)}</span>,
+      label: isPotential ? 'Est. Maintenance' : 'Maintenance',
+      renderValue: (load) => <span>{formatCAD(load.maintenanceCost)}</span>,
     },
     {
       label: isPotential ? 'Expected Profit' : 'Net Profit',

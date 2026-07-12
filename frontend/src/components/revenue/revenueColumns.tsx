@@ -114,9 +114,9 @@ export function createColumns(
       meta: { responsive: 'lg' },
     },
     {
-      accessorKey: 'totalExpenses',
-      header: isPotential ? 'Est. Expenses' : 'Expenses',
-      cell: ({ row }) => formatCAD(row.original.totalExpenses),
+      accessorKey: 'maintenanceCost',
+      header: isPotential ? 'Est. Maintenance' : 'Maintenance',
+      cell: ({ row }) => formatCAD(row.original.maintenanceCost),
       meta: { responsive: 'md' },
     },
     {
