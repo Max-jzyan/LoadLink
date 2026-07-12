@@ -7,6 +7,7 @@ import {
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import type { AppDispatch, RootState } from './store'
+import { api } from './api'
 import { type UserRole } from '@/types/enums'
 import { showSuccess, showError, getHttpErrorMessage, getErrorStatus } from '@/lib/toast'
 import { uploadDocuments, type UploadedDocument } from '@/lib/uploadDocuments'
@@ -20,14 +21,18 @@ export interface AuthUser {
   role: UserRole | null
 }
 
+export type SessionState = null | 'expiring' | 'expired'
+
 interface AuthState {
   user: AuthUser | null
   loading: boolean
+  sessionState: SessionState
 }
 
 const initialState: AuthState = {
   user: null,
   loading: true,
+  sessionState: null,
 }
 
 const authSlice = createSlice({
@@ -42,10 +47,13 @@ const authSlice = createSlice({
     setAuthLoading(state) {
       state.loading = true
     },
+    setSessionState(state, action: PayloadAction<SessionState>) {
+      state.sessionState = action.payload
+    },
   },
 })
 
-export const { setUser, setAuthLoading } = authSlice.actions
+export const { setUser, setAuthLoading, setSessionState } = authSlice.actions
 export default authSlice.reducer
 
 export const selectCurrentUser = (state: RootState) => state.auth.user
@@ -60,6 +68,17 @@ export const selectMongoId = (state: RootState) => state.auth.user?.mongoId ?? n
 export const selectRequiredMongoId = (state: RootState): string => state.auth.user?.mongoId ?? ''
 export const selectFirebaseUid = (state: RootState) => state.auth.user?.uid ?? null
 export const selectRole = (state: RootState) => state.auth.user?.role ?? null
+export const selectSessionState = (state: RootState) => state.auth.sessionState
+
+// Flag to distinguish manual logout from token expiry.
+// Set to true just before calling signOut(auth) from NavUser or other manual
+// logout flows, so subscribeToAuthChanges knows not to show the expired dialog.
+let _isManualLogout = false
+
+/** Call this before signOut(auth) to indicate the logout was user-initiated. */
+export function setManualLogout() {
+  _isManualLogout = true
+}
 
 // Fetch the MongoDB user profile for the current Firebase user.
 // The backend derives identity from the verified token.
@@ -89,14 +108,32 @@ export async function fetchDbUser(): Promise<{ _id: string; role: UserRole } | n
  *  3. We dispatch setUser with the complete profile (Redux is the single
  *     source of truth for role — nothing role-related is persisted client-side).
  *
- * Flow on logout: dispatch setUser(null).
+ * Flow on logout: dispatch setUser(null), reset RTK Query cache.
+ *   - If manual logout (_isManualLogout=true): just clean up, no dialog.
+ *   - If token expiry (firebaseUser is null without manual flag): set
+ *     sessionState to 'expired' so the UI can show a warning dialog.
  */
 export function subscribeToAuthChanges(dispatch: AppDispatch) {
   return onAuthStateChanged(auth, async (firebaseUser) => {
     if (!firebaseUser) {
+      // Reset all RTK Query cached data so stale data from the previous
+      // session is never shown when the next user logs in.
+      dispatch(api.util.resetApiState())
+
+      if (_isManualLogout) {
+        _isManualLogout = false
+        dispatch(setUser(null))
+        return
+      }
+
+      // Token expired / forced sign-out — show warning dialog
+      dispatch(setSessionState('expired'))
       dispatch(setUser(null))
       return
     }
+
+    // Clear any leftover session state when a user re-appears
+    dispatch(setSessionState(null))
 
     // Keep loading while we fetch mongoId + role from the backend.
     dispatch(setAuthLoading())

@@ -29,7 +29,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { applyTheme, getStoredTheme, type Theme } from '@/hooks/useTheme'
 import { auth } from '@/lib/firebase'
 import { useSelector } from 'react-redux'
-import { selectRole } from '@/services/authSlice'
+import { selectRole, setManualLogout } from '@/services/authSlice'
 import { useGetMyProfileQuery } from '@/services/userApi/userSlice'
 
 const THEME_ICONS: Record<Theme, React.ReactNode> = {
@@ -48,6 +48,7 @@ export function NavUser() {
   const { data: profile } = useGetMyProfileQuery()
 
   async function handleLogout() {
+    setManualLogout()
     await signOut(auth)
     navigate('/login')
   }

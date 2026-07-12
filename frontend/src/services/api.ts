@@ -8,8 +8,26 @@ import { auth } from '@/lib/firebase'
 // avoiding race conditions where auth.currentUser is not yet hydrated.
 let cachedToken: string | null = null
 
+/** Unix timestamp (ms) when the current Firebase ID token expires. */
+let _tokenExpiresAt: number | null = null
+
+/** Returns the token expiry timestamp in ms (or null if no user is signed in). */
+export function getTokenExpiresAt(): number | null {
+  return _tokenExpiresAt
+}
+
 onIdTokenChanged(auth, async (user) => {
-  cachedToken = user ? await user.getIdToken() : null
+  if (user) {
+    cachedToken = await user.getIdToken()
+    // Decode the token to extract the exp claim (seconds since epoch), convert to ms.
+    const tokenResult = await user.getIdTokenResult()
+    _tokenExpiresAt = tokenResult.expirationTime
+      ? new Date(tokenResult.expirationTime).getTime()
+      : null
+  } else {
+    cachedToken = null
+    _tokenExpiresAt = null
+  }
 })
 
 export const api = createApi({

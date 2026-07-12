@@ -1,12 +1,14 @@
 import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import './App.css'
 import { auth } from '@/lib/firebase'
 import { initTheme } from '@/hooks/useTheme'
+import { api } from '@/services/api'
 import PublicRoute from './components/auth/PublicRoute'
 import ProtectedRoute from './components/auth/ProtectedRoute'
+import SessionExpiredDialog from './components/auth/SessionExpiredDialog'
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
 import AdminLoginPage from './pages/auth/AdminLoginPage'
@@ -14,7 +16,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
 import PageLayout from '@/components/PageLayout'
 import AppRoutes from '@/routes'
-import { selectRole, selectAuthLoading } from '@/services/authSlice'
+import { selectRole, selectAuthLoading, setManualLogout } from '@/services/authSlice'
 import Spinner from '@/components/shared/Spinner'
 
 // Picks the correct sidebar based on the server-resolved role (Redux is the
@@ -26,12 +28,15 @@ function RoleLayout() {
   const role = useSelector(selectRole)
   const loading = useSelector(selectAuthLoading)
   const navigate = useNavigate()
+  const dispatch = useDispatch()
 
   useEffect(() => {
     if (!loading && !role) {
+      setManualLogout()
+      dispatch(api.util.resetApiState())
       signOut(auth).then(() => navigate('/login', { replace: true }))
     }
-  }, [loading, role, navigate])
+  }, [loading, role, navigate, dispatch])
 
   // prevents flashbang
   if (loading || !role) {
@@ -62,6 +67,7 @@ function App() {
 
   return (
     <Router>
+      <SessionExpiredDialog />
       <Routes>
         <Route
           path="/login"
