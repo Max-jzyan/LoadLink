@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Progress } from '@/components/ui/progress'
-import type { EligibilityFlags, EligibilitySeverity } from '@/services/driverApi/driverEnum'
+import type { EligibilityFlags, EligibilitySeverity, EligibilityBadgeType } from '@/services/driverApi/driverEnum'
+import { ELIGIBILITY_LABELS } from '@/services/driverApi/driverEnum'
 import { AlertTriangle, Star } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
@@ -11,19 +12,6 @@ interface EligibilityBadgeProps {
   highScoreHighlights?: string[]
   className?: string
 }
-
-const ELIGIBILITY_LABELS: Record<keyof EligibilityFlags, string> = {
-  eligibleTruckType: 'Wrong truck type',
-  eligibleTrailerLength: 'Trailer too long',
-  eligibleCertifications: 'Missing required certifications',
-  eligibleSchedule: 'Schedule conflict',
-  eligibleMinRate: 'Below minimum rate per mile',
-  eligibleMinValue: 'Below minimum load value',
-  eligibleDeadhead: 'Exceeds max deadhead',
-  isEligible: ''
-}
-
-type BadgeState = 'high-score' | 'eligible' | 'ineligible'
 
 /**
  * Renders a compact score indicator with a hover tooltip, using a thin Progress bar.
@@ -45,7 +33,7 @@ export function EligibilityBadge({
   const isEligible = flags.isEligible
   const score = Math.min(100, Math.max(0, recommendationScore))
 
-  const badgeState: BadgeState = (() => {
+  const badgeState: EligibilityBadgeType = (() => {
     if (!isEligible) return 'ineligible'
     if (score >= 80) return 'high-score'
     return 'eligible'

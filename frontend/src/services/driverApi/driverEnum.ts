@@ -269,6 +269,17 @@ export interface EligibilityFlags {
 
 export type EligibilitySeverity = 'critical' | 'minor'
 
+export const ELIGIBILITY_LABELS: Record<keyof EligibilityFlags, string> = {
+  eligibleTruckType: 'Wrong truck type',
+  eligibleTrailerLength: 'Trailer too long',
+  eligibleCertifications: 'Missing required certifications',
+  eligibleSchedule: 'Schedule conflict',
+  eligibleMinRate: 'Below minimum rate per mile',
+  eligibleMinValue: 'Below minimum load value',
+  eligibleDeadhead: 'Exceeds max deadhead',
+  isEligible: ''
+}
+
 export interface ScoredLoad {
   loadId: string
   eligibilityFlags: EligibilityFlags

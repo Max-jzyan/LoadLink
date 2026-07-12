@@ -1,5 +1,6 @@
 import { CheckCircle, XCircle, AlertTriangle, Star, Info } from 'lucide-react'
 import type { EligibilityFlags, EligibilitySeverity } from '@/services/driverApi/driverEnum'
+import { ELIGIBILITY_LABELS } from '@/services/driverApi/driverEnum'
 
 interface EligibilityIssue {
   key: string
@@ -11,17 +12,6 @@ interface DetailedEligibilityPanelProps {
   score: number
   severity?: EligibilitySeverity
   highlights?: string[]
-}
-
-const ELIGIBILITY_LABELS: Record<keyof EligibilityFlags, string> = {
-  eligibleTruckType: 'Truck type matches',
-  eligibleTrailerLength: 'Trailer length suitable',
-  eligibleCertifications: 'Has required certifications',
-  eligibleSchedule: 'No schedule conflict',
-  eligibleMinRate: 'Meets minimum rate',
-  eligibleMinValue: 'Meets minimum load value',
-  eligibleDeadhead: 'Within max deadhead',
-  isEligible: '',
 }
 
 export function DetailedEligibilityPanel({
