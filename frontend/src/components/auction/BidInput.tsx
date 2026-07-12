@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { AUCTION_STATUSES } from '@/services/auctionApi/auctionEnum'
 import { PriceInputVariant } from '@/types/enums'
 import { BadgeAlert } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { selectMongoId } from '@/services/authSlice'
 import PlaceBidDialog from '@/components/auction/PlaceBidDialog'
@@ -15,17 +15,34 @@ interface BidInputProps {
   loadId: string
   auctionStatus?: string
   currentPrice?: number
+  onPriceChange?: (price: number) => void
+  onBidActiveChange?: (active: boolean) => void
 }
 
-export default function BidInput({ loadId, auctionStatus, currentPrice }: BidInputProps) {
+export default function BidInput({ loadId, auctionStatus, currentPrice, onPriceChange, onBidActiveChange }: BidInputProps) {
   const [bidAmount, setBidAmount] = useState<number | ''>('')
   const mongoId = useSelector(selectMongoId)
   const isAuctionLive = auctionStatus === AUCTION_STATUSES.Active
 
   const handleBidChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    setBidAmount(value === '' ? '' : Number(value))
+    const next = value === '' ? '' : Number(value)
+    setBidAmount(next)
+    if (typeof next === 'number') {
+      onPriceChange?.(next)
+      onBidActiveChange?.(true)
+    } else if (value === '' && typeof currentPrice === 'number') {
+      onPriceChange?.(currentPrice)
+      onBidActiveChange?.(false)
+    }
   }
+
+  useEffect(() => {
+    if (bidAmount === '' && typeof currentPrice === 'number') {
+      onPriceChange?.(currentPrice)
+      onBidActiveChange?.(false)
+    }
+  }, [bidAmount, currentPrice, onPriceChange, onBidActiveChange])
 
   const isBelowCurrentPrice =
     typeof bidAmount === 'number' && currentPrice !== undefined && bidAmount < currentPrice
