@@ -1,5 +1,5 @@
 import { ArrowRight, CalendarClock, MapPin, Truck, Weight } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import type { AuctionSummary, CompanySummary, Load, LoadStatus } from '@/services/loadApi/loadEnum'
 import type { EligibilityFlags } from '@/services/driverApi/driverEnum'
@@ -63,24 +63,21 @@ export function LoadCard({
   load,
   onClick,
   viewAuctionHref,
-  href,
   eligibilityFlags,
   recommendationScore,
   severity,
   highScoreHighlights,
 }: LoadCardProps) {
-  const navigate = useNavigate()
   const auction = isPopulatedAuction(load.auctionId) ? load.auctionId : null
   const company = isPopulatedCompany(load.companyId) ? load.companyId : null
   const badge = STATUS_BADGE[load.status] ?? STATUS_BADGE.draft
-  const cardTarget = href ?? viewAuctionHref
 
   const hasScore = eligibilityFlags !== undefined && recommendationScore !== undefined
 
   return (
     <Card
       className={`rounded-xl transition-colors cursor-pointer hover:bg-muted/40`}
-      onClick={() => cardTarget && navigate(cardTarget)}
+      onClick={onClick}
     >
       <CardContent className="px-4 py-3 flex flex-row items-stretch gap-0">
         <div className="flex flex-col gap-1.5 flex-1 min-w-0 justify-center">
@@ -89,7 +86,7 @@ export function LoadCard({
             {company && (
               <>
                 <span className="text-base font-bold leading-tight">{company.companyName}</span>
-                <span className="text-muted-foreground text-sm">-</span>
+                <span className="text-muted-foreground text-sm">•</span>
               </>
             )}
             <span
@@ -179,14 +176,13 @@ export function LoadCard({
           {/* View Auction button */}
           {viewAuctionHref && (
             <Link
-              to="#"
+              to={viewAuctionHref}
               className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors whitespace-nowrap"
               onClick={(e) => {
                 e.stopPropagation()
-                onClick?.()
               }}
             >
-              Quick View
+              View Auction
             </Link>
           )}
 
