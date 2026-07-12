@@ -3,7 +3,7 @@ export const formatMoney = (amount: number, locale = 'en-CA') =>
     style: 'currency',
     currency: 'CAD',
     currencyDisplay: 'narrowSymbol',
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(amount)
 
 const MINUTE = 60
