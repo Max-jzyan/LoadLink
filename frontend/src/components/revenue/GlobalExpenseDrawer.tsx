@@ -110,6 +110,32 @@ export function GlobalExpenseDrawer({
   const isGlobal = scope === 'global'
   const fields = isGlobal ? globalExpenseFields : truckExpenseFields
 
+  // Fully initialize a truck's form the moment it is selected so that later
+  // edits only change the specific field being edited (they spread the
+  // already-populated object instead of starting from undefined).
+  const handleScopeChange = useCallback(
+    (next: string) => {
+      setScope(next)
+      if (next === 'global') return
+      setTruckForms((prev) => {
+        if (prev[next]) return prev
+        const t = trucks.find((x) => x._id === next)
+        if (!t) return prev
+        return {
+          ...prev,
+          [next]: {
+            fuelCostPerLiter: t.expensePreferences?.fuelCostPerLiter ?? null,
+            fuelEfficiencyKmPerLiter: t.expensePreferences?.fuelEfficiencyKmPerLiter ?? null,
+            insurancePerMonth: t.expensePreferences?.insurancePerMonth ?? 0,
+            maintenancePerKm: t.expensePreferences?.maintenancePerKm ?? null,
+            otherFixedCostsPerMonth: t.expensePreferences?.otherFixedCostsPerMonth ?? null,
+          },
+        }
+      })
+    },
+    [trucks]
+  )
+
   const handleChange = useCallback(
     (key: string, value: string) => {
       const num = parseFloat(value) || 0
@@ -140,21 +166,16 @@ export function GlobalExpenseDrawer({
       title="Expense Preferences"
       description="Configure your default cost estimates. These are used to calculate per-load profit. You can override them for individual loads, or set them per truck."
       size="lg"
-      footer={
-        <>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Expenses'}
-          </Button>
-        </>
-      }
+      drawerSubmit={{
+        onSubmit: handleSave,
+        isSubmitting: isSaving,
+        submitLabel: isSaving ? undefined : 'Save Expenses',
+      }}
     >
       <div className="space-y-5">
         <Field>
           <FieldLabel>Apply to</FieldLabel>
-          <Select value={scope} onValueChange={setScope}>
+          <Select value={scope} onValueChange={handleScopeChange}>
             <SelectTrigger>
               <SelectValue placeholder="Select scope" />
             </SelectTrigger>

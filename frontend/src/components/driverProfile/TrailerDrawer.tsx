@@ -15,8 +15,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import type { Trailer, CreateTrailerPayload } from '@/services/driverApi/driverEnum'
 import { TRUCK_TYPES } from '@/types/enums'
-import { Loader2 } from 'lucide-react'
-
 export type TrailerFormValues = CreateTrailerPayload
 
 interface TrailerDrawerProps {
@@ -39,7 +37,7 @@ export default function TrailerDrawer({ open, onOpenChange, editTrailer, isLoadi
 
   const inputCls = 'bg-background border-border placeholder:text-muted-foreground/50'
 
-  const { register, handleSubmit, control, reset, formState } = useForm<TrailerFormValues>({
+  const { register, handleSubmit, control, reset, formState: { errors, isLoading: formLoading } } = useForm<TrailerFormValues>({
     defaultValues: {
       plateNumber: '',
       trailerType: '',
@@ -86,8 +84,6 @@ export default function TrailerDrawer({ open, onOpenChange, editTrailer, isLoadi
     }
   }, [open, editTrailer, reset])
 
-  const { errors } = formState
-
   const onFormSubmit = (values: TrailerFormValues) => {
     onSubmit(values, editTrailer?._id)
   }
@@ -99,22 +95,11 @@ export default function TrailerDrawer({ open, onOpenChange, editTrailer, isLoadi
       title={isEdit ? 'Edit Trailer' : 'Add Trailer'}
       description={isEdit ? 'Update the trailer details.' : 'Register a new trailer to your fleet.'}
       size="md"
-      footer={
-        <>
-          <Button type="submit" size="lg" disabled={isLoading} form={formId}>
-            {isLoading && (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            )}
-            {!isLoading && (isEdit ? 'Save Changes' : 'Add Trailer')}
-          </Button>
-          <Button variant="outline" size="lg" disabled={isLoading} onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-        </>
-      }
+      drawerSubmit={{
+        onSubmit: handleSubmit(onFormSubmit),
+        isSubmitting: formLoading,
+        submitLabel: formLoading ? undefined : isEdit ? 'Save Changes' : 'Add Trailer',
+      }}
     >
       <form key={formKey} id={formId} onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         {/* Trailer Type */}

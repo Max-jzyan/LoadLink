@@ -54,8 +54,7 @@ const columns: ColumnDef<AdminUser>[] = [
       return ROLE_BADGES[role] ?? <Badge variant="secondary">{role}</Badge>
     },
     meta: {
-      headerClassName: 'hidden sm:table-cell',
-      cellClassName: 'hidden sm:table-cell',
+      responsive: 'sm',
     },
   },
   {
@@ -63,8 +62,7 @@ const columns: ColumnDef<AdminUser>[] = [
     header: 'Joined',
     cell: ({ row }) => format(new Date(row.getValue<string>('createdAt')), 'MMM d, yyyy'),
     meta: {
-      headerClassName: 'hidden md:table-cell',
-      cellClassName: 'hidden md:table-cell',
+      responsive: 'md',
     },
   },
   {
@@ -75,8 +73,7 @@ const columns: ColumnDef<AdminUser>[] = [
       return v ? format(new Date(v), 'MMM d, yyyy') : '—'
     },
     meta: {
-      headerClassName: 'hidden lg:table-cell',
-      cellClassName: 'hidden lg:table-cell',
+      responsive: 'lg',
     },
   },
 ]

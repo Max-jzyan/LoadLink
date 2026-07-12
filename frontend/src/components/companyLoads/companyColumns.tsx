@@ -1,11 +1,9 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import type { LoadWithDetails } from '@/services/companyApi/companyTypes'
 import { RoutePath } from '@/config/routes'
 import { StatusBadge } from '@/components/shared/StatusBadge'
-import { ResponsiveRowMenu } from '@/components/shared/ResponsiveRowMenu'
 import { TRUCK_TYPES, LOAD_STATUSES, type LoadStatus } from '@/types/enums'
 
 const TRUCK_LABELS: Record<string, string> = Object.fromEntries(
@@ -38,6 +36,9 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
         {row.original.originAddress.split(',')[0].trim()}
       </span>
     ),
+    meta: {
+      responsive: 'md',
+    },
   },
   {
     id: 'destination',
@@ -48,6 +49,9 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
         {row.original.destinationAddress.split(',')[0].trim()}
       </span>
     ),
+    meta: {
+      responsive: 'lg',
+    },
   },
   {
     accessorKey: 'truckType',
@@ -58,8 +62,7 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
       </span>
     ),
     meta: {
-      headerClassName: 'hidden xl:table-cell',
-      cellClassName: 'hidden xl:table-cell',
+      responsive: 'xl',
     },
   },
   {
@@ -76,8 +79,7 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
       )
     },
     meta: {
-      headerClassName: 'hidden xl:table-cell',
-      cellClassName: 'hidden xl:table-cell',
+      responsive: 'xl',
     },
   },
   {
@@ -93,8 +95,7 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
       )
     },
     meta: {
-      headerClassName: 'hidden xl:table-cell',
-      cellClassName: 'hidden xl:table-cell',
+      responsive: 'xl',
     },
   },
   {
@@ -132,72 +133,7 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
       )
     },
     meta: {
-      headerClassName: 'hidden 2xl:table-cell',
-      cellClassName: 'hidden 2xl:table-cell',
-    },
-  },
-  {
-    id: 'mobileActions',
-    header: '',
-    cell: ({ row }) => {
-      const load = row.original
-      const canEdit = !(NON_EDITABLE_STATUSES as readonly string[]).includes(load.status)
-      return (
-        <div className="2xl:hidden">
-          <ResponsiveRowMenu
-            load={load}
-            mobileDetails={[
-              {
-                label: 'Truck',
-                value: (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground border border-border">
-                    {TRUCK_LABELS[load.truckType] ?? load.truckType}
-                  </span>
-                ),
-              },
-              {
-                label: 'Bids',
-                value: (
-                  <span
-                    className={
-                      load.bidCount > 0 ? 'text-primary font-semibold' : 'text-muted-foreground'
-                    }
-                  >
-                    {load.bidCount}
-                  </span>
-                ),
-              },
-              {
-                label: 'Current Price',
-                value: (
-                  <span className="font-semibold">
-                    {load.auctionId ? `$${load.auctionId.currentPrice.toLocaleString()}` : '—'}
-                  </span>
-                ),
-              },
-            ]}
-          >
-            {load.status === LOAD_STATUSES.InTransit ? (
-              <DropdownMenuItem asChild>
-                <Link to={RoutePath.Map}>Track</Link>
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem asChild>
-                <Link to={`/loads/${load._id}`}>View</Link>
-              </DropdownMenuItem>
-            )}
-            {canEdit && (
-              <DropdownMenuItem asChild>
-                <Link to={`/loads/${load._id}/edit`}>Edit</Link>
-              </DropdownMenuItem>
-            )}
-          </ResponsiveRowMenu>
-        </div>
-      )
-    },
-    meta: {
-      headerClassName: '2xl:hidden',
-      cellClassName: '2xl:hidden',
+      responsive: '2xl',
     },
   },
 ]

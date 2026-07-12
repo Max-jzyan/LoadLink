@@ -8,7 +8,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
-import { X } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 import { type ReactNode } from 'react'
 
 type DrawerSize = 'sm' | 'md' | 'lg'
@@ -34,6 +34,13 @@ interface DrawerShellProps {
   children: ReactNode
   /** Optional footer content (typically action buttons) */
   footer?: ReactNode
+  /** Standard form submit footer: Close + Save buttons */
+  drawerSubmit?: {
+    onSubmit: () => void
+    submitLabel?: string
+    cancelLabel?: string
+    isSubmitting?: boolean
+  }
   /** Show close (X) button in top-right corner */
   showCloseButton?: boolean
   /** Drawer direction */
@@ -49,6 +56,7 @@ interface DrawerShellProps {
  * - Modal mode enabled by default (prevents closing on portal clicks)
  * - Scrollable content area
  * - Optional footer for actions
+ * - Standard form submit footer via `drawerSubmit`
  *
  * @example
  * <DrawerShell
@@ -61,6 +69,16 @@ interface DrawerShellProps {
  * >
  *   <form>...</form>
  * </DrawerShell>
+ *
+ * @example
+ * <DrawerShell
+ *   open={open}
+ *   onOpenChange={setOpen}
+ *   title="Edit Item"
+ *   drawerSubmit={{ onSubmit: handleSave, isSubmitting }}
+ * >
+ *   <form>...</form>
+ * </DrawerShell>
  */
 export default function DrawerShell({
   open,
@@ -70,9 +88,44 @@ export default function DrawerShell({
   size = 'md',
   children,
   footer,
+  drawerSubmit,
   showCloseButton = true,
   direction = 'right',
 }: DrawerShellProps) {
+  const resolvedFooter = drawerSubmit
+    ? drawerSubmit.cancelLabel === '' && drawerSubmit.submitLabel === 'Close'
+      ? (
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={drawerSubmit.isSubmitting}
+          >
+            Close
+          </Button>
+        )
+      : (
+          <>
+            <Button
+              type="submit"
+              onClick={drawerSubmit.onSubmit}
+              disabled={drawerSubmit.isSubmitting}
+            >
+              {drawerSubmit.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {drawerSubmit.submitLabel ?? 'Save'}
+            </Button>
+            {drawerSubmit.cancelLabel !== '' && (
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={drawerSubmit.isSubmitting}
+              >
+                {drawerSubmit.cancelLabel ?? 'Cancel'}
+              </Button>
+            )}
+          </>
+        )
+    : footer
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction={direction} modal>
       <DrawerContent className={sizeClasses[size]}>
@@ -80,7 +133,9 @@ export default function DrawerShell({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <DrawerTitle>{title}</DrawerTitle>
-              {description && <DrawerDescription>{description}</DrawerDescription>}
+              <DrawerDescription className={description ? undefined : "sr-only"}>
+                {description ?? "Drawer content panel"}
+              </DrawerDescription>
             </div>
             {showCloseButton && (
               <DrawerClose asChild>
@@ -95,7 +150,7 @@ export default function DrawerShell({
 
         <div className="flex-1 overflow-y-auto px-4 pb-4">{children}</div>
 
-        {footer && <DrawerFooter>{footer}</DrawerFooter>}
+        {resolvedFooter && <DrawerFooter>{resolvedFooter}</DrawerFooter>}
       </DrawerContent>
     </Drawer>
   )

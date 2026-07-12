@@ -1,137 +1,16 @@
-import { useEffect, useState } from 'react'
-import { Info, Pencil } from 'lucide-react'
+import { Info } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
-import { useUpdateLoadExpensesMutation } from '@/services/loadApi/loadSlice'
-import type {
-  DashboardViewMode,
-  LoadRevenue,
-  ExpenseOverrideFields,
-} from '@/services/driverApi/driverEnum'
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import type { DashboardViewMode, LoadRevenue } from '@/services/driverApi/driverEnum'
 import type { ColumnDef } from '@tanstack/react-table'
-import { formatCAD, cn } from '@/lib/utils'
-
-// ── Per-load expense dialog component ─────────────────────────────────────────
-
-const perLoadFields: {
-  key: keyof ExpenseOverrideFields
-  label: string
-  suffix: string
-  step: number
-  isMonetary?: boolean
-}[] = [
-  { key: 'fuelCostPerLiter', label: 'Fuel Cost', suffix: 'per L', step: 0.01, isMonetary: true },
-  { key: 'fuelEfficiencyKmPerLiter', label: 'Fuel Efficiency', suffix: 'km/L', step: 0.1 },
-  { key: 'maintenancePerKm', label: 'Maintenance', suffix: 'per km', step: 0.01, isMonetary: true },
-]
-
-function PerLoadExpenseDialog({
-  load,
-  onSaved,
-  trigger,
-}: {
-  load: LoadRevenue
-  onSaved: () => void
-  trigger: React.ReactNode
-}) {
-  const [open, setOpen] = useState(false)
-  const [updateExpenses, { isLoading }] = useUpdateLoadExpensesMutation()
-
-  const [form, setForm] = useState<ExpenseOverrideFields>({})
-
-  useEffect(() => {
-    if (open) {
-      setForm({
-        fuelCostPerLiter: load.effectiveFuelCostPerLiter ?? null,
-        fuelEfficiencyKmPerLiter: load.effectiveFuelEfficiencyKmPerLiter ?? null,
-        maintenancePerKm: load.effectiveMaintenancePerKm ?? null,
-      })
-    }
-  }, [open, load])
-
-  const handleChange = (key: keyof ExpenseOverrideFields, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value === '' ? null : parseFloat(value) || 0 }))
-  }
-
-  const handleClear = async () => {
-    await updateExpenses({
-      loadId: load.loadId,
-      body: { fuelCostPerLiter: null, fuelEfficiencyKmPerLiter: null, maintenancePerKm: null },
-    }).unwrap()
-    setOpen(false)
-    onSaved()
-  }
-
-  const handleSave = async () => {
-    await updateExpenses({ loadId: load.loadId, body: form }).unwrap()
-    setOpen(false)
-    onSaved()
-  }
-
-  return (
-    <>
-      <div onClick={() => setOpen(true)}>{trigger}</div>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Override Load Expenses</DialogTitle>
-            <DialogDescription>
-              Set custom expense assumptions for this specific load. Leave empty to use global
-              defaults.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {perLoadFields.map(({ key, label, suffix, step, isMonetary }) => (
-              <Field key={key}>
-                <FieldLabel>
-                  {label} ({suffix})
-                </FieldLabel>
-                <div className="relative">
-                  {isMonetary && (
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                      $
-                    </span>
-                  )}
-                  <Input
-                    type="number"
-                    step={step}
-                    min={0}
-                    placeholder="Use global default"
-                    value={form[key] ?? ''}
-                    onChange={(e) => handleChange(key, e.target.value)}
-                    className={cn(isMonetary && 'pl-7')}
-                  />
-                </div>
-                <FieldDescription>
-                  {isMonetary ? 'Dollar amount' : 'Leave blank to use your global default'}
-                </FieldDescription>
-              </Field>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleClear} disabled={isLoading}>
-              Clear Overrides
-            </Button>
-            <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? 'Saving...' : 'Save'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  )
-}
+import { formatCAD } from '@/lib/utils'
+import { Pencil } from 'lucide-react'
 
 const statusBadgeVariant: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
   booked: 'secondary',
@@ -165,19 +44,18 @@ export function createColumns(
         })
       },
       meta: {
-        headerClassName: 'hidden lg:table-cell',
-        cellClassName: 'hidden lg:table-cell text-muted-foreground',
+        responsive: 'xl',
       },
     },
     {
       accessorKey: 'originAddress',
       header: 'Origin',
-      meta: { headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell' },
+      meta: { responsive: 'sm' },
     },
     {
       accessorKey: 'destinationAddress',
       header: 'Destination',
-      meta: { headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell' },
+      meta: { responsive: 'sm' },
     },
     {
       id: 'truck',
@@ -198,8 +76,7 @@ export function createColumns(
         )
       },
       meta: {
-        headerClassName: 'hidden sm:table-cell',
-        cellClassName: 'hidden sm:table-cell',
+        responsive: 'lg',
       },
     },
   ]
@@ -213,7 +90,7 @@ export function createColumns(
         const s = row.original.status ?? ''
         return <Badge variant={statusBadgeVariant[s] ?? 'outline'}>{statusLabel[s] ?? s}</Badge>
       },
-      meta: { headerClassName: 'text-center', cellClassName: 'text-center' },
+      meta: { responsive: 'lg' },
     })
   }
 
@@ -222,31 +99,25 @@ export function createColumns(
       accessorKey: 'distanceKm',
       header: 'Distance',
       cell: ({ row }) => `${Math.round(row.original.distanceKm).toLocaleString()} km`,
-      meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
+      meta: { responsive: 'md' },
     },
     {
       accessorKey: 'payout',
       header: isPotential ? 'Expected Payout' : 'Payout',
       cell: ({ row }) => formatCAD(row.original.payout),
-      meta: { headerClassName: 'text-right', cellClassName: 'text-right font-medium' },
+      meta: { responsive: 'always' },
     },
     {
       accessorKey: 'fuelCost',
       header: 'Fuel',
       cell: ({ row }) => formatCAD(row.original.fuelCost),
-      meta: {
-        headerClassName: 'text-right hidden md:table-cell',
-        cellClassName: 'text-right hidden md:table-cell',
-      },
+      meta: { responsive: 'lg' },
     },
     {
       accessorKey: 'totalExpenses',
       header: isPotential ? 'Est. Expenses' : 'Expenses',
       cell: ({ row }) => formatCAD(row.original.totalExpenses),
-      meta: {
-        headerClassName: 'text-right hidden sm:table-cell',
-        cellClassName: 'text-right hidden sm:table-cell',
-      },
+      meta: { responsive: 'md' },
     },
     {
       accessorKey: 'netProfit',
@@ -257,7 +128,7 @@ export function createColumns(
           <span className={val >= 0 ? 'text-green-600' : 'text-red-600'}>{formatCAD(val)}</span>
         )
       },
-      meta: { headerClassName: 'text-right', cellClassName: 'text-right font-semibold' },
+      meta: { responsive: 'always' },
     },
     {
       id: 'assumptions',
@@ -291,29 +162,9 @@ export function createColumns(
           </TooltipProvider>
         )
       },
-      meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
+      meta: { responsive: 'lg' },
     }
   )
-
-  // Edit column only for completed mode (per-load expense overrides make sense only for actual data)
-  if (!isPotential) {
-    columns.push({
-      id: 'edit',
-      header: '',
-      cell: ({ row }) => (
-        <PerLoadExpenseDialog
-          load={row.original}
-          onSaved={onPerLoadSaved}
-          trigger={
-            <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit load expenses">
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-          }
-        />
-      ),
-      meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
-    })
-  }
 
   return columns
 }

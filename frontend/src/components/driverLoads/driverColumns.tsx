@@ -3,7 +3,6 @@ import type { Load, AuctionSummary } from '@/services/loadApi/loadEnum'
 import type { Truck } from '@/services/driverApi/driverEnum'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { LoadActionsCell } from './LoadActionsCell'
-import { ResponsiveRowMenu } from '@/components/shared/ResponsiveRowMenu'
 import { type LoadStatus } from '@/types/enums'
 import { TRUCK_TYPES } from '@/types/enums'
 import { Badge } from '@/components/ui/badge'
@@ -43,8 +42,7 @@ export const columns = (trucks: Truck[] = []): ColumnDef<Load>[] => [
     },
     maxSize: 200,
     meta: {
-      headerClassName: 'hidden md:table-cell',
-      cellClassName: 'hidden md:table-cell max-w-[200px]',
+      responsive: 'md',
     },
   },
   {
@@ -64,33 +62,7 @@ export const columns = (trucks: Truck[] = []): ColumnDef<Load>[] => [
     },
     maxSize: 200,
     meta: {
-      headerClassName: 'hidden lg:table-cell',
-      cellClassName: 'hidden lg:table-cell max-w-[200px]',
-    },
-  },
-  {
-    accessorKey: 'truckType',
-    header: 'Truck',
-    cell: ({ row }) => (
-      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground border border-border">
-        {TRUCK_LABELS[row.getValue<string>('truckType')] ?? row.getValue<string>('truckType')}
-      </span>
-    ),
-    meta: {
-      headerClassName: 'hidden xl:table-cell',
-      cellClassName: 'hidden xl:table-cell',
-    },
-  },
-  {
-    accessorKey: 'weightLbs',
-    header: 'Weight (lbs)',
-    cell: ({ row }) => {
-      const weight = row.getValue<number>('weightLbs')
-      return weight.toLocaleString()
-    },
-    meta: {
-      headerClassName: 'hidden xl:table-cell',
-      cellClassName: 'hidden xl:table-cell',
+      responsive: 'md',
     },
   },
   {
@@ -108,8 +80,7 @@ export const columns = (trucks: Truck[] = []): ColumnDef<Load>[] => [
       )
     },
     meta: {
-      headerClassName: 'hidden 2xl:table-cell',
-      cellClassName: 'hidden 2xl:table-cell',
+      responsive: 'sm',
     },
   },
   {
@@ -127,8 +98,30 @@ export const columns = (trucks: Truck[] = []): ColumnDef<Load>[] => [
       )
     },
     meta: {
-      headerClassName: 'hidden 2xl:table-cell',
-      cellClassName: 'hidden 2xl:table-cell',
+      responsive: 'sm',
+    },
+  },
+  {
+    accessorKey: 'truckType',
+    header: 'Truck',
+    cell: ({ row }) => (
+      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground border border-border">
+        {TRUCK_LABELS[row.getValue<string>('truckType')] ?? row.getValue<string>('truckType')}
+      </span>
+    ),
+    meta: {
+      responsive: 'xl',
+    },
+  },
+  {
+    accessorKey: 'weightLbs',
+    header: 'Weight (lbs)',
+    cell: ({ row }) => {
+      const weight = row.getValue<number>('weightLbs')
+      return weight.toLocaleString()
+    },
+    meta: {
+      responsive: 'xl',
     },
   },
   {
@@ -156,8 +149,7 @@ export const columns = (trucks: Truck[] = []): ColumnDef<Load>[] => [
       )
     },
     meta: {
-      headerClassName: 'hidden md:table-cell',
-      cellClassName: 'hidden md:table-cell',
+      responsive: 'lg',
     },
   },
   {
@@ -198,8 +190,7 @@ export const columns = (trucks: Truck[] = []): ColumnDef<Load>[] => [
     },
     maxSize: 200,
     meta: {
-      headerClassName: 'hidden lg:table-cell',
-      cellClassName: 'hidden lg:table-cell max-w-[200px]',
+      responsive: 'lg',
     },
   },
   {
@@ -212,90 +203,7 @@ export const columns = (trucks: Truck[] = []): ColumnDef<Load>[] => [
     ),
     size: 140,
     meta: {
-      headerClassName: 'hidden 2xl:table-cell',
-      cellClassName: 'hidden 2xl:table-cell',
-    },
-  },
-  {
-    id: 'mobileActions',
-    header: '',
-    cell: ({ row }) => {
-      const load = row.original
-      const selTruck = trucks.find((t) => t._id === load.selectedTruckId)
-      return (
-        <div className="2xl:hidden">
-          <ResponsiveRowMenu
-            load={load}
-            mobileDetails={[
-              {
-                label: 'Truck Type',
-                value: (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground border border-border">
-                    {TRUCK_LABELS[load.truckType] ?? load.truckType}
-                  </span>
-                ),
-              },
-              {
-                label: 'Assigned Truck',
-                value: selTruck ? (
-                  <span className="text-sm">{truckDisplayName(selTruck)}</span>
-                ) : (
-                  <span className="text-sm text-amber-600">No Truck Selected</span>
-                ),
-              },
-              {
-                label: 'Weight',
-                value: <span>{load.weightLbs.toLocaleString()} lbs</span>,
-              },
-              {
-                label: 'Pickup',
-                value: (
-                  <span className="text-right">
-                    {new Date(load.pickupTime).toLocaleDateString()}
-                    <br />
-                    <span className="text-muted-foreground">
-                      {new Date(load.pickupTime).toLocaleTimeString()}
-                    </span>
-                  </span>
-                ),
-              },
-              {
-                label: 'Dropoff',
-                value: (
-                  <span className="text-right">
-                    {new Date(load.dropoffTime).toLocaleDateString()}
-                    <br />
-                    <span className="text-muted-foreground">
-                      {new Date(load.dropoffTime).toLocaleTimeString()}
-                    </span>
-                  </span>
-                ),
-              },
-              {
-                label: 'My Price',
-                value: (() => {
-                  const auction = load.auctionId
-                  const currentPrice =
-                    auction && typeof auction === 'object'
-                      ? (auction as AuctionSummary).currentPrice
-                      : null
-                  return (
-                    <span className="font-semibold">
-                      {currentPrice != null ? `$${currentPrice.toLocaleString()}` : '—'}
-                    </span>
-                  )
-                })(),
-              },
-            ]}
-          >
-            <LoadActionsCell load={load} trucks={trucks} />
-          </ResponsiveRowMenu>
-        </div>
-      )
-    },
-    meta: {
-      headerClassName: '2xl:hidden',
-      cellClassName: '2xl:hidden',
+      responsive: '2xl',
     },
   },
 ]

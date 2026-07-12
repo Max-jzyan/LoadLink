@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form'
 
 import DrawerShell from '@/components/layout/DrawerShell'
 import type { CertificationDocument, DriverProfile } from '@/services/driverApi/driverEnum'
-import { FileText, Loader2, Trash2 } from 'lucide-react'
+import { FileText, Trash2 } from 'lucide-react'
 
 import AvatarUploadField from '@/components/shared/AvatarUploadField'
 import FileUploadField from '@/components/shared/FileUploadField'
@@ -168,18 +168,6 @@ export default function DriverInfoDrawer({
 
   const inputCls = 'bg-background border-border placeholder:text-muted-foreground/50'
 
-  const getButtonContent = () => {
-    if (isSubmitting || uploading) {
-      return (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Saving...
-        </>
-      )
-    }
-    return 'Save Changes'
-  }
-
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -203,21 +191,11 @@ export default function DriverInfoDrawer({
       title="Edit Personal Information"
       description="Update your name, professional title, profile picture, and certifications."
       size="md"
-      footer={
-        <>
-          <Button type="submit" size="lg" disabled={isSubmitting || uploading} form={formId}>
-            {getButtonContent()}
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            disabled={isSubmitting || uploading}
-            onClick={() => onOpenChange(false)}
-          >
-            Cancel
-          </Button>
-        </>
-      }
+      drawerSubmit={{
+        onSubmit: handleSubmit(onFormSubmit),
+        isSubmitting: isSubmitting || uploading,
+        submitLabel: 'Save Changes',
+      }}
     >
       <form id={formId} onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         {/* Profile Picture Preview */}

@@ -23,7 +23,6 @@ import { Textarea } from '@/components/ui/textarea'
 import type { Truck, TruckExpensePreferences } from '@/services/driverApi/driverEnum'
 import { CERTIFICATION_OPTIONS, TRUCK_TYPES } from '@/types/enums'
 import { cn } from '@/lib/utils'
-import { Loader2 } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
@@ -184,18 +183,6 @@ export default function TruckDrawer({ open, onOpenChange, editTruck, onSubmit }:
 
   const inputCls = 'bg-background border-border placeholder:text-muted-foreground/50'
 
-  const getButtonContent = () => {
-    if (isSubmitting) {
-      return (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Saving...
-        </>
-      )
-    }
-    return isEdit ? 'Save Changes' : 'Add Truck'
-  }
-
   return (
     <DrawerShell
       open={open}
@@ -205,21 +192,11 @@ export default function TruckDrawer({ open, onOpenChange, editTruck, onSubmit }:
         isEdit ? 'Update the details of your truck.' : 'Register a new truck to your fleet.'
       }
       size="lg"
-      footer={
-        <>
-          <Button type="submit" size="lg" disabled={isSubmitting} form={formId}>
-            {getButtonContent()}
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            disabled={isSubmitting}
-            onClick={() => onOpenChange(false)}
-          >
-            Cancel
-          </Button>
-        </>
-      }
+      drawerSubmit={{
+        onSubmit: handleSubmit(onFormSubmit),
+        isSubmitting,
+        submitLabel: isSubmitting ? undefined : isEdit ? 'Save Changes' : 'Add Truck',
+      }}
     >
       <form key={formKey} id={formId} onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         {/* Make & Model */}

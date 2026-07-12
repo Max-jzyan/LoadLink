@@ -26,6 +26,21 @@ export const LOAD_STATUSES = {
 
 export type LoadStatus = (typeof LOAD_STATUSES)[keyof typeof LOAD_STATUSES]
 
+/** Statuses that drivers can set on their loads */
+export const DRIVER_STATUSES = [
+  LOAD_STATUSES.Booked,
+  LOAD_STATUSES.InTransit,
+  LOAD_STATUSES.Completed,
+] as const
+
+/** Statuses that companies can set on their loads */
+export const COMPANY_STATUSES = [
+  LOAD_STATUSES.Draft,
+  LOAD_STATUSES.AuctionLive,
+  LOAD_STATUSES.AuctionClosed,
+  LOAD_STATUSES.Cancelled,
+] as const
+
 /** Set of load statuses considered "active" for dashboard filtering */
 export const ACTIVE_STATUSES = new Set<string>([
   LOAD_STATUSES.AuctionLive,
