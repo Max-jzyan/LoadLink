@@ -42,6 +42,14 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-xs text-destructive mt-1">{message}</p>
 }
 
+function Required() {
+  return (
+    <span className="text-destructive ml-0.5" aria-hidden="true">
+      *
+    </span>
+  )
+}
+
 export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProps) {
   const { register, control, setValue, trigger, values, summaryRows, onFormSubmit, errors } =
     useLoadForm(initialValues, onSubmit)
@@ -68,14 +76,22 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
             <CardContent className="flex flex-col gap-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <Field>
-                  <FieldLabel>Truck Type</FieldLabel>
+                  <FieldLabel>
+                    <span>
+                      Truck Type
+                      <Required />
+                    </span>
+                  </FieldLabel>
                   <Controller
                     control={control}
                     name="truckType"
                     rules={{ required: 'Truck type is required' }}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className="bg-background border-border w-full">
+                        <SelectTrigger
+                          className="bg-background border-border w-full"
+                          aria-invalid={!!errors.truckType}
+                        >
                           <SelectValue placeholder="Select type..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -91,12 +107,18 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
                   <FieldError message={errors.truckType?.message} />
                 </Field>
                 <Field>
-                  <FieldLabel>Truck Size (ft)</FieldLabel>
+                  <FieldLabel>
+                    <span>
+                      Truck Size (ft)
+                      <Required />
+                    </span>
+                  </FieldLabel>
                   <Input
                     className={inputCls}
                     type="number"
                     min="1"
                     placeholder="53"
+                    aria-invalid={!!errors.truckSize}
                     {...register('truckSize', {
                       required: 'Truck size is required',
                       min: { value: 1, message: 'Must be greater than 0' },
@@ -108,11 +130,17 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <Field>
-                  <FieldLabel>Weight (lbs)</FieldLabel>
+                  <FieldLabel>
+                    <span>
+                      Weight (lbs)
+                      <Required />
+                    </span>
+                  </FieldLabel>
                   <Input
                     className={inputCls}
                     type="number"
                     placeholder="e.g. 40,000"
+                    aria-invalid={!!errors.weightLbs}
                     {...register('weightLbs', {
                       required: 'Weight is required',
                       min: { value: 1, message: 'Must be greater than 0' },
@@ -121,10 +149,16 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
                   <FieldError message={errors.weightLbs?.message} />
                 </Field>
                 <Field>
-                  <FieldLabel>Commodity Type</FieldLabel>
+                  <FieldLabel>
+                    <span>
+                      Commodity Type
+                      <Required />
+                    </span>
+                  </FieldLabel>
                   <Input
                     className={inputCls}
                     placeholder="e.g. Frozen Produce, Steel Coils..."
+                    aria-invalid={!!errors.commodity}
                     {...register('commodity', { required: 'Commodity is required' })}
                   />
                   <FieldError message={errors.commodity?.message} />
@@ -202,11 +236,19 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                <div className="flex-1 min-w-0">
+                <Field className="flex-1 min-w-0">
                   <AddressField
-                    label="Origin"
+                    label={
+                      <>
+                        <span>
+                          Origin
+                          <Required />
+                        </span>
+                      </>
+                    }
                     placeholder="Enter origin address..."
                     initialValue={initialValues?.originAddress}
+                    invalid={!!(errors.originAddress ?? errors.originCoords)}
                     onValueChange={(v) => setValue('originAddress', v, { shouldValidate: true })}
                     onSelect={(opt) =>
                       setValue(
@@ -222,15 +264,23 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
                       (errors.originCoords as FieldError | undefined)?.message
                     }
                   />
-                </div>
+                </Field>
                 <div className="hidden sm:flex pt-8 shrink-0">
                   <ArrowRight size={18} className="text-muted-foreground" />
                 </div>
-                <div className="flex-1 min-w-0">
+                <Field className="flex-1 min-w-0">
                   <AddressField
-                    label="Destination"
+                    label={
+                      <>
+                        <span>
+                          Destination
+                          <Required />
+                        </span>
+                      </>
+                    }
                     placeholder="Enter destination address..."
                     initialValue={initialValues?.destinationAddress}
+                    invalid={!!(errors.destinationAddress ?? errors.destinationCoords)}
                     onValueChange={(v) =>
                       setValue('destinationAddress', v, { shouldValidate: true })
                     }
@@ -248,29 +298,45 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
                       (errors.destinationCoords as FieldError | undefined)?.message
                     }
                   />
-                </div>
+                </Field>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+                <Field>
                   <DatePicker
-                    label="Pickup Date"
+                    label={
+                      <>
+                        <span>
+                          Pickup Date
+                          <Required />
+                        </span>
+                      </>
+                    }
                     initialValue={initialValues?.pickupTime}
+                    invalid={!!errors.pickupTime}
                     onDateTimeChange={(v) => {
                       setValue('pickupTime', v, { shouldValidate: true })
                       trigger('dropoffTime')
                     }}
                   />
                   <FieldError message={errors.pickupTime?.message} />
-                </div>
-                <div>
+                </Field>
+                <Field>
                   <DatePicker
-                    label="Delivery Date"
+                    label={
+                      <>
+                        <span>
+                          Delivery Date
+                          <Required />
+                        </span>
+                      </>
+                    }
                     initialValue={initialValues?.dropoffTime}
+                    invalid={!!errors.dropoffTime}
                     onDateTimeChange={(v) => setValue('dropoffTime', v, { shouldValidate: true })}
                   />
                   <FieldError message={errors.dropoffTime?.message} />
-                </div>
+                </Field>
               </div>
             </CardContent>
           </Card>
@@ -289,10 +355,18 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
                   <PriceInput
                     className={inputCls}
                     inputGroupClassName="border-border bg-background overflow-hidden"
-                    label="Minimum Price (Start)"
+                    label={
+                      <>
+                        <span>
+                          Minimum Price (Start)
+                          <Required />
+                        </span>
+                      </>
+                    }
                     variant={PriceInputVariant.AMOUNT}
                     placeholder="800"
                     description="Auction starts at this price"
+                    aria-invalid={!!errors.minPrice}
                     {...register('minPrice', {
                       required: 'Min price is required',
                       min: { value: 0.01, message: 'Must be greater than 0' },
@@ -304,10 +378,18 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
                   <PriceInput
                     className={inputCls}
                     inputGroupClassName="border-border bg-background overflow-hidden"
-                    label="Maximum Price (Cap)"
+                    label={
+                      <>
+                        <span>
+                          Maximum Price (Cap)
+                          <Required />
+                        </span>
+                      </>
+                    }
                     variant={PriceInputVariant.AMOUNT}
                     placeholder="1,000"
                     description="Auction ends at this price"
+                    aria-invalid={!!errors.maxPrice}
                     {...register('maxPrice', {
                       required: 'Max price is required',
                       min: { value: 0.01, message: 'Must be greater than 0' },
@@ -323,10 +405,18 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
                   <PriceInput
                     className={inputCls}
                     inputGroupClassName="border-border bg-background overflow-hidden"
-                    label="Escalation Rate"
+                    label={
+                      <>
+                        <span>
+                          Escalation Rate
+                          <Required />
+                        </span>
+                      </>
+                    }
                     variant={PriceInputVariant.ESCALATION}
                     placeholder="10"
                     description="How fast price auto-increases"
+                    aria-invalid={!!errors.escalationRate}
                     {...register('escalationRate', {
                       required: 'Escalation rate is required',
                       min: { value: 0.01, message: 'Must be greater than 0' },

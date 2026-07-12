@@ -53,12 +53,13 @@ export interface AddressFieldProps {
   disabled?: boolean
   placeholder?: string
   className?: string
-  label?: string
+  label?: React.ReactNode
   description?: string
   /** Prefill with an existing address (e.g. when editing a load) */
   initialValue?: string
   onValueChange?: (value: string) => void
   onSelect?: (option: AddressOption) => void
+  invalid?: boolean
 }
 
 export function AddressField({
@@ -70,6 +71,7 @@ export function AddressField({
   initialValue,
   onValueChange,
   onSelect,
+  invalid,
 }: AddressFieldProps) {
   const [address, setAddress] = useState<string>(initialValue ?? '')
   const [open, setOpen] = useState(false)
@@ -108,7 +110,9 @@ export function AddressField({
 
   return (
     <div className={cn('flex flex-col', className)}>
-      {label && <FieldLabel className="mb-1">{label}</FieldLabel>}
+      {label && (
+        <FieldLabel className="mb-1">{label}</FieldLabel>
+      )}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -117,6 +121,7 @@ export function AddressField({
             role="combobox"
             disabled={disabled ?? false}
             aria-expanded={open}
+            aria-invalid={invalid}
             className="w-full font-normal overflow-hidden"
           >
             {address.length > 0 ? (

@@ -6,7 +6,7 @@ import { PriceInputVariant } from '@/types/enums'
 import * as React from 'react'
 
 interface PriceInputProps extends React.ComponentProps<typeof Input> {
-  label?: string
+  label?: React.ReactNode
   variant: PriceInputVariant
   description?: string
   inputGroupClassName?: string

@@ -11,13 +11,14 @@ import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 interface DatePickerProps {
-  label?: string
+  label?: React.ReactNode
   /** Prefill with an existing ISO datetime (e.g. when editing a load) */
   initialValue?: string
   onDateTimeChange?: (isoString: string) => void
+  invalid?: boolean
 }
 
-export function DatePicker({ label, initialValue, onDateTimeChange }: DatePickerProps) {
+export function DatePicker({ label, initialValue, onDateTimeChange, invalid }: DatePickerProps) {
   const initialDate = initialValue ? new Date(initialValue) : undefined
   const [open, setOpen] = React.useState(false)
   const [date, setDate] = React.useState<Date | undefined>(initialDate)
@@ -51,6 +52,7 @@ export function DatePicker({ label, initialValue, onDateTimeChange }: DatePicker
             <Button
               variant="outline"
               id="date-picker-optional"
+              aria-invalid={invalid}
               className="w-32 justify-between font-normal"
             >
               {date ? format(date, 'PPP') : 'Select date'}
