@@ -121,12 +121,16 @@ export const companyColumns: ColumnDef<LoadWithDetails>[] = [
           ) : (
             // view links to load detail page -- not yet implemented
             <Button size="sm" asChild>
-              <Link to={`/loads/${load._id}`}>View</Link>
+              <Link to={`/loads/${load._id}`} state={{ from: RoutePath.CompanyDashboard }}>
+                View
+              </Link>
             </Button>
           )}
           {canEdit && (
             <Button size="sm" variant="ghost" asChild>
-              <Link to={`/loads/${load._id}/edit`}>Edit</Link>
+              <Link to={`/loads/${load._id}/edit`} state={{ from: RoutePath.CompanyDashboard }}>
+                Edit
+              </Link>
             </Button>
           )}
         </div>

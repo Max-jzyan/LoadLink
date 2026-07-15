@@ -1,7 +1,11 @@
 import { useCallback, useState, useMemo } from 'react'
 import type { Table } from '@tanstack/react-table'
 import { Link } from 'react-router-dom'
-import { DataTable, type OnTableReadyPayload, type DrawerField } from '@/components/shared/DataTable'
+import {
+  DataTable,
+  type OnTableReadyPayload,
+  type DrawerField,
+} from '@/components/shared/DataTable'
 import DynamicCard from '@/components/layout/DynamicCard'
 import LoadTablePagination from '@/components/driverLoads/loadTablePagination'
 import type { LoadWithDetails } from '@/services/companyApi/companyTypes'
@@ -45,84 +49,87 @@ export default function CompanyLoadTable({
 
   const drawerTitle = useCallback((load: LoadWithDetails) => load.commodity.toUpperCase(), [])
 
-  const drawerFields = useMemo<DrawerField<LoadWithDetails>[]>(() => [
-    // Route section
-    {
-      label: 'Origin',
-      renderValue: (load) => <span className="text-sm">{load.originAddress}</span>,
-    },
-    {
-      label: 'Destination',
-      renderValue: (load) => <span className="text-sm">{load.destinationAddress}</span>,
-    },
-    // Schedule section
-    {
-      label: 'Pickup',
-      renderValue: (load) => (
-        <span>
-          <span className="text-sm">{new Date(load.pickupTime).toLocaleDateString()}</span>
-          <br />
-          <span className="text-xs text-muted-foreground">
-            {new Date(load.pickupTime).toLocaleTimeString()}
+  const drawerFields = useMemo<DrawerField<LoadWithDetails>[]>(
+    () => [
+      // Route section
+      {
+        label: 'Origin',
+        renderValue: (load) => <span className="text-sm">{load.originAddress}</span>,
+      },
+      {
+        label: 'Destination',
+        renderValue: (load) => <span className="text-sm">{load.destinationAddress}</span>,
+      },
+      // Schedule section
+      {
+        label: 'Pickup',
+        renderValue: (load) => (
+          <span>
+            <span className="text-sm">{new Date(load.pickupTime).toLocaleDateString()}</span>
+            <br />
+            <span className="text-xs text-muted-foreground">
+              {new Date(load.pickupTime).toLocaleTimeString()}
+            </span>
           </span>
-        </span>
-      ),
-    },
-    {
-      label: 'Dropoff',
-      renderValue: (load) => (
-        <span>
-          <span className="text-sm">{new Date(load.dropoffTime).toLocaleDateString()}</span>
-          <br />
-          <span className="text-xs text-muted-foreground">
-            {new Date(load.dropoffTime).toLocaleTimeString()}
+        ),
+      },
+      {
+        label: 'Dropoff',
+        renderValue: (load) => (
+          <span>
+            <span className="text-sm">{new Date(load.dropoffTime).toLocaleDateString()}</span>
+            <br />
+            <span className="text-xs text-muted-foreground">
+              {new Date(load.dropoffTime).toLocaleTimeString()}
+            </span>
           </span>
-        </span>
-      ),
-    },
-    // Cargo section
-    {
-      label: 'Weight',
-      renderValue: (load) => <span>{load.weightLbs.toLocaleString()} lbs</span>,
-    },
-    {
-      label: 'Truck Type',
-      renderValue: (load) => (
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground border border-border">
-          {TRUCK_LABELS[load.truckType] ?? load.truckType}
-        </span>
-      ),
-    },
-    {
-      label: 'Trailer Length',
-      renderValue: (load) => <span>{load.trailerLengthFt} ft</span>,
-    },
-    // Pricing section
-    {
-      label: 'Bids',
-      renderValue: (load) => (
-        <span
-          className={`text-sm font-semibold ${load.bidCount > 0 ? 'text-primary' : 'text-muted-foreground'}`}
-        >
-          {load.bidCount}
-        </span>
-      ),
-    },
-    {
-      label: 'Current Price',
-      renderValue: (load) => (
-        <span className="font-semibold">
-          {load.auctionId ? `$${load.auctionId.currentPrice.toLocaleString()}` : '—'}
-        </span>
-      ),
-    },
-    {
-      label: 'Status',
-      renderValue: (load) => (
-        <StatusBadge status={load.status as LoadStatus} bidCount={load.bidCount} />
-      ),
-    },
-  ], [])
+        ),
+      },
+      // Cargo section
+      {
+        label: 'Weight',
+        renderValue: (load) => <span>{load.weightLbs.toLocaleString()} lbs</span>,
+      },
+      {
+        label: 'Truck Type',
+        renderValue: (load) => (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground border border-border">
+            {TRUCK_LABELS[load.truckType] ?? load.truckType}
+          </span>
+        ),
+      },
+      {
+        label: 'Trailer Length',
+        renderValue: (load) => <span>{load.trailerLengthFt} ft</span>,
+      },
+      // Pricing section
+      {
+        label: 'Bids',
+        renderValue: (load) => (
+          <span
+            className={`text-sm font-semibold ${load.bidCount > 0 ? 'text-primary' : 'text-muted-foreground'}`}
+          >
+            {load.bidCount}
+          </span>
+        ),
+      },
+      {
+        label: 'Current Price',
+        renderValue: (load) => (
+          <span className="font-semibold">
+            {load.auctionId ? `$${load.auctionId.currentPrice.toLocaleString()}` : '—'}
+          </span>
+        ),
+      },
+      {
+        label: 'Status',
+        renderValue: (load) => (
+          <StatusBadge status={load.status as LoadStatus} bidCount={load.bidCount} />
+        ),
+      },
+    ],
+    []
+  )
 
   const drawerFooter = useCallback((load: LoadWithDetails) => {
     const canEdit = !(NON_EDITABLE_STATUSES as readonly string[]).includes(load.status)
@@ -134,12 +141,16 @@ export default function CompanyLoadTable({
           </Button>
         ) : (
           <Button className="w-full" size="sm" asChild>
-            <Link to={`/loads/${load._id}`}>View</Link>
+            <Link to={`/loads/${load._id}`} state={{ from: RoutePath.CompanyDashboard }}>
+              View
+            </Link>
           </Button>
         )}
         {canEdit && (
           <Button className="w-full" size="sm" variant="ghost" asChild>
-            <Link to={`/loads/${load._id}/edit`}>Edit</Link>
+            <Link to={`/loads/${load._id}/edit`} state={{ from: RoutePath.CompanyDashboard }}>
+              Edit
+            </Link>
           </Button>
         )}
       </div>

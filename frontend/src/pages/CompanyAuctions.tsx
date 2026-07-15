@@ -185,7 +185,12 @@ export default function CompanyAuctions() {
                 )}
                 {auction.status !== AUCTION_STATUSES.Active && load && (
                   <Button size="sm" variant="outline" asChild>
-                    <Link to={`/loads/${loadId}`}>Details</Link>
+                    <Link
+                      to={`/loads/${loadId}`}
+                      state={{ from: RoutePath.CompanyAuctions }}
+                    >
+                      Details
+                    </Link>
                   </Button>
                 )}
               </div>

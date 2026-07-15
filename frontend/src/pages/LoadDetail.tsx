@@ -24,7 +24,7 @@ import {
   Weight,
 } from 'lucide-react'
 import { useMemo } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 
 const NON_EDITABLE_STATUSES: readonly string[] = [
   LOAD_STATUSES.InTransit,
@@ -64,9 +64,12 @@ function DetailField({
 
 export default function LoadDetail() {
   const { loadId } = useParams<{ loadId: string }>()
+  const location = useLocation()
+  const backTarget = (location.state as { from?: RoutePath } | null)?.from ?? RoutePath.Loads
   const { data: load, isLoading, isError } = useGetLoadQuery(loadId ?? '', { skip: !loadId })
   const { user } = useAuth()
-  const isBooked = load?.status === LOAD_STATUSES.Booked ||
+  const isBooked =
+    load?.status === LOAD_STATUSES.Booked ||
     load?.status === LOAD_STATUSES.InTransit ||
     load?.status === LOAD_STATUSES.Completed
   const showRcButton = (user?.role === 'company' || user?.role === 'admin') && isBooked
@@ -109,9 +112,9 @@ export default function LoadDetail() {
         <div className="flex flex-col items-center gap-3 py-20 text-center">
           <p className="text-destructive">Failed to load this load. It may have been removed.</p>
           <Button variant="outline" asChild>
-            <Link to={RoutePath.Loads}>
+            <Link to={backTarget}>
               <ArrowLeft className="h-4 w-4" />
-              Back to Loads
+              Back
             </Link>
           </Button>
         </div>
@@ -129,14 +132,14 @@ export default function LoadDetail() {
       actions={
         <>
           <Button variant="outline" size="sm" asChild>
-            <Link to={RoutePath.Loads}>
+            <Link to={backTarget}>
               <ArrowLeft className="h-4 w-4" />
-              Back to Loads
+              Back
             </Link>
           </Button>
           {canEdit && (
             <Button variant="outline" size="sm" asChild>
-              <Link to={`/loads/${load._id}/edit`}>
+              <Link to={`/loads/${load._id}/edit`} state={{ from: backTarget, viaDetail: true }}>
                 <Pencil className="h-4 w-4" />
                 Edit Load
               </Link>
