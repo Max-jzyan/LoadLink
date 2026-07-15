@@ -1,3 +1,5 @@
+import { DatePickerWithRange } from '@/components/shared/DatePickerWithRange'
+import ResponsiveFilterBar from '@/components/shared/ResponsiveFilterBar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -7,12 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
-import { X } from 'lucide-react'
-import { TRUCK_TYPES } from '@/types/enums'
-import { DatePickerWithRange } from '@/components/shared/DatePickerWithRange'
 import type { RevenueFilters, Truck } from '@/services/driverApi/driverEnum'
+import { TRUCK_TYPES } from '@/types/enums'
 import { format } from 'date-fns'
+import { X } from 'lucide-react'
 import React from 'react'
 
 interface RevenueFilterBarProps {
@@ -73,12 +73,14 @@ function ActiveFiltersNotice({
 
   if (filters.selectedTruck) {
     const selectedTruck = trucks.find((t) => t._id === filters.selectedTruck)
-    const truckName =
-      filters.selectedTruck === 'none'
-        ? 'No Truck'
-        : selectedTruck
-          ? truckDisplayName(selectedTruck)
-          : filters.selectedTruck
+    let truckName = filters.selectedTruck
+
+    if (filters.selectedTruck === 'none') {
+      truckName = 'No Truck'
+    } else if (selectedTruck) {
+      truckName = truckDisplayName(selectedTruck)
+    }
+
     activeFilters.push({ key: 'selectedTruck', label: 'My Truck', value: truckName })
   }
 
@@ -180,42 +182,50 @@ export default function RevenueFilterBar({
     return filters.dateRange
   }, [filters.dateRange])
 
-  return (
-    <div className="flex flex-col gap-2">
-      {/* Filter inputs row */}
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Date Range Picker */}
-        <DatePickerWithRange
-          label="Date Range"
-          date={dateRange}
-          onRangeChange={(range) => {
-            updateFilter('dateRange', range)
-          }}
-        />
-
-        <Separator orientation="vertical" className="hidden md:block h-6" />
-        <Separator className="md:hidden w-full" />
-
-        {/* Origin Filter */}
+  const controls = [
+    {
+      id: 'dateRange',
+      label: 'Date Range',
+      content: (
+        <div className="min-w-[180px]">
+          <DatePickerWithRange
+            label="Date Range"
+            date={dateRange}
+            onRangeChange={(range) => {
+              updateFilter('dateRange', range)
+            }}
+          />
+        </div>
+      ),
+    },
+    {
+      id: 'origin',
+      label: 'Origin',
+      content: (
         <Input
           placeholder="Origin city..."
           className="w-36"
           value={filters.origin}
           onChange={(e) => updateFilter('origin', e.target.value)}
         />
-
-        {/* Destination Filter */}
+      ),
+    },
+    {
+      id: 'destination',
+      label: 'Destination',
+      content: (
         <Input
           placeholder="Destination city..."
           className="w-36"
           value={filters.destination}
           onChange={(e) => updateFilter('destination', e.target.value)}
         />
-
-        <Separator orientation="vertical" className="hidden md:block h-6" />
-        <Separator className="md:hidden w-full" />
-
-        {/* Truck Type Filter */}
+      ),
+    },
+    {
+      id: 'truckType',
+      label: 'Truck Type',
+      content: (
         <Select
           value={filters.truckType || 'all'}
           onValueChange={(value) => updateFilter('truckType', value === 'all' ? '' : value)}
@@ -232,8 +242,12 @@ export default function RevenueFilterBar({
             ))}
           </SelectContent>
         </Select>
-
-        {/* My Truck Filter */}
+      ),
+    },
+    {
+      id: 'selectedTruck',
+      label: 'My Truck',
+      content: (
         <Select
           value={filters.selectedTruck || 'all'}
           onValueChange={(value) => updateFilter('selectedTruck', value === 'all' ? '' : value)}
@@ -251,16 +265,18 @@ export default function RevenueFilterBar({
             ))}
           </SelectContent>
         </Select>
-
-        <Separator orientation="vertical" className="hidden md:block h-6" />
-
-        {/* Distance Range Filter */}
+      ),
+    },
+    {
+      id: 'distanceRange',
+      label: 'Distance Range',
+      content: (
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium whitespace-nowrap">Distance (km)</span>
           <Input
             type="number"
             placeholder="Min"
-            className="w-20 h-8"
+            className="h-8 w-20"
             value={filters.minDistance ?? ''}
             onChange={(e) =>
               updateFilter('minDistance', e.target.value ? Number(e.target.value) : null)
@@ -270,21 +286,25 @@ export default function RevenueFilterBar({
           <Input
             type="number"
             placeholder="Max"
-            className="w-20 h-8"
+            className="h-8 w-20"
             value={filters.maxDistance ?? ''}
             onChange={(e) =>
               updateFilter('maxDistance', e.target.value ? Number(e.target.value) : null)
             }
           />
         </div>
-
-        {/* Payout Range Filter */}
+      ),
+    },
+    {
+      id: 'payoutRange',
+      label: 'Payout Range',
+      content: (
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium whitespace-nowrap">Payout ($)</span>
           <Input
             type="number"
             placeholder="Min"
-            className="w-20 h-8"
+            className="h-8 w-20"
             value={filters.minPayout ?? ''}
             onChange={(e) =>
               updateFilter('minPayout', e.target.value ? Number(e.target.value) : null)
@@ -294,23 +314,29 @@ export default function RevenueFilterBar({
           <Input
             type="number"
             placeholder="Max"
-            className="w-20 h-8"
+            className="h-8 w-20"
             value={filters.maxPayout ?? ''}
             onChange={(e) =>
               updateFilter('maxPayout', e.target.value ? Number(e.target.value) : null)
             }
           />
         </div>
+      ),
+    },
+  ]
 
-        <Separator orientation="vertical" className="hidden md:block h-6" />
+  return (
+    <div className="flex flex-col gap-2">
+      <ResponsiveFilterBar
+        controls={controls}
+        className="w-full"
+        actions={
+          <Button variant="outline" size="sm" onClick={handleReset} disabled={!hasActiveFilters}>
+            Reset Filters
+          </Button>
+        }
+      />
 
-        {/* Reset Filters Button */}
-        <Button variant="outline" size="sm" onClick={handleReset} disabled={!hasActiveFilters}>
-          Reset Filters
-        </Button>
-      </div>
-
-      {/* Active filters notice */}
       <ActiveFiltersNotice
         filters={filters}
         onRemoveFilter={handleRemoveFilter}

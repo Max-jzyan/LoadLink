@@ -1,3 +1,4 @@
+import '@/components/layout/PageShell.less'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
@@ -70,7 +71,7 @@ export default function PageShell({
 
         {/* ── Sticky bar ── */}
         {(tabs || stickyBar || actions) && (
-          <div className="sticky top-0 z-[9999] bg-background border-b shadow-sm mb-3">
+          <div className="sticky top-0 z-[9999] w-full border-b bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80 mb-3">
             {/* Tab bar (optional) */}
             {tabs && (
               <div className="px-4 pt-1 pb-0">
@@ -97,9 +98,12 @@ export default function PageShell({
             )}
             {/* Sticky bar row */}
             {(stickyBar || actions) && (
-              <div className="flex items-center justify-between px-4 py-2">
-                <div className="flex-1 min-w-0">{stickyBar}</div>
-                {actions && <div className="flex items-center gap-2 shrink-0 ml-3">{actions}</div>}
+              <div
+                className="flex w-full min-w-0 items-center justify-between gap-2 px-4 py-2"
+                style={{ width: 'calc(100vw - 50px)' }}
+              >
+                <div className="min-w-0 flex-1">{stickyBar}</div>
+                {actions && <div className="ml-3 flex shrink-0 items-center gap-2">{actions}</div>}
               </div>
             )}
           </div>
