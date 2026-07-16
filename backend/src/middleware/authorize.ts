@@ -4,7 +4,7 @@ import { isValidObjectId } from 'mongoose'
 import { ApiError } from '../utils/ApiError'
 import { LoadModel } from '../models/loads/Load'
 import { ReviewModel } from '../models/ratings/Review'
-import type { UserRole } from '../models/enums'
+import { USER_ROLES, type UserRole } from '../models/enums'
 import type { AuthedUser } from '../types/auth'
 
 /**
@@ -66,6 +66,31 @@ export const requireOwns =
       next(err)
     }
   }
+
+// admin and driver can view any load; company can only view the loads belong to it.
+export const canViewLoad = async (req: Request, _res: Response, next: NextFunction) => {
+  try {
+    const user = ensureUser(req)
+    if (user.role === USER_ROLES.ADMIN || user.role === USER_ROLES.DRIVER) {
+      return next()
+    }
+
+    const { loadId } = req.params
+    if (!isValidObjectId(loadId)) {
+      return next(new ApiError(StatusCodes.NOT_FOUND, 'Resource not found'))
+    }
+    const load = await LoadModel.findById(loadId).select('companyId')
+    if (!load) {
+      return next(new ApiError(StatusCodes.NOT_FOUND, 'Resource not found'))
+    }
+    if (load.companyId?.toString() !== user._id) {
+      return next(new ApiError(StatusCodes.FORBIDDEN, 'Forbidden: not your resource'))
+    }
+    next()
+  } catch (err) {
+    next(err)
+  }
+}
 
 /** Owner of the load at `:loadId` is its company. */
 export const companyOwnsLoad = async (req: Request): Promise<string | null> => {

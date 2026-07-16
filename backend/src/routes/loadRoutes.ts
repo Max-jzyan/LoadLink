@@ -16,6 +16,7 @@ import {
   requireRole,
   requireSelfParam,
   requireOwns,
+  canViewLoad,
   companyOwnsLoad,
   driverOwnsAssignedLoad,
 } from '../middleware/authorize'
@@ -25,8 +26,8 @@ const router = Router()
 
 router.get('/loads', requireAuth, listAvailableLoads)
 router.get('/loads/stream', requireAuthSSE, streamNewLoads)
-router.get('/loads/:loadId', requireAuth, getLoad)
-router.get('/loads/:loadId/accepted-bid', requireAuth, getAcceptedBid)
+router.get('/loads/:loadId', requireAuth, canViewLoad, getLoad)
+router.get('/loads/:loadId/accepted-bid', requireAuth, canViewLoad, getAcceptedBid)
 
 router.get(
   '/company/:companyId/loads',

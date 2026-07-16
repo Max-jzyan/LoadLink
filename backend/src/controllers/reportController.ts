@@ -5,11 +5,12 @@ import * as reportService from '../services/reportService'
 /**
  * POST /api/reports
  * Submit a fraud or inaccurate-details report.
- * Body: { reporterId, type: 'fraud' | 'inaccurate', targetType, targetName, category, description }
+ * Body: { type: 'fraud' | 'inaccurate', targetType, targetName, category, description }
+ * reporterId is taken from the authenticated caller, not the request body.
  */
 export const createReport = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const report = await reportService.createReport(req.body)
+    const report = await reportService.createReport({ ...req.body, reporterId: req.user!._id })
     res.status(StatusCodes.CREATED).json(report)
   } catch (err) {
     next(err)

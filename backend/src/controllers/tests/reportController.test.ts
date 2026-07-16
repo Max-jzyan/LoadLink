@@ -24,10 +24,10 @@ beforeEach(() => {
 })
 
 describe('createReport', () => {
-  it('201s with the created report', async () => {
+  it('201s and binds reporterId to the authenticated caller', async () => {
     createReportMock.mockResolvedValue({ _id: REPORT_ID } as never)
     const body = {
-      reporterId: USER_ID,
+      reporterId: '000000000000000000000099',
       type: 'fraud',
       targetType: 'company',
       targetName: 'Acme',
@@ -35,12 +35,13 @@ describe('createReport', () => {
       description: 'suspicious activity',
     }
     const req = httpMocks.createRequest({ body })
+    req.user = { _id: USER_ID } as never
     const res = httpMocks.createResponse()
     const next = jest.fn()
 
     await createReport(req, res, next)
 
-    expect(createReportMock).toHaveBeenCalledWith(body)
+    expect(createReportMock).toHaveBeenCalledWith({ ...body, reporterId: USER_ID })
     expect(res.statusCode).toBe(StatusCodes.CREATED)
     expect(res._getJSONData()).toEqual({ _id: REPORT_ID })
   })
@@ -48,6 +49,7 @@ describe('createReport', () => {
   it('forwards errors to next', async () => {
     createReportMock.mockRejectedValue(new ApiError(StatusCodes.BAD_REQUEST, 'invalid'))
     const req = httpMocks.createRequest({ body: {} })
+    req.user = { _id: USER_ID } as never
     const res = httpMocks.createResponse()
     const next = jest.fn()
 

@@ -5,6 +5,7 @@ import {
   requireRole,
   requireSelfParam,
   requireOwns,
+  canViewLoad,
   companyOwnsLoad,
   driverOwnsAssignedLoad,
   reviewOwnedByCaller,
@@ -145,6 +146,102 @@ describe('requireOwns', () => {
     const next = jest.fn()
 
     await requireOwns(loader)(req, httpMocks.createResponse(), next)
+
+    expect(next).toHaveBeenCalledWith()
+  })
+})
+
+describe('canViewLoad', () => {
+  it('401s when there is no authenticated user', async () => {
+    const req = httpMocks.createRequest({ params: { loadId: VALID_ID } })
+    const next = jest.fn()
+
+    await canViewLoad(req, httpMocks.createResponse(), next)
+
+    expect((next.mock.calls[0][0] as ApiError).statusCode).toBe(StatusCodes.UNAUTHORIZED)
+    expect(findLoadByIdMock).not.toHaveBeenCalled()
+  })
+
+  it('lets an admin view any load without a lookup', async () => {
+    const req = httpMocks.createRequest({
+      params: { loadId: VALID_ID },
+      user: authedUser({ role: 'admin' }),
+    } as never)
+    const next = jest.fn()
+
+    await canViewLoad(req, httpMocks.createResponse(), next)
+
+    expect(next).toHaveBeenCalledWith()
+    expect(findLoadByIdMock).not.toHaveBeenCalled()
+  })
+
+  it('lets a driver view any load without a lookup', async () => {
+    const req = httpMocks.createRequest({
+      params: { loadId: VALID_ID },
+      user: authedUser({ role: 'driver' }),
+    } as never)
+    const next = jest.fn()
+
+    await canViewLoad(req, httpMocks.createResponse(), next)
+
+    expect(next).toHaveBeenCalledWith()
+    expect(findLoadByIdMock).not.toHaveBeenCalled()
+  })
+
+  it('404s for a company when the loadId is syntactically invalid', async () => {
+    const req = httpMocks.createRequest({
+      params: { loadId: INVALID_ID },
+      user: authedUser({ role: 'company' }),
+    } as never)
+    const next = jest.fn()
+
+    await canViewLoad(req, httpMocks.createResponse(), next)
+
+    expect((next.mock.calls[0][0] as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND)
+    expect(findLoadByIdMock).not.toHaveBeenCalled()
+  })
+
+  it('404s for a company when the load does not exist', async () => {
+    findLoadByIdMock.mockReturnValue({ select: jest.fn().mockResolvedValue(null) } as never)
+    const req = httpMocks.createRequest({
+      params: { loadId: VALID_ID },
+      user: authedUser({ role: 'company' }),
+    } as never)
+    const next = jest.fn()
+
+    await canViewLoad(req, httpMocks.createResponse(), next)
+
+    expect((next.mock.calls[0][0] as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND)
+  })
+
+  it('403s for a company that does not own the load', async () => {
+    findLoadByIdMock.mockReturnValue({
+      select: jest.fn().mockResolvedValue({ companyId: { toString: () => OTHER_ID } }),
+    } as never)
+    const req = httpMocks.createRequest({
+      params: { loadId: VALID_ID },
+      user: authedUser({ _id: VALID_ID, role: 'company' }),
+    } as never)
+    const next = jest.fn()
+
+    await canViewLoad(req, httpMocks.createResponse(), next)
+
+    const err = next.mock.calls[0][0] as ApiError
+    expect(err.statusCode).toBe(StatusCodes.FORBIDDEN)
+    expect(err.message).toMatch(/not your resource/)
+  })
+
+  it('calls next() for a company that owns the load', async () => {
+    findLoadByIdMock.mockReturnValue({
+      select: jest.fn().mockResolvedValue({ companyId: { toString: () => VALID_ID } }),
+    } as never)
+    const req = httpMocks.createRequest({
+      params: { loadId: VALID_ID },
+      user: authedUser({ _id: VALID_ID, role: 'company' }),
+    } as never)
+    const next = jest.fn()
+
+    await canViewLoad(req, httpMocks.createResponse(), next)
 
     expect(next).toHaveBeenCalledWith()
   })
