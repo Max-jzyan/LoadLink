@@ -1,6 +1,6 @@
 import { useCallback, useState, useRef, useMemo } from 'react'
 import { DataTable, type OnTableReadyPayload, type DrawerField } from '@/components/shared/DataTable'
-import type { Load, AuctionSummary } from '@/services/loadApi/loadEnum'
+import type { Load, AuctionSummary, CompanySummary } from '@/services/loadApi/loadEnum'
 import type { Truck } from '@/services/driverApi/driverEnum'
 import type { Table } from '@tanstack/react-table'
 import { columns } from './driverColumns'
@@ -27,6 +27,10 @@ const TRUCK_LABELS: Record<string, string> = Object.fromEntries(
 
 function truckDisplayName(t: Truck) {
   return `${t.year} ${t.make} ${t.model} (${t.trailerLengthFt}ft)`
+}
+
+function isPopulatedCompany(value: Load['companyId']): value is CompanySummary {
+  return typeof value === 'object' && value !== null && 'companyName' in value
 }
 
 function getCurrentPrice(load: Load): number | null {
@@ -90,9 +94,13 @@ export default function DriverLoadTable({
     return Object.entries(LOAD_STATUSES).find(([, v]) => v === statusValue)?.[0] ?? statusValue
   }, [])
 
-  const drawerTitle = useCallback((load: Load) => load.commodity.toUpperCase(), [])
+  const drawerTitle = useCallback((load: Load) => {
+    const company = isPopulatedCompany(load.companyId) ? load.companyId : null
+    return company?.companyName?.toUpperCase() || load.commodity.toUpperCase()
+  }, [])
 
   const drawerFields = useMemo<DrawerField<Load>[]>(() => [
+    { label: 'Commodity', renderValue: (load) => <span className="text-sm font-semibold">{load.commodity.toUpperCase()}</span> },
     { label: 'Origin', renderValue: (load) => <span className="text-sm">{load.originAddress}</span> },
     {
       label: 'Destination',

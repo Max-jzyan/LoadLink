@@ -4,6 +4,8 @@ import { RatingCategories } from '../models/ratings/Rating'
 import { ReviewModel, TARGET_TYPES, TargetType } from '../models/ratings/Review'
 import { CompanyModel } from '../models/users/Company'
 import { DriverModel } from '../models/users/Driver'
+import { LoadModel } from '../models/loads/Load'
+import { LOAD_STATUSES } from '../models/enums'
 import { ApiError } from '../utils/ApiError'
 
 const assertValidId = (id: string, label: string) => {
@@ -167,6 +169,29 @@ export const createCompanyReview = async (data: {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Cannot review yourself')
   }
 
+  // Verify the load is a completed load assigned to the target driver and
+  // owned by the reviewing company. This enforces that a company can only
+  // review a driver for a load the driver has actually completed for them.
+  const load = await LoadModel.findById(data.loadId)
+  if (!load) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Load not found')
+  }
+  if (load.status !== LOAD_STATUSES.Completed) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'You can only review drivers for completed loads')
+  }
+  if (!load.assignedDriverId || load.assignedDriverId.toString() !== data.targetId) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'You can only review a driver for a load assigned to them'
+    )
+  }
+  if (load.companyId.toString() !== data.reviewerId) {
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      'You can only review drivers for loads belonging to your company'
+    )
+  }
+
   // Validate each rating category is within 0-5
   for (const [key, value] of Object.entries(data.ratingCategories)) {
     if (typeof value !== 'number' || value < 0 || value > 5) {
@@ -198,6 +223,90 @@ export const createCompanyReview = async (data: {
 
   // Keep the target's rating summary up to date
   await recalculateRatingSummary(data.targetId, TARGET_TYPES.DRIVER)
+
+  return review
+}
+
+/**
+ * Create a review from a driver reviewing a company.
+ * Validates that the reviewerId belongs to a driver document.
+ * Enforces one review per (reviewer, load) pair.
+ */
+export const createDriverReview = async (data: {
+  reviewerId: string
+  targetId: string
+  loadId: string
+  ratingCategories: RatingCategories
+  comment?: string
+}) => {
+  assertValidId(data.reviewerId, 'reviewerId')
+  assertValidId(data.targetId, 'targetId')
+  assertValidId(data.loadId, 'loadId')
+
+  // Verify the reviewer is a driver
+  const driver = await DriverModel.findById(data.reviewerId)
+  if (!driver) {
+    throw new ApiError(StatusCodes.FORBIDDEN, 'Only drivers can review companies')
+  }
+
+  if (data.reviewerId === data.targetId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Cannot review yourself')
+  }
+
+  // Verify the load is a completed load assigned to the reviewing driver and
+  // owned by the target company. This enforces that a driver can only
+  // review a company for a load they have actually completed for them.
+  const load = await LoadModel.findById(data.loadId)
+  if (!load) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Load not found')
+  }
+  if (load.status !== LOAD_STATUSES.Completed) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'You can only review companies for completed loads')
+  }
+  if (!load.assignedDriverId || load.assignedDriverId.toString() !== data.reviewerId) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'You can only review a company for a load assigned to you'
+    )
+  }
+  if (load.companyId.toString() !== data.targetId) {
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      'You can only review a company for a load belonging to them'
+    )
+  }
+
+  // Validate each rating category is within 0-5
+  for (const [key, value] of Object.entries(data.ratingCategories)) {
+    if (typeof value !== 'number' || value < 0 || value > 5) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        `Rating "${key}" must be a number between 0 and 5`
+      )
+    }
+  }
+
+  // Check the unique constraint explicitly for a better error message
+  const existing = await ReviewModel.findOne({
+    reviewerId: new Types.ObjectId(data.reviewerId),
+    loadId: new Types.ObjectId(data.loadId),
+  })
+
+  if (existing) {
+    throw new ApiError(StatusCodes.CONFLICT, 'You have already reviewed this load')
+  }
+
+  const review = await ReviewModel.create({
+    reviewerId: new Types.ObjectId(data.reviewerId),
+    targetId: new Types.ObjectId(data.targetId),
+    targetType: TARGET_TYPES.COMPANY,
+    loadId: new Types.ObjectId(data.loadId),
+    ratingCategories: data.ratingCategories,
+    comment: data.comment ?? '',
+  })
+
+  // Keep the target's rating summary up to date
+  await recalculateRatingSummary(data.targetId, TARGET_TYPES.COMPANY)
 
   return review
 }

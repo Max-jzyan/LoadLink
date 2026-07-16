@@ -10,78 +10,24 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { RoutePath, getRouteLabel } from '@/config/routes'
-import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
+import { useSelector } from 'react-redux'
+import { selectBreadcrumbOverrides } from '@/services/breadcrumbSlice'
 import { ToastManager } from '@/components/shared/ToastManager'
-
-// Patterns for routes that have a :loadId parameter
-const ID_ROUTE_PREFIXES = [
-  `${RoutePath.DriverAuctions}/`,
-  `${RoutePath.Loads}/`,
-  `${RoutePath.AuctionLive}/`,
-]
-
-const MONGO_ID_RE = /^[a-f\d]{24}$/i
-
-function isIdRoute(pathname: string): boolean {
-  return ID_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix))
-}
-
-function extractLoadId(pathname: string): string | null {
-  for (const prefix of ID_ROUTE_PREFIXES) {
-    if (pathname.startsWith(prefix)) {
-      // Take only the id segment (drop trailing /edit etc.) and require a real
-      // ObjectId so paths like /loads/post never hit the API
-      const id = pathname.slice(prefix.length).split('/')[0]
-      if (MONGO_ID_RE.test(id)) return id
-    }
-  }
-  return null
-}
-
-function truncateId(id: string): string {
-  return `#${id.slice(-6).toUpperCase()}`
-}
 
 export default function PageLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
-  const loadId = extractLoadId(location.pathname)
-  const {
-    data: load,
-    isLoading: loadLoading,
-    isError: loadError,
-  } = useGetLoadQuery(loadId ?? '', {
-    skip: loadId === null,
-  })
-
+  // Select the full overrides map once (Rules of Hooks safe) — pages populate it
+  // with friendly labels for their own entity, and we fall back to route-config
+  // labels when no override exists for a given cumulative path.
+  const overrides = useSelector(selectBreadcrumbOverrides)
   const segments = location.pathname.split('/').filter(Boolean)
 
-  // TODO: this is temp; for root path, segments is empty → show just "Dashboard"
   const breadcrumbItems =
     segments.length === 0
       ? [{ path: RoutePath.Dashboard, label: getRouteLabel(RoutePath.Dashboard) }]
-      : segments.map((seg, i) => {
+      : segments.map((_seg, i) => {
           const path = '/' + segments.slice(0, i + 1).join('/')
-          // Match the segment itself so the id crumb renders origin → destination
-          // even when it isn't last (e.g. /loads/<id>/edit)
-          const isIdSegment = loadId !== null && seg === loadId && isIdRoute(path)
-
-          let label: string
-          if (isIdSegment) {
-            if (loadLoading) {
-              label = 'Loading...'
-            } else if (loadError || !load) {
-              label = truncateId(loadId)
-            } else {
-              const origin = load.originAddress.split(',')[0].trim()
-              const destination = load.destinationAddress.split(',')[0].trim()
-              label = `${origin} → ${destination}`
-            }
-          } else {
-            // Prefer the full cumulative path so e.g. /company/dashboard resolves to
-            // "Dashboard" rather than matching /dashboard ("Revenue Center")
-            label = getRouteLabel(path)
-          }
-
+          const label = overrides[path] ?? getRouteLabel(path)
           return { path, label }
         })
 

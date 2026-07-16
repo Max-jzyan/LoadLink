@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import type { AuctionSummary, CompanySummary, Load, LoadStatus } from '@/services/loadApi/loadEnum'
 import type { EligibilityFlags } from '@/services/driverApi/driverEnum'
 import { EligibilityBadge } from '@/components/driverLoads/EligibilityBadge'
+import CompanyNameLink from '@/components/shared/CompanyNameLink'
 
 const STATUS_BADGE: Record<LoadStatus, { label: string; className: string }> = {
   draft: { label: 'Draft', className: 'bg-muted text-muted-foreground' },
@@ -85,7 +86,11 @@ export function LoadCard({
           <div className="flex items-baseline gap-1.5">
             {company && (
               <>
-                <span className="text-base font-bold leading-tight">{company.companyName}</span>
+                <CompanyNameLink
+                  name={company.companyName}
+                  companyId={company._id}
+                  className="text-base font-bold leading-tight"
+                />
                 <span className="text-muted-foreground text-sm">•</span>
               </>
             )}

@@ -3,21 +3,28 @@ import { Badge } from '@/components/ui/badge'
 import { AUCTION_STATUSES, type Auction } from '@/services/auctionApi/auctionEnum'
 import type { PopulatedLoad } from '@/services/loadApi/loadEnum'
 import CountdownTimer from './CountdownTimer'
+import CompanyNameLink from '@/components/shared/CompanyNameLink'
 
 interface LoadSummaryCardProps {
   load: PopulatedLoad
   auction: Auction
   companyName?: string
+  companyId?: string
 }
 
-export default function LoadSummaryCard({ load, auction, companyName }: LoadSummaryCardProps) {
+export default function LoadSummaryCard({ load, auction, companyName, companyId }: LoadSummaryCardProps) {
   const isLive = auction.status === AUCTION_STATUSES.Active
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xl font-bold">
-          {companyName ? `${companyName} ` : ''}№{load._id.slice(-7)}
+          {companyName && companyId ? (
+            <CompanyNameLink name={companyName} companyId={companyId} className="text-xl font-bold" />
+          ) : companyName ? (
+            `${companyName} `
+          ) : ''}
+          №{load._id.slice(-7)}
         </h2>
         <div className="flex items-center gap-2">
           {isLive && (

@@ -12,6 +12,8 @@ import TruckDrawer from '@/components/driverProfile/TruckDrawer'
 import TruckInfoCard from '@/components/driverProfile/TruckInfoCard'
 import TrailerInfoCard from '@/components/driverProfile/TrailerInfoCard'
 import TrailerDrawer, { type TrailerFormValues } from '@/components/driverProfile/TrailerDrawer'
+import { ReviewsSection } from '@/components/shared/PublicProfileLayout'
+import ReviewCard from '@/components/shared/ReviewCard'
 import Col from '@/components/layout/Col'
 import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
@@ -29,14 +31,26 @@ import {
   useCreateTrailerMutation,
   useUpdateTrailerMutation,
 } from '@/services/trailerApi/trailerSlice'
+import { useGetReviewsForTargetQuery } from '@/services/reviewApi/reviewSlice'
 import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
+type ProfileTab = 'profile' | 'reviews'
+
 export default function DriverProfile() {
   const driverId = useRequiredMongoId()
-  const { data: driver, isLoading, isError } = useGetDriverProfileQuery(driverId)
+  const [activeTab, setActiveTab] = useState<ProfileTab>('profile')
+
+  const { data: driver, isLoading } = useGetDriverProfileQuery(driverId)
 
   const { data: trailers = [] } = useListDriverTrailersQuery(driverId, { skip: !driverId })
+
+  const {
+    data: reviewsPayload,
+    isSuccess: isReviewsSuccess,
+    isLoading: isReviewsLoading,
+    isError: isReviewsError,
+  } = useGetReviewsForTargetQuery({ targetId: driverId, page: 1, limit: 20 }, { skip: !driverId || activeTab !== 'reviews' })
 
   const [updateDriverProfile] = useUpdateDriverProfileMutation()
   const [updateDriverProfileForInfo, { isSuccess: infoSaved }] = useUpdateDriverProfileMutation()
@@ -185,7 +199,7 @@ export default function DriverProfile() {
     [driverId, updateDriverProfileForInfo]
   )
 
-  if (isLoading) {
+  if (isLoading || !driver) {
     return (
       <PageShell title="My Profile">
         <div className="flex items-center justify-center py-20">
@@ -195,70 +209,112 @@ export default function DriverProfile() {
     )
   }
 
-  if (isError || !driver) {
-    return (
-      <PageShell title="My Profile">
-        <div className="flex items-center justify-center py-20 text-destructive">
-          Failed to load profile. Please try again later.
+  const reviewsBody = (() => {
+    if (isReviewsLoading) {
+      return (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
         </div>
-      </PageShell>
-    )
-  }
+      )
+    }
+    if (isReviewsError) {
+      return <div className="text-sm text-destructive">Could not load reviews. Please try again later.</div>
+    }
+    if (isReviewsSuccess) {
+      if (reviewsPayload.data.length === 0) {
+        return <div className="text-sm text-muted-foreground italic">No reviews yet for you.</div>
+      }
+      return (
+        <div className="space-y-3">
+          {reviewsPayload.data.map((r) => (
+            <ReviewCard key={r._id} review={r} />
+          ))}
+        </div>
+      )
+    }
+    // Skipped or no data yet
+    return null
+  })()
 
   return (
-    <PageShell title="My Profile">
-      <Row>
-        {/* Column 1 — 25% */}
-        <Col size={4}>
-          <Row>
-            <Col size={16}>
-              <DriverInfoCard driver={driver} onEdit={() => setDriverInfoDrawerOpen(true)} />
-            </Col>
-          </Row>
-          <Row>
-            <Col size={16}>
-              <ContactInfoCard driver={driver} onSave={handleContactSave} />
-            </Col>
-          </Row>
-          <Row>
-            <Col size={16}>
-              <PerformanceCard driver={driver} />
-            </Col>
-          </Row>
-        </Col>
+    <PageShell
+      title="My Profile"
+      tabs={{
+        options: [
+          { value: 'profile', label: 'Profile' },
+          { value: 'reviews', label: 'Reviews' },
+        ],
+        value: activeTab,
+        onValueChange: (value) => setActiveTab(value as ProfileTab),
+      }}
+    >
+      {activeTab === 'profile' ? (
+        <Row>
+          {/* Column 1 — 25% */}
+          <Col size={4}>
+            <Row>
+              <Col size={16}>
+                <DriverInfoCard driver={driver} onEdit={() => setDriverInfoDrawerOpen(true)} />
+              </Col>
+            </Row>
+            <Row>
+              <Col size={16}>
+                <ContactInfoCard driver={driver} onSave={handleContactSave} />
+              </Col>
+            </Row>
+            <Row>
+              <Col size={16}>
+                <PerformanceCard driver={driver} />
+              </Col>
+            </Row>
+          </Col>
 
-        {/* Column 2 — 75% */}
-        <Col size={12}>
-          <Row>
-            <Col size={16}>
-              <TruckInfoCard
-                driver={driver}
-                onAddTruck={handleAddTruck}
-                onEditTruck={handleEditTruck}
-              />
-            </Col>
-          </Row>
-          <Row>
-            <Col size={16}>
-              <TrailerInfoCard
-                trailers={trailers}
-                onAddTrailer={handleAddTrailer}
-                onEditTrailer={handleEditTrailer}
-              />
-            </Col>
-          </Row>
-          <Row>
-            <Col size={16}>
-              <PricingPreferencesCard driver={driver} onSave={handlePricingSave} />
-            </Col>
-          </Row>
-          <Row>
-            <Col size={16}>
-              <NotificationPreferencesCard driver={driver} />
-            </Col>
-          </Row>
-        </Col>
-      </Row>
+          {/* Column 2 — 75% */}
+          <Col size={12}>
+            <Row>
+              <Col size={16}>
+                <TruckInfoCard
+                  driver={driver}
+                  onAddTruck={handleAddTruck}
+                  onEditTruck={handleEditTruck}
+                />
+              </Col>
+            </Row>
+            <Row>
+              <Col size={16}>
+                <TrailerInfoCard
+                  trailers={trailers}
+                  onAddTrailer={handleAddTrailer}
+                  onEditTrailer={handleEditTrailer}
+                />
+              </Col>
+            </Row>
+            <Row>
+              <Col size={16}>
+                <PricingPreferencesCard driver={driver} onSave={handlePricingSave} />
+              </Col>
+            </Row>
+            <Row>
+              <Col size={16}>
+                <NotificationPreferencesCard notificationPreferences={driver.notificationPreferences} />
+              </Col>
+            </Row>
+          </Col>
+        </Row>
+      ) : (
+        <Row>
+          <Col size={16}>
+            <ReviewsSection
+              totalReviews={reviewsPayload?.pagination.total}
+              isAuthorized={false}
+              onWriteReview={() => {}}
+              loadsCount={0}
+            >
+              {reviewsBody}
+            </ReviewsSection>
+          </Col>
+        </Row>
+      )}
 
       {/* Truck Add/Edit Drawer */}
       <TruckDrawer

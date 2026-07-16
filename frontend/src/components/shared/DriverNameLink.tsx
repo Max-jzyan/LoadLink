@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom'
-import { useSelector } from 'react-redux'
 import { selectRole } from '@/services/authSlice'
+import { useSelector } from 'react-redux'
+import { Link } from 'react-router-dom'
 
 interface DriverNameLinkProps {
   name: string
@@ -19,7 +19,7 @@ export default function DriverNameLink({ name, driverId, className }: DriverName
   }
 
   return (
-    <Link to={`/driver/profile/${driverId}`} className={`${LINK_CLASS} ${className ?? ''}`}>
+    <Link to={`/driver/${driverId}`} className={`${LINK_CLASS} ${className ?? ''}`}>
       {label}
     </Link>
   )

@@ -1,17 +1,27 @@
 import { Request, Response, NextFunction } from 'express'
 import { StatusCodes } from 'http-status-codes'
+import { TARGET_TYPES, TargetType } from '../models/ratings/Review'
 import * as reviewService from '../services/reviewService'
 
 /**
  * POST /api/reviews
- * Create a new review — only companies can review drivers.
- * Body: { reviewerId, targetId, loadId, ratingCategories, comment? }
- * The service layer validates that reviewerId belongs to a company.
+ * Create a new review. Accepts targetType in the body:
+ *   - targetType: 'driver'  → a company is reviewing a driver
+ *   - targetType: 'company' → a driver is reviewing a company
+ * Body: { reviewerId, targetId, loadId, ratingCategories, comment?, targetType? }
+ * targetType defaults to 'driver' for backward compatibility.
  */
 export const createReview = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const reviewerId = req.user!._id
-    const review = await reviewService.createCompanyReview({ ...req.body, reviewerId })
+    const targetType: TargetType = req.body.targetType || TARGET_TYPES.DRIVER
+
+    let review
+    if (targetType === TARGET_TYPES.COMPANY) {
+      review = await reviewService.createDriverReview({ ...req.body, reviewerId })
+    } else {
+      review = await reviewService.createCompanyReview({ ...req.body, reviewerId })
+    }
     res.status(StatusCodes.CREATED).json(review)
   } catch (err) {
     next(err)

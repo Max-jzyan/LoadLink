@@ -99,8 +99,8 @@ export const listDriverBids = async (driverId: string, status?: string) => {
 }
 
 /**
- * List loads assigned to a driver. Optional status filter.
- */
+  * List loads assigned to a driver. Optional status filter.
+  */
 export const listDriverLoads = async (driverId: string, status?: string) => {
   assertValidId(driverId, 'driverId')
 
@@ -113,6 +113,37 @@ export const listDriverLoads = async (driverId: string, status?: string) => {
     .sort({ createdAt: -1 })
     .populate('companyId')
     .populate('auctionId')
+}
+
+/**
+  * List completed loads for a driver that are eligible for review for a specific company.
+  * Excludes loads already reviewed by the driver.
+  */
+export const listDriverCompletedLoadsForCompany = async (driverId: string, companyId: string) => {
+  assertValidId(driverId, 'driverId')
+  assertValidId(companyId, 'companyId')
+
+  // First get the ReviewModel
+  const { ReviewModel } = await import('../models/ratings/Review')
+
+  // Find loads that have already been reviewed by this driver
+  const reviewedLoadIds = await ReviewModel.distinct('loadId', {
+    reviewerId: new Types.ObjectId(driverId),
+  })
+
+  // Find completed loads for this company that are assigned to the driver
+  // and haven't been reviewed yet
+  const loads = await LoadModel.find({
+    companyId: new Types.ObjectId(companyId),
+    assignedDriverId: new Types.ObjectId(driverId),
+    status: LOAD_STATUSES.Completed,
+    _id: { $nin: reviewedLoadIds },
+  })
+    .sort({ createdAt: -1 })
+    .populate('companyId')
+    .populate('auctionId')
+
+  return loads
 }
 
 /**

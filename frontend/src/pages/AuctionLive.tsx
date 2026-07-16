@@ -18,6 +18,9 @@ import { AUCTION_STATUSES, BID_STATUSES } from '@/services/auctionApi/auctionEnu
 import type { BidsStreamPayload, PriceStreamPayload } from '@/services/auctionApi/auctionEnum'
 import { useAcceptBidMutation } from '@/services/auctionApi/auctionSlice'
 import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
+import { setBreadcrumbLabel } from '@/services/breadcrumbSlice'
+import { useDispatch } from 'react-redux'
+import { useEffect } from 'react'
 import { formatMoney } from '@/lib/format'
 import NotFound from '@/pages/NotFound'
 
@@ -42,9 +45,28 @@ export default function AuctionLive() {
   const { data: pricePayload, status: priceStatus } = useEventSource<PriceStreamPayload>(
     isValidId ? `/api/auctions/${loadId}/price` : null
   )
+  const dispatch = useDispatch()
+
+  // Push a friendly origin → destination label into the breadcrumb store for the
+  // live auction route (we already have the load). PageLayout reads it instead
+  // of parsing the id out of the URL.
+  useEffect(() => {
+    if (isValidId && load) {
+      const label = `${load.originAddress.split(',')[0].trim()} → ${load.destinationAddress
+        .split(',')[0]
+        .trim()}`
+      dispatch(
+        setBreadcrumbLabel({
+          path: `/auctionLive/${loadId}`,
+          label,
+        })
+      )
+    }
+  }, [isValidId, loadId, load, dispatch])
 
   const [acceptBid, { isLoading: accepting }] = useAcceptBidMutation()
   const companyName = load?.companyId?.name
+  const companyId = load?.companyId?._id
 
   const bids = bidsPayload?.bids ?? []
   const bestBid = bids[0]
@@ -172,7 +194,7 @@ export default function AuctionLive() {
               </div>
             ) : (
               <div className="space-y-6">
-                <LoadSummaryCard load={load} auction={auction} companyName={companyName} />
+                <LoadSummaryCard load={load} auction={auction} companyName={companyName} companyId={companyId} />
                 <PriceTracker auction={auction} currentPrice={currentPrice} />
                 {!isAuctionOver && (
                   <AuctionControls

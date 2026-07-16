@@ -28,8 +28,10 @@ export const RoutePath = {
   Report: '/report',
   ReportFraud: '/report/fraud',
   ReportInaccurate: '/report/inaccurate',
-  DriverProfile: '/driver/profile',
-  DriverPublicProfile: '/driver/profile/:driverId',
+  DriverProfile: '/driver/',
+  DriverPublicProfile: '/driver/:driverId',
+  CompanyProfile: '/company/',
+  CompanyPublicProfile: '/company/:companyId',
   Loads: '/loads',
   AuctionLive: '/auctionLive',
   PostLoad: '/loads/post',
@@ -92,7 +94,7 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
   },
   /** Driver profile page — accessed via the user dropdown's Settings item, not in the sidebar nav. */
   [RoutePath.DriverProfile]: {
-    label: 'My Profile',
+    label: 'Profile',
     icon: User,
     navGroup: null,
     roles: ['driver'],
@@ -101,6 +103,7 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     label: 'Driver Profile',
     icon: User,
     navGroup: null,
+    roles: ['company'],
   },
   [RoutePath.Report]: { label: 'My Reports', icon: ShieldAlert, navGroup: null },
   [RoutePath.ReportFraud]: { label: 'Report Fraud', icon: ShieldAlert, navGroup: null },
@@ -134,6 +137,18 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     roles: ['company'],
   },
   [RoutePath.Map]: { label: 'Map', icon: MapPin, navGroup: 'main', roles: ['driver', 'company'] },
+  [RoutePath.CompanyProfile]: {
+    label: 'Profile',
+    icon: User,
+    navGroup: null,
+    roles: ['company'],
+  },
+  [RoutePath.CompanyPublicProfile]: {
+    label: 'Company Profile',
+    icon: User,
+    navGroup: null,
+    roles: ['driver'],
+  },
   [RoutePath.BlocklistPreferences]: {
     label: 'Blocklist',
     icon: ShieldAlert,

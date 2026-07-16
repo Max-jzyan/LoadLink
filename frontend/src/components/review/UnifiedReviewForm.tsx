@@ -1,19 +1,21 @@
-import { useState } from 'react'
-import { Star } from 'lucide-react'
-import type { Load } from '@/services/loadApi/loadEnum'
-import { categoryLabels, type RatingCategories } from '@/services/driverApi/driverEnum'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+import { categoryLabels, type RatingCategories } from '@/services/driverApi/driverEnum'
+import type { Load } from '@/services/loadApi/loadEnum'
+import { Star } from 'lucide-react'
+import { useState } from 'react'
+import LoadSelect from './LoadSelect'
 
-interface ReviewFormProps {
-  driverName: string
+interface UnifiedReviewFormProps {
+  targetName: string
+  targetType: 'driver' | 'company'
   loads: Load[]
   onSubmit: (data: { loadId: string; ratingCategories: RatingCategories; comment: string }) => void
   onCancel: () => void
@@ -50,13 +52,14 @@ function StarInput({ value, onChange }: { value: number; onChange: (v: number) =
   )
 }
 
-export default function ReviewForm({
-  driverName,
+export default function UnifiedReviewForm({
+  targetName,
+  targetType,
   loads,
   onSubmit,
   onCancel,
   isSubmitting = false,
-}: ReviewFormProps) {
+}: UnifiedReviewFormProps) {
   const [selectedLoadId, setSelectedLoadId] = useState<string>('')
   const [ratingCategories, setRatingCategories] = useState<RatingCategories>({
     timeliness: 0,
@@ -79,14 +82,11 @@ export default function ReviewForm({
     onSubmit({ loadId: selectedLoadId, ratingCategories, comment })
   }
 
-  const formatLoadLabel = (load: Load) => {
-    const date = new Date(load.dropoffTime).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: '2-digit',
-    })
-    return `${load.originAddress} → ${load.destinationAddress} | ${date}`
-  }
+  const titleLabel = targetType === 'driver' ? 'Driver' : 'Company'
+  const noLoadsMessage =
+    targetType === 'driver'
+      ? 'This driver currently has no loads available for review. This may be because they have not completed a load for your company yet, or because all completed loads have already been reviewed.'
+      : 'You currently have no loads available for review. This may be because you have not completed a load for this company yet, or because all completed loads have already been reviewed.'
 
   return (
     <Dialog
@@ -97,30 +97,22 @@ export default function ReviewForm({
     >
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Review Driver: {driverName}</DialogTitle>
+          <DialogTitle>
+            Review {titleLabel}: {targetName}
+          </DialogTitle>
+          <DialogDescription>
+            Rate this {targetType} on multiple categories and share your experience.
+          </DialogDescription>
         </DialogHeader>
 
         {loads.length === 0 ? (
-          <DialogDescription className="rounded-md border border-dashed p-4">
-            This driver currently has no loads available for review. This may be because they have
-            not completed a load for your company yet, or because all completed loads have already
-            been reviewed.
-          </DialogDescription>
+          <div className="rounded-md border border-dashed p-4">
+            <p className="text-sm text-muted-foreground">{noLoadsMessage}</p>
+          </div>
         ) : (
           <div>
             <label className="block text-sm font-medium mb-1">Select Load</label>
-            <select
-              value={selectedLoadId}
-              onChange={(e) => setSelectedLoadId(e.target.value)}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="">-- Choose a load --</option>
-              {loads.map((load) => (
-                <option key={load._id} value={load._id}>
-                  {formatLoadLabel(load)}
-                </option>
-              ))}
-            </select>
+            <LoadSelect loads={loads} onChange={setSelectedLoadId} />
           </div>
         )}
 
@@ -137,7 +129,7 @@ export default function ReviewForm({
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Share your experience with this driver..."
+              placeholder={`Share your experience with this ${targetType}...`}
               rows={4}
               maxLength={2000}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"

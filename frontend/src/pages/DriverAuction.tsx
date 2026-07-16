@@ -25,10 +25,13 @@ import {
   useGetLoadQuery,
   useGetAcceptedBidQuery,
 } from '@/services/loadApi/loadSlice'
-import { Clock, Calendar } from 'lucide-react'
+import { Calendar, Clock } from 'lucide-react'
+import CompanyNameLink from '@/components/shared/CompanyNameLink'
 import { useParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useDispatch } from 'react-redux'
+import { setBreadcrumbLabel } from '@/services/breadcrumbSlice'
 import type { Truck } from '@/services/driverApi/driverEnum'
-import { useState } from 'react'
 
 function timeAgo(dateStr: string): string {
   const now = Date.now()
@@ -53,6 +56,24 @@ export default function DriverAuction() {
   const { data: load, isLoading, isError } = useGetLoadQuery(loadId)
   const { data: bidsPayload } = useStreamBidsQuery(loadId)
   const { data: pricePayload } = useStreamAuctionPriceQuery(loadId)
+  const dispatch = useDispatch()
+
+  // Push a friendly origin → destination label into the breadcrumb store for the
+  // driver auction route (we already have the load). PageLayout reads it instead
+  // of showing just the raw id.
+  useEffect(() => {
+    if (loadId && load) {
+      const label = `${load.originAddress.split(',')[0].trim()} → ${load.destinationAddress
+        .split(',')[0]
+        .trim()}`
+      dispatch(
+        setBreadcrumbLabel({
+          path: `/driverAuctions/${loadId}`,
+          label,
+        })
+      )
+    }
+  }, [loadId, load, dispatch])
 
   // Derive bids from SSE payload, falling back to empty array
   const bids: PopulatedBid[] = bidsPayload?.bids ?? []
@@ -138,9 +159,18 @@ export default function DriverAuction() {
       ? load.companyId
       : ((load.companyId as { companyName?: string }).companyName ?? 'Company')
 
+  const companyIdStr =
+    typeof load.companyId === 'string' ? load.companyId : (load.companyId as { _id?: string })._id
+
   return (
     <PageShell
-      title={companyDisplayName}
+      title={
+        companyIdStr ? (
+          <CompanyNameLink name={companyDisplayName} companyId={companyIdStr} />
+        ) : (
+          companyDisplayName
+        )
+      }
       subtitle={`Load ${truncateId(load._id)} · ${timeAgo(load.createdAt)}`}
       actions={
         isAuctionLive ? (
@@ -162,8 +192,8 @@ export default function DriverAuction() {
       <LayoutGrid>
         <Row size={16} >
           {/* ── Left column ── */}
-          <Col size={8} className="-m-2">
-            <div className="flex flex-col gap-3">
+          <Col size={8}>
+            <div className="flex flex-col gap-3 -m-2">
               {/* Route */}
               <div className="flex items-stretch gap-2">
                 <div className="flex-1 rounded-lg border bg-card p-3">{load.originAddress}</div>
@@ -310,8 +340,8 @@ export default function DriverAuction() {
           </Col>
 
           {/* ── Right column ── */}
-          <Col size={8} className="-m-2">
-            <div className="flex flex-col gap-3">
+          <Col size={8}>
+            <div className="flex flex-col gap-3 -m-2">
               <DynamicCard
                 title="Route Preview"
                 action={load.originAddress + ' → ' + load.destinationAddress}

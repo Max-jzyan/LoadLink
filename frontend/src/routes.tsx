@@ -6,6 +6,8 @@ import ReportHub from '@/pages/ReportHub'
 import ReportInaccurate from '@/pages/ReportInaccurate'
 import CompanyDashboard from '@/pages/CompanyDashboard'
 import CompanyAuctions from '@/pages/CompanyAuctions'
+import CompanyProfile from '@/pages/CompanyProfile'
+import CompanyPublicProfile from '@/pages/CompanyPublicProfile'
 import Dashboard from '@/pages/Dashboard'
 import DriverAuction from '@/pages/DriverAuction'
 import DriverAuctions from '@/pages/DriverAuctions'
@@ -99,6 +101,14 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path={RoutePath.CompanyProfile}
+        element={
+          <RoleRoute path={RoutePath.CompanyProfile}>
+            <CompanyProfile />
+          </RoleRoute>
+        }
+      />
+      <Route
         path={RoutePath.Loads}
         element={
           <RoleRoute path={RoutePath.Loads}>
@@ -185,6 +195,7 @@ export default function AppRoutes() {
 
       {/* Public / shared routes */}
       <Route path={RoutePath.DriverPublicProfile} element={<DriverPublicProfile />} />
+      <Route path={RoutePath.CompanyPublicProfile} element={<CompanyPublicProfile />} />
       <Route path={RoutePath.BlocklistPreferences} element={<BlocklistPreferences />} />
       <Route path={RoutePath.Report} element={<ReportHub />} />
       <Route path={RoutePath.ReportFraud} element={<ReportFraud />} />

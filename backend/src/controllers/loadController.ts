@@ -101,6 +101,7 @@ export const listCompanyLoads = async (req: Request, res: Response, next: NextFu
     const options = {
       assignedDriverId: req.query.assignedDriverId as string | undefined,
       excludeReviewedBy: req.query.excludeReviewedBy as string | undefined,
+      status: req.query.status as string | undefined,
     }
     const loads = await loadService.listCompanyLoads(companyId as string, options)
     res.status(StatusCodes.OK).json(loads)

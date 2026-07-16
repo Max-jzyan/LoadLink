@@ -7,6 +7,7 @@ import { type LoadStatus } from '@/types/enums'
 import { TRUCK_TYPES } from '@/types/enums'
 import { Badge } from '@/components/ui/badge'
 import { Truck as TruckIcon } from 'lucide-react'
+import CompanyNameLink from '@/components/shared/CompanyNameLink'
 
 const TRUCK_LABELS: Record<string, string> = Object.fromEntries(
   TRUCK_TYPES.map((t) => [t.value, t.label])
@@ -18,11 +19,26 @@ function truckDisplayName(t: Truck) {
 
 export const columns = (trucks: Truck[] = []): ColumnDef<Load>[] => [
   {
-    accessorKey: 'commodity',
-    header: 'Commodity',
+    id: 'company',
+    header: 'Company',
+    accessorFn: (row) => {
+      const company = row.companyId
+      return typeof company === 'object' && company !== null ? company.companyName : null
+    },
     cell: ({ row }) => {
-      const commodity = row.getValue<string>('commodity')
-      return <p className="font-semibold text-sm">{commodity.toUpperCase()}</p>
+      const company = row.original.companyId
+      const companyId = typeof company === 'object' ? company._id : company
+      const companyName =
+        typeof company === 'object' ? company.companyName ?? company.name : null
+      return companyId ? (
+        <CompanyNameLink
+          name={companyName || undefined}
+          companyId={companyId}
+          className="font-semibold text-sm"
+        />
+      ) : (
+        <span className="text-sm text-muted-foreground">Unassigned</span>
+      )
     },
   },
   {

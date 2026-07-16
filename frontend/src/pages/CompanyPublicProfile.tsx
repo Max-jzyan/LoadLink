@@ -1,112 +1,112 @@
-import DriverInfoCard from '@/components/driverProfile/DriverInfoCard'
-import PerformanceCard from '@/components/driverProfile/PerformanceCard'
+import { useState, useEffect } from 'react'
+import CompanyInfoCard from '@/components/companyProfile/CompanyInfoCard'
+import CompanyPerformanceCard from '@/components/companyProfile/CompanyPerformanceCard'
 import Col from '@/components/layout/Col'
 import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
-import UnifiedReviewForm from '@/components/review/UnifiedReviewForm'
+import { useGetCompanyProfileQuery } from '@/services/companyApi/companyApi'
+import { useListDriverCompletedLoadsForCompanyQuery } from '@/services/driverApi/driverSlice'
+import { useGetReviewsForTargetQuery, useCreateReviewMutation } from '@/services/reviewApi/reviewSlice'
+import { useSelector, useDispatch } from 'react-redux'
+import { selectRole, selectMongoId } from '@/services/authSlice'
+import { setBreadcrumbLabel } from '@/services/breadcrumbSlice'
+import { Loader2 } from 'lucide-react'
+import { useParams } from 'react-router-dom'
 import { ReviewsSection } from '@/components/shared/PublicProfileLayout'
 import ReviewCard from '@/components/shared/ReviewCard'
+import UnifiedReviewForm from '@/components/review/UnifiedReviewForm'
 import ForbiddenPage from '@/pages/ForbiddenPage'
-import { selectMongoId, selectRole } from '@/services/authSlice'
-import { setBreadcrumbLabel } from '@/services/breadcrumbSlice'
 import type { RatingCategories } from '@/services/driverApi/driverEnum'
-import { useGetDriverProfileQuery } from '@/services/driverApi/driverSlice'
-import { useListCompanyLoadsQuery } from '@/services/loadApi/loadSlice'
-import { useCreateReviewMutation, useGetReviewsForTargetQuery } from '@/services/reviewApi/reviewSlice'
-import { LOAD_STATUSES } from '@/types/enums'
-import { Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { useParams } from 'react-router-dom'
 
-export default function DriverPublicProfile() {
+export default function CompanyPublicProfile() {
   const [showReviewForm, setShowReviewForm] = useState(false)
   const currentRole = useSelector(selectRole)
   const currentMongoId = useSelector(selectMongoId)
 
   const dispatch = useDispatch()
 
-  const { driverId } = useParams<{ driverId?: string }>()
+  const { companyId } = useParams<{ companyId?: string }>()
 
   useEffect(() => {
-    if (currentRole === 'driver') {
+    if (currentRole === 'company') {
       dispatch(
         setBreadcrumbLabel({
-          path: `/driver/${driverId ?? ''}`,
+          path: `/company/${companyId ?? ''}`,
           label: 'Forbidden',
         })
       )
     }
-  }, [currentRole, driverId, dispatch])
+  }, [currentRole, companyId, dispatch])
 
-  if (currentRole === 'driver') {
+  if (currentRole === 'company') {
     return <ForbiddenPage />
   }
 
   const {
-    data: driver,
-    isLoading: isDriverLoading,
-    isError: isDriverError,
-  } = useGetDriverProfileQuery(driverId!, { skip: !driverId })
+    data: company,
+    isLoading: isCompanyLoading,
+    isError: isCompanyError,
+  } = useGetCompanyProfileQuery(companyId!, { skip: !companyId })
 
   const {
     data: reviewsPayload,
     isLoading: isReviewsLoading,
     isError: isReviewsError,
-  } = useGetReviewsForTargetQuery({ targetId: driverId!, page: 1, limit: 20 }, { skip: !driverId })
+  } = useGetReviewsForTargetQuery({ targetId: companyId!, page: 1, limit: 20 }, { skip: !companyId })
 
-  const { data: companyLoads } = useListCompanyLoadsQuery(
+  const { data: driverLoads } = useListDriverCompletedLoadsForCompanyQuery(
     {
-      companyId: currentMongoId!,
-      assignedDriverId: driverId,
-      excludeReviewedBy: currentMongoId!,
-      status: LOAD_STATUSES.Completed,
+      driverId: currentMongoId!,
+      companyId: companyId!,
     },
-    { skip: !currentMongoId || !driverId }
+    { skip: !currentMongoId || !companyId }
   )
 
   const [createReview, { isLoading: isSubmittingReview }] = useCreateReviewMutation()
 
-  // Push the resolved driver name into the breadcrumb store so PageLayout can
+  // Push the resolved company name into the breadcrumb store so PageLayout can
   // render a friendly label without re-fetching the entity by id from the URL.
   useEffect(() => {
-    if (driverId && driver) {
+    if (companyId && company) {
+      const name = company.companyName || company.name
       dispatch(
         setBreadcrumbLabel({
-          path: `/driver/${driverId}`,
-          label: driver.name ? `${driver.name}'s Profile` : 'Driver Profile',
+          path: `/company/${companyId}`,
+          label: name ? `${name}'s Profile` : 'Company Profile',
         })
       )
     }
-  }, [driverId, driver, dispatch])
+  }, [companyId, company, dispatch])
 
-  const handleReviewSubmit = async (data: { loadId: string; ratingCategories: RatingCategories; comment: string }) => {
-    if (!driverId) return
-    try {
-      await createReview({
-        reviewerId: currentMongoId!,
-        targetId: driverId,
-        loadId: data.loadId,
-        ratingCategories: data.ratingCategories,
-        comment: data.comment,
-      }).unwrap()
-      setShowReviewForm(false)
-    } catch {
-      // Error toast could be added here; the mutation handles cache invalidation
-    }
-  }
-
-  if (!driverId) {
+  if (!companyId) {
     return (
-      <PageShell title="Driver Profile">
-        <div className="flex items-center justify-center py-20 text-destructive">Missing driver ID.</div>
+      <PageShell title="Company Profile">
+        <div className="flex items-center justify-center py-20 text-destructive">Missing company ID.</div>
       </PageShell>
     )
   }
 
-  if (isDriverLoading) {
+  const handleReviewSubmit = async (data: { loadId: string; ratingCategories: RatingCategories; comment: string }) => {
+    try {
+      await createReview({
+        reviewerId: currentMongoId!,
+        targetId: companyId!,
+        loadId: data.loadId,
+        ratingCategories: data.ratingCategories,
+        comment: data.comment,
+        targetType: 'company',
+      }).unwrap()
+      setShowReviewForm(false)
+    } catch {
+      // Error handling managed by mutation
+    }
+  }
+
+  const displayName = company?.companyName || company?.name
+
+  if (isCompanyLoading) {
     return (
-      <PageShell title="Driver Profile">
+      <PageShell title="Company Profile">
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -114,11 +114,11 @@ export default function DriverPublicProfile() {
     )
   }
 
-  if (isDriverError || !driver) {
+  if (isCompanyError || !company) {
     return (
-      <PageShell title="Driver Profile">
+      <PageShell title="Company Profile">
         <div className="flex items-center justify-center py-20 text-destructive">
-          Failed to load driver profile.
+          Failed to load company profile.
         </div>
       </PageShell>
     )
@@ -131,7 +131,7 @@ export default function DriverPublicProfile() {
   ) : isReviewsError ? (
     <div className="text-sm text-destructive">Could not load reviews. Please try again later.</div>
   ) : (reviewsPayload?.data ?? []).length === 0 ? (
-    <div className="text-sm text-muted-foreground italic">No reviews yet for this driver.</div>
+    <div className="text-sm text-muted-foreground italic">No reviews yet for this company.</div>
   ) : (
     <div className="space-y-3">
       {(reviewsPayload?.data ?? []).map((r) => (
@@ -143,7 +143,7 @@ export default function DriverPublicProfile() {
   const leftColumnContent = (
     <>
       <Col size={16}>
-        <DriverInfoCard driver={driver} />
+        <CompanyInfoCard company={company} />
       </Col>
     </>
   )
@@ -151,15 +151,15 @@ export default function DriverPublicProfile() {
   const rightColumnContent = (
     <>
       <Col size={16}>
-        <PerformanceCard driver={driver} />
+        <CompanyPerformanceCard company={company} />
       </Col>
     </>
   )
 
   return (
     <PageShell
-      title={driver.name ? `${driver.name}'s Profile` : 'Driver Profile'}
-      subtitle={driver.ratingSummary?.totalReviews ? `${driver.ratingSummary.totalReviews} reviews` : undefined}
+      title={displayName ? `${displayName}'s Profile` : 'Company Profile'}
+      subtitle={company.ratingSummary?.totalReviews ? `${company.ratingSummary.totalReviews} reviews` : undefined}
     >
       <Row>
         <Col size={4}>
@@ -176,10 +176,10 @@ export default function DriverPublicProfile() {
             <Col size={16}>
               <ReviewsSection
                 totalReviews={reviewsPayload?.pagination.total}
-                isAuthorized={currentRole === 'company'}
+                isAuthorized={currentRole === 'driver'}
                 onWriteReview={() => setShowReviewForm(true)}
-                loadsCount={companyLoads?.length ?? 0}
-                disabledTooltip="You can only review this driver after they have completed a load for your company"
+                loadsCount={driverLoads?.length ?? 0}
+                disabledTooltip="You can only review this company after completing a load for them"
               >
                 {reviewsBody}
               </ReviewsSection>
@@ -190,9 +190,9 @@ export default function DriverPublicProfile() {
 
       {showReviewForm && (
         <UnifiedReviewForm
-          targetName={driver.name ?? 'this driver'}
-          targetType="driver"
-          loads={companyLoads ?? []}
+          targetName={displayName ?? 'this company'}
+          targetType="company"
+          loads={driverLoads ?? []}
           onSubmit={handleReviewSubmit}
           onCancel={() => setShowReviewForm(false)}
           isSubmitting={isSubmittingReview}

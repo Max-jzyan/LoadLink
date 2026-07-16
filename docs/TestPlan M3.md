@@ -82,7 +82,7 @@
 
 **Test:**
 
-1. Register a new driver (or edit profile) and upload a certification file via the Driver Info drawer (`/driver/profile` -&gt; Edit Personal Information -&gt; Upload certification).
+1. Register a new driver (or edit profile) and upload a certification file via the Driver Info drawer (`/driver` -&gt; Edit Personal Information -&gt; Upload certification).
 2. Also upload a profile picture. 
 3. **Expected:** Files upload directly to S3 via a presigned PUT URL; the returned URLs are stored on the driver profile (`certificationDocuments`, `profilePictureUrl`) and render in the UI. No 403 on GET after the backend swaps to a presigned viewable URL.
 
@@ -131,13 +131,13 @@
 
 ### Test Case 1: Profile page renders
 
-**Test:** Log in as driver `testUser1` and open `/driver/profile` (via the user dropdown -&gt; Settings/My Profile). 
+**Test:** Log in as driver `testUser1` and open `/driver` (via the user dropdown -&gt; Settings/My Profile). 
 
 **Expected:** Page shows Driver Info card (name, carrier creds MC#/DOT#/NSC), Contact card, Trucks card, Trailers card, Performance (ratings) card, and Notification Preferences card.
 
 ### Test Case 2: Add a truck
 
-**Test:** On `/driver/profile`, click **Add New Truck**, fill year/make/model/type/trailer length/capacity/plate, set as primary, save. **Expected:** Truck appears in the Trucks card; a success toast shows. `GET /api/driver/<id>/trucks` reflects the new truck.
+**Test:** On `/driver`, click **Add New Truck**, fill year/make/model/type/trailer length/capacity/plate, set as primary, save. **Expected:** Truck appears in the Trucks card; a success toast shows. `GET /api/driver/<id>/trucks` reflects the new truck.
 
 ### Test Case 3: Edit a truck
 
@@ -169,7 +169,7 @@
 
 ### Test Case 8: Public driver profile + reviews
 
-**Test:** As a company (`testCompany1`), open a driver's public profile `/driver/profile/<driverId>` (e.g. from a DriverNameLink).
+**Test:** As a company (`testCompany1`), open a driver's public profile `/driver/<driverId>` (e.g. from a DriverNameLink).
 
 **Expected:** Public profile renders with Performance/ratings, completed loads, and a "Write a Review" button. Submitting a review creates a `Review` and updates the driver's `ratingSummary`.
 
@@ -362,7 +362,7 @@
 
 **Test:**
 
-1. As a driver, upload a certification document (`/driver/profile` -&gt; Edit Personal Information -&gt; Upload certification) — seeded drivers have none uploaded by default, so this step is required to have something to review.
+1. As a driver, upload a certification document (`/driver` -&gt; Edit Personal Information -&gt; Upload certification) — seeded drivers have none uploaded by default, so this step is required to have something to review.
 2. As admin, open `/admin/documents`, search for that driver, and expand their row.
 3. Click **View** on the uploaded document.
 
@@ -389,7 +389,7 @@
 
 ### Test Case 1: Submit a review
 
-**Test:** As `testCompany1`, open `/driver/profile/<driverId>` for a driver you've completed a load with, click "Write a Review", pick an eligible load, rate categories, submit. **Expected:** Review appears in the driver's Ratings &amp; Reviews section; average/summary updates.
+**Test:** As `testCompany1`, open `/driver/<driverId>` for a driver you've completed a load with, click "Write a Review", pick an eligible load, rate categories, submit. **Expected:** Review appears in the driver's Ratings &amp; Reviews section; average/summary updates.
 
 ### Test Case 2: Prevent duplicate review
 

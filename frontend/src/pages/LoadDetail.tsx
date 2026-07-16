@@ -23,8 +23,10 @@ import {
   Truck,
   Weight,
 } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { setBreadcrumbLabel } from '@/services/breadcrumbSlice'
 
 const NON_EDITABLE_STATUSES: readonly string[] = [
   LOAD_STATUSES.InTransit,
@@ -76,6 +78,24 @@ export default function LoadDetail() {
   const { data: acceptedBid } = useGetAcceptedBidQuery(loadId ?? '', {
     skip: !loadId || !showRcButton,
   })
+  const dispatch = useDispatch()
+
+  // Push a friendly origin → destination label into the breadcrumb store for
+  // both the detail route and its /edit sub-route (no extra fetch needed — we
+  // already have the load). PageLayout reads it instead of parsing the URL.
+  useEffect(() => {
+    if (loadId && load) {
+      const label = `${load.originAddress.split(',')[0].trim()} → ${load.destinationAddress
+        .split(',')[0]
+        .trim()}`
+      dispatch(
+        setBreadcrumbLabel({
+          path: `/loads/${loadId}`,
+          label,
+        })
+      )
+    }
+  }, [loadId, load, dispatch])
 
   const auction = load?.auctionId ?? null
   const canEdit = load ? !NON_EDITABLE_STATUSES.includes(load.status) : false

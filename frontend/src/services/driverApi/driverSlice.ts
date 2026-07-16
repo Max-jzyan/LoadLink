@@ -132,6 +132,12 @@ export const driverApi = api.injectEndpoints({
       providesTags: (_result, _error, driverId) => [{ type: LoadTag.Driver, id: driverId }],
     }),
 
+    // GET /api/driver/:driverId/completed-loads/:companyId — list completed loads eligible for review
+    listDriverCompletedLoadsForCompany: build.query<Load[], { driverId: string; companyId: string }>({
+      query: ({ driverId, companyId }) => `driver/${driverId}/completed-loads/${companyId}`,
+      providesTags: (_result, _error, { driverId }) => [{ type: LoadTag.Load, id: `${driverId}-completed` }],
+    }),
+
     // PATCH /api/driver/:driverId/profile — update driver profile fields
     updateDriverProfile: build.mutation<
       DriverProfile,
@@ -279,6 +285,7 @@ export const driverApi = api.injectEndpoints({
         return tags
       },
     }),
+
     // DELETE /api/driver/:driverId/documents/:docKey — remove a certification doc
     removeCertificationDocument: build.mutation<void, { driverId: string; docKey: string }>({
       query: ({ driverId, docKey }) => ({
@@ -320,4 +327,5 @@ export const {
   useSelectTruckForLoadMutation,
   useRemoveCertificationDocumentMutation,
   useRemoveInsuranceCertificateMutation,
+  useListDriverCompletedLoadsForCompanyQuery,
 } = driverApi

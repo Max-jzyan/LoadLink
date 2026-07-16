@@ -25,6 +25,7 @@ export interface CreateReviewPayload {
   loadId: string
   ratingCategories: import('../driverApi/driverEnum').RatingCategories
   comment?: string
+  targetType?: 'driver' | 'company'
 }
 
 export interface GetReviewsForTargetResponse {

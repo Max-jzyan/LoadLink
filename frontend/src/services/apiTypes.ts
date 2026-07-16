@@ -6,6 +6,7 @@ export const LoadTag = {
   Trailer: 'Trailer',
   DriverProfile: 'DriverProfile',
   Driver: 'Driver',
+  Company: 'Company',
   Review: 'Review',
   Blocklist: 'Blocklist',
   Report: 'Report',

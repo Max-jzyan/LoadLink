@@ -1,14 +1,12 @@
 import DynamicCard from '@/components/layout/DynamicCard'
-import type { DriverProfile } from '@/services/driverApi/driverEnum'
+import type { NotificationPreferences } from '@/services/userApi/userEnum'
 import { Mail, MessageSquare, Briefcase } from 'lucide-react'
 
 interface NotificationPreferencesCardProps {
-  driver: DriverProfile
+  notificationPreferences: NotificationPreferences
 }
 
-export default function NotificationPreferencesCard({ driver }: NotificationPreferencesCardProps) {
-  const { notificationPreferences } = driver
-
+export default function NotificationPreferencesCard({ notificationPreferences }: NotificationPreferencesCardProps) {
   const items = [
     {
       icon: Mail,

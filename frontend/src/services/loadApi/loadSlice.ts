@@ -53,26 +53,29 @@ export const loadApi = api.injectEndpoints({
       providesTags: (_result, _error, loadId) => [{ type: LoadTag.Bid, id: `accepted-${loadId}` }],
     }),
 
-    // GET /api/company/:companyId/loads — list company loads, optionally filtered by driver and/or excluding reviewed loads
+    // GET /api/company/:companyId/loads — list company loads, optionally filtered by driver, status, and/or excluding reviewed loads
     // Accepts either a plain companyId string (legacy) or an object with optional filters
     listCompanyLoads: build.query<
       Load[],
-      string | { companyId: string; assignedDriverId?: string; excludeReviewedBy?: string }
+      string | { companyId: string; assignedDriverId?: string; excludeReviewedBy?: string; status?: string }
     >({
       query: (arg) => {
         let companyId: string
         let assignedDriverId: string | undefined
         let excludeReviewedBy: string | undefined
+        let status: string | undefined
         if (typeof arg === 'string') {
           companyId = arg
         } else {
           companyId = arg.companyId
           assignedDriverId = arg.assignedDriverId
           excludeReviewedBy = arg.excludeReviewedBy
+          status = arg.status
         }
         const params = new URLSearchParams()
         if (assignedDriverId) params.set('assignedDriverId', assignedDriverId)
         if (excludeReviewedBy) params.set('excludeReviewedBy', excludeReviewedBy)
+        if (status) params.set('status', status)
         const qs = params.toString()
         return `company/${companyId}/loads${qs ? `?${qs}` : ''}`
       },

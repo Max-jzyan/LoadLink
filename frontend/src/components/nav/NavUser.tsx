@@ -1,36 +1,36 @@
+import NotificationBell from '@/components/shared/NotificationBell'
 import { signOut } from 'firebase/auth'
 import {
-  ChevronRightIcon,
-  LogOutIcon,
-  MonitorIcon,
-  MoonIcon,
-  Settings,
-  SunIcon,
+    ChevronRightIcon,
+    LogOutIcon,
+    MonitorIcon,
+    MoonIcon,
+    Settings,
+    SunIcon,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import NotificationBell from '@/components/shared/NotificationBell'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SidebarMenu, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 import { applyTheme, getStoredTheme, type Theme } from '@/hooks/useTheme'
 import { auth } from '@/lib/firebase'
-import { useSelector } from 'react-redux'
 import { selectRole, setManualLogout } from '@/services/authSlice'
 import { useGetMyProfileQuery } from '@/services/userApi/userSlice'
+import { useSelector } from 'react-redux'
 
 const THEME_ICONS: Record<Theme, React.ReactNode> = {
   light: <SunIcon className="h-4 w-4" />,
@@ -141,7 +141,7 @@ export function NavUser() {
                   <button
                     type="button"
                     className="flex w-full cursor-pointer items-center gap-2 px-1 py-1.5 text-left text-sm hover:bg-accent rounded-sm"
-                    onClick={() => navigate('/driver/profile')}
+                    onClick={() => navigate('/driver')}
                   >
                     <Avatar className="h-8 w-8 rounded-lg">
                       <AvatarImage src={profilePictureUrl} alt={displayName} />
@@ -153,16 +153,20 @@ export function NavUser() {
                     </div>
                   </button>
                 ) : (
-                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                  <button
+                    type="button"
+                    className="flex w-full cursor-pointer items-center gap-2 px-1 py-1.5 text-left text-sm hover:bg-accent rounded-sm"
+                    onClick={() => navigate('/company')}
+                  >
                     <Avatar className="h-8 w-8 rounded-lg">
                       <AvatarImage src={profilePictureUrl} alt={displayName} />
                       <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-semibold">{displayName}</span>
-                      <span className="truncate text-xs capitalize">{role}</span>
+                      <span className="truncate text-xs capitalize">{roleLabel}</span>
                     </div>
-                  </div>
+                  </button>
                 )}
               </DropdownMenuLabel>
 
@@ -172,7 +176,7 @@ export function NavUser() {
                 <DropdownMenuItem
                   onClick={() =>
                     navigate(
-                      role === 'driver' ? '/driver/profile' : '/settings'
+                      role === 'driver' ? '/driver' : '/company'
                     )
                   }
                 >

@@ -6,6 +6,7 @@ import {
   getScoredLoads,
   listDriverBids,
   listDriverLoads,
+  listDriverCompletedLoadsForCompany,
   updateDriverExpenses,
   updateDriverProfile,
   removeCertificationDocument,
@@ -29,5 +30,6 @@ router.patch('/driver/:driverId/expenses', middlewares, updateDriverExpenses)
 router.get('/driver/:driverId/profile', requireAuth, getDriverProfile)
 router.delete('/driver/:driverId/documents/:docKey', middlewares, removeCertificationDocument)
 router.delete('/driver/:driverId/insurance/:idx', middlewares, removeInsuranceCertificate)
+router.get('/driver/:driverId/completed-loads/:companyId', middlewares, listDriverCompletedLoadsForCompany)
 
 export default router

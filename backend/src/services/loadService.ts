@@ -25,6 +25,7 @@ interface CreateLoadData {
 interface ListCompanyLoadsOptions {
   assignedDriverId?: string
   excludeReviewedBy?: string
+  status?: string
 }
 
 /**
@@ -189,6 +190,11 @@ export const listCompanyLoads = async (
       reviewerId: options.excludeReviewedBy,
     })
     filter._id = { $nin: reviewedLoadIds }
+  }
+
+  // Optional status filter (e.g., only completed loads eligible for review)
+  if (options.status) {
+    filter.status = options.status
   }
 
   const loads = await LoadModel.find(filter)

@@ -4,6 +4,7 @@ import { CompanyModel } from '../models/users/Company'
 import { LoadModel } from '../models/loads/Load'
 import { BidModel } from '../models/loads/Bid'
 import { LOAD_STATUSES } from '../models/enums'
+import * as companyService from '../services/companyService'
 
 // GET /api/companies
 // lists all companies -- dev only, replace with auth-based lookup once firebase auth is wired up
@@ -74,6 +75,30 @@ export const getCompanyDashboard = async (req: Request, res: Response, next: Nex
     }
 
     res.status(StatusCodes.OK).json({ loads: enrichedLoads, summary })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// GET /api/company/:companyId/profile
+// Returns the full company profile with presigned URLs for S3 assets
+export const getCompanyProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const companyId = req.params.companyId as string
+    const profile = await companyService.getCompanyProfile(companyId)
+    res.status(StatusCodes.OK).json(profile)
+  } catch (err) {
+    next(err)
+  }
+}
+
+// PATCH /api/company/:companyId/profile
+// Updates editable company profile fields
+export const updateCompanyProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const companyId = req.params.companyId as string
+    const profile = await companyService.updateCompanyProfile(companyId, req.body)
+    res.status(StatusCodes.OK).json(profile)
   } catch (err) {
     next(err)
   }

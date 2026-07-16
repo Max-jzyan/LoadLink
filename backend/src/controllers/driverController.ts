@@ -2,37 +2,6 @@ import { NextFunction, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import * as driverService from '../services/driverService'
 
-/**
- * DELETE /api/driver/:driverId/documents/:docKey
- * Remove a certification document from the driver's profile (by S3 key).
- */
-export const removeCertificationDocument = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const driverId = req.params.driverId as string
-    const docKey = decodeURIComponent(req.params.docKey as string)
-    await driverService.removeCertificationDocument(driverId, docKey)
-    res.status(StatusCodes.NO_CONTENT).send()
-  } catch (err) {
-    next(err)
-  }
-}
-
-/**
- * DELETE /api/driver/:driverId/insurance/:idx
- * Remove an insurance certificate by array index.
- */
-export const removeInsuranceCertificate = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const driverId = req.params.driverId as string
-    const idx = parseInt(req.params.idx as string, 10)
-    await driverService.removeInsuranceCertificate(driverId, idx)
-    res.status(StatusCodes.NO_CONTENT).send()
-  } catch (err) {
-    next(err)
-  }
-}
-
-
 // ── endpoints ────────────────────────────────────────────────────────────
 
 /**
@@ -59,6 +28,22 @@ export const listDriverLoads = async (req: Request, res: Response, next: NextFun
     const driverId = req.params.driverId as string
     const status = req.query.status as string | undefined
     const loads = await driverService.listDriverLoads(driverId, status)
+    res.status(StatusCodes.OK).json(loads)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * GET /api/driver/:driverId/completed-loads/:companyId
+ * List completed loads for a driver that are eligible for review for a specific company.
+ * Excludes loads already reviewed by the driver.
+ */
+export const listDriverCompletedLoadsForCompany = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const driverId = req.params.driverId as string
+    const companyId = req.params.companyId as string
+    const loads = await driverService.listDriverCompletedLoadsForCompany(driverId, companyId)
     res.status(StatusCodes.OK).json(loads)
   } catch (err) {
     next(err)
@@ -148,6 +133,36 @@ export const updateDriverExpenses = async (req: Request, res: Response, next: Ne
     const driverId = req.params.driverId as string
     const driver = await driverService.updateDriverExpenses(driverId, req.body)
     res.status(StatusCodes.OK).json(driver)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * DELETE /api/driver/:driverId/documents/:docKey
+ * Remove a certification document from the driver's profile (by S3 key).
+ */
+export const removeCertificationDocument = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const driverId = req.params.driverId as string
+    const docKey = decodeURIComponent(req.params.docKey as string)
+    await driverService.removeCertificationDocument(driverId, docKey)
+    res.status(StatusCodes.NO_CONTENT).send()
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * DELETE /api/driver/:driverId/insurance/:idx
+ * Remove an insurance certificate by array index.
+ */
+export const removeInsuranceCertificate = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const driverId = req.params.driverId as string
+    const idx = parseInt(req.params.idx as string, 10)
+    await driverService.removeInsuranceCertificate(driverId, idx)
+    res.status(StatusCodes.NO_CONTENT).send()
   } catch (err) {
     next(err)
   }

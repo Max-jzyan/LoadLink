@@ -2,6 +2,7 @@ import '@/components/layout/PageShell.less'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
+import React from 'react'
 
 export interface TabOption {
   value: string
@@ -10,7 +11,7 @@ export interface TabOption {
 
 interface PageShellProps {
   /** Page title shown at the top (scrolls away) */
-  title: string
+  title: string | React.JSX.Element
   /** Optional subtitle line shown below the title */
   subtitle?: string | null
   /** Optional banner rendered below the title, above sticky bar */
