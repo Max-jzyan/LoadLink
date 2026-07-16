@@ -13,6 +13,8 @@ interface PageShellProps {
   title: string
   /** Optional subtitle line shown below the title */
   subtitle?: string | null
+  /** Optional banner rendered below the title, above sticky bar */
+  banner?: ReactNode
   /** Optional tab bar rendered in the sticky area above stickyBar */
   tabs?: {
     options: TabOption[]
@@ -30,6 +32,7 @@ interface PageShellProps {
  * PageShell wraps page content with a standardised title header and sticky bar.
  *
  * - `title` scrolls away naturally as the user scrolls down.
+ * - `banner` renders below the title, above the sticky bar area.
  * - `stickyBar` sticks to the top of the viewport once the title scrolls past.
  * - `actions` are rendered on the right side of the sticky bar row.
  * - `tabs` renders a tab bar above stickyBar in the sticky area.
@@ -38,6 +41,7 @@ interface PageShellProps {
  * <PageShell
  *   title="Revenue Center"
  *   subtitle="Updated 2m ago"
+ *   banner={<RateConfirmationBanner rcUrl="..." />}
  *   tabs={{
  *     options: [
  *       { value: 'completed', label: 'Completed' },
@@ -55,6 +59,7 @@ interface PageShellProps {
 export default function PageShell({
   title,
   subtitle,
+  banner,
   tabs,
   stickyBar,
   actions,
@@ -68,6 +73,9 @@ export default function PageShell({
           <h1 className="text-2xl font-bold text-foreground">{title}</h1>
           {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
         </div>
+
+        {/* ── Banner area (static, pushed by title) ── */}
+        {banner && <div className="px-4 pb-2">{banner}</div>}
 
         {/* ── Sticky bar ── */}
         {(tabs || stickyBar || actions) && (

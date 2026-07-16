@@ -10,6 +10,7 @@ import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
 import Col from '@/components/layout/Col'
 import { InfoIconPopover } from '@/components/shared/InfoIconPopover'
+import { RateConfirmationBanner } from '@/components/shared/RateConfirmationBanner'
 import { SeparatorWithText } from '@/components/shared/SeparatorWithText'
 import { Badge } from '@/components/ui/badge'
 import { haversineDistanceKm } from '@/lib/geo'
@@ -24,8 +25,7 @@ import {
   useGetLoadQuery,
   useGetAcceptedBidQuery,
 } from '@/services/loadApi/loadSlice'
-import { Button } from '@/components/ui/button'
-import { Clock, Download, Calendar } from 'lucide-react'
+import { Clock, Calendar } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import type { Truck } from '@/services/driverApi/driverEnum'
 import { useState } from 'react'
@@ -157,6 +157,7 @@ export default function DriverAuction() {
           </Badge>
         )
       }
+      banner={auctionClosed && isWinner ? <RateConfirmationBanner rcUrl={rcUrl} /> : undefined}
     >
       <LayoutGrid>
         <Row size={16} >
@@ -284,25 +285,6 @@ export default function DriverAuction() {
                   <p className="text-sm text-muted-foreground">No auction data available</p>
                 )}
               </div>
-
-              {/* Rate Confirmation banner */}
-              {auctionClosed && isWinner && (
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
-                  <p className="text-sm font-semibold text-primary">🎉 You won this load!</p>
-                  {rcUrl ? (
-                    <a href={rcUrl} target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" className="gap-1.5">
-                        <Download className="h-4 w-4" />
-                        Download Rate Confirmation
-                      </Button>
-                    </a>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Rate confirmation is being generated — check your notifications shortly.
-                    </p>
-                  )}
-                </div>
-              )}
 
               {/* Claim button */}
               <ClaimLoadDialog
