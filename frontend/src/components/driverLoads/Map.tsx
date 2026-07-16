@@ -112,9 +112,11 @@ type DriverMapProps = {
   routes: RouteCoordinate[]
   height?: string
   selectedRouteId?: string | null
+  /** Called when a route line / marker is clicked on the map */
+  onRouteClick?: (routeId: string) => void
 }
 
-export function DriverMap({ routes, height = '500px', selectedRouteId }: DriverMapProps) {
+export function DriverMap({ routes, height = '500px', selectedRouteId, onRouteClick }: DriverMapProps) {
   const isDark = useDarkMode()
   const tile = isDark ? TILES.dark : TILES.light
 
@@ -137,7 +139,7 @@ export function DriverMap({ routes, height = '500px', selectedRouteId }: DriverM
         <FlyToRoute routes={routes} selectedRouteId={selectedRouteId} />
 
         {routes.map((route) => (
-          <RouteLine key={route.id} route={route} />
+          <RouteLine key={route.id} route={route} onRouteClick={onRouteClick} />
         ))}
       </MapContainer>
     </div>
@@ -257,7 +259,7 @@ function isRouteDashed(status: string): boolean {
   return status === LOAD_STATUSES.Booked
 }
 
-function RouteLine({ route }: { route: RouteCoordinate }) {
+function RouteLine({ route, onRouteClick }: { route: RouteCoordinate; onRouteClick?: (routeId: string) => void }) {
   const map = useMap()
   const polylineRef = useRef<L.Polyline>(null)
 
@@ -275,6 +277,7 @@ function RouteLine({ route }: { route: RouteCoordinate }) {
     if (!line) return
     const bounds = line.getBounds() as LatLngBoundsExpression
     map.fitBounds(bounds, { padding: [40, 40] })
+    onRouteClick?.(route.id)
   }
 
   const color = getRouteColor(route.status)

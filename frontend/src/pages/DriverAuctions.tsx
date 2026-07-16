@@ -2,7 +2,7 @@ import { useEventSource } from '@/components/auction/useEventSource'
 import DeliveryTimeline from '@/components/driverLoads/DeliveryTimeline'
 import { DriverMap } from '@/components/driverLoads/Map'
 import { DetailedEligibilityPanel } from '@/components/driverLoads/DetailedEligibilityPanel'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import type { DateRange } from 'react-day-picker'
 import { AlertTriangle } from 'lucide-react'
@@ -10,6 +10,7 @@ import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
 import { LoadCard } from '@/components/shared/LoadCard'
 import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { useGetScoredLoadsQuery, useListDriverBidsQuery } from '@/services/driverApi/driverSlice'
 import type { Load } from '@/services/loadApi/loadEnum'
@@ -31,6 +32,7 @@ import type { SortKey, EligibilityFilter } from '@/components/driverLoads/Driver
 
 export default function DriverAuctions() {
   const driverId = useRequiredMongoId()
+  const loadFeedRef = useRef<HTMLDivElement>(null)
 
   const {
     data: availableLoads = [],
@@ -156,10 +158,9 @@ export default function DriverAuctions() {
     return arr
   }, [eligibilityFiltered, sortKey])
 
-  // show only the selected load's route, or up to 20 loads when none is selected
+  // Build map routes from all available loads (always show all routes on map)
   const mapRoutes = useMemo(() => {
-    const source = selectedLoad ? [selectedLoad] : availableLoads.slice(0, 20)
-    return source.map((l) => ({
+    return availableLoads.slice(0, 20).map((l) => ({
       id: l._id,
       origin: [l.originCoords.lat, l.originCoords.lng] as [number, number],
       originName: l.originAddress,
@@ -167,7 +168,7 @@ export default function DriverAuctions() {
       destinationName: l.destinationAddress,
       status: l.status,
     }))
-  }, [selectedLoad, availableLoads])
+  }, [availableLoads])
 
   const mapDescription = selectedLoad
     ? [
@@ -178,7 +179,23 @@ export default function DriverAuctions() {
       ]
         .filter(Boolean)
         .join('  ·  ')
-    : 'Select a load to view route details'
+    : `${availableLoads.length} load${availableLoads.length !== 1 ? 's' : ''} shown`
+
+  // Handle clicking a route on the map: select the load and scroll the left panel
+  const handleMapRouteClick = useCallback((routeId: string) => {
+    const load = availableLoads.find((l) => l._id === routeId)
+    if (load) {
+      // Merge with scored data if available
+      const scored = scoredMap.get(load._id)
+      const enriched: EnrichedLoad = scored ? { ...load, _scored: scored } : { ...load }
+      setSelectedLoad(enriched)
+      // Scroll to the card in the left panel
+      setTimeout(() => {
+        const cardEl = document.getElementById(`load-card-${routeId}`)
+        cardEl?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 50)
+    }
+  }, [availableLoads, scoredMap])
 
   const renderLoadGroup = (loads: typeof sorted) =>
     loads.map((load) => {
@@ -190,8 +207,9 @@ export default function DriverAuctions() {
       return (
         <div
           key={load._id}
+          id={`load-card-${load._id}`}
           className={cn(
-            'rounded-xl transition-shadow',
+            'rounded-xl transition-shadow scroll-mt-4',
             selectedLoad?._id === load._id && 'ring-2 ring-primary ring-offset-1',
             isIneligible && 'opacity-65 hover:opacity-85 transition-opacity',
             isCriticalIneligible && 'hover:opacity-90'
@@ -240,8 +258,95 @@ export default function DriverAuctions() {
     setDateRange(undefined)
   }
 
+  // Shared helper: renders the map card
+  const renderMapCard = useCallback(
+    (expandable: boolean) => (
+      <DynamicCard
+        title="Shipment route overview"
+        description={mapDescription}
+        {...(expandable ? { expand: true } : {})}
+        action={
+          <div className="flex gap-1">
+            {(['route', 'fuel', 'rest'] as MapLayer[]).map((layer) => (
+              <Button
+                key={layer}
+                size="sm"
+                variant={activeLayer === layer ? 'default' : 'outline'}
+                className="h-7 px-2.5 text-xs"
+                onClick={() => setActiveLayer(layer)}
+              >
+                {layer === 'route' ? 'Route' : layer === 'fuel' ? 'Fuel Stops' : 'Rest Areas'}
+              </Button>
+            ))}
+          </div>
+        }
+        rounded="sm"
+      >
+        <DriverMap
+          routes={mapRoutes}
+          selectedRouteId={selectedLoad?._id ?? null}
+          height={expandable ? '100%' : '300px'}
+          onRouteClick={handleMapRouteClick}
+        />
+      </DynamicCard>
+    ),
+    [mapDescription, activeLayer, mapRoutes, selectedLoad, handleMapRouteClick]
+  )
+
+  // Renders the details section for the mobile sheet: side-by-side eligibility + timeline
+  const renderSheetDetails = useCallback(
+    (load: EnrichedLoad | null) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {/* Eligibility Details (first) */}
+        {load?._scored && (
+          <DynamicCard
+            title="Eligibility Details"
+            description={
+              load._scored.recommendationScore >= 80
+                ? 'This load is a top match for your profile'
+                : load._scored.eligibilityFlags.isEligible
+                  ? 'You meet all eligibility requirements'
+                  : 'Some requirements need attention'
+            }
+            rounded="sm"
+          >
+            <DetailedEligibilityPanel
+              flags={load._scored.eligibilityFlags}
+              score={load._scored.recommendationScore}
+              severity={load._scored.eligibilitySeverity}
+              highlights={load._scored.highScoreHighlights}
+            />
+          </DynamicCard>
+        )}
+
+        {/* Delivery Timeline */}
+        <DynamicCard
+          title="Delivery timeline"
+          rounded="sm"
+          action={
+            load && (
+              <Button size="sm" asChild>
+                <Link to={`/driverAuctions/${load._id}`}>View Auction</Link>
+              </Button>
+            )
+          }
+        >
+          {load ? (
+            <DeliveryTimeline load={load} />
+          ) : (
+            <div className="flex items-center justify-center h-28 text-muted-foreground text-sm">
+              Select a load to view the delivery timeline
+            </div>
+          )}
+        </DynamicCard>
+      </div>
+    ),
+    []
+  )
+
   return (
     <PageShell
+      noScroll
       title="Available Loads"
       subtitle={!isLoading ? `${sorted.length} load${sorted.length !== 1 ? 's' : ''}` : undefined}
       stickyBar={
@@ -277,9 +382,12 @@ export default function DriverAuctions() {
         </>
       }
     >
-      <div className="flex gap-2 min-h-0">
+      <div className="flex gap-2 flex-1 min-h-0 h-full">
         {/* left panel: scrollable load feed */}
-        <div className="flex-[5] min-w-[400px] overflow-y-auto space-y-2 pl-1 pr-1 pt-2 pb-2">
+        <div
+          ref={loadFeedRef}
+          className="flex-[5] min-w-0 lg:min-w-[400px] overflow-y-auto h-full space-y-2 pl-1 pr-1 pt-2 pb-2"
+        >
           {isLoading && (
             <div className="space-y-2">
               {[0, 1, 2].map((i) => (
@@ -325,76 +433,33 @@ export default function DriverAuctions() {
           )}
         </div>
 
-        {/* right panel: map + timeline */}
-        <div className="flex-[11] min-w-0 space-y-2 pt-2 pb-2">
-          <DynamicCard
-            title="Shipment route overview"
-            description={mapDescription}
-            action={
-              <div className="flex gap-1">
-                {(['route', 'fuel', 'rest'] as MapLayer[]).map((layer) => (
-                  <Button
-                    key={layer}
-                    size="sm"
-                    variant={activeLayer === layer ? 'default' : 'outline'}
-                    className="h-7 px-2.5 text-xs"
-                    onClick={() => setActiveLayer(layer)}
-                  >
-                    {layer === 'route' ? 'Route' : layer === 'fuel' ? 'Fuel Stops' : 'Rest Areas'}
-                  </Button>
-                ))}
-              </div>
-            }
-            rounded="sm"
-          >
-            <DriverMap
-              routes={mapRoutes}
-              selectedRouteId={selectedLoad?._id ?? null}
-              height="300px"
-            />
-          </DynamicCard>
+        {/* right panel: map only (desktop) — expandable */}
+        <div className="hidden lg:flex flex-[11] min-w-0 flex-col pt-2 pb-2">
+          {renderMapCard(true)}
+        </div>
 
-          <DynamicCard
-            title="Delivery timeline"
-            rounded="sm"
-            action={
-              selectedLoad && (
-                <Button size="sm" asChild>
-                  <Link to={`/driverAuctions/${selectedLoad._id}`}>View Auction</Link>
-                </Button>
-              )
-            }
+        {/* Mobile sheet: shows when a load is selected (hidden on lg+) */}
+        <div className="lg:hidden">
+          <Sheet
+            open={!!selectedLoad}
+            onOpenChange={(open) => {
+              if (!open) setSelectedLoad(null)
+            }}
           >
-            {selectedLoad ? (
-              <DeliveryTimeline load={selectedLoad} />
-            ) : (
-              <div className="flex items-center justify-center h-28 text-muted-foreground text-sm">
-                Select a load to view the delivery timeline
+            <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>
+                  {selectedLoad
+                    ? `${selectedLoad.originAddress} → ${selectedLoad.destinationAddress}`
+                    : 'Load Details'}
+                </SheetTitle>
+              </SheetHeader>
+              <div className="space-y-2 mt-2">
+                {renderMapCard(false)}
+                {renderSheetDetails(selectedLoad)}
               </div>
-            )}
-          </DynamicCard>
-
-          {/* Detailed Eligibility Panel */}
-          {selectedLoad?._scored && (
-            <DynamicCard
-              title="Eligibility Details"
-              description={
-                selectedLoad._scored.recommendationScore >= 80
-                  ? 'This load is a top match for your profile'
-                  : selectedLoad._scored.eligibilityFlags.isEligible
-                    ? 'You meet all eligibility requirements'
-                    : 'Some requirements need attention'
-              }
-              rounded="sm"
-            >
-              <DetailedEligibilityPanel
-                flags={selectedLoad._scored.eligibilityFlags}
-                score={selectedLoad._scored.recommendationScore}
-                severity={selectedLoad._scored.eligibilitySeverity}
-                highlights={selectedLoad._scored.highScoreHighlights}
-              />
-            </DynamicCard>
-          )}
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </PageShell>
