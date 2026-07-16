@@ -186,101 +186,88 @@ export default function LoadDetail() {
     >
       <Row stackAt="lg">
         <Col size={9}>
-          <Row>
-            <Col size={16}>
-              <DynamicCard title="Load Information" action={<StatusBadge status={load.status} />}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                  <DetailField icon={MapPin} label="Origin" value={load.originAddress} />
-                  <DetailField icon={MapPin} label="Destination" value={load.destinationAddress} />
-                  <DetailField
-                    icon={Calendar}
-                    label="Pickup"
-                    value={formatDateTime(load.pickupTime)}
-                  />
-                  <DetailField
-                    icon={Calendar}
-                    label="Dropoff"
-                    value={formatDateTime(load.dropoffTime)}
-                  />
-                  <DetailField icon={Package2} label="Commodity" value={load.commodity} />
-                  <DetailField
-                    icon={Weight}
-                    label="Weight"
-                    value={`${load.weightLbs.toLocaleString()} lbs`}
-                  />
-                  <DetailField
-                    icon={Truck}
-                    label="Truck"
-                    value={`${load.truckType} · ${load.trailerLengthFt} ft trailer`}
-                  />
-                  {load.route?.distanceKm ? (
-                    <DetailField
-                      icon={MapPin}
-                      label="Distance"
-                      value={`${Math.round(load.route.distanceKm).toLocaleString()} km`}
-                    />
-                  ) : null}
+          <DynamicCard title="Load Information" action={<StatusBadge status={load.status} />}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <DetailField icon={MapPin} label="Origin" value={load.originAddress} />
+              <DetailField icon={MapPin} label="Destination" value={load.destinationAddress} />
+              <DetailField icon={Calendar} label="Pickup" value={formatDateTime(load.pickupTime)} />
+              <DetailField
+                icon={Calendar}
+                label="Dropoff"
+                value={formatDateTime(load.dropoffTime)}
+              />
+              <DetailField icon={Package2} label="Commodity" value={load.commodity} />
+              <DetailField
+                icon={Weight}
+                label="Weight"
+                value={`${load.weightLbs.toLocaleString()} lbs`}
+              />
+              <DetailField
+                icon={Truck}
+                label="Truck"
+                value={`${load.truckType} · ${load.trailerLengthFt} ft trailer`}
+              />
+              {load.route?.distanceKm ? (
+                <DetailField
+                  icon={MapPin}
+                  label="Distance"
+                  value={`${Math.round(load.route.distanceKm).toLocaleString()} km`}
+                />
+              ) : null}
+            </div>
+            {(load.certifications?.length || load.driverAssist) && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-4 pt-4 border-t">
+                <span className="text-xs text-muted-foreground mr-1">Requirements:</span>
+                {load.certifications?.map((cert) => (
+                  <Badge key={cert} variant="outline" className="text-xs">
+                    {cert}
+                  </Badge>
+                ))}
+                {load.driverAssist && (
+                  <Badge variant="outline" className="text-xs">
+                    Driver Assist
+                  </Badge>
+                )}
+              </div>
+            )}
+          </DynamicCard>
+          <DynamicCard
+            className="mt-4"
+            title="Auction"
+            description={
+              auction
+                ? 'Pricing set when this load was posted.'
+                : 'No auction has been created for this load yet.'
+            }
+          >
+            {auction ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Current Price</p>
+                  <p className="text-2xl font-bold">{formatMoney(auction.currentPrice)}</p>
                 </div>
-                {(load.certifications?.length || load.driverAssist) && (
-                  <div className="flex flex-wrap items-center gap-1.5 mt-4 pt-4 border-t">
-                    <span className="text-xs text-muted-foreground mr-1">Requirements:</span>
-                    {load.certifications?.map((cert) => (
-                      <Badge key={cert} variant="outline" className="text-xs">
-                        {cert}
-                      </Badge>
-                    ))}
-                    {load.driverAssist && (
-                      <Badge variant="outline" className="text-xs">
-                        Driver Assist
-                      </Badge>
-                    )}
-                  </div>
-                )}
-              </DynamicCard>
-            </Col>
-          </Row>
-          <Row>
-            <Col size={16}>
-              <DynamicCard
-                title="Auction"
-                description={
-                  auction
-                    ? 'Pricing set when this load was posted.'
-                    : 'No auction has been created for this load yet.'
-                }
-              >
-                {auction ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Current Price</p>
-                      <p className="text-2xl font-bold">{formatMoney(auction.currentPrice)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Start Price</p>
-                      <p className="text-2xl font-bold">{formatMoney(auction.startPrice)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Cap Price</p>
-                      <p className="text-2xl font-bold">{formatMoney(auction.capPrice)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        {isAuctionLive ? 'Expires' : 'Expired'}
-                      </p>
-                      <p className="text-sm font-medium mt-1.5">
-                        {formatDateTime(auction.expiresAt)}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
-                    <Gavel className="h-4 w-4 mr-2" />
-                    Auctions are created automatically when a load is posted.
-                  </div>
-                )}
-              </DynamicCard>
-            </Col>
-          </Row>
+                <div>
+                  <p className="text-xs text-muted-foreground">Start Price</p>
+                  <p className="text-2xl font-bold">{formatMoney(auction.startPrice)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Cap Price</p>
+                  <p className="text-2xl font-bold">{formatMoney(auction.capPrice)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    {isAuctionLive ? 'Expires' : 'Expired'}
+                  </p>
+                  <p className="text-sm font-medium mt-1.5">{formatDateTime(auction.expiresAt)}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+                <Gavel className="h-4 w-4 mr-2" />
+                Auctions are created automatically when a load is posted.
+              </div>
+            )}
+          </DynamicCard>
         </Col>
         <Col size={7}>
           <DynamicCard title="Route Map" expand>
