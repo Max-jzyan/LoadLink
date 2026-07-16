@@ -69,14 +69,18 @@ export default function CompanyInfoCard({ company, onEdit }: CompanyInfoCardProp
         <div className="mt-4 space-y-2">
           {company.businessAddress && (
             <div className="flex items-start gap-2 text-sm">
-              <span className="text-muted-foreground min-w-[70px] text-xs font-medium">Address:</span>
+              <span className="text-muted-foreground min-w-[70px] text-xs font-medium">
+                Address:
+              </span>
               <span className="text-sm">{company.businessAddress}</span>
             </div>
           )}
 
           {company.businessNumber && (
             <div className="flex items-start gap-2 text-sm">
-              <span className="text-muted-foreground min-w-[70px] text-xs font-medium">Bus. #:</span>
+              <span className="text-muted-foreground min-w-[70px] text-xs font-medium">
+                Bus. #:
+              </span>
               <span className="font-mono text-sm">{company.businessNumber}</span>
             </div>
           )}

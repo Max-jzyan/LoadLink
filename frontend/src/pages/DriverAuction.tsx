@@ -17,14 +17,9 @@ import { haversineDistanceKm } from '@/lib/geo'
 import type { Auction, PopulatedBid } from '@/services/auctionApi/auctionEnum'
 import { AUCTION_STATUSES } from '@/services/auctionApi/auctionEnum'
 import { useStreamAuctionPriceQuery, useStreamBidsQuery } from '@/services/auctionApi/auctionSlice'
-import {
-  useListDriverTrucksQuery,
-} from '@/services/driverApi/driverSlice'
+import { useListDriverTrucksQuery } from '@/services/driverApi/driverSlice'
 import { useRequiredMongoId } from '@/hooks/useAuth'
-import {
-  useGetLoadQuery,
-  useGetAcceptedBidQuery,
-} from '@/services/loadApi/loadSlice'
+import { useGetLoadQuery, useGetAcceptedBidQuery } from '@/services/loadApi/loadSlice'
 import { Calendar, Clock } from 'lucide-react'
 import CompanyNameLink from '@/components/shared/CompanyNameLink'
 import { useParams } from 'react-router-dom'
@@ -190,7 +185,7 @@ export default function DriverAuction() {
       banner={auctionClosed && isWinner ? <RateConfirmationBanner rcUrl={rcUrl} /> : undefined}
     >
       <LayoutGrid>
-        <Row size={16} >
+        <Row size={16}>
           {/* ── Left column ── */}
           <Col size={8}>
             <div className="flex flex-col gap-3 -m-2">
@@ -198,7 +193,9 @@ export default function DriverAuction() {
               <div className="flex items-stretch gap-2">
                 <div className="flex-1 rounded-lg border bg-card p-3">{load.originAddress}</div>
                 <div className="flex items-center justify-center px-2 text-muted-foreground">→</div>
-                <div className="flex-1 rounded-lg border bg-card p-3">{load.destinationAddress}</div>
+                <div className="flex-1 rounded-lg border bg-card p-3">
+                  {load.destinationAddress}
+                </div>
                 <div className="flex items-center justify-center rounded-lg border bg-blue-100/70 dark:bg-blue-950/30 border-blue-300/50 dark:border-blue-700/50 px-4 text-sm font-medium">
                   {haversineDistanceKm(
                     load.originCoords.lat,

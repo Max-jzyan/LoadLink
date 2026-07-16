@@ -111,7 +111,9 @@ function NotificationItem({
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={cn('text-sm font-medium truncate', !notification.isRead && 'text-foreground')}>
+        <p
+          className={cn('text-sm font-medium truncate', !notification.isRead && 'text-foreground')}
+        >
           {notification.title}
         </p>
         {notification.message && (

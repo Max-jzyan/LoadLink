@@ -19,7 +19,13 @@ interface BidInputProps {
   onBidActiveChange?: (active: boolean) => void
 }
 
-export default function BidInput({ loadId, auctionStatus, currentPrice, onPriceChange, onBidActiveChange }: BidInputProps) {
+export default function BidInput({
+  loadId,
+  auctionStatus,
+  currentPrice,
+  onPriceChange,
+  onBidActiveChange,
+}: BidInputProps) {
   const [bidAmount, setBidAmount] = useState<number | ''>('')
   const mongoId = useSelector(selectMongoId)
   const isAuctionLive = auctionStatus === AUCTION_STATUSES.Active

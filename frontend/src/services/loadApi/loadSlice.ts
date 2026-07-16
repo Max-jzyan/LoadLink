@@ -41,14 +41,17 @@ export const loadApi = api.injectEndpoints({
     }),
 
     // GET /api/loads/:loadId/accepted-bid — return the accepted bid including rateConfirmationUrl
-    getAcceptedBid: build.query<{
-      _id: string
-      driverId: string
-      amount: number
-      acceptedAt: string | null
-      rateConfirmationUrl: string | null
-      rateConfirmationKey: string | null
-    } | null, string>({
+    getAcceptedBid: build.query<
+      {
+        _id: string
+        driverId: string
+        amount: number
+        acceptedAt: string | null
+        rateConfirmationUrl: string | null
+        rateConfirmationKey: string | null
+      } | null,
+      string
+    >({
       query: (loadId) => `loads/${loadId}/accepted-bid`,
       providesTags: (_result, _error, loadId) => [{ type: LoadTag.Bid, id: `accepted-${loadId}` }],
     }),
@@ -57,7 +60,13 @@ export const loadApi = api.injectEndpoints({
     // Accepts either a plain companyId string (legacy) or an object with optional filters
     listCompanyLoads: build.query<
       Load[],
-      string | { companyId: string; assignedDriverId?: string; excludeReviewedBy?: string; status?: string }
+      | string
+      | {
+          companyId: string
+          assignedDriverId?: string
+          excludeReviewedBy?: string
+          status?: string
+        }
     >({
       query: (arg) => {
         let companyId: string

@@ -10,7 +10,11 @@ interface TrailerInfoCardProps {
   onEditTrailer: (trailer: Trailer) => void
 }
 
-export default function TrailerInfoCard({ trailers, onAddTrailer, onEditTrailer }: TrailerInfoCardProps) {
+export default function TrailerInfoCard({
+  trailers,
+  onAddTrailer,
+  onEditTrailer,
+}: TrailerInfoCardProps) {
   const primaryTrailer = trailers.find((t) => t.isPrimary)
   const otherTrailers = trailers.filter((t) => !t.isPrimary)
 

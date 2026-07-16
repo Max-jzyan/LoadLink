@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button'
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
@@ -79,7 +79,8 @@ export default function ResponsiveFilterBar({
 
       const containerWidth = container.getBoundingClientRect().width
       const actionWidth = actionArea?.getBoundingClientRect().width ?? 0
-      const overflowButtonWidth = overflowTriggerMeasurement?.getBoundingClientRect().width ?? OVERFLOW_BUTTON_WIDTH_PX
+      const overflowButtonWidth =
+        overflowTriggerMeasurement?.getBoundingClientRect().width ?? OVERFLOW_BUTTON_WIDTH_PX
       const widths = Object.fromEntries(
         controls.map((control) => {
           const element = measurementsRef.current[control.id]

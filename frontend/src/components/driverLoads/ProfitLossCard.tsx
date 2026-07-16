@@ -1,5 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { InfoIconPopover } from '@/components/shared/InfoIconPopover'
 import DynamicCard from '@/components/layout/DynamicCard'
 import type { Load, Truck } from '@/services/driverApi/driverEnum'
@@ -21,7 +27,13 @@ function formatCurrency(amount: number): string {
   }).format(amount)
 }
 
-export function ProfitLossCard({ load, distanceKm, bidPrice, trucks, priceLabel }: ProfitLossCardProps) {
+export function ProfitLossCard({
+  load,
+  distanceKm,
+  bidPrice,
+  trucks,
+  priceLabel,
+}: ProfitLossCardProps) {
   const [selectedTruckId, setSelectedTruckId] = useState<string | null>(
     () => trucks.find((t) => t.isPrimary)?._id || trucks[0]?._id || null
   )
@@ -33,7 +45,9 @@ export function ProfitLossCard({ load, distanceKm, bidPrice, trucks, priceLabel 
 
     const prefs = selectedTruck.expensePreferences
     const fuelCost =
-      prefs.fuelEfficiencyKmPerLiter && prefs.fuelEfficiencyKmPerLiter > 0 && prefs.fuelCostPerLiter != null
+      prefs.fuelEfficiencyKmPerLiter &&
+      prefs.fuelEfficiencyKmPerLiter > 0 &&
+      prefs.fuelCostPerLiter != null
         ? (distanceKm / prefs.fuelEfficiencyKmPerLiter) * prefs.fuelCostPerLiter
         : 0
     const maintenance = prefs.maintenancePerKm != null ? distanceKm * prefs.maintenancePerKm : 0
@@ -45,7 +59,8 @@ export function ProfitLossCard({ load, distanceKm, bidPrice, trucks, priceLabel 
     const monthFraction = loadDays / 30
 
     const insurance = prefs.insurancePerMonth > 0 ? prefs.insurancePerMonth * monthFraction : 0
-    const otherFixed = prefs.otherFixedCostsPerMonth != null ? prefs.otherFixedCostsPerMonth * monthFraction : 0
+    const otherFixed =
+      prefs.otherFixedCostsPerMonth != null ? prefs.otherFixedCostsPerMonth * monthFraction : 0
     const totalExpenses = fuelCost + maintenance + insurance + otherFixed
     const profit = bidPrice - totalExpenses
     const margin = bidPrice > 0 ? (profit / bidPrice) * 100 : 0
@@ -80,7 +95,9 @@ export function ProfitLossCard({ load, distanceKm, bidPrice, trucks, priceLabel 
         size="sm"
         titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
       >
-        <p className="text-xs text-muted-foreground">No trucks available — add a truck in your profile.</p>
+        <p className="text-xs text-muted-foreground">
+          No trucks available — add a truck in your profile.
+        </p>
       </DynamicCard>
     )
   }
@@ -112,7 +129,10 @@ export function ProfitLossCard({ load, distanceKm, bidPrice, trucks, priceLabel 
           <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider shrink-0">
             Truck
           </label>
-          <Select value={selectedTruckId ?? undefined} onValueChange={(val) => setSelectedTruckId(val === 'none' ? null : val)}>
+          <Select
+            value={selectedTruckId ?? undefined}
+            onValueChange={(val) => setSelectedTruckId(val === 'none' ? null : val)}
+          >
             <SelectTrigger className="h-8 text-xs flex-1">
               <SelectValue placeholder="Select truck" />
             </SelectTrigger>
@@ -164,16 +184,24 @@ export function ProfitLossCard({ load, distanceKm, bidPrice, trucks, priceLabel 
             <span
               className={cn(
                 'flex items-center gap-1 text-sm font-semibold',
-                calc.isProfit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                calc.isProfit
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-red-600 dark:text-red-400'
               )}
             >
-              {calc.isProfit ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+              {calc.isProfit ? (
+                <TrendingUp className="h-4 w-4" />
+              ) : (
+                <TrendingDown className="h-4 w-4" />
+              )}
               {calc.isProfit ? 'Estimated profit' : 'Estimated loss'}
             </span>
             <span
               className={cn(
                 'text-sm font-semibold tabular-nums',
-                calc.isProfit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                calc.isProfit
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-red-600 dark:text-red-400'
               )}
             >
               {formatCurrency(Math.abs(calc.profit))}
@@ -184,7 +212,9 @@ export function ProfitLossCard({ load, distanceKm, bidPrice, trucks, priceLabel 
             <span
               className={cn(
                 'text-[11px] font-medium tabular-nums',
-                calc.isProfit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                calc.isProfit
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-red-600 dark:text-red-400'
               )}
             >
               {calc.margin.toFixed(1)}%

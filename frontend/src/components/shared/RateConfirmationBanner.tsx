@@ -27,9 +27,7 @@ export function RateConfirmationBanner({ rcUrl, className }: RateConfirmationBan
       )}
     >
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-primary">
-          View your rate confirmation
-        </p>
+        <p className="text-sm font-semibold text-primary">View your rate confirmation</p>
         {rcUrl ? (
           <a href={rcUrl} target="_blank" rel="noopener noreferrer">
             <Button size="sm" className="gap-1.5 whitespace-nowrap">

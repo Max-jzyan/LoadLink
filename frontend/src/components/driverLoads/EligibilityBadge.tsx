@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Progress } from '@/components/ui/progress'
-import type { EligibilityFlags, EligibilitySeverity, EligibilityBadgeType } from '@/services/driverApi/driverEnum'
+import type {
+  EligibilityFlags,
+  EligibilitySeverity,
+  EligibilityBadgeType,
+} from '@/services/driverApi/driverEnum'
 import { ELIGIBILITY_LABELS } from '@/services/driverApi/driverEnum'
 import { AlertTriangle, Star } from 'lucide-react'
 import { createPortal } from 'react-dom'
@@ -89,7 +93,9 @@ export function EligibilityBadge({
 
   return (
     <div
-      ref={(el) => { badgeRef[0] = el }}
+      ref={(el) => {
+        badgeRef[0] = el
+      }}
       className={`w-full relative ${className}`}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}

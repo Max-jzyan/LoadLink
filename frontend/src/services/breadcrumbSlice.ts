@@ -1,4 +1,4 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 
 interface BreadcrumbState {
   /**
@@ -35,5 +35,6 @@ export const { setBreadcrumbLabel, clearBreadcrumbLabel, clearAllBreadcrumbLabel
 export default breadcrumbSlice.reducer
 
 /** Whole-map selector for components (e.g. PageLayout) that render all crumbs. */
-export const selectBreadcrumbOverrides = (state: { breadcrumb: BreadcrumbState }): Record<string, string> =>
-  state.breadcrumb.overrides
+export const selectBreadcrumbOverrides = (state: {
+  breadcrumb: BreadcrumbState
+}): Record<string, string> => state.breadcrumb.overrides

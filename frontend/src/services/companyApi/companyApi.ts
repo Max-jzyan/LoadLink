@@ -45,4 +45,9 @@ export const companyApi = api.injectEndpoints({
   overrideExisting: false,
 })
 
-export const { useListCompaniesQuery, useGetCompanyDashboardQuery, useGetCompanyProfileQuery, useUpdateCompanyProfileMutation } = companyApi
+export const {
+  useListCompaniesQuery,
+  useGetCompanyDashboardQuery,
+  useGetCompanyProfileQuery,
+  useUpdateCompanyProfileMutation,
+} = companyApi

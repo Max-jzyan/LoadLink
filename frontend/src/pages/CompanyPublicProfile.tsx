@@ -6,7 +6,10 @@ import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
 import { useGetCompanyProfileQuery } from '@/services/companyApi/companyApi'
 import { useListDriverCompletedLoadsForCompanyQuery } from '@/services/driverApi/driverSlice'
-import { useGetReviewsForTargetQuery, useCreateReviewMutation } from '@/services/reviewApi/reviewSlice'
+import {
+  useGetReviewsForTargetQuery,
+  useCreateReviewMutation,
+} from '@/services/reviewApi/reviewSlice'
 import { useSelector, useDispatch } from 'react-redux'
 import { selectRole, selectMongoId } from '@/services/authSlice'
 import { setBreadcrumbLabel } from '@/services/breadcrumbSlice'
@@ -52,7 +55,10 @@ export default function CompanyPublicProfile() {
     data: reviewsPayload,
     isLoading: isReviewsLoading,
     isError: isReviewsError,
-  } = useGetReviewsForTargetQuery({ targetId: companyId!, page: 1, limit: 20 }, { skip: !companyId })
+  } = useGetReviewsForTargetQuery(
+    { targetId: companyId!, page: 1, limit: 20 },
+    { skip: !companyId }
+  )
 
   const { data: driverLoads } = useListDriverCompletedLoadsForCompanyQuery(
     {
@@ -81,12 +87,18 @@ export default function CompanyPublicProfile() {
   if (!companyId) {
     return (
       <PageShell title="Company Profile">
-        <div className="flex items-center justify-center py-20 text-destructive">Missing company ID.</div>
+        <div className="flex items-center justify-center py-20 text-destructive">
+          Missing company ID.
+        </div>
       </PageShell>
     )
   }
 
-  const handleReviewSubmit = async (data: { loadId: string; ratingCategories: RatingCategories; comment: string }) => {
+  const handleReviewSubmit = async (data: {
+    loadId: string
+    ratingCategories: RatingCategories
+    comment: string
+  }) => {
     try {
       await createReview({
         reviewerId: currentMongoId!,
@@ -159,16 +171,16 @@ export default function CompanyPublicProfile() {
   return (
     <PageShell
       title={displayName ? `${displayName}'s Profile` : 'Company Profile'}
-      subtitle={company.ratingSummary?.totalReviews ? `${company.ratingSummary.totalReviews} reviews` : undefined}
+      subtitle={
+        company.ratingSummary?.totalReviews
+          ? `${company.ratingSummary.totalReviews} reviews`
+          : undefined
+      }
     >
       <Row>
         <Col size={4}>
-          <Row>
-            {leftColumnContent}
-          </Row>
-          <Row>
-            {rightColumnContent}
-          </Row>
+          <Row>{leftColumnContent}</Row>
+          <Row>{rightColumnContent}</Row>
         </Col>
 
         <Col size={12}>

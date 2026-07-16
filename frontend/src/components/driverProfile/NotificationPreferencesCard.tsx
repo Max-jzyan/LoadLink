@@ -6,7 +6,9 @@ interface NotificationPreferencesCardProps {
   notificationPreferences: NotificationPreferences
 }
 
-export default function NotificationPreferencesCard({ notificationPreferences }: NotificationPreferencesCardProps) {
+export default function NotificationPreferencesCard({
+  notificationPreferences,
+}: NotificationPreferencesCardProps) {
   const items = [
     {
       icon: Mail,

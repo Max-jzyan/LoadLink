@@ -10,7 +10,10 @@ import Col from '@/components/layout/Col'
 import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
 import { useRequiredMongoId } from '@/hooks/useAuth'
-import { useGetCompanyProfileQuery, useUpdateCompanyProfileMutation } from '@/services/companyApi/companyApi'
+import {
+  useGetCompanyProfileQuery,
+  useUpdateCompanyProfileMutation,
+} from '@/services/companyApi/companyApi'
 import { useGetReviewsForTargetQuery } from '@/services/reviewApi/reviewSlice'
 import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
@@ -89,11 +92,19 @@ export default function CompanyProfile() {
       )
     }
     if (isReviewsError) {
-      return <div className="text-sm text-destructive">Could not load reviews. Please try again later.</div>
+      return (
+        <div className="text-sm text-destructive">
+          Could not load reviews. Please try again later.
+        </div>
+      )
     }
     if (isReviewsSuccess) {
       if (reviewsPayload.data.length === 0) {
-        return <div className="text-sm text-muted-foreground italic">No reviews yet for your company.</div>
+        return (
+          <div className="text-sm text-muted-foreground italic">
+            No reviews yet for your company.
+          </div>
+        )
       }
       return (
         <div className="space-y-3">
@@ -147,7 +158,9 @@ export default function CompanyProfile() {
             </Row>
             <Row>
               <Col size={16}>
-                <NotificationPreferencesCard notificationPreferences={company.notificationPreferences} />
+                <NotificationPreferencesCard
+                  notificationPreferences={company.notificationPreferences}
+                />
               </Col>
             </Row>
           </Col>

@@ -84,7 +84,9 @@ function RcRow({ bid }: { bid: RateConfirmationBid }) {
         </p>
       )}
       {!bid.rateConfirmationUrl && (
-        <Badge variant="destructive" className="text-xs">PDF not generated</Badge>
+        <Badge variant="destructive" className="text-xs">
+          PDF not generated
+        </Badge>
       )}
     </div>
   )
@@ -139,9 +141,7 @@ export default function AdminRateConfirmations() {
       {!isLoading && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <FileText className="h-10 w-10 mb-3 opacity-20" />
-          <p className="text-sm">
-            {search ? 'No matches.' : 'No rate confirmations yet.'}
-          </p>
+          <p className="text-sm">{search ? 'No matches.' : 'No rate confirmations yet.'}</p>
         </div>
       )}
       {!isLoading && filtered.length > 0 && (

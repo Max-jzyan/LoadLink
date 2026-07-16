@@ -110,9 +110,7 @@ export function AddressField({
 
   return (
     <div className={cn('flex flex-col', className)}>
-      {label && (
-        <FieldLabel className="mb-1">{label}</FieldLabel>
-      )}
+      {label && <FieldLabel className="mb-1">{label}</FieldLabel>}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button

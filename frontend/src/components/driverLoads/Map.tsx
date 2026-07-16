@@ -116,7 +116,12 @@ type DriverMapProps = {
   onRouteClick?: (routeId: string) => void
 }
 
-export function DriverMap({ routes, height = '500px', selectedRouteId, onRouteClick }: DriverMapProps) {
+export function DriverMap({
+  routes,
+  height = '500px',
+  selectedRouteId,
+  onRouteClick,
+}: DriverMapProps) {
   const isDark = useDarkMode()
   const tile = isDark ? TILES.dark : TILES.light
 
@@ -259,7 +264,13 @@ function isRouteDashed(status: string): boolean {
   return status === LOAD_STATUSES.Booked
 }
 
-function RouteLine({ route, onRouteClick }: { route: RouteCoordinate; onRouteClick?: (routeId: string) => void }) {
+function RouteLine({
+  route,
+  onRouteClick,
+}: {
+  route: RouteCoordinate
+  onRouteClick?: (routeId: string) => void
+}) {
   const map = useMap()
   const polylineRef = useRef<L.Polyline>(null)
 

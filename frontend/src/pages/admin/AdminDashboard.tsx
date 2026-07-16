@@ -1,7 +1,10 @@
 import PageShell from '@/components/layout/PageShell'
 import DynamicCard from '@/components/layout/DynamicCard'
 import { RoutePath } from '@/config/routes'
-import { useGetPlatformStatsQuery, useListRateConfirmationsQuery } from '@/services/adminApi/adminSlice'
+import {
+  useGetPlatformStatsQuery,
+  useListRateConfirmationsQuery,
+} from '@/services/adminApi/adminSlice'
 import { Loader2, FileText, Users, Truck, ClipboardList, Package, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -111,7 +114,9 @@ export default function AdminDashboard() {
                         {load.originAddress.split(',')[0]} → {load.destinationAddress.split(',')[0]}
                       </p>
                     ) : (
-                      <p className="font-medium text-muted-foreground">Load #{String(bid.loadId).slice(-6)}</p>
+                      <p className="font-medium text-muted-foreground">
+                        Load #{String(bid.loadId).slice(-6)}
+                      </p>
                     )}
                     <p className="text-xs text-muted-foreground">
                       {driver?.name ?? 'Driver'} · ${bid.amount.toFixed(2)}

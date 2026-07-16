@@ -75,7 +75,9 @@ export const driverApi = api.injectEndpoints({
         try {
           const { data } = await queryFulfilled
           const payout = typeof data.finalPayout === 'number' ? data.finalPayout.toFixed(2) : '0.00'
-          showSuccess(`Load claimed for $${payout}. Check your notifications for the rate confirmation.`)
+          showSuccess(
+            `Load claimed for $${payout}. Check your notifications for the rate confirmation.`
+          )
         } catch (error) {
           const status = getErrorStatus(error)
           showError(getHttpErrorMessage(status))
@@ -133,9 +135,14 @@ export const driverApi = api.injectEndpoints({
     }),
 
     // GET /api/driver/:driverId/completed-loads/:companyId — list completed loads eligible for review
-    listDriverCompletedLoadsForCompany: build.query<Load[], { driverId: string; companyId: string }>({
+    listDriverCompletedLoadsForCompany: build.query<
+      Load[],
+      { driverId: string; companyId: string }
+    >({
       query: ({ driverId, companyId }) => `driver/${driverId}/completed-loads/${companyId}`,
-      providesTags: (_result, _error, { driverId }) => [{ type: LoadTag.Load, id: `${driverId}-completed` }],
+      providesTags: (_result, _error, { driverId }) => [
+        { type: LoadTag.Load, id: `${driverId}-completed` },
+      ],
     }),
 
     // PATCH /api/driver/:driverId/profile — update driver profile fields

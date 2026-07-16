@@ -23,7 +23,6 @@ export function RevenueTable({
     return load.originAddress?.split(',')[0] ?? 'Load Revenue'
   }, [])
 
-
   const drawerFields: DrawerField<LoadRevenue>[] = [
     {
       label: 'Date',
@@ -77,7 +76,9 @@ export function RevenueTable({
       renderValue: (load) => {
         const val = load.netProfit
         return (
-          <span className={val >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+          <span
+            className={val >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}
+          >
             {formatCAD(val)}
           </span>
         )
@@ -87,7 +88,13 @@ export function RevenueTable({
 
   const drawerFooter = useCallback(
     (load: LoadRevenue, helpers: { onClose: () => void }) => (
-      <DrawerExpenseForm load={load} onClose={() => { onPerLoadSaved(); helpers.onClose() }} />
+      <DrawerExpenseForm
+        load={load}
+        onClose={() => {
+          onPerLoadSaved()
+          helpers.onClose()
+        }}
+      />
     ),
     [onPerLoadSaved]
   )

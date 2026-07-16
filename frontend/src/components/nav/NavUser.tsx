@@ -1,27 +1,27 @@
 import NotificationBell from '@/components/shared/NotificationBell'
 import { signOut } from 'firebase/auth'
 import {
-    ChevronRightIcon,
-    LogOutIcon,
-    MonitorIcon,
-    MoonIcon,
-    Settings,
-    SunIcon,
+  ChevronRightIcon,
+  LogOutIcon,
+  MonitorIcon,
+  MoonIcon,
+  Settings,
+  SunIcon,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SidebarMenu, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -174,11 +174,7 @@ export function NavUser() {
 
               <DropdownMenuGroup>
                 <DropdownMenuItem
-                  onClick={() =>
-                    navigate(
-                      role === 'driver' ? '/driver' : '/company'
-                    )
-                  }
+                  onClick={() => navigate(role === 'driver' ? '/driver' : '/company')}
                 >
                   <Settings />
                   Settings

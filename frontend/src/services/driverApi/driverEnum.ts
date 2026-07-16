@@ -277,7 +277,7 @@ export const ELIGIBILITY_LABELS: Record<keyof EligibilityFlags, string> = {
   eligibleMinRate: 'Below minimum rate per mile',
   eligibleMinValue: 'Below minimum load value',
   eligibleDeadhead: 'Exceeds max deadhead',
-  isEligible: ''
+  isEligible: '',
 }
 
 export interface ScoredLoad {

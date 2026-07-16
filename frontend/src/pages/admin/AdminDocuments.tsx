@@ -36,7 +36,13 @@ function DocViewButton({ docKey }: { docKey: string }) {
   }
 
   return (
-    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={handleView} disabled={isLoading}>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-7 text-xs gap-1"
+      onClick={handleView}
+      disabled={isLoading}
+    >
       <ExternalLink className="h-3 w-3" />
       {isLoading ? 'Loading…' : 'View'}
     </Button>
@@ -44,12 +50,34 @@ function DocViewButton({ docKey }: { docKey: string }) {
 }
 
 function statusBadge(status?: string) {
-  if (status === 'approved') return <Badge variant="default" className="text-xs">Verified</Badge>
-  if (status === 'rejected') return <Badge variant="destructive" className="text-xs">Rejected</Badge>
-  return <Badge variant="secondary" className="text-xs">Pending Review</Badge>
+  if (status === 'approved')
+    return (
+      <Badge variant="default" className="text-xs">
+        Verified
+      </Badge>
+    )
+  if (status === 'rejected')
+    return (
+      <Badge variant="destructive" className="text-xs">
+        Rejected
+      </Badge>
+    )
+  return (
+    <Badge variant="secondary" className="text-xs">
+      Pending Review
+    </Badge>
+  )
 }
 
-function InsuranceCertRow({ cert, idx, driverId }: { cert: InsuranceCert; idx: number; driverId: string }) {
+function InsuranceCertRow({
+  cert,
+  idx,
+  driverId,
+}: {
+  cert: InsuranceCert
+  idx: number
+  driverId: string
+}) {
   const [approve, { isLoading: approving }] = useApproveInsuranceCertMutation()
   const [reject, { isLoading: rejecting }] = useRejectInsuranceCertMutation()
   const [rejecting2, setRejecting2] = useState(false)
@@ -67,21 +95,32 @@ function InsuranceCertRow({ cert, idx, driverId }: { cert: InsuranceCert; idx: n
           </div>
           <p className="text-xs text-muted-foreground">Policy: {cert.policyNumber}</p>
           <p className={`text-xs mt-0.5 ${expired ? 'text-destructive' : 'text-muted-foreground'}`}>
-            Expires: {format(new Date(cert.expiresAt), 'MMM d, yyyy')}{expired && ' (EXPIRED)'}
+            Expires: {format(new Date(cert.expiresAt), 'MMM d, yyyy')}
+            {expired && ' (EXPIRED)'}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <DocViewButton docKey={cert.key} />
           {cert.verificationStatus !== 'approved' && (
-            <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-green-500/50 text-green-600 hover:bg-green-50"
-              onClick={() => approve({ driverId, idx })} disabled={busy}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1 border-green-500/50 text-green-600 hover:bg-green-50"
+              onClick={() => approve({ driverId, idx })}
+              disabled={busy}
+            >
               <CheckCircle className="h-3 w-3" />
               Approve
             </Button>
           )}
           {cert.verificationStatus !== 'rejected' && (
-            <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-destructive/50 text-destructive hover:bg-destructive/5"
-              onClick={() => setRejecting2((v) => !v)} disabled={busy}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1 border-destructive/50 text-destructive hover:bg-destructive/5"
+              onClick={() => setRejecting2((v) => !v)}
+              disabled={busy}
+            >
               <XCircle className="h-3 w-3" />
               Reject
             </Button>
@@ -90,12 +129,31 @@ function InsuranceCertRow({ cert, idx, driverId }: { cert: InsuranceCert; idx: n
       </div>
       {rejecting2 && (
         <div className="flex gap-2 items-center">
-          <Input className="h-8 text-xs" placeholder="Rejection reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />
-          <Button size="sm" className="h-8 text-xs shrink-0 bg-destructive hover:bg-destructive/90"
-            onClick={() => { reject({ driverId, idx, reason: reason || undefined }); setRejecting2(false); setReason('') }}>
+          <Input
+            className="h-8 text-xs"
+            placeholder="Rejection reason (optional)"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          <Button
+            size="sm"
+            className="h-8 text-xs shrink-0 bg-destructive hover:bg-destructive/90"
+            onClick={() => {
+              reject({ driverId, idx, reason: reason || undefined })
+              setRejecting2(false)
+              setReason('')
+            }}
+          >
             Confirm
           </Button>
-          <Button size="sm" variant="ghost" className="h-8 text-xs shrink-0" onClick={() => setRejecting2(false)}>Cancel</Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 text-xs shrink-0"
+            onClick={() => setRejecting2(false)}
+          >
+            Cancel
+          </Button>
         </div>
       )}
     </div>
@@ -127,15 +185,25 @@ function CertDocRow({ doc, idx, driverId }: { doc: CertDoc; idx: number; driverI
         <div className="flex items-center gap-2 shrink-0">
           <DocViewButton docKey={doc.key} />
           {doc.verificationStatus !== 'approved' && (
-            <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-green-500/50 text-green-600 hover:bg-green-50"
-              onClick={() => approve({ driverId, idx })} disabled={busy}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1 border-green-500/50 text-green-600 hover:bg-green-50"
+              onClick={() => approve({ driverId, idx })}
+              disabled={busy}
+            >
               <CheckCircle className="h-3 w-3" />
               Approve
             </Button>
           )}
           {doc.verificationStatus !== 'rejected' && (
-            <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-destructive/50 text-destructive hover:bg-destructive/5"
-              onClick={() => setRejecting2((v) => !v)} disabled={busy}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1 border-destructive/50 text-destructive hover:bg-destructive/5"
+              onClick={() => setRejecting2((v) => !v)}
+              disabled={busy}
+            >
               <XCircle className="h-3 w-3" />
               Reject
             </Button>
@@ -144,12 +212,31 @@ function CertDocRow({ doc, idx, driverId }: { doc: CertDoc; idx: number; driverI
       </div>
       {rejecting2 && (
         <div className="flex gap-2 items-center">
-          <Input className="h-8 text-xs" placeholder="Rejection reason (optional)" value={reason} onChange={(e) => setReason(e.target.value)} />
-          <Button size="sm" className="h-8 text-xs shrink-0 bg-destructive hover:bg-destructive/90"
-            onClick={() => { reject({ driverId, idx, reason: reason || undefined }); setRejecting2(false); setReason('') }}>
+          <Input
+            className="h-8 text-xs"
+            placeholder="Rejection reason (optional)"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          <Button
+            size="sm"
+            className="h-8 text-xs shrink-0 bg-destructive hover:bg-destructive/90"
+            onClick={() => {
+              reject({ driverId, idx, reason: reason || undefined })
+              setRejecting2(false)
+              setReason('')
+            }}
+          >
             Confirm
           </Button>
-          <Button size="sm" variant="ghost" className="h-8 text-xs shrink-0" onClick={() => setRejecting2(false)}>Cancel</Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 text-xs shrink-0"
+            onClick={() => setRejecting2(false)}
+          >
+            Cancel
+          </Button>
         </div>
       )}
     </div>
@@ -174,42 +261,57 @@ function DriverRow({ driver }: { driver: AdminDriver }) {
             <p className="text-xs text-muted-foreground truncate">{driver.email}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {driver.mcNumber && <Badge variant="outline" className="text-xs">MC# {driver.mcNumber}</Badge>}
-            {driver.dotNumber && <Badge variant="outline" className="text-xs">DOT# {driver.dotNumber}</Badge>}
+            {driver.mcNumber && (
+              <Badge variant="outline" className="text-xs">
+                MC# {driver.mcNumber}
+              </Badge>
+            )}
+            {driver.dotNumber && (
+              <Badge variant="outline" className="text-xs">
+                DOT# {driver.dotNumber}
+              </Badge>
+            )}
             <Badge variant={totalDocs > 0 ? 'default' : 'secondary'} className="text-xs">
               <FileText className="h-3 w-3 mr-1" />
               {totalDocs} doc{totalDocs !== 1 ? 's' : ''}
             </Badge>
           </div>
         </div>
-        {expanded
-          ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
-          : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
-        }
+        {expanded ? (
+          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
+        ) : (
+          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
+        )}
       </button>
 
       {expanded && (
         <div className="px-4 pb-4 space-y-3 border-t bg-muted/20">
           {/* Insurance Certificates */}
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-3 mb-2">Insurance Certificates</p>
-            {insCount === 0
-              ? <p className="text-sm text-muted-foreground italic">None uploaded.</p>
-              : driver.insuranceCertificates.map((cert, i) => (
-                  <InsuranceCertRow key={i} cert={cert} idx={i} driverId={driver._id} />
-                ))
-            }
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-3 mb-2">
+              Insurance Certificates
+            </p>
+            {insCount === 0 ? (
+              <p className="text-sm text-muted-foreground italic">None uploaded.</p>
+            ) : (
+              driver.insuranceCertificates.map((cert, i) => (
+                <InsuranceCertRow key={i} cert={cert} idx={i} driverId={driver._id} />
+              ))
+            )}
           </div>
 
           {/* Certification Documents */}
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Certification Documents</p>
-            {certCount === 0
-              ? <p className="text-sm text-muted-foreground italic">None uploaded.</p>
-              : driver.certificationDocuments.map((doc, i) => (
-                  <CertDocRow key={i} doc={doc} idx={i} driverId={driver._id} />
-                ))
-            }
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+              Certification Documents
+            </p>
+            {certCount === 0 ? (
+              <p className="text-sm text-muted-foreground italic">None uploaded.</p>
+            ) : (
+              driver.certificationDocuments.map((doc, i) => (
+                <CertDocRow key={i} doc={doc} idx={i} driverId={driver._id} />
+              ))
+            )}
           </div>
         </div>
       )}
@@ -233,11 +335,19 @@ export default function AdminDocuments() {
   })
 
   return (
-    <PageShell title="Document Review" subtitle="Review driver insurance certificates and certification documents">
+    <PageShell
+      title="Document Review"
+      subtitle="Review driver insurance certificates and certification documents"
+    >
       <div className="mb-4 flex items-center gap-2">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Search by name, email, MC# or DOT#…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input
+            className="pl-9"
+            placeholder="Search by name, email, MC# or DOT#…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
         <Badge variant="secondary">{filtered.length} drivers</Badge>
       </div>
@@ -249,7 +359,9 @@ export default function AdminDocuments() {
       ) : (
         <div className="space-y-2">
           {filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic text-center py-8">No drivers found.</p>
+            <p className="text-sm text-muted-foreground italic text-center py-8">
+              No drivers found.
+            </p>
           ) : (
             filtered.map((driver) => <DriverRow key={driver._id} driver={driver} />)
           )}

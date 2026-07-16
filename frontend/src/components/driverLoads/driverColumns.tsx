@@ -28,8 +28,7 @@ export const columns = (trucks: Truck[] = []): ColumnDef<Load>[] => [
     cell: ({ row }) => {
       const company = row.original.companyId
       const companyId = typeof company === 'object' ? company._id : company
-      const companyName =
-        typeof company === 'object' ? company.companyName ?? company.name : null
+      const companyName = typeof company === 'object' ? (company.companyName ?? company.name) : null
       return companyId ? (
         <CompanyNameLink
           name={companyName || undefined}

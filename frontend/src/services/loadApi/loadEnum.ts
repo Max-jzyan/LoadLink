@@ -16,6 +16,13 @@ export interface CompanySummary {
   companyName: string
 }
 
+// Populated driver subdocument returned when assignedDriverId is joined
+export interface DriverSummary {
+  _id: string
+  name: string
+  firebaseUid?: string
+}
+
 // Populated auction subdocument returned when auctionId is joined
 export interface AuctionSummary {
   _id: string
@@ -40,7 +47,7 @@ export interface RouteSegment {
 export interface Load {
   _id: string
   companyId: string | CompanySummary
-  assignedDriverId?: string | null
+  assignedDriverId?: string | DriverSummary | null
   selectedTruckId?: string | null
   originAddress: string
   destinationAddress: string

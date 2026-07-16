@@ -182,20 +182,23 @@ export default function DriverAuctions() {
     : `${availableLoads.length} load${availableLoads.length !== 1 ? 's' : ''} shown`
 
   // Handle clicking a route on the map: select the load and scroll the left panel
-  const handleMapRouteClick = useCallback((routeId: string) => {
-    const load = availableLoads.find((l) => l._id === routeId)
-    if (load) {
-      // Merge with scored data if available
-      const scored = scoredMap.get(load._id)
-      const enriched: EnrichedLoad = scored ? { ...load, _scored: scored } : { ...load }
-      setSelectedLoad(enriched)
-      // Scroll to the card in the left panel
-      setTimeout(() => {
-        const cardEl = document.getElementById(`load-card-${routeId}`)
-        cardEl?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }, 50)
-    }
-  }, [availableLoads, scoredMap])
+  const handleMapRouteClick = useCallback(
+    (routeId: string) => {
+      const load = availableLoads.find((l) => l._id === routeId)
+      if (load) {
+        // Merge with scored data if available
+        const scored = scoredMap.get(load._id)
+        const enriched: EnrichedLoad = scored ? { ...load, _scored: scored } : { ...load }
+        setSelectedLoad(enriched)
+        // Scroll to the card in the left panel
+        setTimeout(() => {
+          const cardEl = document.getElementById(`load-card-${routeId}`)
+          cardEl?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }, 50)
+      }
+    },
+    [availableLoads, scoredMap]
+  )
 
   const renderLoadGroup = (loads: typeof sorted) =>
     loads.map((load) => {

@@ -194,7 +194,12 @@ export default function AuctionLive() {
               </div>
             ) : (
               <div className="space-y-6">
-                <LoadSummaryCard load={load} auction={auction} companyName={companyName} companyId={companyId} />
+                <LoadSummaryCard
+                  load={load}
+                  auction={auction}
+                  companyName={companyName}
+                  companyId={companyId}
+                />
                 <PriceTracker auction={auction} currentPrice={currentPrice} />
                 {!isAuctionOver && (
                   <AuctionControls

@@ -12,7 +12,10 @@ import { setBreadcrumbLabel } from '@/services/breadcrumbSlice'
 import type { RatingCategories } from '@/services/driverApi/driverEnum'
 import { useGetDriverProfileQuery } from '@/services/driverApi/driverSlice'
 import { useListCompanyLoadsQuery } from '@/services/loadApi/loadSlice'
-import { useCreateReviewMutation, useGetReviewsForTargetQuery } from '@/services/reviewApi/reviewSlice'
+import {
+  useCreateReviewMutation,
+  useGetReviewsForTargetQuery,
+} from '@/services/reviewApi/reviewSlice'
 import { LOAD_STATUSES } from '@/types/enums'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -80,7 +83,11 @@ export default function DriverPublicProfile() {
     }
   }, [driverId, driver, dispatch])
 
-  const handleReviewSubmit = async (data: { loadId: string; ratingCategories: RatingCategories; comment: string }) => {
+  const handleReviewSubmit = async (data: {
+    loadId: string
+    ratingCategories: RatingCategories
+    comment: string
+  }) => {
     if (!driverId) return
     try {
       await createReview({
@@ -99,7 +106,9 @@ export default function DriverPublicProfile() {
   if (!driverId) {
     return (
       <PageShell title="Driver Profile">
-        <div className="flex items-center justify-center py-20 text-destructive">Missing driver ID.</div>
+        <div className="flex items-center justify-center py-20 text-destructive">
+          Missing driver ID.
+        </div>
       </PageShell>
     )
   }
@@ -159,16 +168,16 @@ export default function DriverPublicProfile() {
   return (
     <PageShell
       title={driver.name ? `${driver.name}'s Profile` : 'Driver Profile'}
-      subtitle={driver.ratingSummary?.totalReviews ? `${driver.ratingSummary.totalReviews} reviews` : undefined}
+      subtitle={
+        driver.ratingSummary?.totalReviews
+          ? `${driver.ratingSummary.totalReviews} reviews`
+          : undefined
+      }
     >
       <Row>
         <Col size={4}>
-          <Row>
-            {leftColumnContent}
-          </Row>
-          <Row>
-            {rightColumnContent}
-          </Row>
+          <Row>{leftColumnContent}</Row>
+          <Row>{rightColumnContent}</Row>
         </Col>
 
         <Col size={12}>

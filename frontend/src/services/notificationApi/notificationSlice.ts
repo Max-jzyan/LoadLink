@@ -1,9 +1,18 @@
 import { api } from '../api'
 import { LoadTag } from '../apiTypes'
-import type { NotificationListResponse, UnreadCountResponse, Notification } from './notificationEnum'
+import type {
+  NotificationListResponse,
+  UnreadCountResponse,
+  Notification,
+} from './notificationEnum'
 import { withSSEToken } from '@/lib/sse'
 
-export type { Notification, NotificationListResponse, UnreadCountResponse, NotificationType } from './notificationEnum'
+export type {
+  Notification,
+  NotificationListResponse,
+  UnreadCountResponse,
+  NotificationType,
+} from './notificationEnum'
 export { NOTIFICATION_TYPES } from './notificationEnum'
 
 /**

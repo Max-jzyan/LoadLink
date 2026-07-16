@@ -30,14 +30,26 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-xs text-destructive mt-1">{message}</p>
 }
 
-export default function TrailerDrawer({ open, onOpenChange, editTrailer, isLoading = false, onSubmit }: TrailerDrawerProps) {
+export default function TrailerDrawer({
+  open,
+  onOpenChange,
+  editTrailer,
+  isLoading = false,
+  onSubmit,
+}: TrailerDrawerProps) {
   const formId = 'trailer-form'
   const isEdit = !!editTrailer
   const formKey = `${open ? 'open' : 'closed'}:${editTrailer?._id ?? 'create'}`
 
   const inputCls = 'bg-background border-border placeholder:text-muted-foreground/50'
 
-  const { register, handleSubmit, control, reset, formState: { errors, isLoading: formLoading } } = useForm<TrailerFormValues>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors, isLoading: formLoading },
+  } = useForm<TrailerFormValues>({
     defaultValues: {
       plateNumber: '',
       trailerType: '',

@@ -9,11 +9,14 @@ import {
 import DynamicCard from '@/components/layout/DynamicCard'
 import LoadTablePagination from '@/components/driverLoads/loadTablePagination'
 import type { LoadWithDetails } from '@/services/companyApi/companyTypes'
+import type { DriverSummary } from '@/services/loadApi/loadEnum'
 import { companyColumns } from './companyColumns'
 import { TRUCK_TYPES, LOAD_STATUSES, type LoadStatus } from '@/types/enums'
 import { Button } from '@/components/ui/button'
 import { RoutePath } from '@/config/routes'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import DriverNameLink from '@/components/shared/DriverNameLink'
+import DocumentLinks from '@/components/shared/DocumentLinks'
 
 const TRUCK_LABELS: Record<string, string> = Object.fromEntries(
   TRUCK_TYPES.map((t) => [t.value, t.label])
@@ -122,10 +125,24 @@ export default function CompanyLoadTable({
         ),
       },
       {
+        label: 'Assigned Driver',
+        renderValue: (load) => {
+          if (!load.assignedDriverId) {
+            return <span className="text-sm text-muted-foreground">Unassigned</span>
+          }
+          const driver = load.assignedDriverId as DriverSummary
+          return <DriverNameLink name={driver.name} driverId={driver._id} />
+        },
+      },
+      {
         label: 'Status',
         renderValue: (load) => (
           <StatusBadge status={load.status as LoadStatus} bidCount={load.bidCount} />
         ),
+      },
+      {
+        label: 'Documents',
+        renderValue: (load) => <DocumentLinks loadId={load._id} />,
       },
     ],
     []

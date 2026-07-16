@@ -22,7 +22,14 @@ interface DriverLoadFiltersProps {
   onEligibilityChange: (value: EligibilityFilter) => void
   dateRange?: DateRange
   onDateRangeChange: (range: DateRange | undefined) => void
-  counts: { all: number; eligible: number; issues: number; highScore?: number; critical?: number; minor?: number }
+  counts: {
+    all: number
+    eligible: number
+    issues: number
+    highScore?: number
+    critical?: number
+    minor?: number
+  }
   onReset: () => void
 }
 

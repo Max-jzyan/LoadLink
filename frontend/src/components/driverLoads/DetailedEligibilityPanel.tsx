@@ -25,10 +25,33 @@ export function DetailedEligibilityPanel({
 
   // Determine theme colors
   const theme = (() => {
-    if (!isEligible && severity === 'critical') return { border: 'border-red-500', bg: 'bg-red-50 dark:bg-red-950/20', text: 'text-red-700 dark:text-red-400', accent: 'bg-red-500' }
-    if (!isEligible) return { border: 'border-amber-500', bg: 'bg-amber-50 dark:bg-amber-950/20', text: 'text-amber-700 dark:text-amber-400', accent: 'bg-amber-500' }
-    if (isHighScore) return { border: 'border-green-500', bg: 'bg-green-50 dark:bg-green-950/20', text: 'text-green-700 dark:text-green-400', accent: 'bg-green-500' }
-    return { border: 'border-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-950/20', text: 'text-emerald-700 dark:text-emerald-400', accent: 'bg-emerald-500' }
+    if (!isEligible && severity === 'critical')
+      return {
+        border: 'border-red-500',
+        bg: 'bg-red-50 dark:bg-red-950/20',
+        text: 'text-red-700 dark:text-red-400',
+        accent: 'bg-red-500',
+      }
+    if (!isEligible)
+      return {
+        border: 'border-amber-500',
+        bg: 'bg-amber-50 dark:bg-amber-950/20',
+        text: 'text-amber-700 dark:text-amber-400',
+        accent: 'bg-amber-500',
+      }
+    if (isHighScore)
+      return {
+        border: 'border-green-500',
+        bg: 'bg-green-50 dark:bg-green-950/20',
+        text: 'text-green-700 dark:text-green-400',
+        accent: 'bg-green-500',
+      }
+    return {
+      border: 'border-emerald-500',
+      bg: 'bg-emerald-50 dark:bg-emerald-950/20',
+      text: 'text-emerald-700 dark:text-emerald-400',
+      accent: 'bg-emerald-500',
+    }
   })()
 
   // Determine badge text
@@ -45,16 +68,34 @@ export function DetailedEligibilityPanel({
 
   // Separate critical issues (schedule, certs) from minor issues
   const criticalIssues = [
-    !flags.eligibleSchedule && { key: 'eligibleSchedule', label: ELIGIBILITY_LABELS.eligibleSchedule },
-    !flags.eligibleCertifications && { key: 'eligibleCertifications', label: ELIGIBILITY_LABELS.eligibleCertifications },
+    !flags.eligibleSchedule && {
+      key: 'eligibleSchedule',
+      label: ELIGIBILITY_LABELS.eligibleSchedule,
+    },
+    !flags.eligibleCertifications && {
+      key: 'eligibleCertifications',
+      label: ELIGIBILITY_LABELS.eligibleCertifications,
+    },
   ].filter((issue): issue is EligibilityIssue => Boolean(issue))
 
   const minorIssues = [
-    !flags.eligibleTruckType && { key: 'eligibleTruckType', label: ELIGIBILITY_LABELS.eligibleTruckType },
-    !flags.eligibleTrailerLength && { key: 'eligibleTrailerLength', label: ELIGIBILITY_LABELS.eligibleTrailerLength },
+    !flags.eligibleTruckType && {
+      key: 'eligibleTruckType',
+      label: ELIGIBILITY_LABELS.eligibleTruckType,
+    },
+    !flags.eligibleTrailerLength && {
+      key: 'eligibleTrailerLength',
+      label: ELIGIBILITY_LABELS.eligibleTrailerLength,
+    },
     !flags.eligibleMinRate && { key: 'eligibleMinRate', label: ELIGIBILITY_LABELS.eligibleMinRate },
-    !flags.eligibleMinValue && { key: 'eligibleMinValue', label: ELIGIBILITY_LABELS.eligibleMinValue },
-    !flags.eligibleDeadhead && { key: 'eligibleDeadhead', label: ELIGIBILITY_LABELS.eligibleDeadhead },
+    !flags.eligibleMinValue && {
+      key: 'eligibleMinValue',
+      label: ELIGIBILITY_LABELS.eligibleMinValue,
+    },
+    !flags.eligibleDeadhead && {
+      key: 'eligibleDeadhead',
+      label: ELIGIBILITY_LABELS.eligibleDeadhead,
+    },
   ].filter((issue): issue is EligibilityIssue => Boolean(issue))
 
   return (
@@ -71,19 +112,17 @@ export function DetailedEligibilityPanel({
           )}
           <span className="text-sm font-semibold">Match Score</span>
         </div>
-        <span className={`text-2xl font-bold tabular-nums ${theme.text}`}>
-          {score}/100
-        </span>
+        <span className={`text-2xl font-bold tabular-nums ${theme.text}`}>{score}/100</span>
       </div>
 
       {/* Status Badge */}
       <div className="flex items-center gap-1.5">
-        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${theme.accent} text-white`}>
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${theme.accent} text-white`}
+        >
           {badgeText}
         </span>
-        {isHighScore && (
-          <span className="text-xs text-muted-foreground">Highly recommended</span>
-        )}
+        {isHighScore && <span className="text-xs text-muted-foreground">Highly recommended</span>}
       </div>
 
       {/* Critical Issues Section */}
@@ -129,7 +168,10 @@ export function DetailedEligibilityPanel({
               </p>
               <ul className="space-y-1">
                 {highlights.map((highlight, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-sm text-green-800 dark:text-green-300">
+                  <li
+                    key={idx}
+                    className="flex items-start gap-2 text-sm text-green-800 dark:text-green-300"
+                  >
                     <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
                     <span>{highlight}</span>
                   </li>
@@ -149,7 +191,10 @@ export function DetailedEligibilityPanel({
       {isEligible && !isHighScore && (
         <div className="flex items-start gap-2 text-xs text-muted-foreground pt-2 border-t">
           <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-          <span>Score above 80 indicates a particularly strong match based on rate, schedule, and location preferences.</span>
+          <span>
+            Score above 80 indicates a particularly strong match based on rate, schedule, and
+            location preferences.
+          </span>
         </div>
       )}
     </div>

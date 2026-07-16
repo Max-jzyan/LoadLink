@@ -57,7 +57,9 @@ export function DrawerExpenseForm({ load, onClose }: DrawerExpenseFormProps) {
             Fuel Cost (per L)
           </FieldLabel>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              $
+            </span>
             <Input
               type="number"
               step={0.01}
@@ -90,7 +92,9 @@ export function DrawerExpenseForm({ load, onClose }: DrawerExpenseFormProps) {
             Maintenance (per km)
           </FieldLabel>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              $
+            </span>
             <Input
               type="number"
               step={0.01}

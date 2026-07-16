@@ -9,7 +9,12 @@ export type SortKey =
   | 'rate'
   | 'distance'
 
-export type EligibilityFilter = 'all' | 'eligible' | 'high-score' | 'issues-critical' | 'issues-minor'
+export type EligibilityFilter =
+  | 'all'
+  | 'eligible'
+  | 'high-score'
+  | 'issues-critical'
+  | 'issues-minor'
 
 // Filter types for date range
 export interface DateFilter {

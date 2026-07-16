@@ -185,171 +185,172 @@ export default function DriverInfoDrawer({
 
   return (
     <>
-    <DrawerShell
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Edit Personal Information"
-      description="Update your name, professional title, profile picture, and certifications."
-      size="md"
-      drawerSubmit={{
-        onSubmit: handleSubmit(onFormSubmit),
-        isSubmitting: isSubmitting || uploading,
-        submitLabel: 'Save Changes',
-      }}
-    >
-      <form id={formId} onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
-        {/* Profile Picture Preview */}
-        <div className="flex flex-col items-center">
-          <AvatarUploadField
-            file={profilePictureFile}
-            onFileChange={setProfilePictureFile}
-            existingUrl={driver.profilePictureUrl}
-            fallbackText={getInitials(driver.name)}
-            onError={setPictureError}
-            disabled={isSubmitting || uploading}
-          />
-          <FieldDescription className="mt-2 text-center">
-            Click the pencil icon to upload a profile picture
-          </FieldDescription>
-          <FieldError message={pictureError ?? undefined} />
-        </div>
-
-        {/* Name */}
-        <Field>
-          <FieldLabel>Full Name</FieldLabel>
-          <Input
-            className={inputCls}
-            placeholder="Enter your full name"
-            {...register('name', {
-              required: 'Name is required',
-              minLength: { value: 2, message: 'Name must be at least 2 characters' },
-            })}
-          />
-          <FieldError message={errors.name?.message} />
-        </Field>
-
-        {/* Professional Title */}
-        <Field>
-          <FieldLabel>Professional Title</FieldLabel>
-          <Input
-            className={inputCls}
-            placeholder="e.g. Long Haul Truck Driver"
-            {...register('professionalTitle')}
-          />
-          <FieldDescription>Optional: Add a professional title or certification</FieldDescription>
-        </Field>
-
-        {/* Carrier Credentials */}
-        <div className="pt-1">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Carrier Credentials
-          </p>
-          <p className="text-xs text-muted-foreground mb-3">
-            These appear on rate confirmations and allow verification against FMCSA records.
-          </p>
-          <div className="grid grid-cols-1 gap-3">
-            <Field>
-              <FieldLabel>MC # (FMCSA Motor Carrier)</FieldLabel>
-              <Input
-                className={inputCls}
-                placeholder="e.g. MC-123456"
-                {...register('mcNumber')}
-              />
-            </Field>
-            <Field>
-              <FieldLabel>US DOT #</FieldLabel>
-              <Input
-                className={inputCls}
-                placeholder="e.g. 1234567"
-                {...register('dotNumber')}
-              />
-            </Field>
-            <Field>
-              <FieldLabel>NSC / CVOR # (Canada)</FieldLabel>
-              <Input
-                className={inputCls}
-                placeholder="e.g. NSC-987654"
-                {...register('nscCvorNumber')}
-              />
-            </Field>
+      <DrawerShell
+        open={open}
+        onOpenChange={onOpenChange}
+        title="Edit Personal Information"
+        description="Update your name, professional title, profile picture, and certifications."
+        size="md"
+        drawerSubmit={{
+          onSubmit: handleSubmit(onFormSubmit),
+          isSubmitting: isSubmitting || uploading,
+          submitLabel: 'Save Changes',
+        }}
+      >
+        <form id={formId} onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+          {/* Profile Picture Preview */}
+          <div className="flex flex-col items-center">
+            <AvatarUploadField
+              file={profilePictureFile}
+              onFileChange={setProfilePictureFile}
+              existingUrl={driver.profilePictureUrl}
+              fallbackText={getInitials(driver.name)}
+              onError={setPictureError}
+              disabled={isSubmitting || uploading}
+            />
+            <FieldDescription className="mt-2 text-center">
+              Click the pencil icon to upload a profile picture
+            </FieldDescription>
+            <FieldError message={pictureError ?? undefined} />
           </div>
-        </div>
 
-        {/* Certifications */}
-        <Field>
-          <FieldLabel>Certifications</FieldLabel>
-          {driver.certificationDocuments && driver.certificationDocuments.length > 0 && (
-            <ul className="space-y-1.5 mb-2">
-              {driver.certificationDocuments.map((doc) => {
-                const status = doc.verificationStatus ?? 'pending'
-                return (
-                  <li
-                    key={doc.key}
-                    className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm"
-                  >
-                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="truncate flex-1">{doc.name}</span>
-                    <Badge variant={docStatusVariant(status)} className="text-xs shrink-0">
-                      {status === 'approved' && 'Verified'}
-                      {status === 'rejected' && 'Rejected'}
-                      {status === 'pending' && 'Pending Review'}
-                      {!['approved', 'rejected', 'pending'].includes(status) && 'Pending Review'}
-                    </Badge>
-                    <button
-                      type="button"
-                      onClick={() => setDocToDelete(doc)}
-                      className="shrink-0 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                      title="Remove document"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </li>
-                )
+          {/* Name */}
+          <Field>
+            <FieldLabel>Full Name</FieldLabel>
+            <Input
+              className={inputCls}
+              placeholder="Enter your full name"
+              {...register('name', {
+                required: 'Name is required',
+                minLength: { value: 2, message: 'Name must be at least 2 characters' },
               })}
-            </ul>
-          )}
-          <FileUploadField
-            files={certificationFiles}
-            onChange={setCertificationFiles}
-            onError={setCertError}
-            multiple
-            disabled={isSubmitting || uploading}
-            buttonLabel="Upload certification"
-          />
-          <FieldDescription>Optional: Add proof of any certifications</FieldDescription>
-          <FieldError message={certError ?? undefined} />
-        </Field>
-      </form>
-    </DrawerShell>
+            />
+            <FieldError message={errors.name?.message} />
+          </Field>
 
-    {/* Confirm delete document dialog */}
-    <Dialog open={!!docToDelete} onOpenChange={(v) => { if (!v) setDocToDelete(null) }} >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Remove document?</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to remove <strong>{docToDelete?.name}</strong>? This action cannot
-            be undone.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setDocToDelete(null)} disabled={isRemoving}>
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            disabled={isRemoving}
-            onClick={async () => {
-              if (!docToDelete) return
-              await removeCertDoc({ driverId, docKey: docToDelete.key })
-              setDocToDelete(null)
-            }}
-          >
-            {isRemoving ? 'Removing…' : 'Remove'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          {/* Professional Title */}
+          <Field>
+            <FieldLabel>Professional Title</FieldLabel>
+            <Input
+              className={inputCls}
+              placeholder="e.g. Long Haul Truck Driver"
+              {...register('professionalTitle')}
+            />
+            <FieldDescription>Optional: Add a professional title or certification</FieldDescription>
+          </Field>
+
+          {/* Carrier Credentials */}
+          <div className="pt-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Carrier Credentials
+            </p>
+            <p className="text-xs text-muted-foreground mb-3">
+              These appear on rate confirmations and allow verification against FMCSA records.
+            </p>
+            <div className="grid grid-cols-1 gap-3">
+              <Field>
+                <FieldLabel>MC # (FMCSA Motor Carrier)</FieldLabel>
+                <Input
+                  className={inputCls}
+                  placeholder="e.g. MC-123456"
+                  {...register('mcNumber')}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>US DOT #</FieldLabel>
+                <Input className={inputCls} placeholder="e.g. 1234567" {...register('dotNumber')} />
+              </Field>
+              <Field>
+                <FieldLabel>NSC / CVOR # (Canada)</FieldLabel>
+                <Input
+                  className={inputCls}
+                  placeholder="e.g. NSC-987654"
+                  {...register('nscCvorNumber')}
+                />
+              </Field>
+            </div>
+          </div>
+
+          {/* Certifications */}
+          <Field>
+            <FieldLabel>Certifications</FieldLabel>
+            {driver.certificationDocuments && driver.certificationDocuments.length > 0 && (
+              <ul className="space-y-1.5 mb-2">
+                {driver.certificationDocuments.map((doc) => {
+                  const status = doc.verificationStatus ?? 'pending'
+                  return (
+                    <li
+                      key={doc.key}
+                      className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm"
+                    >
+                      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate flex-1">{doc.name}</span>
+                      <Badge variant={docStatusVariant(status)} className="text-xs shrink-0">
+                        {status === 'approved' && 'Verified'}
+                        {status === 'rejected' && 'Rejected'}
+                        {status === 'pending' && 'Pending Review'}
+                        {!['approved', 'rejected', 'pending'].includes(status) && 'Pending Review'}
+                      </Badge>
+                      <button
+                        type="button"
+                        onClick={() => setDocToDelete(doc)}
+                        className="shrink-0 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                        title="Remove document"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+            <FileUploadField
+              files={certificationFiles}
+              onChange={setCertificationFiles}
+              onError={setCertError}
+              multiple
+              disabled={isSubmitting || uploading}
+              buttonLabel="Upload certification"
+            />
+            <FieldDescription>Optional: Add proof of any certifications</FieldDescription>
+            <FieldError message={certError ?? undefined} />
+          </Field>
+        </form>
+      </DrawerShell>
+
+      {/* Confirm delete document dialog */}
+      <Dialog
+        open={!!docToDelete}
+        onOpenChange={(v) => {
+          if (!v) setDocToDelete(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove document?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove <strong>{docToDelete?.name}</strong>? This action
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDocToDelete(null)} disabled={isRemoving}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isRemoving}
+              onClick={async () => {
+                if (!docToDelete) return
+                await removeCertDoc({ driverId, docKey: docToDelete.key })
+                setDocToDelete(null)
+              }}
+            >
+              {isRemoving ? 'Removing…' : 'Remove'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

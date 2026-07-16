@@ -2,7 +2,14 @@ import { api } from '../api'
 import { LoadTag } from '../apiTypes'
 import type { PlatformStats, AdminUser, AdminDriver, RateConfirmationBid } from './adminEnum'
 
-export type { PlatformStats, AdminUser, InsuranceCert, CertDoc, AdminDriver, RateConfirmationBid } from './adminEnum'
+export type {
+  PlatformStats,
+  AdminUser,
+  InsuranceCert,
+  CertDoc,
+  AdminDriver,
+  RateConfirmationBid,
+} from './adminEnum'
 
 export const adminApi = api.injectEndpoints({
   endpoints: (build) => ({

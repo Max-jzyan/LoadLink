@@ -14,14 +14,16 @@ export default function BusinessDocumentsCard({ documents, onEdit }: BusinessDoc
       title="Business Documents"
       action={
         onEdit && (
-          <EditPencilButton onClick={onEdit} ariaLabel="Manage documents" title="Manage documents" />
+          <EditPencilButton
+            onClick={onEdit}
+            ariaLabel="Manage documents"
+            title="Manage documents"
+          />
         )
       }
     >
       {documents.length === 0 ? (
-        <p className="text-sm text-muted-foreground italic">
-          No business documents uploaded yet.
-        </p>
+        <p className="text-sm text-muted-foreground italic">No business documents uploaded yet.</p>
       ) : (
         <div className="space-y-2">
           {documents.map((doc) => (

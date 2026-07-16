@@ -84,7 +84,9 @@ interface DataTableProps<TData, TValue> {
   drawerIsViewOnly?: boolean
   /** Full custom footer for drawer (takes precedence over drawerSubmit).
    * Can be a static node or a function receiving the selected row and helpers. */
-  drawerFooter?: React.ReactNode | ((row: TData, helpers: { onClose: () => void }) => React.ReactNode)
+  drawerFooter?:
+    | React.ReactNode
+    | ((row: TData, helpers: { onClose: () => void }) => React.ReactNode)
 }
 
 // ──────────────────────────────────────────────
@@ -218,20 +220,21 @@ export function DataTable<TData, TValue>({
       : typeof drawerFooter === 'function'
         ? undefined
         : drawerFooter
-  const submitObj = drawerSubmit && selectedDrawerRow && !footerNode
-    ? {
-        onSubmit: async () => {
-          if (isViewOnly) {
-            setDrawerOpen(false)
-          } else {
-            await drawerSubmit(selectedDrawerRow)
-            setDrawerOpen(false)
-          }
-        },
-        submitLabel: isViewOnly ? 'Close' : 'Save Changes',
-        cancelLabel: isViewOnly ? '' : undefined,
-      }
-    : undefined
+  const submitObj =
+    drawerSubmit && selectedDrawerRow && !footerNode
+      ? {
+          onSubmit: async () => {
+            if (isViewOnly) {
+              setDrawerOpen(false)
+            } else {
+              await drawerSubmit(selectedDrawerRow)
+              setDrawerOpen(false)
+            }
+          },
+          submitLabel: isViewOnly ? 'Close' : 'Save Changes',
+          cancelLabel: isViewOnly ? '' : undefined,
+        }
+      : undefined
 
   return (
     <>

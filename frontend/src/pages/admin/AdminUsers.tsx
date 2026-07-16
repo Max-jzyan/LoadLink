@@ -11,9 +11,24 @@ import { Loader2, Search, User, Building2, ShieldCheck } from 'lucide-react'
 import { format } from 'date-fns'
 
 const ROLE_BADGES: Record<string, React.ReactNode> = {
-  driver: <Badge variant="secondary" className="text-xs gap-1"><User className="h-3 w-3" />Driver</Badge>,
-  company: <Badge variant="outline" className="text-xs gap-1"><Building2 className="h-3 w-3" />Company</Badge>,
-  admin: <Badge className="text-xs gap-1 bg-primary/15 text-primary border-primary/20"><ShieldCheck className="h-3 w-3" />Admin</Badge>,
+  driver: (
+    <Badge variant="secondary" className="text-xs gap-1">
+      <User className="h-3 w-3" />
+      Driver
+    </Badge>
+  ),
+  company: (
+    <Badge variant="outline" className="text-xs gap-1">
+      <Building2 className="h-3 w-3" />
+      Company
+    </Badge>
+  ),
+  admin: (
+    <Badge className="text-xs gap-1 bg-primary/15 text-primary border-primary/20">
+      <ShieldCheck className="h-3 w-3" />
+      Admin
+    </Badge>
+  ),
 }
 
 const ROLE_FILTERS = ['all', 'driver', 'company', 'admin'] as const
@@ -125,11 +140,7 @@ export default function AdminUsers() {
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={filtered}
-          getId={(user) => user._id}
-        />
+        <DataTable columns={columns} data={filtered} getId={(user) => user._id} />
       )}
     </PageShell>
   )

@@ -92,39 +92,35 @@ export default function DrawerShell({
   showCloseButton = true,
   direction = 'right',
 }: DrawerShellProps) {
-  const resolvedFooter = drawerSubmit
-    ? drawerSubmit.cancelLabel === '' && drawerSubmit.submitLabel === 'Close'
-      ? (
+  const resolvedFooter = drawerSubmit ? (
+    drawerSubmit.cancelLabel === '' && drawerSubmit.submitLabel === 'Close' ? (
+      <Button
+        variant="outline"
+        onClick={() => onOpenChange(false)}
+        disabled={drawerSubmit.isSubmitting}
+      >
+        Close
+      </Button>
+    ) : (
+      <>
+        <Button type="submit" onClick={drawerSubmit.onSubmit} disabled={drawerSubmit.isSubmitting}>
+          {drawerSubmit.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {drawerSubmit.submitLabel ?? 'Save'}
+        </Button>
+        {drawerSubmit.cancelLabel !== '' && (
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={drawerSubmit.isSubmitting}
           >
-            Close
+            {drawerSubmit.cancelLabel ?? 'Cancel'}
           </Button>
-        )
-      : (
-          <>
-            <Button
-              type="submit"
-              onClick={drawerSubmit.onSubmit}
-              disabled={drawerSubmit.isSubmitting}
-            >
-              {drawerSubmit.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {drawerSubmit.submitLabel ?? 'Save'}
-            </Button>
-            {drawerSubmit.cancelLabel !== '' && (
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={drawerSubmit.isSubmitting}
-              >
-                {drawerSubmit.cancelLabel ?? 'Cancel'}
-              </Button>
-            )}
-          </>
-        )
-    : footer
+        )}
+      </>
+    )
+  ) : (
+    footer
+  )
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction={direction} modal>
@@ -133,8 +129,8 @@ export default function DrawerShell({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <DrawerTitle>{title}</DrawerTitle>
-              <DrawerDescription className={description ? undefined : "sr-only"}>
-                {description ?? "Drawer content panel"}
+              <DrawerDescription className={description ? undefined : 'sr-only'}>
+                {description ?? 'Drawer content panel'}
               </DrawerDescription>
             </div>
             {showCloseButton && (

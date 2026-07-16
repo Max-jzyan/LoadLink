@@ -50,15 +50,20 @@ export default function DriverProfile() {
     isSuccess: isReviewsSuccess,
     isLoading: isReviewsLoading,
     isError: isReviewsError,
-  } = useGetReviewsForTargetQuery({ targetId: driverId, page: 1, limit: 20 }, { skip: !driverId || activeTab !== 'reviews' })
+  } = useGetReviewsForTargetQuery(
+    { targetId: driverId, page: 1, limit: 20 },
+    { skip: !driverId || activeTab !== 'reviews' }
+  )
 
   const [updateDriverProfile] = useUpdateDriverProfileMutation()
   const [updateDriverProfileForInfo, { isSuccess: infoSaved }] = useUpdateDriverProfileMutation()
   const [createTruck] = useCreateTruckMutation()
   const [updateTruck] = useUpdateTruckMutation()
   const [updateTruckExpenses] = useUpdateTruckExpensesMutation()
-  const [createTrailer, { isSuccess: trailerCreated, isLoading: isCreatingTrailer }] = useCreateTrailerMutation()
-  const [updateTrailer, { isSuccess: trailerUpdated, isLoading: isUpdatingTrailer }] = useUpdateTrailerMutation()
+  const [createTrailer, { isSuccess: trailerCreated, isLoading: isCreatingTrailer }] =
+    useCreateTrailerMutation()
+  const [updateTrailer, { isSuccess: trailerUpdated, isLoading: isUpdatingTrailer }] =
+    useUpdateTrailerMutation()
 
   // Truck drawer state
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -218,7 +223,11 @@ export default function DriverProfile() {
       )
     }
     if (isReviewsError) {
-      return <div className="text-sm text-destructive">Could not load reviews. Please try again later.</div>
+      return (
+        <div className="text-sm text-destructive">
+          Could not load reviews. Please try again later.
+        </div>
+      )
     }
     if (isReviewsSuccess) {
       if (reviewsPayload.data.length === 0) {
@@ -296,7 +305,9 @@ export default function DriverProfile() {
             </Row>
             <Row>
               <Col size={16}>
-                <NotificationPreferencesCard notificationPreferences={driver.notificationPreferences} />
+                <NotificationPreferencesCard
+                  notificationPreferences={driver.notificationPreferences}
+                />
               </Col>
             </Row>
           </Col>

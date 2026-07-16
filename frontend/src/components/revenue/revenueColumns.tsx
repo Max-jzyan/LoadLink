@@ -1,12 +1,7 @@
 import { Info } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { DashboardViewMode, LoadRevenue } from '@/services/driverApi/driverEnum'
 import type { ColumnDef } from '@tanstack/react-table'
 import { formatCAD } from '@/lib/utils'

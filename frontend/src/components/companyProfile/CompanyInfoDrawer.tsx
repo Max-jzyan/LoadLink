@@ -171,113 +171,118 @@ export default function CompanyInfoDrawer({
 
   return (
     <>
-    <DrawerShell
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Edit Company Information"
-      description="Update your company name, contact info, profile picture, and business documents."
-      size="md"
-      drawerSubmit={{
-        onSubmit: handleSubmit(onFormSubmit),
-        isSubmitting: isSubmitting || uploading,
-        submitLabel: 'Save Changes',
-      }}
-    >
-      <form id={formId} onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
-        {/* Profile Picture Preview */}
-        <div className="flex flex-col items-center">
-          <AvatarUploadField
-            file={profilePictureFile}
-            onFileChange={setProfilePictureFile}
-            existingUrl={company.profilePictureUrl}
-            fallbackText={getInitials(company.companyName || company.name)}
-            onError={setPictureError}
-            disabled={isSubmitting || uploading}
-          />
-          <FieldDescription className="mt-2 text-center">
-            Click the pencil icon to upload a company logo
-          </FieldDescription>
-          <FieldError message={pictureError ?? undefined} />
-        </div>
+      <DrawerShell
+        open={open}
+        onOpenChange={onOpenChange}
+        title="Edit Company Information"
+        description="Update your company name, contact info, profile picture, and business documents."
+        size="md"
+        drawerSubmit={{
+          onSubmit: handleSubmit(onFormSubmit),
+          isSubmitting: isSubmitting || uploading,
+          submitLabel: 'Save Changes',
+        }}
+      >
+        <form id={formId} onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+          {/* Profile Picture Preview */}
+          <div className="flex flex-col items-center">
+            <AvatarUploadField
+              file={profilePictureFile}
+              onFileChange={setProfilePictureFile}
+              existingUrl={company.profilePictureUrl}
+              fallbackText={getInitials(company.companyName || company.name)}
+              onError={setPictureError}
+              disabled={isSubmitting || uploading}
+            />
+            <FieldDescription className="mt-2 text-center">
+              Click the pencil icon to upload a company logo
+            </FieldDescription>
+            <FieldError message={pictureError ?? undefined} />
+          </div>
 
-        {/* Company Name */}
-        <Field>
-          <FieldLabel>Company Name</FieldLabel>
-          <Input
-            className={inputCls}
-            placeholder="Enter your company name"
-            {...register('companyName', {
-              required: 'Company name is required',
-              minLength: { value: 2, message: 'Company name must be at least 2 characters' },
-            })}
-          />
-          <FieldError message={errors.companyName?.message} />
-        </Field>
+          {/* Company Name */}
+          <Field>
+            <FieldLabel>Company Name</FieldLabel>
+            <Input
+              className={inputCls}
+              placeholder="Enter your company name"
+              {...register('companyName', {
+                required: 'Company name is required',
+                minLength: { value: 2, message: 'Company name must be at least 2 characters' },
+              })}
+            />
+            <FieldError message={errors.companyName?.message} />
+          </Field>
 
-        {/* Contact Name */}
-        <Field>
-          <FieldLabel>Contact Name</FieldLabel>
-          <Input
-            className={inputCls}
-            placeholder="Enter contact person name"
-            {...register('contactName', {
-              required: 'Contact name is required',
-              minLength: { value: 2, message: 'Contact name must be at least 2 characters' },
-            })}
-          />
-          <FieldError message={errors.contactName?.message} />
-        </Field>
+          {/* Contact Name */}
+          <Field>
+            <FieldLabel>Contact Name</FieldLabel>
+            <Input
+              className={inputCls}
+              placeholder="Enter contact person name"
+              {...register('contactName', {
+                required: 'Contact name is required',
+                minLength: { value: 2, message: 'Contact name must be at least 2 characters' },
+              })}
+            />
+            <FieldError message={errors.contactName?.message} />
+          </Field>
 
-        {/* Business Address */}
-        <Field>
-          <FieldLabel>Business Address</FieldLabel>
-          <Input
-            className={inputCls}
-            placeholder="Enter your business address"
-            {...register('businessAddress')}
-          />
-          <FieldDescription>Optional: Your registered business address</FieldDescription>
-        </Field>
+          {/* Business Address */}
+          <Field>
+            <FieldLabel>Business Address</FieldLabel>
+            <Input
+              className={inputCls}
+              placeholder="Enter your business address"
+              {...register('businessAddress')}
+            />
+            <FieldDescription>Optional: Your registered business address</FieldDescription>
+          </Field>
 
-        {/* Business Number */}
-        <Field>
-          <FieldLabel>Business Number</FieldLabel>
-          <Input
-            className={inputCls}
-            placeholder="e.g. 987654321"
-            {...register('businessNumber')}
-          />
-          <FieldDescription>Optional: Your registration or business number</FieldDescription>
-        </Field>
-      </form>
-    </DrawerShell>
+          {/* Business Number */}
+          <Field>
+            <FieldLabel>Business Number</FieldLabel>
+            <Input
+              className={inputCls}
+              placeholder="e.g. 987654321"
+              {...register('businessNumber')}
+            />
+            <FieldDescription>Optional: Your registration or business number</FieldDescription>
+          </Field>
+        </form>
+      </DrawerShell>
 
-    {/* Confirm delete document dialog */}
-    <Dialog open={!!docToDelete} onOpenChange={(v) => { if (!v) setDocToDelete(null) }} >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Remove document?</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to remove <strong>{docToDelete?.name}</strong>? This action cannot
-            be undone.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setDocToDelete(null)}>
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => {
-              // Removal is handled via the parent by filtering out the doc
-              setDocToDelete(null)
-            }}
-          >
-            Remove
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      {/* Confirm delete document dialog */}
+      <Dialog
+        open={!!docToDelete}
+        onOpenChange={(v) => {
+          if (!v) setDocToDelete(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove document?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove <strong>{docToDelete?.name}</strong>? This action
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDocToDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                // Removal is handled via the parent by filtering out the doc
+                setDocToDelete(null)
+              }}
+            >
+              Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

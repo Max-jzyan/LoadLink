@@ -15,16 +15,18 @@ import { format } from 'date-fns'
 interface AuctionEntry {
   _id: string
   companyId: string
-  loadId: {
-    _id: string
-    originAddress: string
-    destinationAddress: string
-    pickupTime: string
-    dropoffTime: string
-    commodity: string
-    truckType: string
-    status: string
-  } | string
+  loadId:
+    | {
+        _id: string
+        originAddress: string
+        destinationAddress: string
+        pickupTime: string
+        dropoffTime: string
+        commodity: string
+        truckType: string
+        status: string
+      }
+    | string
   status: (typeof AUCTION_STATUSES)[keyof typeof AUCTION_STATUSES]
   currentPrice: number
   startPrice: number
@@ -38,7 +40,11 @@ interface AuctionEntry {
 function statusBadge(status: string) {
   switch (status) {
     case AUCTION_STATUSES.Active:
-      return <Badge className="bg-green-500/15 text-green-700 border-green-500/30 dark:text-green-400">Live</Badge>
+      return (
+        <Badge className="bg-green-500/15 text-green-700 border-green-500/30 dark:text-green-400">
+          Live
+        </Badge>
+      )
     case AUCTION_STATUSES.Closed:
       return <Badge variant="secondary">Closed</Badge>
     case AUCTION_STATUSES.Cancelled:
@@ -123,7 +129,9 @@ export default function CompanyAuctions() {
       {!isLoading && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <Gavel className="h-10 w-10 mb-3 opacity-30" />
-          <p className="text-sm">{search ? 'No auctions match your search.' : 'No auctions yet.'}</p>
+          <p className="text-sm">
+            {search ? 'No auctions match your search.' : 'No auctions yet.'}
+          </p>
         </div>
       )}
       {!isLoading && filtered.length > 0 && (
@@ -155,7 +163,9 @@ export default function CompanyAuctions() {
                         <span>{load.truckType}</span>
                         <span>Pickup: {format(new Date(load.pickupTime), 'MMM d')}</span>
                         {auction.bidCount !== undefined && (
-                          <span>{auction.bidCount} bid{auction.bidCount !== 1 ? 's' : ''}</span>
+                          <span>
+                            {auction.bidCount} bid{auction.bidCount !== 1 ? 's' : ''}
+                          </span>
                         )}
                       </div>
                     </>
@@ -185,19 +195,16 @@ export default function CompanyAuctions() {
                 )}
                 {auction.status !== AUCTION_STATUSES.Active && load && (
                   <Button size="sm" variant="outline" asChild>
-                    <Link
-                      to={`/loads/${loadId}`}
-                      state={{ from: RoutePath.CompanyAuctions }}
-                    >
+                    <Link to={`/loads/${loadId}`} state={{ from: RoutePath.CompanyAuctions }}>
                       Details
                     </Link>
                   </Button>
                 )}
               </div>
-              )
-            })}
-          </div>
-        )}
-      </PageShell>
+            )
+          })}
+        </div>
+      )}
+    </PageShell>
   )
 }

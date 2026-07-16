@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import type { Load } from '@/services/loadApi/loadEnum'
-import { 
-  Combobox, 
-  ComboboxInput, 
-  ComboboxContent, 
-  ComboboxList, 
-  ComboboxItem, 
-  ComboboxEmpty, 
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
 } from '@/components/ui/combobox'
 
 interface LoadSelectProps {
@@ -43,8 +43,8 @@ export default function LoadSelect({ loads, onChange }: LoadSelectProps) {
 
   return (
     // 3. Pass the display label as the value and handle selection
-    <Combobox 
-      items={items} 
+    <Combobox
+      items={items}
       value={displayValue}
       onValueChange={(newValue) => {
         const selected = items.find((item) => item.label === newValue)
@@ -59,11 +59,7 @@ export default function LoadSelect({ loads, onChange }: LoadSelectProps) {
         <ComboboxEmpty>No matching loads</ComboboxEmpty>
         <ComboboxList>
           {items.map((item) => (
-            <ComboboxItem 
-              key={item.value} 
-              value={item.label}
-              className="cursor-pointer"
-            >
+            <ComboboxItem key={item.value} value={item.label} className="cursor-pointer">
               {item.label}
             </ComboboxItem>
           ))}
