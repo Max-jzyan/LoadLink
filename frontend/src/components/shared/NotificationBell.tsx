@@ -2,7 +2,7 @@ import { Bell, CheckCheck, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import DrawerShell from '@/components/layout/DrawerShell'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   useGetUnreadCountQuery,
@@ -10,10 +10,20 @@ import {
   useMarkAsReadMutation,
   useMarkAllAsReadMutation,
   useDeleteNotificationMutation,
+  useStreamNotificationsQuery,
+  type NotificationStreamPayload,
+  type UnreadCountResponse,
 } from '@/services/notificationApi/notificationSlice'
 import { NOTIFICATION_TYPES, type Notification } from '@/services/notificationApi/notificationEnum'
 import { formatDistanceToNow } from 'date-fns'
 import { RoutePath } from '@/config/routes'
+
+// Type guard to distinguish Notification from UnreadCountResponse in SSE stream
+function isNotification(
+  payload: NotificationStreamPayload | UnreadCountResponse | null
+): payload is NotificationStreamPayload {
+  return payload !== null && '_id' in payload && 'type' in payload
+}
 
 /** Map a notification to a navigation target (route or external URL). */
 function resolveNotificationTarget(n: Notification): { path?: string; url?: string } | null {
@@ -140,14 +150,23 @@ function NotificationItem({
 export default function NotificationBell() {
   const [open, setOpen] = useState(false)
 
-  const { data: countData } = useGetUnreadCountQuery(undefined, {
-    pollingInterval: 5_000,
+  // Track unread count statefully (handles SSE updates)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  // SSE stream for real-time notifications (always active for authenticated users)
+  const { data: streamData } = useStreamNotificationsQuery(undefined, {
+    // Stream only - no fallback
   })
-  const { data: listData } = useListNotificationsQuery(
+
+  // Get initial count and list data
+  const { data: countData } = useGetUnreadCountQuery(undefined, {
+    // Stream only - no fallback
+    refetchOnMountOrArgChange: true,
+  })
+  const { data: listData, refetch: refetchList } = useListNotificationsQuery(
     { page: 1, limit: 40 },
     {
       skip: !open,
-      pollingInterval: open ? 15_000 : 0,
       refetchOnMountOrArgChange: true,
     }
   )
@@ -156,7 +175,35 @@ export default function NotificationBell() {
   const [markAllAsRead] = useMarkAllAsReadMutation()
   const [deleteNotification] = useDeleteNotificationMutation()
 
-  const unreadCount = countData?.unreadCount ?? 0
+  // Handle SSE stream updates: can be unread count or notification
+  useEffect(() => {
+    if (!streamData) return
+
+    // SSE updates are now handled in the slice for proper cache updates
+    // This effect only handles the badge count state
+    if (isNotification(streamData)) {
+      // Increment the badge count
+      setUnreadCount((prev) => prev + 1)
+    } else {
+      // It's an unread count update
+      setUnreadCount(streamData!.unreadCount)
+    }
+  }, [streamData])
+
+  // Sync with initial query data on mount
+  useEffect(() => {
+    if (countData?.unreadCount !== undefined) {
+      setUnreadCount(countData.unreadCount)
+    }
+  }, [countData])
+
+  // Refetch list when drawer opens
+  useEffect(() => {
+    if (open) {
+      refetchList()
+    }
+  }, [open, refetchList])
+
   const notifications = listData?.notifications ?? []
 
   return (

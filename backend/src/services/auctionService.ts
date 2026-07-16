@@ -339,6 +339,7 @@ export const claimLoad = async (
 
   // Generate rate confirmation PDF
   let rateConfirmationUrl: string | null = null
+  let driverNameForNotification = driverId // fallback to driverId
   try {
     const load = await LoadModel.findById(loadId)
       .populate<{ companyId: { companyName: string; businessAddress?: string } }>('companyId')
@@ -348,13 +349,14 @@ export const claimLoad = async (
     if (load) {
       const company = load.companyId as any
       const driver = load.assignedDriverId as any
+      driverNameForNotification = driver?.name ?? driverId
       const bidIdStr = bid._id.toString()
       const pdfResult = await generateRateConfirmationPdf({
         loadId,
         bidId: bidIdStr,
         companyName: company?.companyName ?? 'Unknown Company',
         companyAddress: company?.businessAddress,
-        driverName: driver?.name ?? driverId,
+        driverName: driverNameForNotification,
         driverEmail: driver?.email,
         originAddress: load.originAddress,
         destinationAddress: load.destinationAddress,
@@ -395,7 +397,7 @@ export const claimLoad = async (
   // Notify the company their load was claimed
   await notifyLoadClaimed(auction.companyId.toString(), {
     loadId,
-    driverName: driverId, // will be enriched with real name in a real implementation
+    driverName: driverNameForNotification,
     payout: auction.currentPrice,
   })
 

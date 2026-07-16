@@ -5,12 +5,17 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
+  streamNotifications,
 } from '../controllers/notificationController'
-import { requireAuth } from '../middleware/requireAuth'
+import { requireAuth, requireAuthSSE } from '../middleware/requireAuth'
 
 const router = Router()
 
-// All notification routes require authentication.
+// SSE stream for real-time notifications (uses token via query param)
+// Must be defined BEFORE the router.use(requireAuth) middleware
+router.get('/notifications/stream', requireAuthSSE, streamNotifications)
+
+// All other notification routes require authentication via header.
 router.use(requireAuth)
 
 router.get('/notifications', listNotifications)

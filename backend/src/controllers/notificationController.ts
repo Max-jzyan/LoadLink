@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import * as notificationService from '../services/notificationService'
+import { initSSE, sendSSE, startSSEKeepAlive } from '../utils/sse'
+import { onNotification } from '../events/notificationEvents'
 
 /**
  * GET /api/notifications
@@ -70,6 +72,37 @@ export const deleteNotification = async (req: Request, res: Response, next: Next
     const notificationId = req.params.notificationId as string
     await notificationService.deleteNotification(notificationId, userId)
     res.status(StatusCodes.NO_CONTENT).send()
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * GET /api/notifications/stream
+ * SSE stream for real-time notification delivery. Sends an initial unread count,
+ * then pushes new notifications as they're created.
+ */
+export const streamNotifications = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!._id
+
+    // Send initial unread count snapshot
+    const initial = await notificationService.getUnreadCount(userId)
+    initSSE(res)
+    sendSSE(res, initial)
+
+    const keepAlive = startSSEKeepAlive(res)
+
+    // Subscribe to notification events for this specific user
+    const unsubscribe = onNotification(userId, (payload) => {
+      sendSSE(res, payload)
+    })
+
+    req.on('close', () => {
+      clearInterval(keepAlive)
+      unsubscribe()
+      res.end()
+    })
   } catch (err) {
     next(err)
   }

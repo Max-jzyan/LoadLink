@@ -1,9 +1,16 @@
 import { api } from '../api'
 import { LoadTag } from '../apiTypes'
-import type { NotificationListResponse, UnreadCountResponse } from './notificationEnum'
+import type { NotificationListResponse, UnreadCountResponse, Notification } from './notificationEnum'
+import { withSSEToken } from '@/lib/sse'
 
 export type { Notification, NotificationListResponse, UnreadCountResponse, NotificationType } from './notificationEnum'
 export { NOTIFICATION_TYPES } from './notificationEnum'
+
+/**
+ * Payload sent via SSE when a notification is created.
+ * The backend sends the full notification document.
+ */
+export interface NotificationStreamPayload extends Notification {}
 
 export const notificationApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -47,6 +54,41 @@ export const notificationApi = api.injectEndpoints({
         { type: LoadTag.Notification, id: 'COUNT' },
       ],
     }),
+
+    /**
+     * SSE stream for real-time notification delivery.
+     * Opens an EventSource when the query cache is active, pushes incoming
+     * notifications into the cache, and closes on cache entry removal.
+     *
+     * Uses queryFn to return a placeholder so cacheDataLoaded resolves immediately
+     * without making a failing HTTP request (the backend sends SSE format, not JSON).
+     */
+    streamNotifications: build.query<NotificationStreamPayload | UnreadCountResponse | null, void>({
+      queryFn: () => ({ data: null }),
+      async onCacheEntryAdded(_, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) {
+        await cacheDataLoaded
+
+        const es = new EventSource(await withSSEToken('/api/notifications/stream'))
+
+        es.onmessage = (e) => {
+          try {
+            const payload = JSON.parse(e.data) as NotificationStreamPayload | UnreadCountResponse
+            updateCachedData(() => payload)
+          } catch {
+            // ignore malformed events
+          }
+        }
+
+        es.onerror = () => {
+          es.close()
+        }
+
+        // Wait until the cache entry is removed (component unmount)
+        await cacheEntryRemoved
+
+        es.close()
+      },
+    }),
   }),
 })
 
@@ -56,4 +98,5 @@ export const {
   useMarkAsReadMutation,
   useMarkAllAsReadMutation,
   useDeleteNotificationMutation,
+  useStreamNotificationsQuery,
 } = notificationApi

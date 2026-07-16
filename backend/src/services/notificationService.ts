@@ -6,6 +6,7 @@ import {
   type NotificationType,
 } from '../models/notifications/Notification'
 import { ApiError } from '../utils/ApiError'
+import { emitNotification } from '../events/notificationEvents'
 
 const assertValidId = (id: string, label: string) => {
   if (!isValidObjectId(id)) throw new ApiError(StatusCodes.BAD_REQUEST, `Invalid ${label}`)
@@ -22,13 +23,18 @@ export const createNotification = async (params: {
   data?: Record<string, unknown>
 }) => {
   try {
-    return await NotificationModel.create({
+    const notification = await NotificationModel.create({
       userId: new Types.ObjectId(params.userId),
       type: params.type,
       title: params.title,
       message: params.message ?? '',
       data: params.data ?? {},
     })
+
+    // Emit event for SSE subscribers (in-process notification)
+    emitNotification(params.userId, notification.toObject())
+
+    return notification
   } catch (err) {
     console.error('[notificationService] Failed to create notification:', err)
     return null

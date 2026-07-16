@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import mongoose, { Types } from 'mongoose'
 import { BidModel } from '../../models/loads/Bid'
+import { NotificationModel } from '../../models/notifications/Notification'
 import { seedAuctions } from './auctions'
 import { seedBids } from './bids'
 import { seedLoads } from './loads'
@@ -103,6 +104,9 @@ const BID_SPECS_BY_LOAD: Record<
 async function main() {
   await mongoose.connect(MONGODB_URI)
   try {
+    // Clear notifications on seed to ensure clean state
+    await NotificationModel.deleteMany({})
+
     const { companies, drivers } = await seedUsers()
 
     const { activeLoads, completedLoads } = await seedLoads({
