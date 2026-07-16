@@ -147,7 +147,7 @@ export default function CompanyPublicProfile() {
   ) : (
     <div className="space-y-3">
       {(reviewsPayload?.data ?? []).map((r) => (
-        <ReviewCard key={r._id} review={r} />
+        <ReviewCard key={r._id} review={r} reviewerType="driver" />
       ))}
     </div>
   )

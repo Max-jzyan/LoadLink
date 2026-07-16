@@ -143,6 +143,7 @@ export default function Dashboard() {
         ],
         value: viewMode,
         onValueChange: handleViewModeChange,
+        searchParamKey: 'tab',
       }}
       stickyBar={
         <RevenueFilterBar filters={filters} onFiltersChange={setFilters} trucks={trucks} />

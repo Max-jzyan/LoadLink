@@ -236,7 +236,7 @@ export default function DriverProfile() {
       return (
         <div className="space-y-3">
           {reviewsPayload.data.map((r) => (
-            <ReviewCard key={r._id} review={r} />
+            <ReviewCard key={r._id} review={r} reviewerType="company" />
           ))}
         </div>
       )
@@ -255,6 +255,7 @@ export default function DriverProfile() {
         ],
         value: activeTab,
         onValueChange: (value) => setActiveTab(value as ProfileTab),
+        searchParamKey: 'tab',
       }}
     >
       {activeTab === 'profile' ? (

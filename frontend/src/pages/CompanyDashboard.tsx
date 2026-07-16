@@ -147,6 +147,7 @@ export default function CompanyDashboard() {
         ],
         value: tab,
         onValueChange: handleTabChange,
+        searchParamKey: 'tab',
       }}
       stickyBar={
         tab === 'overview' ? (

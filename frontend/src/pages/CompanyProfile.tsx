@@ -109,7 +109,7 @@ export default function CompanyProfile() {
       return (
         <div className="space-y-3">
           {reviewsPayload.data.map((r) => (
-            <ReviewCard key={r._id} review={r} />
+            <ReviewCard key={r._id} review={r} reviewerType="driver" />
           ))}
         </div>
       )
@@ -128,6 +128,7 @@ export default function CompanyProfile() {
         ],
         value: activeTab,
         onValueChange: (value) => setActiveTab(value as ProfileTab),
+        searchParamKey: 'tab',
       }}
     >
       {activeTab === 'profile' ? (

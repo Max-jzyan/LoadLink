@@ -2,7 +2,8 @@ import '@/components/layout/PageShell.less'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 export interface TabOption {
   value: string
@@ -21,6 +22,9 @@ interface PageShellProps {
     options: TabOption[]
     value: string
     onValueChange: (value: string) => void
+    /** When set, the active tab is reflected as a URL search param with this key.
+     *  The first tab's value is treated as default and is omitted from the URL. */
+    searchParamKey?: string
   }
   /** Content rendered in the sticky bar (filters, controls) */
   stickyBar?: ReactNode
@@ -69,6 +73,38 @@ export default function PageShell({
   noScroll = false,
   children,
 }: PageShellProps) {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const hasSyncedRef = useRef(false)
+
+  // On mount, sync URL search param → tab state (only if a valid tab is specified)
+  useEffect(() => {
+    if (!tabs?.searchParamKey || hasSyncedRef.current) return
+    const paramVal = searchParams.get(tabs.searchParamKey)
+    if (paramVal && tabs.options.some((o) => o.value === paramVal) && paramVal !== tabs.value) {
+      tabs.onValueChange(paramVal)
+    }
+    hasSyncedRef.current = true
+    // Run only once on mount — ignore dependency changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleTabClick = (optionValue: string) => {
+    tabs?.onValueChange(optionValue)
+    if (!tabs?.searchParamKey) return
+    const defaultVal = tabs.options[0]?.value
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (optionValue === defaultVal) {
+          next.delete(tabs.searchParamKey!)
+        } else {
+          next.set(tabs.searchParamKey!, optionValue)
+        }
+        return next
+      },
+      { replace: true }
+    )
+  }
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className={cn('flex-1', noScroll ? 'flex flex-col min-h-0' : 'overflow-y-auto')}>
@@ -100,7 +136,7 @@ export default function PageShell({
                           ? 'text-primary border-b-primary font-medium'
                           : 'text-muted-foreground'
                       )}
-                      onClick={() => tabs.onValueChange(option.value)}
+                      onClick={() => handleTabClick(option.value)}
                     >
                       {option.label}
                     </Button>
