@@ -12,7 +12,8 @@ const TRUCK_IDS: Record<string, Types.ObjectId> = {
   testUser3_1: new Types.ObjectId('000000000000000000000404'),
   testUser4_1: new Types.ObjectId('000000000000000000000405'),
   testUser4_2: new Types.ObjectId('000000000000000000000406'),
-  testUser5_1: new Types.ObjectId('000000000000000000000407'),
+  testUser3_2: new Types.ObjectId('000000000000000000000407'),
+  testUser5_1: new Types.ObjectId('000000000000000000000408'),
 }
 
 type DriverDoc = Awaited<ReturnType<typeof import('./users').seedUsers>>['drivers'][SeedDriverKey]
@@ -263,6 +264,38 @@ export async function seedTrucks(drivers: Record<SeedDriverKey, DriverDoc>) {
         },
       ],
       notes: 'Short-haul flatbed for Ontario construction freight',
+    },
+    {
+      id: TRUCK_IDS.testUser3_2,
+      ownerDriverId: drivers.testUser3._id,
+      make: 'Volvo',
+      model: 'VNR 300',
+      year: 2024,
+      truckType: TRUCK_TYPES.DryVan,
+      trailerLengthFt: 53,
+      capacityLbs: 45000,
+      maxPayloadLbs: 41500,
+      plateNumber: 'SK-778899',
+      vin: '4V4NC9EH5RN556677',
+      certifications: [],
+      isPrimary: false,
+      expensePreferences: {
+        fuelCostPerLiter: 1.62,
+        fuelEfficiencyKmPerLiter: 3.4,
+        insurancePerMonth: 720,
+        maintenancePerKm: 0.15,
+        otherFixedCostsPerMonth: 130,
+      },
+      maintenanceRecords: [
+        {
+          date: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000),
+          type: 'tire rotation',
+          notes: 'Rotated drive tires and recalibrated TPMS',
+          costCents: 28000,
+          serviceProvider: 'Prairie Truck Works',
+        },
+      ],
+      notes: 'Secondary day cab for regional Saskatchewan runs',
     },
     {
       id: TRUCK_IDS.testUser5_1,

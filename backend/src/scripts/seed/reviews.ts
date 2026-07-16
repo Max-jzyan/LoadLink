@@ -22,6 +22,16 @@ const REVIEW_IDS = {
   company1OnDriver1_load105: new Types.ObjectId('000000000000000000000510'),
   company2OnDriver1_load103: new Types.ObjectId('000000000000000000000504'),
   company2OnDriver1_load104: new Types.ObjectId('000000000000000000000508'),
+  // Extra company → driver reviews (spread to other drivers)
+  company1OnDriver5_load119: new Types.ObjectId('000000000000000000000514'),
+  company2OnDriver2_load122: new Types.ObjectId('000000000000000000000515'),
+  company1OnDriver5_load123: new Types.ObjectId('000000000000000000000516'),
+}
+
+const HISTORICAL_LOAD_IDS = {
+  load119: new Types.ObjectId('000000000000000000000119'),
+  load122: new Types.ObjectId('000000000000000000000122'),
+  load123: new Types.ObjectId('000000000000000000000123'),
 }
 
 const LOAD_IDS = {
@@ -245,6 +255,54 @@ export async function seedReviews(
       },
       comment: 'Outstanding driver. Very professional and careful with the cargo.',
       createdAt: new Date(Date.now() - 8 * 24 * MS_PER_HOUR),
+    },
+    {
+      _id: REVIEW_IDS.company1OnDriver5_load119,
+      reviewerId: companies.testCompany1._id,
+      targetId: drivers.testUser5._id,
+      targetType: TARGET_TYPES.DRIVER,
+      loadId: HISTORICAL_LOAD_IDS.load119,
+      ratingCategories: {
+        timeliness: 5,
+        communication: 4,
+        reliability: 5,
+        professionalism: 5,
+        documentationAccuracy: 5,
+      },
+      comment: 'Step deck specialist delivered oversized freight flawlessly.',
+      createdAt: new Date(Date.now() - 28 * 24 * MS_PER_HOUR),
+    },
+    {
+      _id: REVIEW_IDS.company2OnDriver2_load122,
+      reviewerId: companies.testCompany2._id,
+      targetId: drivers.testUser2._id,
+      targetType: TARGET_TYPES.DRIVER,
+      loadId: HISTORICAL_LOAD_IDS.load122,
+      ratingCategories: {
+        timeliness: 4,
+        communication: 4,
+        reliability: 5,
+        professionalism: 4,
+        documentationAccuracy: 4,
+      },
+      comment: 'Solid flatbed haul. Tarp job was clean and secure.',
+      createdAt: new Date(Date.now() - 13 * 24 * MS_PER_HOUR),
+    },
+    {
+      _id: REVIEW_IDS.company1OnDriver5_load123,
+      reviewerId: companies.testCompany1._id,
+      targetId: drivers.testUser5._id,
+      targetType: TARGET_TYPES.DRIVER,
+      loadId: HISTORICAL_LOAD_IDS.load123,
+      ratingCategories: {
+        timeliness: 4,
+        communication: 5,
+        reliability: 4,
+        professionalism: 5,
+        documentationAccuracy: 4,
+      },
+      comment: 'Reliable step deck operator for our BC corridor runs.',
+      createdAt: new Date(Date.now() - 10 * 24 * MS_PER_HOUR),
     },
   ]
 
