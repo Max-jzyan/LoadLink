@@ -1,5 +1,6 @@
 import type { LoadWithDetails } from '@/services/companyApi/companyTypes'
 import { LOAD_STATUSES } from '@/types/enums'
+import { haversineDistanceKm } from '@/lib/geo'
 
 /**
  * A company load flattened for spend analytics. Price comes from the auction's
@@ -47,7 +48,16 @@ export function deriveSpendLoads(loads: LoadWithDetails[]): SpendLoad[] {
       originAddress: l.originAddress,
       destinationAddress: l.destinationAddress,
       price: l.auctionId?.currentPrice ?? 0,
-      distanceKm: l.route?.distanceKm ?? 0,
+      distanceKm:
+        l.route?.distanceKm ??
+        (l.originCoords && l.destinationCoords
+          ? haversineDistanceKm(
+              l.originCoords.lat,
+              l.originCoords.lng,
+              l.destinationCoords.lat,
+              l.destinationCoords.lng
+            )
+          : 0),
       date: l.dropoffTime ?? l.createdAt,
       truckType: l.truckType,
       status: l.status,
