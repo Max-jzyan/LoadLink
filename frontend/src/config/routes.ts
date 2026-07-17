@@ -191,8 +191,8 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
 }
 
 export const ROLE_HOME: Record<UserRole, RoutePath> = {
-  driver: RoutePath.DriverLoads,
-  company: RoutePath.Loads,
+  driver: RoutePath.Dashboard,
+  company: RoutePath.CompanyDashboard,
   admin: RoutePath.AdminDashboard,
 }
 
