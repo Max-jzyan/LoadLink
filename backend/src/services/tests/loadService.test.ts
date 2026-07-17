@@ -4,6 +4,7 @@ import { LoadModel } from '../../models/loads/Load'
 import { AuctionModel } from '../../models/loads/Auction'
 import { ReviewModel } from '../../models/ratings/Review'
 import { TruckModel } from '../../models/trucks/Truck'
+import { UserModel } from '../../models/users/User'
 import { BlocklistModel } from '../../models/blocklist/Blocklist'
 import { LOAD_STATUSES } from '../../models/enums'
 import { computeRoute } from '../../lib/routing'
@@ -21,6 +22,7 @@ jest.mock('../../models/loads/Load')
 jest.mock('../../models/loads/Auction')
 jest.mock('../../models/ratings/Review')
 jest.mock('../../models/trucks/Truck', () => ({ TruckModel: { findOne: jest.fn() } }))
+jest.mock('../../models/users/User', () => ({ UserModel: { findById: jest.fn() } }))
 jest.mock('../../models/blocklist/Blocklist', () => ({
   BlocklistModel: { find: jest.fn() },
   TARGET_TYPES: { DRIVER: 'driver', COMPANY: 'company' },
@@ -35,6 +37,7 @@ const findLoadMock = jest.mocked(LoadModel.find)
 const createAuctionMock = jest.mocked(AuctionModel.create)
 const distinctReviewMock = jest.mocked(ReviewModel.distinct)
 const findTruckOneMock = jest.mocked(TruckModel.findOne)
+const findUserByIdMock = jest.mocked(UserModel.findById)
 const blocklistFindMock = jest.mocked(BlocklistModel.find)
 const computeRouteMock = jest.mocked(computeRoute)
 const emitLoadPostedMock = jest.mocked(emitLoadPosted)
@@ -49,6 +52,8 @@ function chain(result: unknown) {
   const thenable: never = {
     populate: jest.fn().mockReturnThis(),
     sort: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    lean: jest.fn().mockReturnThis(),
     then: (resolve: (v: unknown) => void) => resolve(result),
   } as never
   return thenable
@@ -178,6 +183,13 @@ describe('listCompanyLoads', () => {
 })
 
 describe('listAvailableLoads', () => {
+  beforeEach(() => {
+    // Default: driver has no stored preference, so hideBlocked falls back to
+    // its schema default (true) — matches the pre-existing behavior these
+    // tests were written against.
+    findUserByIdMock.mockReturnValue(chain(null) as never)
+  })
+
   it('defaults to auction_live loads', async () => {
     findLoadMock.mockReturnValue(chain([]))
 
@@ -264,7 +276,9 @@ describe('listAvailableLoads', () => {
 
     expect(findLoadMock).toHaveBeenCalledWith({
       status: LOAD_STATUSES.AuctionLive,
-      companyId: { $nin: expect.arrayContaining(['000000000000000000000999', '000000000000000000000888']) },
+      companyId: {
+        $nin: expect.arrayContaining(['000000000000000000000999', '000000000000000000000888']),
+      },
     })
   })
 
@@ -281,6 +295,60 @@ describe('listAvailableLoads', () => {
     await listAvailableLoads(LOAD_STATUSES.AuctionLive, DRIVER_ID)
 
     expect(findLoadMock).toHaveBeenCalledWith({ status: LOAD_STATUSES.AuctionLive })
+  })
+
+  it("stops excluding the driver's own blocks once hideBlocked preference is turned off", async () => {
+    findLoadMock.mockReturnValue(chain([]))
+    findUserByIdMock.mockReturnValue(chain({ feedPreferences: { hideBlocked: false } }) as never)
+    // Only one BlocklistModel.find call is expected now (companies-blocking-driver);
+    // the driver's-own-blocks lookup should be skipped entirely.
+    blocklistFindMock.mockReturnValueOnce({
+      distinct: jest.fn().mockResolvedValue([]),
+    } as never)
+
+    await listAvailableLoads(LOAD_STATUSES.AuctionLive, DRIVER_ID)
+
+    expect(blocklistFindMock).toHaveBeenCalledTimes(1)
+    expect(blocklistFindMock).toHaveBeenCalledWith({
+      targetId: expect.any(Object),
+      targetType: 'driver',
+      isActive: true,
+    })
+    expect(findLoadMock).toHaveBeenCalledWith({ status: LOAD_STATUSES.AuctionLive })
+  })
+
+  it('still excludes companies that have blocked the driver even when hideBlocked preference is off', async () => {
+    findLoadMock.mockReturnValue(chain([]))
+    findUserByIdMock.mockReturnValue(chain({ feedPreferences: { hideBlocked: false } }) as never)
+    blocklistFindMock.mockReturnValueOnce({
+      distinct: jest.fn().mockResolvedValue(['000000000000000000000888']),
+    } as never)
+
+    await listAvailableLoads(LOAD_STATUSES.AuctionLive, DRIVER_ID)
+
+    expect(findLoadMock).toHaveBeenCalledWith({
+      status: LOAD_STATUSES.AuctionLive,
+      companyId: { $nin: ['000000000000000000000888'] },
+    })
+  })
+
+  it('treats a missing feedPreferences document as hideBlocked=true (schema default)', async () => {
+    findLoadMock.mockReturnValue(chain([]))
+    findUserByIdMock.mockReturnValue(chain(null) as never)
+    blocklistFindMock
+      .mockReturnValueOnce({
+        distinct: jest.fn().mockResolvedValue(['000000000000000000000999']),
+      } as never)
+      .mockReturnValueOnce({
+        distinct: jest.fn().mockResolvedValue([]),
+      } as never)
+
+    await listAvailableLoads(LOAD_STATUSES.AuctionLive, DRIVER_ID)
+
+    expect(findLoadMock).toHaveBeenCalledWith({
+      status: LOAD_STATUSES.AuctionLive,
+      companyId: { $nin: ['000000000000000000000999'] },
+    })
   })
 })
 

@@ -4,6 +4,7 @@ import { LoadModel } from '../models/loads/Load'
 import { AuctionModel } from '../models/loads/Auction'
 import { ReviewModel } from '../models/ratings/Review'
 import { TruckModel } from '../models/trucks/Truck'
+import { UserModel } from '../models/users/User'
 import { BlocklistModel } from '../models/blocklist/Blocklist'
 import { TARGET_TYPES } from '../models/blocklist/Blocklist'
 import { LOAD_STATUSES } from '../models/enums'
@@ -210,13 +211,16 @@ export const listCompanyLoads = async (
  * List loads that are currently live on the auction board.
  * Supports optional status filter.
  *
- * When `driverId` is provided, loads posted by companies the driver has
- * blocked are excluded (server-side blocklist enforcement).
+ * When `driverId` is provided:
+ *  - Loads from companies that have blocked the driver are always excluded —
+ *    this isn't a driver-controlled preference, since the driver couldn't
+ *    view/bid/claim those loads anyway (see the `notBlockedByLoadCompany`
+ *    guard), so showing them would just be a dead end.
+ *  - Loads from companies the driver has blocked are excluded only when the
+ *    driver's `feedPreferences.hideBlocked` toggle is on (defaults to true),
+ *    so turning it off lets the driver see those loads again.
  */
-export const listAvailableLoads = async (
-  status?: string,
-  driverId?: string
-) => {
+export const listAvailableLoads = async (status?: string, driverId?: string) => {
   const filter: Record<string, unknown> = {}
 
   // Default to auction_live; allow override via query param
@@ -226,29 +230,37 @@ export const listAvailableLoads = async (
     filter.status = LOAD_STATUSES.AuctionLive
   }
 
-  // Exclude loads from companies this driver has blocked
   if (driverId) {
-    const driversBlocks = await BlocklistModel.find({
-      userId: new Types.ObjectId(driverId),
-      targetType: TARGET_TYPES.COMPANY,
-      isActive: true,
-    }).distinct('targetId')
+    const driver = await UserModel.findById(driverId).select('feedPreferences.hideBlocked').lean()
+    const hideBlocked = driver?.feedPreferences?.hideBlocked ?? true
 
-    // Also exclude loads from companies that have blocked this driver
+    let blockedCompanyIds: string[] = []
+
+    if (hideBlocked) {
+      // Companies this driver has blocked — excluded only while the
+      // "hide loads from blocked companies" preference is on
+      const driversBlocks = await BlocklistModel.find({
+        userId: new Types.ObjectId(driverId),
+        targetType: TARGET_TYPES.COMPANY,
+        isActive: true,
+      }).distinct('targetId')
+
+      blockedCompanyIds.push(...(driversBlocks as Types.ObjectId[]).map((id) => id.toString()))
+    }
+
+    // Companies that have blocked this driver — always excluded
     const companiesBlockingDriver = await BlocklistModel.find({
       targetId: new Types.ObjectId(driverId),
       targetType: TARGET_TYPES.DRIVER,
       isActive: true,
     }).distinct('userId')
 
-    // Merge both sets of company ids
-    const allBlockedCompanyIds = [
-      ...(driversBlocks as Types.ObjectId[]).map((id) => id.toString()),
-      ...(companiesBlockingDriver as Types.ObjectId[]).map((id) => id.toString()),
-    ]
+    blockedCompanyIds.push(
+      ...(companiesBlockingDriver as Types.ObjectId[]).map((id) => id.toString())
+    )
 
-    if (allBlockedCompanyIds.length > 0) {
-      filter.companyId = { $nin: [...new Set(allBlockedCompanyIds)] }
+    if (blockedCompanyIds.length > 0) {
+      filter.companyId = { $nin: [...new Set(blockedCompanyIds)] }
     }
   }
 

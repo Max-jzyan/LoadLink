@@ -15,11 +15,13 @@ import { cn } from '@/lib/utils'
 import { useGetScoredLoadsQuery, useListDriverBidsQuery } from '@/services/driverApi/driverSlice'
 import type { Load } from '@/services/loadApi/loadEnum'
 import { useListAvailableLoadsQuery } from '@/services/loadApi/loadSlice'
+import { useGetFeedPreferencesQuery } from '@/services/blocklistApi/blocklistSlice'
 import { getAuctionPrice } from '@/lib/loadHelpers'
 import { estimateKm } from '@/lib/geo'
 import { useRequiredMongoId } from '@/hooks/useAuth'
 import type { ScoredLoad } from '@/services/driverApi/driverEnum'
 import { DriverLoadFilters } from '@/components/driverLoads/DriverLoadFilters'
+import { RoutePath } from '@/config/routes'
 
 type MapLayer = 'route' | 'fuel' | 'rest'
 
@@ -41,6 +43,8 @@ export default function DriverAuctions() {
   } = useListAvailableLoadsQuery()
   const { data: scoredLoads = [], refetch: refetchScored } = useGetScoredLoadsQuery(driverId)
   const { data: activeBids = [] } = useListDriverBidsQuery({ driverId, status: 'active' })
+  const { data: feedPrefs } = useGetFeedPreferencesQuery(driverId)
+  const hideBelowMinimum = feedPrefs?.hideBelowMinimum ?? false
 
   const { data: loadPostedEvent } = useEventSource<{ loadId: string }>('/api/loads/stream')
   useEffect(() => {
@@ -100,10 +104,19 @@ export default function DriverAuctions() {
     })
   }, [textFiltered, dateRange])
 
+  const minimumFiltered = useMemo(() => {
+    if (!hideBelowMinimum) return dateFiltered
+    return dateFiltered.filter((l) => {
+      const flags = l._scored?.eligibilityFlags
+      if (!flags) return true
+      return flags.eligibleMinRate && flags.eligibleMinValue
+    })
+  }, [dateFiltered, hideBelowMinimum])
+
   // Apply eligibility filter
   const eligibilityFiltered = useMemo(() => {
-    if (eligibilityFilter === 'all') return dateFiltered
-    return dateFiltered.filter((l) => {
+    if (eligibilityFilter === 'all') return minimumFiltered
+    return minimumFiltered.filter((l) => {
       const scored = l._scored
       if (!scored) return false
       const isEligible = scored.eligibilityFlags.isEligible
@@ -121,7 +134,7 @@ export default function DriverAuctions() {
           return true
       }
     })
-  }, [dateFiltered, eligibilityFilter])
+  }, [minimumFiltered, eligibilityFilter])
 
   // Sort
   const sorted = useMemo(() => {
@@ -231,14 +244,14 @@ export default function DriverAuctions() {
       )
     })
 
-  // Counts for the filter buttons - based on dateFiltered to reflect date filtering
+
   const visibleCounts = useMemo(() => {
     let eligible = 0,
       issues = 0,
       highScore = 0,
       critical = 0,
       minor = 0
-    for (const l of dateFiltered) {
+    for (const l of minimumFiltered) {
       const scored = l._scored
       if (!scored) continue
       const isEligible = scored.eligibilityFlags.isEligible
@@ -251,8 +264,8 @@ export default function DriverAuctions() {
         else minor++
       }
     }
-    return { all: dateFiltered.length, eligible, issues, highScore, critical, minor }
-  }, [dateFiltered])
+    return { all: minimumFiltered.length, eligible, issues, highScore, critical, minor }
+  }, [minimumFiltered])
 
   // Reset all filters
   const handleResetFilters = () => {
@@ -404,7 +417,11 @@ export default function DriverAuctions() {
           {!isLoading && sorted.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-muted-foreground text-sm">No loads found</p>
-              {(searchText || eligibilityFilter !== 'all' || dateRange?.from || dateRange?.to) && (
+              {(searchText ||
+                eligibilityFilter !== 'all' ||
+                dateRange?.from ||
+                dateRange?.to ||
+                hideBelowMinimum) && (
                 <div className="flex gap-2 mt-1">
                   {searchText && (
                     <button
@@ -429,6 +446,14 @@ export default function DriverAuctions() {
                     >
                       Clear date filter
                     </button>
+                  )}
+                  {hideBelowMinimum && (
+                    <Link
+                      to={RoutePath.BlocklistPreferences}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Adjust minimum-rate filter
+                    </Link>
                   )}
                 </div>
               )}
