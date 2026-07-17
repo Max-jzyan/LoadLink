@@ -6,6 +6,7 @@ import {
   listDriverBids,
   listDriverLoads,
   getRecommendedLoads,
+  getScoredLoads,
   getDriverProfile,
   updateDriverProfile,
   getDriverRevenue,
@@ -17,6 +18,7 @@ jest.mock('../../services/driverService')
 const listDriverBidsMock = jest.mocked(driverService.listDriverBids)
 const listDriverLoadsMock = jest.mocked(driverService.listDriverLoads)
 const getRecommendedLoadsMock = jest.mocked(driverService.getRecommendedLoads)
+const getScoredLoadsMock = jest.mocked(driverService.getScoredLoads)
 const getDriverProfileMock = jest.mocked(driverService.getDriverProfile)
 const updateDriverProfileMock = jest.mocked(driverService.updateDriverProfile)
 const getDriverRevenueMock = jest.mocked(driverService.getDriverRevenue)
@@ -80,6 +82,61 @@ describe('getRecommendedLoads', () => {
 
     expect(getRecommendedLoadsMock).toHaveBeenCalledWith(DRIVER_ID)
     expect(res.statusCode).toBe(StatusCodes.OK)
+  })
+})
+
+describe('getScoredLoads', () => {
+  it('passes null location when lat/lng are absent', async () => {
+    getScoredLoadsMock.mockResolvedValue([] as never)
+    const req = httpMocks.createRequest({ params: { driverId: DRIVER_ID }, query: {} })
+    const res = httpMocks.createResponse()
+    const next = jest.fn()
+
+    await getScoredLoads(req, res, next)
+
+    expect(getScoredLoadsMock).toHaveBeenCalledWith(DRIVER_ID, null)
+    expect(res.statusCode).toBe(StatusCodes.OK)
+  })
+
+  it('parses valid lat/lng query params into a coordinate', async () => {
+    getScoredLoadsMock.mockResolvedValue([] as never)
+    const req = httpMocks.createRequest({
+      params: { driverId: DRIVER_ID },
+      query: { lat: '43.6532', lng: '-79.3832' },
+    })
+    const res = httpMocks.createResponse()
+    const next = jest.fn()
+
+    await getScoredLoads(req, res, next)
+
+    expect(getScoredLoadsMock).toHaveBeenCalledWith(DRIVER_ID, { lat: 43.6532, lng: -79.3832 })
+  })
+
+  it.each([
+    ['non-numeric lat', { lat: 'nope', lng: '-79.3832' }],
+    ['out-of-range lat', { lat: '999', lng: '-79.3832' }],
+    ['out-of-range lng', { lat: '43.6532', lng: '-999' }],
+    ['lng missing', { lat: '43.6532' }],
+  ])('falls back to null location on %s', async (_label, query) => {
+    getScoredLoadsMock.mockResolvedValue([] as never)
+    const req = httpMocks.createRequest({ params: { driverId: DRIVER_ID }, query })
+    const res = httpMocks.createResponse()
+    const next = jest.fn()
+
+    await getScoredLoads(req, res, next)
+
+    expect(getScoredLoadsMock).toHaveBeenCalledWith(DRIVER_ID, null)
+  })
+
+  it('forwards errors to next', async () => {
+    getScoredLoadsMock.mockRejectedValue(new ApiError(StatusCodes.NOT_FOUND, 'not found'))
+    const req = httpMocks.createRequest({ params: { driverId: DRIVER_ID }, query: {} })
+    const res = httpMocks.createResponse()
+    const next = jest.fn()
+
+    await getScoredLoads(req, res, next)
+
+    expect(next).toHaveBeenCalledWith(expect.any(ApiError))
   })
 })
 

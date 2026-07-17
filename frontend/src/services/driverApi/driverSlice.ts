@@ -114,12 +114,27 @@ export const driverApi = api.injectEndpoints({
       ],
     }),
 
-    // GET /api/driver/:driverId/loads/scored — fetch all loads with eligibility + score
-    getScoredLoads: build.query<ScoredLoad[], string>({
-      query: (driverId) => `driver/${driverId}/loads/scored`,
-      providesTags: (_result, _error, driverId) => [
-        { type: LoadTag.Load, id: `${driverId}-scored` },
-      ],
+    // GET /api/driver/:driverId/loads/scored — fetch all loads with eligibility + score.
+    // Optional lat/lng (e.g. from the browser's Geolocation API) override the
+    // inferred current location for deadhead/proximity scoring.
+    getScoredLoads: build.query<
+      ScoredLoad[],
+      string | { driverId: string; lat?: number; lng?: number }
+    >({
+      query: (arg) => {
+        const { driverId, lat, lng } = typeof arg === 'string' ? { driverId: arg } : arg
+        const params = new URLSearchParams()
+        if (lat !== undefined && lng !== undefined) {
+          params.set('lat', String(lat))
+          params.set('lng', String(lng))
+        }
+        const qs = params.toString()
+        return `driver/${driverId}/loads/scored${qs ? `?${qs}` : ''}`
+      },
+      providesTags: (_result, _error, arg) => {
+        const driverId = typeof arg === 'string' ? arg : arg.driverId
+        return [{ type: LoadTag.Load, id: `${driverId}-scored` }]
+      },
     }),
 
     // GET /api/driver/:driverId/trucks — list driver's trucks

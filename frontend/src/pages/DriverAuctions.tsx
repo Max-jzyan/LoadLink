@@ -5,7 +5,7 @@ import { DetailedEligibilityPanel } from '@/components/driverLoads/DetailedEligi
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import type { DateRange } from 'react-day-picker'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, LocateFixed, Loader2 } from 'lucide-react'
 import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
 import { LoadCard } from '@/components/shared/LoadCard'
@@ -19,8 +19,10 @@ import { useGetFeedPreferencesQuery } from '@/services/blocklistApi/blocklistSli
 import { getAuctionPrice } from '@/lib/loadHelpers'
 import { estimateKm } from '@/lib/geo'
 import { useRequiredMongoId } from '@/hooks/useAuth'
+import { useCurrentLocation } from '@/hooks/useCurrentLocation'
 import type { ScoredLoad } from '@/services/driverApi/driverEnum'
 import { DriverLoadFilters } from '@/components/driverLoads/DriverLoadFilters'
+import { showError, showSuccess } from '@/lib/toast'
 import { RoutePath } from '@/config/routes'
 
 type MapLayer = 'route' | 'fuel' | 'rest'
@@ -41,10 +43,26 @@ export default function DriverAuctions() {
     isLoading,
     refetch: refetchAvailable,
   } = useListAvailableLoadsQuery()
-  const { data: scoredLoads = [], refetch: refetchScored } = useGetScoredLoadsQuery(driverId)
+  const {
+    location,
+    status: locationStatus,
+    error: locationError,
+    requestLocation,
+  } = useCurrentLocation()
+  const { data: scoredLoads = [], refetch: refetchScored } = useGetScoredLoadsQuery(
+    location ? { driverId, lat: location.lat, lng: location.lng } : driverId
+  )
   const { data: activeBids = [] } = useListDriverBidsQuery({ driverId, status: 'active' })
   const { data: feedPrefs } = useGetFeedPreferencesQuery(driverId)
   const hideBelowMinimum = feedPrefs?.hideBelowMinimum ?? false
+
+  useEffect(() => {
+    if (locationStatus === 'success') {
+      showSuccess('Location updated — loads are now tailored to where you are.')
+    } else if (locationStatus === 'error' && locationError) {
+      showError(locationError)
+    }
+  }, [locationStatus])
 
   const { data: loadPostedEvent } = useEventSource<{ loadId: string }>('/api/loads/stream')
   useEffect(() => {
@@ -386,6 +404,26 @@ export default function DriverAuctions() {
             }}
             onReset={handleResetFilters}
           />
+          <div className="flex items-center gap-2 mt-2">
+            <Button
+              variant={location ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={requestLocation}
+              disabled={locationStatus === 'locating'}
+            >
+              {locationStatus === 'locating' ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <LocateFixed className="h-3.5 w-3.5" />
+              )}
+              {location ? 'Location set' : 'Use my location'}
+            </Button>
+            {location && (
+              <span className="text-xs text-muted-foreground">
+                Tailoring loads to your current location (within your max deadhead)
+              </span>
+            )}
+          </div>
           {activeBids.length > 0 && (
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 text-amber-800 text-xs mt-2">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-500" />

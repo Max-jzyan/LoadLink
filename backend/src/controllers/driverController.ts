@@ -39,7 +39,11 @@ export const listDriverLoads = async (req: Request, res: Response, next: NextFun
  * List completed loads for a driver that are eligible for review for a specific company.
  * Excludes loads already reviewed by the driver.
  */
-export const listDriverCompletedLoadsForCompany = async (req: Request, res: Response, next: NextFunction) => {
+export const listDriverCompletedLoadsForCompany = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const driverId = req.params.driverId as string
     const companyId = req.params.companyId as string
@@ -113,15 +117,28 @@ export const getDriverRevenue = async (req: Request, res: Response, next: NextFu
 /**
  * GET /api/driver/:driverId/loads/scored
  * Fetch all available loads with eligibility flags and recommendation scores.
+ * Optional `lat`/`lng` query params override the inferred current location
+ * (e.g. from the browser's Geolocation API) for deadhead/proximity scoring.
  */
 export const getScoredLoads = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const driverId = req.params.driverId as string
-    const scored = await driverService.getScoredLoads(driverId)
+    const liveLocation = parseLiveLocation(req.query.lat, req.query.lng)
+    const scored = await driverService.getScoredLoads(driverId, liveLocation)
     res.status(StatusCodes.OK).json(scored)
   } catch (err) {
     next(err)
   }
+}
+
+/** Parses optional `lat`/`lng` query params into a coordinate, or null if absent/invalid. */
+function parseLiveLocation(rawLat: unknown, rawLng: unknown): { lat: number; lng: number } | null {
+  if (rawLat === undefined || rawLng === undefined) return null
+  const lat = Number(rawLat)
+  const lng = Number(rawLng)
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null
+  return { lat, lng }
 }
 
 /**
@@ -142,7 +159,11 @@ export const updateDriverExpenses = async (req: Request, res: Response, next: Ne
  * DELETE /api/driver/:driverId/documents/:docKey
  * Remove a certification document from the driver's profile (by S3 key).
  */
-export const removeCertificationDocument = async (req: Request, res: Response, next: NextFunction) => {
+export const removeCertificationDocument = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const driverId = req.params.driverId as string
     const docKey = decodeURIComponent(req.params.docKey as string)
@@ -157,7 +178,11 @@ export const removeCertificationDocument = async (req: Request, res: Response, n
  * DELETE /api/driver/:driverId/insurance/:idx
  * Remove an insurance certificate by array index.
  */
-export const removeInsuranceCertificate = async (req: Request, res: Response, next: NextFunction) => {
+export const removeInsuranceCertificate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const driverId = req.params.driverId as string
     const idx = parseInt(req.params.idx as string, 10)

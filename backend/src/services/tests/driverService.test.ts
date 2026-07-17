@@ -10,6 +10,7 @@ import {
   listDriverBids,
   listDriverLoads,
   getRecommendedLoads,
+  getScoredLoads,
   listDriverTrucks,
   getDriverProfile,
   updateDriverProfile,
@@ -26,6 +27,7 @@ jest.mock('../../models/trucks/Truck', () => ({ TruckModel: { find: jest.fn() } 
 jest.mock('../uploadService')
 
 const findBidMock = jest.mocked(BidModel.find)
+const aggregateBidMock = jest.mocked(BidModel.aggregate)
 const findLoadMock = jest.mocked(LoadModel.find)
 const findDriverByIdMock = jest.mocked(DriverModel.findById)
 const findDriverByIdAndUpdateMock = jest.mocked(DriverModel.findByIdAndUpdate)
@@ -143,6 +145,99 @@ describe('getRecommendedLoads', () => {
       status: LOAD_STATUSES.AuctionLive,
       truckType: { $in: ['DryVan', 'Reefer'] },
     })
+  })
+})
+
+describe('getScoredLoads', () => {
+  const LOAD_ID = '000000000000000000000501'
+  // Deadhead-limit is deliberately tight (50mi) so a Toronto-based fallback
+  // vs. a Vancouver live location produce opposite eligibleDeadhead results
+  // for a load originating in Vancouver.
+  const VANCOUVER = { lat: 49.2827, lng: -123.1207 }
+  const TORONTO = { lat: 43.6532, lng: -79.3832 }
+
+  function mockScoringFixtures(driverLoads: unknown[] = []) {
+    findDriverByIdMock.mockReturnValue(
+      queryChain({
+        _id: DRIVER_ID,
+        pricingPreferences: {
+          minimumRatePerMile: 0,
+          minimumLoadValue: 0,
+          preferredMaxDeadheadMiles: 50,
+        },
+        homeLocation: { city: 'Toronto', province: 'ON' },
+      }) as never
+    )
+    findTruckMock.mockReturnValue(queryChain([]) as never)
+    findLoadMock
+      .mockReturnValueOnce(queryChain(driverLoads) as never) // driver's own loads
+      .mockReturnValueOnce(
+        queryChain([
+          {
+            _id: LOAD_ID,
+            truckType: 'dry_van',
+            trailerLengthFt: 48,
+            certifications: [],
+            pickupTime: '2026-01-01T00:00:00.000Z',
+            dropoffTime: '2026-01-02T00:00:00.000Z',
+            originCoords: VANCOUVER,
+            destinationCoords: { lat: 51.0447, lng: -114.0719 },
+            auctionId: { currentPrice: 1000 },
+            companyId: {},
+          },
+        ]) as never
+      ) // available loads
+    aggregateBidMock.mockResolvedValue([] as never)
+  }
+
+  it('400s on an invalid driverId', async () => {
+    await expect(getScoredLoads(INVALID_ID)).rejects.toMatchObject({
+      statusCode: StatusCodes.BAD_REQUEST,
+    })
+  })
+
+  it('falls back to the home-city lookup when no live location is supplied, treating a distant load as exceeding the deadhead limit', async () => {
+    mockScoringFixtures()
+
+    const [scored] = await getScoredLoads(DRIVER_ID)
+
+    expect(scored.eligibilityFlags.eligibleDeadhead).toBe(false)
+  })
+
+  it('uses a supplied live location ahead of the home-city fallback, making a nearby load eligible', async () => {
+    mockScoringFixtures()
+
+    const [scored] = await getScoredLoads(DRIVER_ID, VANCOUVER)
+
+    expect(scored.eligibilityFlags.eligibleDeadhead).toBe(true)
+  })
+
+  it('prefers the supplied live location even when a recent load destination is also available', async () => {
+    // Without an override, this recent Toronto dropoff would become the
+    // driver's inferred location (priority 1) and still reject the load.
+    mockScoringFixtures([
+      {
+        status: 'completed',
+        pickupTime: '2025-12-01T00:00:00.000Z',
+        dropoffTime: '2025-12-02T00:00:00.000Z',
+        originAddress: 'Ottawa, ON',
+        originCoords: { lat: 45.4215, lng: -75.6972 },
+        destinationAddress: 'Toronto, ON',
+        destinationCoords: TORONTO,
+      },
+    ])
+
+    const [scored] = await getScoredLoads(DRIVER_ID, VANCOUVER)
+
+    expect(scored.eligibilityFlags.eligibleDeadhead).toBe(true)
+  })
+
+  it('ignores a null live location and falls through to the normal priority order', async () => {
+    mockScoringFixtures()
+
+    const [scored] = await getScoredLoads(DRIVER_ID, null)
+
+    expect(scored.eligibilityFlags.eligibleDeadhead).toBe(false)
   })
 })
 
