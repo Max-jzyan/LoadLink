@@ -2,15 +2,16 @@ import { useMemo, useState } from 'react'
 import PageShell from '@/components/layout/PageShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { useRequiredMongoId } from '@/hooks/useAuth'
 import { api } from '@/services/api'
 import { LoadTag } from '@/services/apiTypes'
 import { AUCTION_STATUSES } from '@/services/auctionApi/auctionEnum'
-import { Search, Gavel, ArrowRight, Loader2, RefreshCw } from 'lucide-react'
+import { Gavel, ArrowRight, Loader2, RefreshCw } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { RoutePath } from '@/config/routes'
 import { format } from 'date-fns'
+import { DEFAULT_FILTERS, type CompanyAuctionFilters } from '@/components/auction/CompanyAuctionFilterBar'
+import CompanyAuctionFilterBar from '@/components/auction/CompanyAuctionFilterBar'
 
 interface AuctionEntry {
   _id: string
@@ -69,7 +70,7 @@ const { useGetCompanyAuctionsQuery } = companyAuctionsApi
 
 export default function CompanyAuctions() {
   const companyId = useRequiredMongoId()
-  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState<CompanyAuctionFilters>({ ...DEFAULT_FILTERS })
 
   const {
     data: auctions = [],
@@ -79,19 +80,64 @@ export default function CompanyAuctions() {
   } = useGetCompanyAuctionsQuery(companyId, { skip: !companyId })
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return auctions
-    const q = search.toLowerCase()
-    return auctions.filter((a) => {
-      const load = typeof a.loadId === 'object' ? a.loadId : null
-      if (!load) return false
-      return (
-        load.originAddress.toLowerCase().includes(q) ||
-        load.destinationAddress.toLowerCase().includes(q) ||
-        load.commodity.toLowerCase().includes(q) ||
-        a.status.toLowerCase().includes(q)
-      )
-    })
-  }, [auctions, search])
+    let result = auctions
+
+    // Status filter
+    if (filters.status !== 'all') {
+      const statusMap: Record<NonNullable<typeof filters.status>, string> = {
+        live: AUCTION_STATUSES.Active,
+        closed: AUCTION_STATUSES.Closed,
+        cancelled: AUCTION_STATUSES.Cancelled,
+      }
+      const targetStatus = statusMap[filters.status]
+      if (targetStatus) {
+        result = result.filter((a) => a.status === targetStatus)
+      }
+    }
+
+    // Search filter (origin, destination, commodity)
+    if (filters.search) {
+      const q = filters.search.toLowerCase()
+      result = result.filter((a) => {
+        const load = typeof a.loadId === 'object' ? a.loadId : null
+        if (!load) return false
+        return (
+          load.originAddress.toLowerCase().includes(q) ||
+          load.destinationAddress.toLowerCase().includes(q) ||
+          load.commodity.toLowerCase().includes(q) ||
+          a.status.toLowerCase().includes(q)
+        )
+      })
+    }
+
+    // Origin filter
+    if (filters.origin) {
+      const q = filters.origin.toLowerCase()
+      result = result.filter((a) => {
+        const load = typeof a.loadId === 'object' ? a.loadId : null
+        return load?.originAddress.toLowerCase().includes(q) ?? false
+      })
+    }
+
+    // Destination filter
+    if (filters.destination) {
+      const q = filters.destination.toLowerCase()
+      result = result.filter((a) => {
+        const load = typeof a.loadId === 'object' ? a.loadId : null
+        return load?.destinationAddress.toLowerCase().includes(q) ?? false
+      })
+    }
+
+    // Price range filter
+    if (filters.minPrice !== null) {
+      result = result.filter((a) => a.currentPrice >= filters.minPrice!)
+    }
+    if (filters.maxPrice !== null) {
+      result = result.filter((a) => a.currentPrice <= filters.maxPrice!)
+    }
+
+    return result
+  }, [auctions, filters])
 
   const live = filtered.filter((a) => a.status === AUCTION_STATUSES.Active).length
   const closed = filtered.filter((a) => a.status === AUCTION_STATUSES.Closed).length
@@ -106,20 +152,13 @@ export default function CompanyAuctions() {
           Refresh
         </Button>
       }
+      stickyBar={<CompanyAuctionFilterBar filters={filters} onFiltersChange={setFilters} />}
     >
-      {/* Search */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Search by route, commodity…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      {!isLoading && filtered.length > 0 && (
+        <div className="mb-2 flex items-center gap-2">
+          <Badge variant="secondary">{filtered.length} auctions</Badge>
         </div>
-        <Badge variant="secondary">{filtered.length} auctions</Badge>
-      </div>
+      )}
 
       {isLoading && (
         <div className="flex justify-center py-12">
@@ -130,7 +169,9 @@ export default function CompanyAuctions() {
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <Gavel className="h-10 w-10 mb-3 opacity-30" />
           <p className="text-sm">
-            {search ? 'No auctions match your search.' : 'No auctions yet.'}
+            {Object.values(filters).some((v) => v !== '' && v !== null && v !== 'all' && v !== undefined)
+              ? 'No auctions match your filters.'
+              : 'No auctions yet.'}
           </p>
         </div>
       )}
