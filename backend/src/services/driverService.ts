@@ -214,6 +214,7 @@ export const updateDriverProfile = async (
     'profilePictureUrl',
     'availableForLoads',
     'pricingPreferences',
+    'scoreWeights',
     'notificationPreferences',
     'homeLocation',
     'certificationDocuments',
@@ -647,7 +648,7 @@ export const getScoredLoads = async (driverId: string, liveLocation?: LatLng | n
 
   // ── 1. Fetch driver data ──────────────────────────────────────────────
   const driver = await DriverModel.findById(new Types.ObjectId(driverId))
-    .select('pricingPreferences homeLocation')
+    .select('pricingPreferences homeLocation scoreWeights')
     .lean()
   if (!driver) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Driver not found')
@@ -658,6 +659,9 @@ export const getScoredLoads = async (driverId: string, liveLocation?: LatLng | n
     minimumLoadValue: 0,
     preferredMaxDeadheadMiles: 0,
   }
+
+  // Use driver's custom score weights or fall back to defaults
+  const weights = driver.scoreWeights ?? SCORE_WEIGHTS
 
   // ── 2. Fetch driver's trucks (certs live per-truck, not on Driver) ────
   const trucks = await TruckModel.find({ ownerDriverId: new Types.ObjectId(driverId) }).lean()
@@ -865,13 +869,13 @@ export const getScoredLoads = async (driverId: string, liveLocation?: LatLng | n
 
     // Weighted total
     const recommendationScore = Math.round(
-      rateScore * SCORE_WEIGHTS.rate +
-        valueScore * SCORE_WEIGHTS.value +
-        deadheadScore * SCORE_WEIGHTS.deadhead +
-        proximityScore * SCORE_WEIGHTS.geographicProximity +
-        temporalScore * SCORE_WEIGHTS.temporalAdjacency +
-        truckMatchScore * SCORE_WEIGHTS.truckTypeMatch +
-        competitionScore * SCORE_WEIGHTS.competition
+      rateScore * weights.rate +
+        valueScore * weights.value +
+        deadheadScore * weights.deadhead +
+        proximityScore * weights.geographicProximity +
+        temporalScore * weights.temporalAdjacency +
+        truckMatchScore * weights.truckTypeMatch +
+        competitionScore * weights.competition
     )
 
     // Generate highlights for high-scoring loads (≥ 80)

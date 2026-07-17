@@ -75,6 +75,16 @@ export interface PricingPreferences {
   preferredMaxDeadheadMiles: number
 }
 
+export interface ScoreWeights {
+  rate: number
+  value: number
+  deadhead: number
+  geographicProximity: number
+  temporalAdjacency: number
+  truckTypeMatch: number
+  competition: number
+}
+
 export interface HomeLocation {
   city: string
   province: string
@@ -113,6 +123,7 @@ export interface DriverProfile extends MyProfile {
   certificationDocuments: CertificationDocument[]
   availableForLoads: boolean
   pricingPreferences: PricingPreferences
+  scoreWeights?: ScoreWeights
   homeLocation: HomeLocation
   ratingSummary: RatingSummary
   completedLoadsCount: number
@@ -297,6 +308,7 @@ export interface UpdateDriverProfilePayload {
   phone?: string
   homeLocation?: Partial<HomeLocation>
   pricingPreferences?: Partial<PricingPreferences>
+  scoreWeights?: Partial<ScoreWeights>
   notificationPreferences?: Partial<NotificationPreferences>
   availableForLoads?: boolean
   certificationDocuments?: CertificationDocument[]

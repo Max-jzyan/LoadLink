@@ -7,6 +7,8 @@ import NotificationPreferencesCard from '@/components/driverProfile/Notification
 import PerformanceCard from '@/components/driverProfile/PerformanceCard'
 import type { PricingFormValues } from '@/components/driverProfile/PricingPreferencesCard'
 import PricingPreferencesCard from '@/components/driverProfile/PricingPreferencesCard'
+import ScoreWeightsCard from '@/components/driverProfile/ScoreWeightsCard'
+import ScoreWeightsDrawer from '@/components/driverProfile/ScoreWeightsDrawer'
 import type { TruckFormValues } from '@/components/driverProfile/TruckDrawer'
 import TruckDrawer from '@/components/driverProfile/TruckDrawer'
 import TruckInfoCard from '@/components/driverProfile/TruckInfoCard'
@@ -18,7 +20,7 @@ import Col from '@/components/layout/Col'
 import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
 import { useRequiredMongoId } from '@/hooks/useAuth'
-import type { Trailer, Truck } from '@/services/driverApi/driverEnum'
+import type { ScoreWeights, Trailer, Truck } from '@/services/driverApi/driverEnum'
 import {
   useCreateTruckMutation,
   useGetDriverProfileQuery,
@@ -75,6 +77,9 @@ export default function DriverProfile() {
 
   // Driver info drawer state
   const [driverInfoDrawerOpen, setDriverInfoDrawerOpen] = useState(false)
+
+  // Score weights drawer state
+  const [scoreWeightsDrawerOpen, setScoreWeightsDrawerOpen] = useState(false)
 
   // Close driver info drawer when profile update succeeds
   useEffect(() => {
@@ -204,6 +209,13 @@ export default function DriverProfile() {
     [driverId, updateDriverProfileForInfo]
   )
 
+  const handleScoreWeightsSave = useCallback(
+    async (weights: ScoreWeights) => {
+      await updateDriverProfile({ driverId, body: { scoreWeights: weights } })
+    },
+    [driverId, updateDriverProfile]
+  )
+
   if (isLoading || !driver) {
     return (
       <PageShell title="My Profile">
@@ -306,6 +318,11 @@ export default function DriverProfile() {
             </Row>
             <Row>
               <Col size={16}>
+                <ScoreWeightsCard driver={driver} onEdit={() => setScoreWeightsDrawerOpen(true)} />
+              </Col>
+            </Row>
+            <Row>
+              <Col size={16}>
                 <NotificationPreferencesCard
                   notificationPreferences={driver.notificationPreferences}
                 />
@@ -351,6 +368,14 @@ export default function DriverProfile() {
         onOpenChange={setDriverInfoDrawerOpen}
         driver={driver}
         onSubmit={handleDriverInfoSubmit}
+      />
+
+      {/* Score Weights Edit Drawer */}
+      <ScoreWeightsDrawer
+        open={scoreWeightsDrawerOpen}
+        onOpenChange={setScoreWeightsDrawerOpen}
+        weights={driver.scoreWeights}
+        onSave={handleScoreWeightsSave}
       />
     </PageShell>
   )

@@ -13,6 +13,19 @@ const PricingPreferencesSchema = new Schema(
   { _id: false }
 )
 
+const ScoreWeightSchema = new Schema(
+  {
+    rate: { type: Number, default: 0.25, min: 0, max: 1 },
+    value: { type: Number, default: 0.1, min: 0, max: 1 },
+    deadhead: { type: Number, default: 0.2, min: 0, max: 1 },
+    geographicProximity: { type: Number, default: 0.2, min: 0, max: 1 },
+    temporalAdjacency: { type: Number, default: 0.15, min: 0, max: 1 },
+    truckTypeMatch: { type: Number, default: 0.05, min: 0, max: 1 },
+    competition: { type: Number, default: 0.05, min: 0, max: 1 },
+  },
+  { _id: false }
+)
+
 const ExpensePreferencesSchema = new Schema(
   {
     fuelCostPerLiter: { type: Number, default: 1.5, min: 0 },
@@ -109,6 +122,7 @@ const DriverSchema = new Schema({
 
   availableForLoads: { type: Boolean, default: true },
   pricingPreferences: { type: PricingPreferencesSchema, default: () => ({}) },
+  scoreWeights: { type: ScoreWeightSchema, default: () => ({}) },
   expensePreferences: { type: ExpensePreferencesSchema, default: () => ({}) },
   notificationPreferences: { type: NotificationPreferencesSchema, default: () => ({}) },
   homeLocation: { type: HomeLocationSchema, default: () => ({}) },

@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes'
 import { ReviewModel, TARGET_TYPES } from '../../models/ratings/Review'
 import { CompanyModel } from '../../models/users/Company'
 import { DriverModel } from '../../models/users/Driver'
+import { LoadModel } from '../../models/loads/Load'
 import {
   recalculateRatingSummary,
   createReview,
@@ -18,6 +19,7 @@ jest.mock('../../models/users/Driver', () => ({ DriverModel: { findByIdAndUpdate
 jest.mock('../../models/users/Company', () => ({
   CompanyModel: { findByIdAndUpdate: jest.fn(), findById: jest.fn() },
 }))
+jest.mock('../../models/loads/Load', () => ({ LoadModel: { findById: jest.fn() } }))
 
 const aggregateMock = jest.mocked(ReviewModel.aggregate)
 const findOneReviewMock = jest.mocked(ReviewModel.findOne)
@@ -29,6 +31,7 @@ const findReviewByIdAndDeleteMock = jest.mocked(ReviewModel.findByIdAndDelete)
 const findDriverByIdAndUpdateMock = jest.mocked(DriverModel.findByIdAndUpdate)
 const findCompanyByIdAndUpdateMock = jest.mocked(CompanyModel.findByIdAndUpdate)
 const findCompanyByIdMock = jest.mocked(CompanyModel.findById)
+const findLoadByIdMock = jest.mocked(LoadModel.findById)
 
 const REVIEWER_ID = '000000000000000000000001'
 const TARGET_ID = '000000000000000000000011'
@@ -202,38 +205,48 @@ describe('createCompanyReview', () => {
     ).rejects.toMatchObject({ statusCode: StatusCodes.BAD_REQUEST })
   })
 
-  it('409s when the company already reviewed this load', async () => {
-    findCompanyByIdMock.mockResolvedValue({ _id: REVIEWER_ID } as never)
-    findOneReviewMock.mockResolvedValue({ _id: 'existing' } as never)
+   it('409s when the company already reviewed this load', async () => {
+     findCompanyByIdMock.mockResolvedValue({ _id: REVIEWER_ID } as never)
+     findOneReviewMock.mockResolvedValue({ _id: 'existing' } as never)
+     findLoadByIdMock.mockResolvedValue({
+       status: 'completed',
+       assignedDriverId: { toString: () => TARGET_ID },
+       companyId: { toString: () => REVIEWER_ID },
+     } as never)
 
-    await expect(
-      createCompanyReview({
-        reviewerId: REVIEWER_ID,
-        targetId: TARGET_ID,
-        loadId: LOAD_ID,
-        ratingCategories: validRatingCategories(),
-      })
-    ).rejects.toMatchObject({ statusCode: StatusCodes.CONFLICT })
-  })
+     await expect(
+       createCompanyReview({
+         reviewerId: REVIEWER_ID,
+         targetId: TARGET_ID,
+         loadId: LOAD_ID,
+         ratingCategories: validRatingCategories(),
+       })
+     ).rejects.toMatchObject({ statusCode: StatusCodes.CONFLICT })
+   })
 
-  it('creates a driver-targeted review and recalculates the driver rating summary', async () => {
-    findCompanyByIdMock.mockResolvedValue({ _id: REVIEWER_ID } as never)
-    findOneReviewMock.mockResolvedValue(null)
-    createReviewMock.mockResolvedValue({ _id: 'new-review' } as never)
-    aggregateMock.mockResolvedValue([])
+   it('creates a driver-targeted review and recalculates the driver rating summary', async () => {
+     findCompanyByIdMock.mockResolvedValue({ _id: REVIEWER_ID } as never)
+     findOneReviewMock.mockResolvedValue(null)
+     createReviewMock.mockResolvedValue({ _id: 'new-review' } as never)
+     aggregateMock.mockResolvedValue([])
+     findLoadByIdMock.mockResolvedValue({
+       status: 'completed',
+       assignedDriverId: { toString: () => TARGET_ID },
+       companyId: { toString: () => REVIEWER_ID },
+     } as never)
 
-    await createCompanyReview({
-      reviewerId: REVIEWER_ID,
-      targetId: TARGET_ID,
-      loadId: LOAD_ID,
-      ratingCategories: validRatingCategories(),
-    })
+     await createCompanyReview({
+       reviewerId: REVIEWER_ID,
+       targetId: TARGET_ID,
+       loadId: LOAD_ID,
+       ratingCategories: validRatingCategories(),
+     })
 
-    expect(createReviewMock).toHaveBeenCalledWith(
-      expect.objectContaining({ targetType: TARGET_TYPES.DRIVER })
-    )
-    expect(findDriverByIdAndUpdateMock).toHaveBeenCalled()
-  })
+     expect(createReviewMock).toHaveBeenCalledWith(
+       expect.objectContaining({ targetType: TARGET_TYPES.DRIVER })
+     )
+     expect(findDriverByIdAndUpdateMock).toHaveBeenCalled()
+   })
 })
 
 describe('getReviewsForTarget', () => {
