@@ -11,6 +11,27 @@ const assertValidId = (id: string, label: string) => {
 }
 
 /**
+ * True if either user has actively blocked the other (checks both
+ * directions, since a block is stored as a single directional row).
+ */
+export const isBlockedPair = async (userAId: string, userBId: string): Promise<boolean> => {
+  if (!isValidObjectId(userAId) || !isValidObjectId(userBId)) return false
+
+  const a = new Types.ObjectId(userAId)
+  const b = new Types.ObjectId(userBId)
+
+  const block = await BlocklistModel.exists({
+    isActive: true,
+    $or: [
+      { userId: a, targetId: b },
+      { userId: b, targetId: a },
+    ],
+  })
+
+  return block !== null
+}
+
+/**
  * Fetch all active blocklist entries for a user, with the target's
  * name populated for display.
  */

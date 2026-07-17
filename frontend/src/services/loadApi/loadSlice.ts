@@ -37,7 +37,17 @@ export const loadApi = api.injectEndpoints({
     // GET /api/loads/:loadId — populates companyId + auctionId, hence PopulatedLoad.
     getLoad: build.query<PopulatedLoad, string>({
       query: (loadId) => `loads/${loadId}`,
-      providesTags: (_result, _error, loadId) => [{ type: LoadTag.Load, id: loadId }],
+      providesTags: (result, _error, loadId): TagDescription[] => {
+        const tags: TagDescription[] = [{ type: LoadTag.Load, id: loadId }]
+        const companyId =
+          typeof result?.companyId === 'string' ? result.companyId : result?.companyId?._id
+        // Also tag by company so blocking that company invalidates this cached
+        // load, even if the viewer never revisits the auction list.
+        if (companyId) {
+          tags.push({ type: LoadTag.Load, id: `company-${companyId}` })
+        }
+        return tags
+      },
     }),
 
     // GET /api/loads/:loadId/accepted-bid — return the accepted bid including rateConfirmationUrl

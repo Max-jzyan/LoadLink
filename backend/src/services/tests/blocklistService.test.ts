@@ -1,7 +1,13 @@
 import { StatusCodes } from 'http-status-codes'
+import { Types } from 'mongoose'
 import { BlocklistModel, TARGET_TYPES } from '../../models/blocklist/Blocklist'
 import { UserModel } from '../../models/users/User'
-import { getBlocklistForUser, blockUserByName, unblockUser } from '../blocklistService'
+import {
+  getBlocklistForUser,
+  blockUserByName,
+  unblockUser,
+  isBlockedPair,
+} from '../blocklistService'
 
 jest.mock('../../models/blocklist/Blocklist')
 jest.mock('../../models/users/User')
@@ -10,6 +16,7 @@ const findBlocklistMock = jest.mocked(BlocklistModel.find)
 const findOneBlocklistMock = jest.mocked(BlocklistModel.findOne)
 const createBlocklistMock = jest.mocked(BlocklistModel.create)
 const findOneAndUpdateBlocklistMock = jest.mocked(BlocklistModel.findOneAndUpdate)
+const existsBlocklistMock = jest.mocked(BlocklistModel.exists)
 const findOneUserMock = jest.mocked(UserModel.findOne)
 
 const USER_ID = '000000000000000000000011'
@@ -132,6 +139,33 @@ describe('blockUserByName', () => {
       expect.objectContaining({ targetType: TARGET_TYPES.COMPANY, reason: '' })
     )
     expect(result).toBe('populated-entry')
+  })
+})
+
+describe('isBlockedPair', () => {
+  it('returns false without a query when either id is syntactically invalid', async () => {
+    await expect(isBlockedPair(INVALID_ID, TARGET_USER_ID)).resolves.toBe(false)
+    await expect(isBlockedPair(USER_ID, INVALID_ID)).resolves.toBe(false)
+    expect(existsBlocklistMock).not.toHaveBeenCalled()
+  })
+
+  it('queries both directions of the pair and returns true when a match exists', async () => {
+    existsBlocklistMock.mockResolvedValue({ _id: 'match' } as never)
+
+    await expect(isBlockedPair(USER_ID, TARGET_USER_ID)).resolves.toBe(true)
+    expect(existsBlocklistMock).toHaveBeenCalledWith({
+      isActive: true,
+      $or: [
+        { userId: new Types.ObjectId(USER_ID), targetId: new Types.ObjectId(TARGET_USER_ID) },
+        { userId: new Types.ObjectId(TARGET_USER_ID), targetId: new Types.ObjectId(USER_ID) },
+      ],
+    })
+  })
+
+  it('returns false when no active block exists in either direction', async () => {
+    existsBlocklistMock.mockResolvedValue(null)
+
+    await expect(isBlockedPair(USER_ID, TARGET_USER_ID)).resolves.toBe(false)
   })
 })
 

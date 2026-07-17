@@ -49,6 +49,7 @@ export const api = createApi({
     LoadTag.Trailer,
     LoadTag.DriverProfile,
     LoadTag.Driver,
+    LoadTag.Company,
     LoadTag.Review,
     LoadTag.Blocklist,
     LoadTag.Report,

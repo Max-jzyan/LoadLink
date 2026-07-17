@@ -1,6 +1,6 @@
 import { getHttpErrorMessage, showError, showSuccess, getErrorStatus } from '@/lib/toast'
 import { api } from '../api'
-import { LoadTag, LoadTagId } from '../apiTypes'
+import { LoadTag, LoadTagId, type TagDescription } from '../apiTypes'
 import type {
   BlocklistEntry,
   BlockUserPayload,
@@ -30,13 +30,16 @@ export const blocklistApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (_result, _error, { userId }) => [
+      invalidatesTags: (result, _error, { userId }): TagDescription[] => [
         { type: LoadTag.Blocklist, id: userId },
         // Force the driver's live auction board (and scored/recommended lists) to refetch
         // so loads from the newly-blocked company disappear immediately.
         { type: LoadTag.Load, id: LoadTagId.List },
         { type: LoadTag.Load, id: `${userId}-scored` },
         { type: LoadTag.Load, id: `${userId}-recommended` },
+        // Also bust any already-cached single-load view (e.g. an open auction
+        // detail page) for loads posted by the newly-blocked company.
+        ...(result?.targetId ? [{ type: LoadTag.Load, id: `company-${result.targetId._id}` }] : []),
       ],
       async onQueryStarted(arg, { queryFulfilled }) {
         try {
@@ -54,13 +57,15 @@ export const blocklistApi = api.injectEndpoints({
         url: `blocklist/${userId}/${targetId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (_result, _error, { userId }) => [
+      invalidatesTags: (_result, _error, { userId, targetId }): TagDescription[] => [
         { type: LoadTag.Blocklist, id: userId },
         // Force the driver's live auction board (and scored/recommended lists) to refetch
         // so loads from the newly-unblocked company reappear immediately.
         { type: LoadTag.Load, id: LoadTagId.List },
         { type: LoadTag.Load, id: `${userId}-scored` },
         { type: LoadTag.Load, id: `${userId}-recommended` },
+        // Also bust any cached single-load view so it re-fetches as accessible again.
+        { type: LoadTag.Load, id: `company-${targetId}` },
       ],
       async onQueryStarted(_arg, { queryFulfilled }) {
         try {

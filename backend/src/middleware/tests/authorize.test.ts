@@ -9,16 +9,24 @@ import {
   companyOwnsLoad,
   driverOwnsAssignedLoad,
   reviewOwnedByCaller,
+  notBlockedByLoadCompany,
+  notBlockedFromBidDriver,
 } from '../authorize'
 import { LoadModel } from '../../models/loads/Load'
 import { ReviewModel } from '../../models/ratings/Review'
+import { BidModel } from '../../models/loads/Bid'
+import { isBlockedPair } from '../../services/blocklistService'
 import type { AuthedUser } from '../../types/auth'
 
 jest.mock('../../models/loads/Load')
 jest.mock('../../models/ratings/Review')
+jest.mock('../../models/loads/Bid')
+jest.mock('../../services/blocklistService')
 
 const findLoadByIdMock = jest.mocked(LoadModel.findById)
 const findReviewByIdMock = jest.mocked(ReviewModel.findById)
+const findBidByIdMock = jest.mocked(BidModel.findById)
+const isBlockedPairMock = jest.mocked(isBlockedPair)
 
 const VALID_ID = '000000000000000000000101'
 const OTHER_ID = '000000000000000000000102'
@@ -242,6 +250,162 @@ describe('canViewLoad', () => {
     const next = jest.fn()
 
     await canViewLoad(req, httpMocks.createResponse(), next)
+
+    expect(next).toHaveBeenCalledWith()
+  })
+})
+
+describe('notBlockedByLoadCompany', () => {
+  it('401s when there is no authenticated user', async () => {
+    const req = httpMocks.createRequest({ params: { loadId: VALID_ID } })
+    const next = jest.fn()
+
+    await notBlockedByLoadCompany(req, httpMocks.createResponse(), next)
+
+    expect((next.mock.calls[0][0] as ApiError).statusCode).toBe(StatusCodes.UNAUTHORIZED)
+  })
+
+  it.each(['company', 'admin'] as const)(
+    'calls next() without a lookup for a %s caller',
+    async (role) => {
+      const req = httpMocks.createRequest({
+        params: { loadId: VALID_ID },
+        user: authedUser({ role }),
+      } as never)
+      const next = jest.fn()
+
+      await notBlockedByLoadCompany(req, httpMocks.createResponse(), next)
+
+      expect(next).toHaveBeenCalledWith()
+      expect(findLoadByIdMock).not.toHaveBeenCalled()
+    }
+  )
+
+  it('404s for a driver when the loadId is syntactically invalid', async () => {
+    const req = httpMocks.createRequest({
+      params: { loadId: INVALID_ID },
+      user: authedUser({ role: 'driver' }),
+    } as never)
+    const next = jest.fn()
+
+    await notBlockedByLoadCompany(req, httpMocks.createResponse(), next)
+
+    expect((next.mock.calls[0][0] as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND)
+    expect(findLoadByIdMock).not.toHaveBeenCalled()
+  })
+
+  it('404s for a driver when the load does not exist', async () => {
+    findLoadByIdMock.mockReturnValue({ select: jest.fn().mockResolvedValue(null) } as never)
+    const req = httpMocks.createRequest({
+      params: { loadId: VALID_ID },
+      user: authedUser({ role: 'driver' }),
+    } as never)
+    const next = jest.fn()
+
+    await notBlockedByLoadCompany(req, httpMocks.createResponse(), next)
+
+    expect((next.mock.calls[0][0] as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND)
+  })
+
+  it('404s (not 403) for a driver blocked from the load company, hiding that a block exists', async () => {
+    findLoadByIdMock.mockReturnValue({
+      select: jest.fn().mockResolvedValue({ companyId: { toString: () => OTHER_ID } }),
+    } as never)
+    isBlockedPairMock.mockResolvedValue(true)
+    const req = httpMocks.createRequest({
+      params: { loadId: VALID_ID },
+      user: authedUser({ _id: VALID_ID, role: 'driver' }),
+    } as never)
+    const next = jest.fn()
+
+    await notBlockedByLoadCompany(req, httpMocks.createResponse(), next)
+
+    expect((next.mock.calls[0][0] as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND)
+    expect(isBlockedPairMock).toHaveBeenCalledWith(VALID_ID, OTHER_ID)
+  })
+
+  it('calls next() for a driver with no block against the load company', async () => {
+    findLoadByIdMock.mockReturnValue({
+      select: jest.fn().mockResolvedValue({ companyId: { toString: () => OTHER_ID } }),
+    } as never)
+    isBlockedPairMock.mockResolvedValue(false)
+    const req = httpMocks.createRequest({
+      params: { loadId: VALID_ID },
+      user: authedUser({ _id: VALID_ID, role: 'driver' }),
+    } as never)
+    const next = jest.fn()
+
+    await notBlockedByLoadCompany(req, httpMocks.createResponse(), next)
+
+    expect(next).toHaveBeenCalledWith()
+  })
+})
+
+describe('notBlockedFromBidDriver', () => {
+  it('401s when there is no authenticated user', async () => {
+    const req = httpMocks.createRequest({ params: { bidId: VALID_ID } })
+    const next = jest.fn()
+
+    await notBlockedFromBidDriver(req, httpMocks.createResponse(), next)
+
+    expect((next.mock.calls[0][0] as ApiError).statusCode).toBe(StatusCodes.UNAUTHORIZED)
+  })
+
+  it('404s when the bidId is syntactically invalid', async () => {
+    const req = httpMocks.createRequest({
+      params: { bidId: INVALID_ID },
+      user: authedUser({ role: 'company' }),
+    } as never)
+    const next = jest.fn()
+
+    await notBlockedFromBidDriver(req, httpMocks.createResponse(), next)
+
+    expect((next.mock.calls[0][0] as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND)
+    expect(findBidByIdMock).not.toHaveBeenCalled()
+  })
+
+  it('404s when the bid does not exist', async () => {
+    findBidByIdMock.mockReturnValue({ select: jest.fn().mockResolvedValue(null) } as never)
+    const req = httpMocks.createRequest({
+      params: { bidId: VALID_ID },
+      user: authedUser({ role: 'company' }),
+    } as never)
+    const next = jest.fn()
+
+    await notBlockedFromBidDriver(req, httpMocks.createResponse(), next)
+
+    expect((next.mock.calls[0][0] as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND)
+  })
+
+  it('404s (not 403) when the company and the bidding driver have blocked each other', async () => {
+    findBidByIdMock.mockReturnValue({
+      select: jest.fn().mockResolvedValue({ driverId: { toString: () => OTHER_ID } }),
+    } as never)
+    isBlockedPairMock.mockResolvedValue(true)
+    const req = httpMocks.createRequest({
+      params: { bidId: VALID_ID },
+      user: authedUser({ _id: VALID_ID, role: 'company' }),
+    } as never)
+    const next = jest.fn()
+
+    await notBlockedFromBidDriver(req, httpMocks.createResponse(), next)
+
+    expect((next.mock.calls[0][0] as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND)
+    expect(isBlockedPairMock).toHaveBeenCalledWith(VALID_ID, OTHER_ID)
+  })
+
+  it('calls next() when there is no block between the company and the bidding driver', async () => {
+    findBidByIdMock.mockReturnValue({
+      select: jest.fn().mockResolvedValue({ driverId: { toString: () => OTHER_ID } }),
+    } as never)
+    isBlockedPairMock.mockResolvedValue(false)
+    const req = httpMocks.createRequest({
+      params: { bidId: VALID_ID },
+      user: authedUser({ _id: VALID_ID, role: 'company' }),
+    } as never)
+    const next = jest.fn()
+
+    await notBlockedFromBidDriver(req, httpMocks.createResponse(), next)
 
     expect(next).toHaveBeenCalledWith()
   })

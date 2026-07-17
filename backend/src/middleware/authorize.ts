@@ -4,8 +4,10 @@ import { isValidObjectId } from 'mongoose'
 import { ApiError } from '../utils/ApiError'
 import { LoadModel } from '../models/loads/Load'
 import { ReviewModel } from '../models/ratings/Review'
+import { BidModel } from '../models/loads/Bid'
 import { USER_ROLES, type UserRole } from '../models/enums'
 import type { AuthedUser } from '../types/auth'
+import { isBlockedPair } from '../services/blocklistService'
 
 /**
  * All guards in this file assume `requireAuth` has already run and populated
@@ -85,6 +87,66 @@ export const canViewLoad = async (req: Request, _res: Response, next: NextFuncti
     }
     if (load.companyId?.toString() !== user._id) {
       return next(new ApiError(StatusCodes.FORBIDDEN, 'Forbidden: not your resource'))
+    }
+    next()
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * Blocks a driver from viewing/bidding/claiming a load posted by a company
+ * they've blocked, or that has blocked them. Pretends the load doesn't
+ * exist (404) rather than revealing the block, mirroring how blocked loads
+ * are simply omitted from the auction board (see loadService.listAvailableLoads).
+ * No-op for admin/company callers — company access to a load is already
+ * gated by tenant-ownership checks elsewhere.
+ */
+export const notBlockedByLoadCompany = async (req: Request, _res: Response, next: NextFunction) => {
+  try {
+    const user = ensureUser(req)
+    if (user.role !== USER_ROLES.DRIVER) {
+      return next()
+    }
+
+    const { loadId } = req.params
+    if (!isValidObjectId(loadId)) {
+      return next(new ApiError(StatusCodes.NOT_FOUND, 'Resource not found'))
+    }
+    const load = await LoadModel.findById(loadId).select('companyId')
+    if (!load) {
+      return next(new ApiError(StatusCodes.NOT_FOUND, 'Resource not found'))
+    }
+
+    const companyId = load.companyId?.toString()
+    if (companyId && (await isBlockedPair(user._id, companyId))) {
+      return next(new ApiError(StatusCodes.NOT_FOUND, 'Resource not found'))
+    }
+    next()
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * Blocks a company from accepting a bid from a driver they've blocked, or
+ * who has blocked them. Assumes `requireOwns(companyOwnsLoad)` already ran,
+ * so the caller is confirmed to be the load's company.
+ */
+export const notBlockedFromBidDriver = async (req: Request, _res: Response, next: NextFunction) => {
+  try {
+    const user = ensureUser(req)
+    const { bidId } = req.params
+    if (!isValidObjectId(bidId)) {
+      return next(new ApiError(StatusCodes.NOT_FOUND, 'Bid not found for this load'))
+    }
+    const bid = await BidModel.findById(bidId).select('driverId')
+    if (!bid) {
+      return next(new ApiError(StatusCodes.NOT_FOUND, 'Bid not found for this load'))
+    }
+
+    if (await isBlockedPair(user._id, bid.driverId.toString())) {
+      return next(new ApiError(StatusCodes.NOT_FOUND, 'Bid not found for this load'))
     }
     next()
   } catch (err) {
