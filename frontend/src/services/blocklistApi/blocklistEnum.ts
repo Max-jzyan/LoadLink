@@ -46,3 +46,11 @@ export interface UpdateFeedPreferencesPayload {
   userId: string
   body: FeedPreferences
 }
+
+/** Known interaction user suggestions for the blocklist block page */
+export interface KnownUser {
+  _id: string
+  name: string
+  email: string
+  interactionType: 'bid' | 'accepted' | 'completed' | 'hauled'
+}

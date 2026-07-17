@@ -2,13 +2,14 @@ import httpMocks from 'node-mocks-http'
 import { StatusCodes } from 'http-status-codes'
 import { ApiError } from '../../utils/ApiError'
 import * as blocklistService from '../../services/blocklistService'
-import { getBlocklist, blockUser, unblockUser } from '../blocklistController'
+import { getBlocklist, blockUser, unblockUser, getKnownUsers } from '../blocklistController'
 
 jest.mock('../../services/blocklistService')
 
 const getBlocklistForUserMock = jest.mocked(blocklistService.getBlocklistForUser)
 const blockUserByNameMock = jest.mocked(blocklistService.blockUserByName)
 const unblockUserMock = jest.mocked(blocklistService.unblockUser)
+const getKnownUsersForBlocklistMock = jest.mocked(blocklistService.getKnownUsersForBlocklist)
 
 const USER_ID = '000000000000000000000011'
 const TARGET_ID = '000000000000000000000001'
@@ -99,6 +100,36 @@ describe('unblockUser', () => {
     const next = jest.fn()
 
     await unblockUser(req, res, next)
+
+    expect(next).toHaveBeenCalledWith(expect.any(ApiError))
+  })
+})
+
+describe('getKnownUsers', () => {
+  it('200s with known users', async () => {
+    getKnownUsersForBlocklistMock.mockResolvedValue([
+      { _id: 'user-1', name: 'Company A', email: 'a@example.com', interactionType: 'bid' },
+    ] as never)
+    const req = httpMocks.createRequest({ params: { userId: USER_ID } })
+    const res = httpMocks.createResponse()
+    const next = jest.fn()
+
+    await getKnownUsers(req, res, next)
+
+    expect(getKnownUsersForBlocklistMock).toHaveBeenCalledWith(USER_ID)
+    expect(res.statusCode).toBe(StatusCodes.OK)
+    expect(res._getJSONData()).toEqual([
+      { _id: 'user-1', name: 'Company A', email: 'a@example.com', interactionType: 'bid' },
+    ])
+  })
+
+  it('forwards errors to next', async () => {
+    getKnownUsersForBlocklistMock.mockRejectedValue(new ApiError(StatusCodes.BAD_REQUEST, 'bad id'))
+    const req = httpMocks.createRequest({ params: { userId: USER_ID } })
+    const res = httpMocks.createResponse()
+    const next = jest.fn()
+
+    await getKnownUsers(req, res, next)
 
     expect(next).toHaveBeenCalledWith(expect.any(ApiError))
   })

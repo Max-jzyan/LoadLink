@@ -5,6 +5,7 @@ import type {
   BlocklistEntry,
   BlockUserPayload,
   FeedPreferences,
+  KnownUser,
   UnblockUserPayload,
   UpdateFeedPreferencesPayload,
 } from './blocklistEnum'
@@ -83,6 +84,12 @@ export const blocklistApi = api.injectEndpoints({
       providesTags: (_result, _error, userId) => [{ type: LoadTag.FeedPrefs, id: userId }],
     }),
 
+    // GET /api/blocklist/:userId/known-users
+    getKnownUsers: build.query<KnownUser[], string>({
+      query: (userId) => `blocklist/${userId}/known-users`,
+      providesTags: (_result, _error, userId) => [{ type: LoadTag.Blocklist, id: `known-${userId}` }],
+    }),
+
     // PATCH /api/users/:userId/feed-preferences — optimistic so switches feel instant
     updateFeedPreferences: build.mutation<FeedPreferences, UpdateFeedPreferencesPayload>({
       query: ({ userId, body }) => ({
@@ -114,4 +121,5 @@ export const {
   useUnblockUserMutation,
   useGetFeedPreferencesQuery,
   useUpdateFeedPreferencesMutation,
+  useGetKnownUsersQuery,
 } = blocklistApi

@@ -2,15 +2,20 @@ import { StatusCodes } from 'http-status-codes'
 import { Types } from 'mongoose'
 import { BlocklistModel, TARGET_TYPES } from '../../models/blocklist/Blocklist'
 import { UserModel } from '../../models/users/User'
+import { BidModel } from '../../models/loads/Bid'
+import { LoadModel } from '../../models/loads/Load'
 import {
   getBlocklistForUser,
   blockUserByName,
   unblockUser,
   isBlockedPair,
+  getKnownUsersForBlocklist,
 } from '../blocklistService'
 
 jest.mock('../../models/blocklist/Blocklist')
 jest.mock('../../models/users/User')
+jest.mock('../../models/loads/Bid')
+jest.mock('../../models/loads/Load')
 
 const findBlocklistMock = jest.mocked(BlocklistModel.find)
 const findOneBlocklistMock = jest.mocked(BlocklistModel.findOne)
@@ -18,6 +23,9 @@ const createBlocklistMock = jest.mocked(BlocklistModel.create)
 const findOneAndUpdateBlocklistMock = jest.mocked(BlocklistModel.findOneAndUpdate)
 const existsBlocklistMock = jest.mocked(BlocklistModel.exists)
 const findOneUserMock = jest.mocked(UserModel.findOne)
+const findByIdUserMock = jest.mocked(UserModel.findById)
+const bidAggregateMock = jest.mocked(BidModel.aggregate)
+const loadAggregateMock = jest.mocked(LoadModel.aggregate)
 
 const USER_ID = '000000000000000000000011'
 const TARGET_USER_ID = '000000000000000000000001'
@@ -197,5 +205,303 @@ describe('unblockUser', () => {
       { isActive: false },
       { new: true }
     )
+  })
+})
+
+describe('getKnownUsersForBlocklist', () => {
+  beforeEach(() => {
+    jest.resetAllMocks()
+  })
+
+  it('400s on an invalid userId', async () => {
+    await expect(getKnownUsersForBlocklist(INVALID_ID)).rejects.toMatchObject({
+      statusCode: StatusCodes.BAD_REQUEST,
+    })
+    expect(findOneUserMock).not.toHaveBeenCalled()
+  })
+
+  it('returns an empty array when the user does not exist', async () => {
+    const selectMock = jest.fn().mockResolvedValue(null)
+    findByIdUserMock.mockReturnValue({ select: selectMock } as never)
+
+    const result = await getKnownUsersForBlocklist(USER_ID)
+
+    expect(result).toEqual([])
+    expect(findBlocklistMock).not.toHaveBeenCalled()
+    expect(bidAggregateMock).not.toHaveBeenCalled()
+    expect(loadAggregateMock).not.toHaveBeenCalled()
+  })
+
+  describe('for a driver', () => {
+    const driverId = '000000000000000000000011'
+
+    it('returns interacted companies from bids and assigned loads', async () => {
+      const selectMock = jest.fn().mockResolvedValue({ _id: new Types.ObjectId(driverId), role: 'driver' })
+      findByIdUserMock.mockReturnValue({ select: selectMock } as never)
+      
+      // Mock active blocks lookup
+      findBlocklistMock.mockReturnValue({
+        lean: jest.fn().mockResolvedValue([{ targetId: new Types.ObjectId('000000000000000000000099') }]),
+      } as never)
+
+      // Mock bid aggregation - companies the driver bid on
+      bidAggregateMock.mockResolvedValue([
+        {
+          companyId: new Types.ObjectId('000000000000000000000001'),
+          companyName: 'Company A',
+          companyEmail: 'compA@example.com',
+          statuses: ['submitted'],
+          maxAcceptedAt: null,
+          hasAccepted: false,
+        },
+        {
+          companyId: new Types.ObjectId('000000000000000000000002'),
+          companyName: 'Company B',
+          companyEmail: 'compB@example.com',
+          statuses: ['accepted'],
+          maxAcceptedAt: new Date('2024-01-15'),
+          hasAccepted: true,
+        },
+      ])
+
+      // Mock assigned loads aggregation
+      loadAggregateMock.mockResolvedValue([
+        {
+          companyId: new Types.ObjectId('000000000000000000000003'),
+          companyName: 'Company C',
+          companyEmail: 'compC@example.com',
+          status: 'Booked',
+        },
+        {
+          companyId: new Types.ObjectId('000000000000000000000002'),
+          companyName: 'Company B',
+          companyEmail: 'compB@example.com',
+          status: 'Completed',
+        },
+      ])
+
+      const result = await getKnownUsersForBlocklist(driverId)
+
+      expect(result).toHaveLength(3)
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ _id: '000000000000000000000001', interactionType: 'bid' }),
+          expect.objectContaining({ _id: '000000000000000000000002', interactionType: 'accepted' }),
+          expect.objectContaining({ _id: '000000000000000000000003', interactionType: 'accepted' }),
+        ])
+      )
+    })
+
+    it('excludes already-blocked users', async () => {
+      const selectMock = jest.fn().mockResolvedValue({ _id: new Types.ObjectId(driverId), role: 'driver' })
+      findByIdUserMock.mockReturnValue({ select: selectMock } as never)
+      
+      const blockedCompanyId = '000000000000000000000001'
+      findBlocklistMock.mockReturnValue({
+        lean: jest.fn().mockResolvedValue([{ targetId: new Types.ObjectId(blockedCompanyId) }]),
+      } as never)
+
+      bidAggregateMock.mockResolvedValue([
+        {
+          companyId: new Types.ObjectId(blockedCompanyId),
+          companyName: 'Blocked Company',
+          companyEmail: 'blocked@example.com',
+          statuses: ['submitted'],
+          maxAcceptedAt: null,
+          hasAccepted: false,
+        },
+      ])
+
+      loadAggregateMock.mockResolvedValue([])
+
+      const result = await getKnownUsersForBlocklist(driverId)
+
+      expect(result).toHaveLength(0)
+    })
+
+    it('excludes the driver themselves', async () => {
+      const selectMock = jest.fn().mockResolvedValue({ _id: new Types.ObjectId(driverId), role: 'driver' })
+      findByIdUserMock.mockReturnValue({ select: selectMock } as never)
+      findBlocklistMock.mockReturnValue({
+        lean: jest.fn().mockResolvedValue([]),
+      } as never)
+
+      // Mock a bid where companyId somehow matches driverId (edge case)
+      bidAggregateMock.mockResolvedValue([
+        {
+          companyId: new Types.ObjectId(driverId),
+          companyName: 'Myself',
+          companyEmail: 'me@example.com',
+          statuses: ['submitted'],
+          maxAcceptedAt: null,
+          hasAccepted: false,
+        },
+      ])
+
+      loadAggregateMock.mockResolvedValue([])
+
+      const result = await getKnownUsersForBlocklist(driverId)
+
+      expect(result).toHaveLength(0)
+    })
+
+    it('returns unique users only', async () => {
+      const selectMock = jest.fn().mockResolvedValue({ _id: new Types.ObjectId(driverId), role: 'driver' })
+      findByIdUserMock.mockReturnValue({ select: selectMock } as never)
+      findBlocklistMock.mockReturnValue({
+        lean: jest.fn().mockResolvedValue([]),
+      } as never)
+
+      // Same company appears in both bid and load with different interaction types
+      bidAggregateMock.mockResolvedValue([
+        {
+          companyId: new Types.ObjectId('000000000000000000000001'),
+          companyName: 'Company A',
+          companyEmail: 'compA@example.com',
+          statuses: ['submitted'],
+          maxAcceptedAt: null,
+          hasAccepted: false,
+        },
+      ])
+
+      loadAggregateMock.mockResolvedValue([
+        {
+          companyId: new Types.ObjectId('000000000000000000000001'),
+          companyName: 'Company A',
+          companyEmail: 'compA@example.com',
+          status: 'InTransit',
+        },
+      ])
+
+      const result = await getKnownUsersForBlocklist(driverId)
+
+      expect(result).toHaveLength(1)
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          _id: '000000000000000000000001',
+          name: 'Company A',
+          interactionType: 'bid', // First occurrence wins (bids processed before loads)
+        })
+      )
+    })
+  })
+
+  describe('for a company', () => {
+    const companyId = '000000000000000000000022'
+
+    it('returns interacted drivers from accepted bids and assigned loads', async () => {
+      const selectMock = jest.fn().mockResolvedValue({ _id: new Types.ObjectId(companyId), role: 'company' })
+      findByIdUserMock.mockReturnValue({ select: selectMock } as never)
+      
+      findBlocklistMock.mockReturnValue({
+        lean: jest.fn().mockResolvedValue([]),
+      } as never)
+
+      // Mock accepted bids aggregation
+      bidAggregateMock.mockResolvedValue([
+        {
+          driverId: new Types.ObjectId('000000000000000000000101'),
+          driverName: 'Driver A',
+          driverEmail: 'driverA@example.com',
+          acceptedAt: new Date('2024-01-20'),
+        },
+        {
+          driverId: new Types.ObjectId('000000000000000000000102'),
+          driverName: 'Driver B',
+          driverEmail: 'driverB@example.com',
+          acceptedAt: null,
+        },
+      ])
+
+      // Mock assigned loads aggregation
+      loadAggregateMock.mockResolvedValue([
+        {
+          assignedDriverId: new Types.ObjectId('000000000000000000000103'),
+          driverName: 'Driver C',
+          driverEmail: 'driverC@example.com',
+          status: 'Booked',
+        },
+        {
+          assignedDriverId: new Types.ObjectId('000000000000000000000101'),
+          driverName: 'Driver A',
+          driverEmail: 'driverA@example.com',
+          status: 'Completed',
+        },
+      ])
+
+      const result = await getKnownUsersForBlocklist(companyId)
+
+      expect(result).toHaveLength(3)
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ _id: '000000000000000000000101', interactionType: 'accepted' }),
+          expect.objectContaining({ _id: '000000000000000000000102', interactionType: 'completed' }),
+          expect.objectContaining({ _id: '000000000000000000000103', interactionType: 'accepted' }),
+        ])
+      )
+    })
+
+    it('excludes already-blocked drivers', async () => {
+      const selectMock = jest.fn().mockResolvedValue({ _id: new Types.ObjectId(companyId), role: 'company' })
+      findByIdUserMock.mockReturnValue({ select: selectMock } as never)
+      
+      const blockedDriverId = '000000000000000000000101'
+      findBlocklistMock.mockReturnValue({
+        lean: jest.fn().mockResolvedValue([{ targetId: new Types.ObjectId(blockedDriverId) }]),
+      } as never)
+
+      bidAggregateMock.mockResolvedValue([
+        {
+          driverId: new Types.ObjectId(blockedDriverId),
+          driverName: 'Blocked Driver',
+          driverEmail: 'blocked@example.com',
+          acceptedAt: new Date('2024-01-20'),
+        },
+      ])
+
+      loadAggregateMock.mockResolvedValue([])
+
+      const result = await getKnownUsersForBlocklist(companyId)
+
+      expect(result).toHaveLength(0)
+    })
+
+    it('filters out loads with no assigned driver', async () => {
+      const selectMock = jest.fn().mockResolvedValue({ _id: new Types.ObjectId(companyId), role: 'company' })
+      findByIdUserMock.mockReturnValue({ select: selectMock } as never)
+      findBlocklistMock.mockReturnValue({
+        lean: jest.fn().mockResolvedValue([]),
+      } as never)
+
+      bidAggregateMock.mockResolvedValue([])
+
+      loadAggregateMock.mockResolvedValue([
+        {
+          assignedDriverId: null,
+          driverName: 'No Driver',
+          driverEmail: 'nodriver@example.com',
+          status: 'Booked',
+        },
+      ])
+
+      const result = await getKnownUsersForBlocklist(companyId)
+
+      expect(result).toHaveLength(0)
+    })
+  })
+
+  it('returns empty array when there are no interactions', async () => {
+    const selectMock = jest.fn().mockResolvedValue({ _id: new Types.ObjectId('000000000000000000000033'), role: 'driver' })
+    findByIdUserMock.mockReturnValue({ select: selectMock } as never)
+    findBlocklistMock.mockReturnValue({
+      lean: jest.fn().mockResolvedValue([]),
+    } as never)
+
+    bidAggregateMock.mockResolvedValue([])
+    loadAggregateMock.mockResolvedValue([])
+
+    const result = await getKnownUsersForBlocklist('000000000000000000000033')
+
+    expect(result).toEqual([])
   })
 })

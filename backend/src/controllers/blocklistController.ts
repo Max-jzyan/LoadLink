@@ -46,3 +46,19 @@ export const unblockUser = async (req: Request, res: Response, next: NextFunctio
     next(err)
   }
 }
+
+/**
+ * GET /api/blocklist/:userId/known-users
+ * Returns users the current user has previously interacted with via bidding
+ * or completed/assigned loads — only surfaced for the blocklist dropdown,
+ * not for general directory browsing. Already-blocked users are excluded.
+ */
+export const getKnownUsers = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.params.userId as string
+    const knownUsers = await blocklistService.getKnownUsersForBlocklist(userId)
+    res.status(StatusCodes.OK).json(knownUsers)
+  } catch (err) {
+    next(err)
+  }
+}

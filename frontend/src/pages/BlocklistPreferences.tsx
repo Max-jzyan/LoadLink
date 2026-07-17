@@ -3,6 +3,15 @@ import PageShell from '@/components/layout/PageShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
+  Combobox,
+  ComboboxCollection,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList
+} from '@/components/ui/combobox'
+import {
   Dialog,
   DialogClose,
   DialogContent,
@@ -11,7 +20,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -21,7 +29,18 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { RoutePath } from '@/config/routes'
+import { useRequiredMongoId } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
+import { selectRole } from '@/services/authSlice'
+import type { BlockedTargetType, BlocklistEntry, KnownUser } from '@/services/blocklistApi/blocklistEnum'
+import {
+  useBlockUserMutation,
+  useGetBlocklistQuery,
+  useGetFeedPreferencesQuery,
+  useGetKnownUsersQuery,
+  useUnblockUserMutation,
+  useUpdateFeedPreferencesMutation,
+} from '@/services/blocklistApi/blocklistSlice'
 import {
   AlertTriangle,
   Building2,
@@ -35,16 +54,6 @@ import {
 import { useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { selectRole } from '@/services/authSlice'
-import {
-  useBlockUserMutation,
-  useGetBlocklistQuery,
-  useGetFeedPreferencesQuery,
-  useUnblockUserMutation,
-  useUpdateFeedPreferencesMutation,
-} from '@/services/blocklistApi/blocklistSlice'
-import type { BlockedTargetType, BlocklistEntry } from '@/services/blocklistApi/blocklistEnum'
-import { useRequiredMongoId } from '@/hooks/useAuth'
 
 const DRIVER_BLOCK_REASONS = [
   { value: 'low_offers', label: 'Consistently low offers' },
@@ -177,6 +186,14 @@ export default function BlocklistPreferences() {
   const [searchQuery, setSearchQuery] = useState('')
   const [blockReason, setBlockReason] = useState('')
   const [pendingUnblock, setPendingUnblock] = useState<BlocklistEntry | null>(null)
+  const [knownUsersOpen, setKnownUsersOpen] = useState(false)
+
+  const { data: knownUsers = [] } = useGetKnownUsersQuery(userId, { skip: !knownUsersOpen })
+
+  // Client-side filter for known users based on typed input
+  const filteredKnownUsers = knownUsers.filter((u) =>
+    u.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   const tabs = isCompany
     ? [{ key: 'drivers' as const, label: 'Blocked Drivers', count: blocked.length }]
@@ -205,7 +222,7 @@ export default function BlocklistPreferences() {
   }
 
   const handleBlock = async () => {
-    if (!searchQuery.trim()) return
+    if (!searchQuery?.trim()) return
     try {
       await blockUser({
         userId,
@@ -217,9 +234,25 @@ export default function BlocklistPreferences() {
       }).unwrap()
       setSearchQuery('')
       setBlockReason('')
+      setKnownUsersOpen(false)
       setActiveTab(tabs[0].key)
     } catch {
       // error toast handled by the mutation
+    }
+  }
+
+  const interactionLabel = (type: KnownUser['interactionType']) => {
+    switch (type) {
+      case 'bid':
+        return 'Previous bid'
+      case 'accepted':
+        return 'Bid accepted'
+      case 'completed':
+        return 'Completed job'
+      case 'hauled':
+        return 'Load in progress'
+      default:
+        return 'Interacted'
     }
   }
 
@@ -311,17 +344,56 @@ export default function BlocklistPreferences() {
         {/* Block form */}
         <DynamicCard
           title={`Block a ${isCompany ? 'Driver' : 'Company'}`}
-          description={`Blocked ${entityNoun === 'company' ? 'companies are removed from your feed' : 'drivers cannot bid on your loads'}. The name must match a registered ${entityNoun}.`}
+          description={`Blocked ${entityNoun === 'company' ? 'companies are removed from your feed' : 'drivers cannot bid on your loads'}. You can select someone you've already interacted with, or type a name exactly.`}
         >
           <div className="flex flex-col sm:flex-row gap-2">
-            <Input
-              ref={searchInputRef}
-              placeholder={`Search ${entityNoun} name...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
-              onKeyDown={(e) => e.key === 'Enter' && handleBlock()}
-            />
+            <div className="flex-1">
+              <Combobox
+                open={knownUsersOpen}
+                onOpenChange={(open) => {
+                  setKnownUsersOpen(open)
+                  if (!open) {
+                    searchInputRef.current?.focus()
+                  }
+                }}
+                items={filteredKnownUsers.map((u) => ({
+                  value: u.name,
+                  label: u.name,
+                }))}
+                onValueChange={(val) => {
+                  if (val) {
+                    setSearchQuery(val)
+                    setKnownUsersOpen(false)
+                  }
+                }}
+              >
+                <ComboboxInput
+                  placeholder={`Search ${entityNoun} name or pick from interactions...`}
+                  value={searchQuery}
+                  onInput={(e) => setSearchQuery((e.target as HTMLInputElement).value)}
+                  onFocus={() => setKnownUsersOpen(true)}
+                />
+                <ComboboxContent className="w-[var(--radix-combobox-trigger-width)]">
+                  <ComboboxList>
+                    {filteredKnownUsers.map((u) => (
+                      <ComboboxItem key={u._id} value={u.name}>
+                        <div className="flex flex-col">
+                          <span>{u.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {interactionLabel(u.interactionType)} · {u.email}
+                          </span>
+                        </div>
+                      </ComboboxItem>
+                    ))}
+                    {filteredKnownUsers.length === 0 && (
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                        No matching interactions found. You can still type an exact name.
+                      </div>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
+            </div>
             <Select value={blockReason} onValueChange={setBlockReason}>
               <SelectTrigger className="w-full sm:w-52">
                 <SelectValue placeholder="Select reason..." />
@@ -338,7 +410,7 @@ export default function BlocklistPreferences() {
               variant="destructive"
               className="bg-red-500 hover:bg-red-600 text-white"
               onClick={handleBlock}
-              disabled={!searchQuery.trim() || isBlocking}
+              disabled={!searchQuery?.trim() || !blockReason || isBlocking}
             >
               {isBlocking && <Loader2 className="h-4 w-4 animate-spin" />}
               Block
