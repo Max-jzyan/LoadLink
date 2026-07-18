@@ -4,9 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Combobox,
-  ComboboxCollection,
   ComboboxContent,
-  ComboboxEmpty,
   ComboboxInput,
   ComboboxItem,
   ComboboxList
@@ -362,7 +360,7 @@ export default function BlocklistPreferences() {
                 }))}
                 onValueChange={(val) => {
                   if (val) {
-                    setSearchQuery(val)
+                    setSearchQuery(val as string)
                     setKnownUsersOpen(false)
                   }
                 }}

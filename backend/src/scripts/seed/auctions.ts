@@ -83,7 +83,7 @@ const AUTO_ACCEPT_TRIGGER_HOURS_BY_LOAD: Record<string, number> = {
 type SeedLoadRef = {
   _id: Types.ObjectId
   companyId: Types.ObjectId
-  assignedDriverId?: Types.ObjectId
+  assignedDriverId?: Types.ObjectId | null
 }
 
 /** Seed active auctions for live loads and closed auctions for completed (historical) loads. */

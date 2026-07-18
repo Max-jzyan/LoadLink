@@ -165,6 +165,20 @@ Frontend automated tests are not yet implemented.
 
 ---
 
+## Milestone 4
+
+### Security Testing — XSS
+
+We tested every text input in the app for cross-site scripting (script injection via form fields, search boxes, and stored profile/review data). Payloads such as `<script>`, `<img onerror>` were injected and the render pages inspected for execution.
+
+**Result: no exploitable XSS was found** .React's automatic output escaping renders all user-supplied strings as inert text. 
+
+Full write-up, input-point inventory, tests, results, and mitigations:
+
+[Milestone 4 — XSS Assessment](docs/M4-XSS.md)
+
+---
+
 ### Tech Stack
 
 | Layer          | Tech                                   | Version   |

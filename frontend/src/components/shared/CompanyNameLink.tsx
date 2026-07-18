@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux'
 import { selectRole } from '@/services/authSlice'
 
 interface CompanyNameLinkProps {
-  name: string
+  name?: string
   companyId: string
   className?: string
 }

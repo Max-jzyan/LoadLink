@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 interface ScoreWeightsDrawerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  weights: ScoreWeights
+  weights?: ScoreWeights
   onSave: (weights: ScoreWeights) => Promise<void>
 }
 
@@ -43,7 +43,7 @@ const weightDescriptions: Record<keyof ScoreWeights, string> = {
 }
 
 export default function ScoreWeightsDrawer({ open, onOpenChange, weights, onSave }: ScoreWeightsDrawerProps) {
-  const [localWeights, setLocalWeights] = useState<ScoreWeights>(weights)
+  const [localWeights, setLocalWeights] = useState<ScoreWeights>(weights ?? DEFAULT_WEIGHTS)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -65,7 +65,6 @@ export default function ScoreWeightsDrawer({ open, onOpenChange, weights, onSave
 
       setLocalWeights((prev) => {
         const currentTotal = Object.values(prev).reduce((sum, val) => sum + val, 0)
-        const delta = newWeight - prev[key]
 
         // Calculate remaining budget after this change
         const remainingBudget = 1.0 - (currentTotal - prev[key])
@@ -87,7 +86,6 @@ export default function ScoreWeightsDrawer({ open, onOpenChange, weights, onSave
     const value = parseFloat(valueStr) || 0
     setLocalWeights((prev) => {
       const currentTotal = Object.values(prev).reduce((sum, val) => sum + val, 0)
-      const delta = value - prev[key]
       const remainingBudget = 1.0 - (currentTotal - prev[key])
 
       // Clamp value to allowable maximum

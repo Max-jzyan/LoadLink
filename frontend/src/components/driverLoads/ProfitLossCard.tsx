@@ -8,12 +8,13 @@ import {
 } from '@/components/ui/select'
 import { InfoIconPopover } from '@/components/shared/InfoIconPopover'
 import DynamicCard from '@/components/layout/DynamicCard'
-import type { Load, Truck } from '@/services/driverApi/driverEnum'
+import type { Truck } from '@/services/driverApi/driverEnum'
+import type { Load } from '@/services/loadApi/loadEnum'
 import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ProfitLossCardProps {
-  load: Load
+  load: Pick<Load, 'pickupTime' | 'dropoffTime'>
   distanceKm: number
   bidPrice: number
   trucks: Truck[]

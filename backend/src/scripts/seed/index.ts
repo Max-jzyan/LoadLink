@@ -161,6 +161,7 @@ async function main() {
 
     // Update completedLoadsCount on drivers that have historical hauls
     const driverLoadCounts = completedLoads.reduce<Record<string, number>>((acc, load) => {
+      if (!load.assignedDriverId) return acc
       const key = load.assignedDriverId.toString()
       acc[key] = (acc[key] ?? 0) + 1
       return acc

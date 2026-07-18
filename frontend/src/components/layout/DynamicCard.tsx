@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card'
 
 interface DriverCardProps {
-  title?: string
+  title?: React.ReactNode
   description?: string
   action?: React.ReactNode
   footer?: React.ReactNode

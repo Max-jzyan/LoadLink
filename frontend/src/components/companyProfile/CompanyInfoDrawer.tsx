@@ -6,10 +6,8 @@ import { useForm } from 'react-hook-form'
 
 import DrawerShell from '@/components/layout/DrawerShell'
 import type { BusinessDocument, CompanyProfile } from '@/services/companyApi/companyEnum'
-import { FileText, Trash2 } from 'lucide-react'
 
 import AvatarUploadField from '@/components/shared/AvatarUploadField'
-import FileUploadField from '@/components/shared/FileUploadField'
 import { auth } from '@/lib/firebase'
 import { uploadDocuments } from '@/lib/uploadDocuments'
 import {
@@ -60,7 +58,7 @@ export default function CompanyInfoDrawer({
   const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null)
   const [pictureError, setPictureError] = useState<string | null>(null)
   const [businessDocFiles, setBusinessDocFiles] = useState<File[]>([])
-  const [docError, setDocError] = useState<string | null>(null)
+  const [, setDocError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [docToDelete, setDocToDelete] = useState<BusinessDocument | null>(null)
 

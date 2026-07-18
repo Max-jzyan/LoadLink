@@ -5,7 +5,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import type { DashboardViewMode, LoadRevenue } from '@/services/driverApi/driverEnum'
 import type { ColumnDef } from '@tanstack/react-table'
 import { formatCAD } from '@/lib/utils'
-import { Pencil } from 'lucide-react'
 
 const statusBadgeVariant: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
   booked: 'secondary',
@@ -20,7 +19,7 @@ const statusLabel: Record<string, string> = {
 // ── Column definitions ──────────────────────────────────────────────────────
 
 export function createColumns(
-  onPerLoadSaved: () => void,
+  _onPerLoadSaved: () => void,
   viewMode: DashboardViewMode = 'completed'
 ): ColumnDef<LoadRevenue>[] {
   const isPotential = viewMode === 'potential'

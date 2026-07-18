@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import DrawerShell from '@/components/layout/DrawerShell'
-import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import {
@@ -34,7 +33,6 @@ export default function TrailerDrawer({
   open,
   onOpenChange,
   editTrailer,
-  isLoading = false,
   onSubmit,
 }: TrailerDrawerProps) {
   const formId = 'trailer-form'
