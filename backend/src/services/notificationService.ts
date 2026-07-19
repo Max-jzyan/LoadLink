@@ -106,13 +106,19 @@ export const notifyRateConfirmationReady = (
 
 export const notifyDriverCheckedIn = (
   companyUserId: string,
-  opts: { loadId: string; coords: { lat: number; lng: number }; checkedInAt: Date }
+  opts: {
+    loadId: string
+    driverName: string
+    commodity: string
+    coords: { lat: number; lng: number }
+    checkedInAt: Date
+  }
 ) =>
   createNotification({
     userId: companyUserId,
     type: NOTIFICATION_TYPES.DRIVER_CHECKED_IN,
     title: 'Driver checked in',
-    message: 'Your driver pinged their approximate location on an in-transit load.',
+    message: `${opts.driverName} has checked in for load #${opts.loadId.slice(-6).toUpperCase()} (${opts.commodity}).`,
     data: { loadId: opts.loadId, coords: opts.coords, checkedInAt: opts.checkedInAt.toISOString() },
   })
 

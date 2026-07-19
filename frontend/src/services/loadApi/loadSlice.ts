@@ -176,6 +176,16 @@ export const loadApi = api.injectEndpoints({
       },
     }),
 
+    // POST /api/loads/:loadId/checkin — driver pings an approximate (fuzzed) location
+    checkIn: build.mutation<Load, { loadId: string; body: { lat: number; lng: number } }>({
+      query: ({ loadId, body }) => ({
+        url: `loads/${loadId}/checkin`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { loadId }) => [{ type: LoadTag.Load, id: loadId }],
+    }),
+
     // PATCH /api/loads/:loadId/expenses — update per-load expense overrides
     updateLoadExpenses: build.mutation<Load, { loadId: string; body: ExpenseOverrideFields }>({
       query: ({ loadId, body }) => ({
@@ -206,4 +216,5 @@ export const {
   useUpdateLoadMutation,
   useUpdateLoadStatusMutation,
   useUpdateLoadExpensesMutation,
+  useCheckInMutation,
 } = loadApi

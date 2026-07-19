@@ -44,6 +44,12 @@ export interface RouteSegment {
   durationHours: number
 }
 
+// Most recent driver check-in ping (approximate, fuzzed location)
+export interface CheckIn {
+  coords: Coordinate
+  checkedInAt: string
+}
+
 export interface Load {
   _id: string
   companyId: string | CompanySummary
@@ -63,6 +69,7 @@ export interface Load {
   driverAssist?: boolean
   route?: RouteSegment
   auctionId?: string | AuctionSummary | null
+  lastCheckIn?: CheckIn | null
   status: LoadStatus
   createdBy: string
   createdAt: string

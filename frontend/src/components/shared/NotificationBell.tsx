@@ -40,6 +40,8 @@ function resolveNotificationTarget(n: Notification): { path?: string; url?: stri
     case NOTIFICATION_TYPES.AUCTION_EXPIRED:
     case NOTIFICATION_TYPES.AUCTION_CANCELLED:
       return { path: RoutePath.CompanyAuctions }
+    case NOTIFICATION_TYPES.DRIVER_CHECKED_IN:
+      return loadId ? { path: `${RoutePath.Map}?loadId=${loadId}` } : null
 
     // Driver receives these
     case NOTIFICATION_TYPES.BID_ACCEPTED:

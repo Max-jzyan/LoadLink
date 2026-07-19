@@ -10,6 +10,7 @@ export const NOTIFICATION_TYPES = {
   DOCUMENT_UPLOADED: 'document_uploaded',
   DOCUMENT_APPROVED: 'document_approved',
   DOCUMENT_REJECTED: 'document_rejected',
+  DRIVER_CHECKED_IN: 'driver_checked_in',
 } as const
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES]

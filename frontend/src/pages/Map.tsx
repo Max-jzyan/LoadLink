@@ -1,9 +1,14 @@
 import { DriverMap, type RouteCoordinate } from '@/components/driverLoads/Map'
 import { LoadCard } from '@/components/shared/LoadCard'
+import { CheckInDialog } from '@/components/map/CheckInDialog'
+import { CheckInDebugBar } from '@/components/map/CheckInDebugBar'
 import PageShell from '@/components/layout/PageShell'
 import { ROLE_HOME } from '@/config/routes'
-import { selectRole } from '@/services/authSlice'
+import { selectMongoId, selectRole } from '@/services/authSlice'
 import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
+import { LOAD_STATUSES } from '@/types/enums'
+import { useStreamNotificationsQuery } from '@/services/notificationApi/notificationSlice'
+import { NOTIFICATION_TYPES } from '@/services/notificationApi/notificationEnum'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -43,10 +48,16 @@ async function fetchRoadPositions(
 
 export default function MapPage() {
   const role = useSelector(selectRole)
+  const mongoId = useSelector(selectMongoId)
   const [searchParams] = useSearchParams()
   const loadId = searchParams.get('loadId')
 
-  const { data: load, isLoading, isError } = useGetLoadQuery(loadId ?? '', { skip: !loadId })
+  const {
+    data: load,
+    isLoading,
+    isError,
+    refetch: refetchLoad,
+  } = useGetLoadQuery(loadId ?? '', { skip: !loadId })
 
   // Road [lat, lng][] positions fetched from Geoapify when the load has no stored polyline
   const [roadPositions, setRoadPositions] = useState<[number, number][] | null>(null)
@@ -60,6 +71,21 @@ export default function MapPage() {
 
     fetchRoadPositions(load.originCoords, load.destinationCoords).then(setRoadPositions)
   }, [load])
+
+  // Reuses the same notification SSE stream NotificationBell already
+  // subscribes to (RTK Query dedupes by query args, so this doesn't open a
+  // second EventSource). When a check-in notification for this exact load
+  // comes in, refetch so an already-open map picks up the new marker
+  // without a manual reload.
+  const { data: streamData } = useStreamNotificationsQuery(undefined)
+
+  useEffect(() => {
+    if (!streamData || !loadId) return
+    if (!('_id' in streamData) || !('type' in streamData)) return
+    if (streamData.type !== NOTIFICATION_TYPES.DRIVER_CHECKED_IN) return
+    if (streamData.data?.loadId !== loadId) return
+    refetchLoad()
+  }, [streamData, loadId, refetchLoad])
 
   // Map is only reachable via a loadId param now (from an in-transit row's
   // "Track"/"Notify Company" button) — bounce back to the role's home page
@@ -101,6 +127,24 @@ export default function MapPage() {
     },
   ]
 
+  const assignedDriverId =
+    typeof load.assignedDriverId === 'object' && load.assignedDriverId !== null
+      ? load.assignedDriverId._id
+      : load.assignedDriverId
+
+  const canCheckIn =
+    role === 'driver' &&
+    !!mongoId &&
+    assignedDriverId === mongoId &&
+    load.status === LOAD_STATUSES.InTransit
+
+  const checkIn = load.lastCheckIn
+    ? {
+        position: [load.lastCheckIn.coords.lat, load.lastCheckIn.coords.lng] as [number, number],
+        checkedInAt: load.lastCheckIn.checkedInAt,
+      }
+    : null
+
   return (
     <PageShell
       title="Route Map"
@@ -112,8 +156,15 @@ export default function MapPage() {
         <LoadCard load={load} />
       </div>
 
+      {canCheckIn && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <CheckInDialog loadId={load._id} />
+          {import.meta.env.DEV && <CheckInDebugBar loadId={load._id} />}
+        </div>
+      )}
+
       <div className="h-[calc(100vh-280px)] rounded-xl border overflow-hidden">
-        <DriverMap routes={routes} height="100%" />
+        <DriverMap routes={routes} height="100%" checkIn={checkIn} />
       </div>
     </PageShell>
   )

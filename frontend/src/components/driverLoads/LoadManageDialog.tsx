@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { Button } from '@/components/ui/button'
@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useUpdateLoadStatusMutation } from '@/services/loadApi/loadSlice'
+import { useCheckInMutation, useUpdateLoadStatusMutation } from '@/services/loadApi/loadSlice'
 import { useSelectTruckForLoadMutation } from '@/services/driverApi/driverSlice'
 import { LOAD_STATUSES, type LoadStatus } from '@/types/enums'
 import type { Load, CompanySummary } from '@/services/loadApi/loadEnum'
@@ -26,7 +26,18 @@ import { RoutePath } from '@/config/routes'
 import { updateLoadInList } from '@/services/driverLoadsSlice'
 import { selectMongoId } from '@/services/authSlice'
 import type { AppDispatch } from '@/services/store'
-import { Settings2, Truck as TruckIcon, CircleCheck, RotateCcw, XCircle, Bell } from 'lucide-react'
+import { useCurrentLocation } from '@/hooks/useCurrentLocation'
+import { fuzzLocation } from '@/lib/geoFuzz'
+import { showError, showSuccess } from '@/lib/toast'
+import {
+  Settings2,
+  Truck as TruckIcon,
+  CircleCheck,
+  RotateCcw,
+  XCircle,
+  Bell,
+  Loader2,
+} from 'lucide-react'
 import CompanyNameLink from '@/components/shared/CompanyNameLink'
 
 export function truckDisplayName(t: Truck) {
@@ -114,6 +125,36 @@ export function LoadManageDialog({ load, trucks = [] }: { load: Load; trucks?: T
   const driverId = useSelector(selectMongoId)
   const [updateLoadStatus] = useUpdateLoadStatusMutation()
   const [selectTruck] = useSelectTruckForLoadMutation()
+  const {
+    location,
+    status: locationStatus,
+    error: locationError,
+    requestLocation,
+  } = useCurrentLocation()
+  const [checkIn, { isLoading: isCheckingIn }] = useCheckInMutation()
+  const pingSubmittedRef = useRef(false)
+
+  useEffect(() => {
+    if (locationStatus !== 'success' || !location || pingSubmittedRef.current) return
+    pingSubmittedRef.current = true
+    const fuzzed = fuzzLocation(location.lat, location.lng)
+    checkIn({ loadId: load._id, body: fuzzed })
+      .then((result) => {
+        if ('error' in result) {
+          showError('Could not check in. Please try again.')
+        } else {
+          showSuccess('Location pinged to company.')
+          setOpen(false)
+        }
+      })
+      .finally(() => {
+        pingSubmittedRef.current = false
+      })
+  }, [location, locationStatus, load._id, checkIn])
+
+  useEffect(() => {
+    if (locationStatus === 'error' && locationError) showError(locationError)
+  }, [locationStatus, locationError])
 
   const handleStatusUpdate = useCallback(
     (newStatus: LoadStatus) => {
@@ -219,15 +260,18 @@ export function LoadManageDialog({ load, trucks = [] }: { load: Load; trucks?: T
                     Go to Map &amp; Ping
                   </Link>
                 </Button>
-                {/* TODO(PR3): wire to the check-in mutation once it exists */}
                 <Button
                   variant="outline"
                   size="sm"
                   className="gap-1.5"
-                  disabled
-                  title="Coming soon"
+                  onClick={requestLocation}
+                  disabled={locationStatus === 'locating' || isCheckingIn}
                 >
-                  <Bell className="h-4 w-4" />
+                  {locationStatus === 'locating' || isCheckingIn ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Bell className="h-4 w-4" />
+                  )}
                   Ping
                 </Button>
               </div>

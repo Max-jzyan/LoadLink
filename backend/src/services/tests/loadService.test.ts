@@ -479,8 +479,9 @@ describe('submitCheckIn', () => {
   })
 
   it('persists lastCheckIn and notifies the company on success', async () => {
-    const load = fakeLoad({ status: LOAD_STATUSES.InTransit })
+    const load = fakeLoad({ status: LOAD_STATUSES.InTransit, commodity: 'Electronics' })
     findLoadByIdMock.mockResolvedValue(load as never)
+    findUserByIdMock.mockReturnValue(chain({ name: 'Jane Driver' }))
 
     const result = await submitCheckIn(LOAD_ID, DRIVER_ID, COORDS)
 
@@ -489,8 +490,26 @@ describe('submitCheckIn', () => {
     expect(load.save).toHaveBeenCalled()
     expect(notifyDriverCheckedInMock).toHaveBeenCalledWith(
       COMPANY_ID,
-      expect.objectContaining({ loadId: LOAD_ID, coords: COORDS })
+      expect.objectContaining({
+        loadId: LOAD_ID,
+        coords: COORDS,
+        driverName: 'Jane Driver',
+        commodity: 'Electronics',
+      })
     )
     expect(result).toBe(load)
+  })
+
+  it('falls back to the driver id when the driver has no name on record', async () => {
+    const load = fakeLoad({ status: LOAD_STATUSES.InTransit, commodity: 'Electronics' })
+    findLoadByIdMock.mockResolvedValue(load as never)
+    findUserByIdMock.mockReturnValue(chain(null))
+
+    await submitCheckIn(LOAD_ID, DRIVER_ID, COORDS)
+
+    expect(notifyDriverCheckedInMock).toHaveBeenCalledWith(
+      COMPANY_ID,
+      expect.objectContaining({ driverName: DRIVER_ID })
+    )
   })
 })

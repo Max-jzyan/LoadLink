@@ -354,7 +354,15 @@ export const submitCheckIn = async (
   load.lastCheckIn = { coords, checkedInAt }
   await load.save()
 
-  await notifyDriverCheckedIn(load.companyId.toString(), { loadId, coords, checkedInAt })
+  const driver = await UserModel.findById(driverId).select('name')
+
+  await notifyDriverCheckedIn(load.companyId.toString(), {
+    loadId,
+    driverName: driver?.name ?? driverId,
+    commodity: load.commodity,
+    coords,
+    checkedInAt,
+  })
 
   return load
 }

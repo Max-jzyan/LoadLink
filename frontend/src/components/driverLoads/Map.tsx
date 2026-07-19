@@ -2,8 +2,9 @@ import type { LatLngBoundsExpression, LatLngExpression } from 'leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useEffect, useRef, useState } from 'react'
-import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
+import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
 import { LOAD_STATUSES } from '@/types/enums'
+import { MAX_FUZZ_RADIUS_METERS } from '@/lib/geoFuzz'
 
 // Fix default Leaflet icon issue with bundlers
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
@@ -57,6 +58,15 @@ function createColoredIcon(color: string) {
 
 const originIcon = createColoredIcon('#22c55e') // green
 const destinationIcon = createColoredIcon('#ef4444') // red
+const checkInIcon = createColoredIcon('#8b5cf6') // violet
+
+/** Formats an ISO timestamp as a short relative "Xm ago" / "Xh ago" string. */
+function relativeTimeFromNow(iso: string): string {
+  const diffMin = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000))
+  if (diffMin < 1) return 'just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  return `${Math.round(diffMin / 60)}h ago`
+}
 
 /**
  * AI helped heavily
@@ -108,12 +118,19 @@ export type RouteCoordinate = {
   positions?: [number, number][]
 }
 
+export type CheckInPoint = {
+  position: [number, number]
+  checkedInAt: string
+}
+
 type DriverMapProps = {
   routes: RouteCoordinate[]
   height?: string
   selectedRouteId?: string | null
   /** Called when a route line / marker is clicked on the map */
   onRouteClick?: (routeId: string) => void
+  /** Driver's most recent (fuzzed) check-in ping, if any */
+  checkIn?: CheckInPoint | null
 }
 
 export function DriverMap({
@@ -121,6 +138,7 @@ export function DriverMap({
   height = '500px',
   selectedRouteId,
   onRouteClick,
+  checkIn,
 }: DriverMapProps) {
   const isDark = useDarkMode()
   const tile = isDark ? TILES.dark : TILES.light
@@ -146,8 +164,36 @@ export function DriverMap({
         {routes.map((route) => (
           <RouteLine key={route.id} route={route} onRouteClick={onRouteClick} />
         ))}
+
+        {checkIn && <CheckInMarker checkIn={checkIn} />}
       </MapContainer>
     </div>
+  )
+}
+
+/**
+ * Renders a driver's check-in ping as a marker plus a circle of radius
+ * MAX_FUZZ_RADIUS_METERS, making clear to both parties that the pin marks an
+ * approximate area rather than an exact spot.
+ */
+function CheckInMarker({ checkIn }: { checkIn: CheckInPoint }) {
+  return (
+    <>
+      <Marker position={checkIn.position} icon={checkInIcon}>
+        <Popup>
+          <strong>Driver check-in</strong>
+          <br />
+          Checked in {relativeTimeFromNow(checkIn.checkedInAt)}
+          <br />
+          <span style={{ fontSize: '0.85em', color: '#6b7280' }}>Location is approximate</span>
+        </Popup>
+      </Marker>
+      <Circle
+        center={checkIn.position}
+        radius={MAX_FUZZ_RADIUS_METERS}
+        pathOptions={{ color: '#8b5cf6', fillColor: '#8b5cf6', fillOpacity: 0.1, weight: 1 }}
+      />
+    </>
   )
 }
 
