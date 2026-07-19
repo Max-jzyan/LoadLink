@@ -9,6 +9,7 @@ import { BlocklistModel } from '../../models/blocklist/Blocklist'
 import { LOAD_STATUSES } from '../../models/enums'
 import { computeRoute } from '../../lib/routing'
 import { emitLoadPosted } from '../../events/auctionEvents'
+import { notifyDriverCheckedIn } from '../notificationService'
 import {
   getLoad,
   createLoad,
@@ -16,6 +17,7 @@ import {
   listCompanyLoads,
   listAvailableLoads,
   selectTruckForLoad,
+  submitCheckIn,
 } from '../loadService'
 
 jest.mock('../../models/loads/Load')
@@ -29,6 +31,7 @@ jest.mock('../../models/blocklist/Blocklist', () => ({
 }))
 jest.mock('../../lib/routing')
 jest.mock('../../events/auctionEvents')
+jest.mock('../notificationService', () => ({ notifyDriverCheckedIn: jest.fn() }))
 
 const findLoadByIdMock = jest.mocked(LoadModel.findById)
 const createLoadMock = jest.mocked(LoadModel.create)
@@ -41,6 +44,7 @@ const findUserByIdMock = jest.mocked(UserModel.findById)
 const blocklistFindMock = jest.mocked(BlocklistModel.find)
 const computeRouteMock = jest.mocked(computeRoute)
 const emitLoadPostedMock = jest.mocked(emitLoadPosted)
+const notifyDriverCheckedInMock = jest.mocked(notifyDriverCheckedIn)
 
 const LOAD_ID = '000000000000000000000101'
 const DRIVER_ID = '000000000000000000000011'
@@ -419,5 +423,74 @@ describe('selectTruckForLoad', () => {
 
     expect(load.selectedTruckId?.toString()).toBe(TRUCK_ID)
     expect(load.save).toHaveBeenCalled()
+  })
+})
+
+describe('submitCheckIn', () => {
+  const COORDS = { lat: 49.2827, lng: -123.1207 }
+
+  it('400s on invalid ids', async () => {
+    await expect(submitCheckIn(INVALID_ID, DRIVER_ID, COORDS)).rejects.toMatchObject({
+      statusCode: StatusCodes.BAD_REQUEST,
+    })
+    await expect(submitCheckIn(LOAD_ID, INVALID_ID, COORDS)).rejects.toMatchObject({
+      statusCode: StatusCodes.BAD_REQUEST,
+    })
+  })
+
+  it('404s when the load does not exist', async () => {
+    findLoadByIdMock.mockResolvedValue(null)
+
+    await expect(submitCheckIn(LOAD_ID, DRIVER_ID, COORDS)).rejects.toMatchObject({
+      statusCode: StatusCodes.NOT_FOUND,
+    })
+  })
+
+  it('403s when the caller is not the assigned driver', async () => {
+    findLoadByIdMock.mockResolvedValue(
+      fakeLoad({
+        status: LOAD_STATUSES.InTransit,
+        assignedDriverId: { toString: () => 'someone-else' },
+      }) as never
+    )
+
+    await expect(submitCheckIn(LOAD_ID, DRIVER_ID, COORDS)).rejects.toMatchObject({
+      statusCode: StatusCodes.FORBIDDEN,
+    })
+  })
+
+  it('403s when the load has no assigned driver at all', async () => {
+    findLoadByIdMock.mockResolvedValue(
+      fakeLoad({ status: LOAD_STATUSES.InTransit, assignedDriverId: null }) as never
+    )
+
+    await expect(submitCheckIn(LOAD_ID, DRIVER_ID, COORDS)).rejects.toMatchObject({
+      statusCode: StatusCodes.FORBIDDEN,
+    })
+  })
+
+  it('409s when the load is not in transit', async () => {
+    findLoadByIdMock.mockResolvedValue(fakeLoad({ status: LOAD_STATUSES.Booked }) as never)
+
+    await expect(submitCheckIn(LOAD_ID, DRIVER_ID, COORDS)).rejects.toMatchObject({
+      statusCode: StatusCodes.CONFLICT,
+    })
+    expect(notifyDriverCheckedInMock).not.toHaveBeenCalled()
+  })
+
+  it('persists lastCheckIn and notifies the company on success', async () => {
+    const load = fakeLoad({ status: LOAD_STATUSES.InTransit })
+    findLoadByIdMock.mockResolvedValue(load as never)
+
+    const result = await submitCheckIn(LOAD_ID, DRIVER_ID, COORDS)
+
+    expect(load.lastCheckIn.coords).toEqual(COORDS)
+    expect(load.lastCheckIn.checkedInAt).toBeInstanceOf(Date)
+    expect(load.save).toHaveBeenCalled()
+    expect(notifyDriverCheckedInMock).toHaveBeenCalledWith(
+      COMPANY_ID,
+      expect.objectContaining({ loadId: LOAD_ID, coords: COORDS })
+    )
+    expect(result).toBe(load)
   })
 })

@@ -10,6 +10,7 @@ import {
   listAvailableLoads,
   streamNewLoads,
   selectTruckForLoad,
+  submitCheckIn,
 } from '../controllers/loadController'
 import { requireAuth, requireAuthSSE } from '../middleware/requireAuth'
 import {
@@ -81,6 +82,13 @@ router.patch(
   requireRole(USER_ROLES.DRIVER),
   requireOwns(driverOwnsAssignedLoad),
   selectTruckForLoad
+)
+router.post(
+  '/loads/:loadId/checkin',
+  requireAuth,
+  requireRole(USER_ROLES.DRIVER),
+  requireOwns(driverOwnsAssignedLoad),
+  submitCheckIn
 )
 
 export default router

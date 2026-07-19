@@ -10,6 +10,7 @@ import { TARGET_TYPES } from '../models/blocklist/Blocklist'
 import { LOAD_STATUSES } from '../models/enums'
 import { computeRoute } from '../lib/routing'
 import { emitLoadPosted } from '../events/auctionEvents'
+import { notifyDriverCheckedIn } from './notificationService'
 import { ApiError } from '../utils/ApiError'
 
 interface CreateLoadData {
@@ -314,6 +315,46 @@ export const selectTruckForLoad = async (
 
   load.selectedTruckId = truckId === null ? null : new Types.ObjectId(truckId)
   await load.save()
+
+  return load
+}
+
+/**
+ * Record a driver's "check in" ping — their approximate current location —
+ * on an in-transit load, and notify the company. Single most-recent ping
+ * only; no history is kept.
+ */
+export const submitCheckIn = async (
+  loadId: string,
+  driverId: string,
+  coords: { lat: number; lng: number }
+) => {
+  if (!isValidObjectId(loadId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid loadId')
+  }
+  if (!isValidObjectId(driverId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid driverId')
+  }
+
+  const load = await LoadModel.findById(loadId)
+  if (!load) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Load not found')
+  }
+
+  // The load must be assigned to this driver
+  if (!load.assignedDriverId || load.assignedDriverId.toString() !== driverId) {
+    throw new ApiError(StatusCodes.FORBIDDEN, 'You are not assigned to this load')
+  }
+
+  if (load.status !== LOAD_STATUSES.InTransit) {
+    throw new ApiError(StatusCodes.CONFLICT, `Load is not in transit (status: ${load.status})`)
+  }
+
+  const checkedInAt = new Date()
+  load.lastCheckIn = { coords, checkedInAt }
+  await load.save()
+
+  await notifyDriverCheckedIn(load.companyId.toString(), { loadId, coords, checkedInAt })
 
   return load
 }

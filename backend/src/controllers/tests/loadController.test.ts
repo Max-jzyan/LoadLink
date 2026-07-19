@@ -15,6 +15,7 @@ import {
   updateLoadExpenses,
   listAvailableLoads,
   selectTruckForLoad,
+  submitCheckIn,
 } from '../loadController'
 import type { AuthedUser } from '../../types/auth'
 
@@ -31,6 +32,7 @@ const updateLoadMock = jest.mocked(loadService.updateLoad)
 const listCompanyLoadsMock = jest.mocked(loadService.listCompanyLoads)
 const listAvailableLoadsMock = jest.mocked(loadService.listAvailableLoads)
 const selectTruckForLoadMock = jest.mocked(loadService.selectTruckForLoad)
+const submitCheckInMock = jest.mocked(loadService.submitCheckIn)
 const onLoadPostedMock = jest.mocked(onLoadPosted)
 
 const LOAD_ID = '000000000000000000000101'
@@ -355,5 +357,56 @@ describe('selectTruckForLoad', () => {
 
     expect(selectTruckForLoadMock).toHaveBeenCalledWith(LOAD_ID, DRIVER_ID, null)
     expect(res.statusCode).toBe(StatusCodes.OK)
+  })
+})
+
+describe('submitCheckIn', () => {
+  it('400s on invalid lat/lng in the body', async () => {
+    const req = httpMocks.createRequest({
+      params: { loadId: LOAD_ID },
+      user: driverUser(),
+      body: { lat: 'nope', lng: -123.12 },
+    } as never)
+    const res = httpMocks.createResponse()
+    const next = jest.fn()
+
+    await submitCheckIn(req, res, next)
+
+    expect((next.mock.calls[0][0] as ApiError).statusCode).toBe(StatusCodes.BAD_REQUEST)
+    expect(submitCheckInMock).not.toHaveBeenCalled()
+  })
+
+  it('passes the driver id and coords through on success', async () => {
+    submitCheckInMock.mockResolvedValue({ _id: LOAD_ID } as never)
+    const req = httpMocks.createRequest({
+      params: { loadId: LOAD_ID },
+      user: driverUser(),
+      body: { lat: 49.2827, lng: -123.1207 },
+    } as never)
+    const res = httpMocks.createResponse()
+    const next = jest.fn()
+
+    await submitCheckIn(req, res, next)
+
+    expect(submitCheckInMock).toHaveBeenCalledWith(LOAD_ID, DRIVER_ID, {
+      lat: 49.2827,
+      lng: -123.1207,
+    })
+    expect(res.statusCode).toBe(StatusCodes.OK)
+  })
+
+  it('forwards service errors to next', async () => {
+    submitCheckInMock.mockRejectedValue(new ApiError(StatusCodes.CONFLICT, 'not in transit'))
+    const req = httpMocks.createRequest({
+      params: { loadId: LOAD_ID },
+      user: driverUser(),
+      body: { lat: 49.2827, lng: -123.1207 },
+    } as never)
+    const res = httpMocks.createResponse()
+    const next = jest.fn()
+
+    await submitCheckIn(req, res, next)
+
+    expect(next).toHaveBeenCalledWith(expect.any(ApiError))
   })
 })

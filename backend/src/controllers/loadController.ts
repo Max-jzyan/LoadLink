@@ -6,6 +6,7 @@ import { BidModel } from '../models/loads/Bid'
 import { ApiError } from '../utils/ApiError'
 import * as loadService from '../services/loadService'
 import { LOAD_STATUSES, BID_STATUSES } from '../models/enums'
+import { parseLatLng } from '../utils/geo'
 
 /**
  * GET /api/loads/:loadId/accepted-bid
@@ -18,7 +19,10 @@ export const getAcceptedBid = async (req: Request, res: Response, next: NextFunc
     const loadId = req.params.loadId as string
     if (!isValidObjectId(loadId)) throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid loadId')
 
-    const bid = await BidModel.findOne({ loadId: new Types.ObjectId(loadId), status: BID_STATUSES.Accepted })
+    const bid = await BidModel.findOne({
+      loadId: new Types.ObjectId(loadId),
+      status: BID_STATUSES.Accepted,
+    })
       .select('_id driverId amount acceptedAt rateConfirmationUrl rateConfirmationKey')
       .lean()
 
@@ -242,6 +246,28 @@ export const selectTruckForLoad = async (req: Request, res: Response, next: Next
     // Cast driver._id to string - use String constructor to ensure proper type
     const driverId = String(driver._id as Types.ObjectId)
     const load = await loadService.selectTruckForLoad(loadId, driverId, truckId)
+    res.status(StatusCodes.OK).json(load)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * POST /api/loads/:loadId/checkin
+ * Record the assigned driver's approximate current location ping on an
+ * in-transit load, and notify the company.
+ */
+export const submitCheckIn = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const loadId = req.params.loadId as string
+    const driverId = req.user!._id
+
+    const coords = parseLatLng(req.body.lat, req.body.lng)
+    if (!coords) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid lat/lng')
+    }
+
+    const load = await loadService.submitCheckIn(loadId, driverId, coords)
     res.status(StatusCodes.OK).json(load)
   } catch (err) {
     next(err)

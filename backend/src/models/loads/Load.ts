@@ -27,6 +27,14 @@ const ExpenseOverridesSchema = new Schema(
   { _id: false }
 )
 
+const CheckInSchema = new Schema(
+  {
+    coords: { type: CoordinateSchema, required: true },
+    checkedInAt: { type: Date, required: true },
+  },
+  { _id: false }
+)
+
 const LoadSchema = new Schema(
   {
     companyId: {
@@ -93,6 +101,13 @@ const LoadSchema = new Schema(
       type: Types.ObjectId,
       ref: 'User',
       required: true,
+    },
+
+    // Most recent driver check-in ping (approximate location), if any.
+    // Single most-recent value only — no history is kept.
+    lastCheckIn: {
+      type: CheckInSchema,
+      default: null,
     },
   },
   { timestamps: true }

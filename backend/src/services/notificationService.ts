@@ -83,10 +83,7 @@ export const notifyLoadClaimed = (
     data: { loadId: opts.loadId, payout: opts.payout },
   })
 
-export const notifyAuctionExpired = (
-  companyUserId: string,
-  opts: { loadId: string }
-) =>
+export const notifyAuctionExpired = (companyUserId: string, opts: { loadId: string }) =>
   createNotification({
     userId: companyUserId,
     type: NOTIFICATION_TYPES.AUCTION_EXPIRED,
@@ -107,6 +104,18 @@ export const notifyRateConfirmationReady = (
     data: { loadId: opts.loadId, bidId: opts.bidId, rateConfirmationUrl: opts.url },
   })
 
+export const notifyDriverCheckedIn = (
+  companyUserId: string,
+  opts: { loadId: string; coords: { lat: number; lng: number }; checkedInAt: Date }
+) =>
+  createNotification({
+    userId: companyUserId,
+    type: NOTIFICATION_TYPES.DRIVER_CHECKED_IN,
+    title: 'Driver checked in',
+    message: 'Your driver pinged their approximate location on an in-transit load.',
+    data: { loadId: opts.loadId, coords: opts.coords, checkedInAt: opts.checkedInAt.toISOString() },
+  })
+
 export const notifyDocumentUploaded = (
   adminUserIds: string[],
   opts: { uploaderName: string; docType: string; ownerId: string }
@@ -123,10 +132,7 @@ export const notifyDocumentUploaded = (
     )
   )
 
-export const notifyDocumentApproved = (
-  userId: string,
-  opts: { docType: string }
-) =>
+export const notifyDocumentApproved = (userId: string, opts: { docType: string }) =>
   createNotification({
     userId,
     type: NOTIFICATION_TYPES.DOCUMENT_APPROVED,

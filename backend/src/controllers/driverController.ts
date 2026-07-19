@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import * as driverService from '../services/driverService'
+import { parseLatLng } from '../utils/geo'
 
 // ── endpoints ────────────────────────────────────────────────────────────
 
@@ -123,22 +124,12 @@ export const getDriverRevenue = async (req: Request, res: Response, next: NextFu
 export const getScoredLoads = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const driverId = req.params.driverId as string
-    const liveLocation = parseLiveLocation(req.query.lat, req.query.lng)
+    const liveLocation = parseLatLng(req.query.lat, req.query.lng)
     const scored = await driverService.getScoredLoads(driverId, liveLocation)
     res.status(StatusCodes.OK).json(scored)
   } catch (err) {
     next(err)
   }
-}
-
-/** Parses optional `lat`/`lng` query params into a coordinate, or null if absent/invalid. */
-function parseLiveLocation(rawLat: unknown, rawLng: unknown): { lat: number; lng: number } | null {
-  if (rawLat === undefined || rawLng === undefined) return null
-  const lat = Number(rawLat)
-  const lng = Number(rawLng)
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null
-  return { lat, lng }
 }
 
 /**
