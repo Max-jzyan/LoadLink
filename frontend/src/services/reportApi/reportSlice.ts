@@ -1,7 +1,13 @@
 import { getHttpErrorMessage, showError, showSuccess, getErrorStatus } from '@/lib/toast'
 import { api } from '../api'
 import { LoadTag } from '../apiTypes'
-import type { CreateReportPayload, Report } from './reportEnum'
+import type { CreateReportPayload, Report, ReportCollaborator, ReportableLoad } from './reportEnum'
+
+/** Prefer the backend's { message } body over the generic status text */
+const getServerErrorMessage = (error: unknown, fallbackStatus: number) => {
+  const data = (error as { error?: { data?: { message?: string } } })?.error?.data
+  return data?.message ?? getHttpErrorMessage(fallbackStatus)
+}
 
 export const reportApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -9,6 +15,18 @@ export const reportApi = api.injectEndpoints({
     getMyReports: build.query<Report[], string>({
       query: (userId) => `reports/user/${userId}`,
       providesTags: (_result, _error, userId) => [{ type: LoadTag.Report, id: userId }],
+    }),
+
+    // GET /api/reports/collaborators — users the caller has actually worked
+    // with (the only valid fraud-report targets); feeds the autocomplete
+    getReportCollaborators: build.query<ReportCollaborator[], void>({
+      query: () => 'reports/collaborators',
+    }),
+
+    // GET /api/reports/loads — loads the caller (driver) has bid on or been
+    // assigned (the only valid inaccurate-report targets); feeds the load picker
+    getReportableLoads: build.query<ReportableLoad[], void>({
+      query: () => 'reports/loads',
     }),
 
     // POST /api/reports — submit a fraud or inaccurate-details report
@@ -26,8 +44,7 @@ export const reportApi = api.injectEndpoints({
           await queryFulfilled
           showSuccess('Report submitted — our trust & safety team will review it')
         } catch (error) {
-          const status = getErrorStatus(error)
-          showError(getHttpErrorMessage(status))
+          showError(getServerErrorMessage(error, getErrorStatus(error)))
         }
       },
     }),
@@ -35,4 +52,9 @@ export const reportApi = api.injectEndpoints({
   overrideExisting: false,
 })
 
-export const { useGetMyReportsQuery, useCreateReportMutation } = reportApi
+export const {
+  useGetMyReportsQuery,
+  useGetReportCollaboratorsQuery,
+  useGetReportableLoadsQuery,
+  useCreateReportMutation,
+} = reportApi

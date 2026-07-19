@@ -216,7 +216,7 @@ export default function BlocklistPreferences() {
   }
 
   const handleReport = (entry: BlocklistEntry) => {
-    navigate(RoutePath.ReportFraud, { state: { entityName: entryName(entry) } })
+    navigate(RoutePath.ReportFraud, { state: { entityEmail: entry.targetId?.email ?? '' } })
   }
 
   const handleBlock = async () => {
@@ -371,7 +371,7 @@ export default function BlocklistPreferences() {
                   onInput={(e) => setSearchQuery((e.target as HTMLInputElement).value)}
                   onFocus={() => setKnownUsersOpen(true)}
                 />
-                <ComboboxContent className="w-[var(--radix-combobox-trigger-width)]">
+                <ComboboxContent>
                   <ComboboxList>
                     {filteredKnownUsers.map((u) => (
                       <ComboboxItem key={u._id} value={u.name}>

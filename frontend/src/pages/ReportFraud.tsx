@@ -4,7 +4,13 @@ import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
 import ReportInfoPanel from '@/components/report/ReportInfoPanel'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@/components/ui/combobox'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -16,7 +22,10 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { RoutePath } from '@/config/routes'
 import { selectMongoId, selectRole } from '@/services/authSlice'
-import { useCreateReportMutation } from '@/services/reportApi/reportSlice'
+import {
+  useCreateReportMutation,
+  useGetReportCollaboratorsQuery,
+} from '@/services/reportApi/reportSlice'
 import { Loader2, ShieldAlert } from 'lucide-react'
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -46,28 +55,52 @@ export default function ReportFraud() {
   const userId = useSelector(selectMongoId)
   const fraudTypes = isCompany ? COMPANY_FRAUD_TYPES : DRIVER_FRAUD_TYPES
 
-  const prefilledName = (location.state as { entityName?: string } | null)?.entityName ?? ''
+  // Prefilled when arriving from a blocklist row's "Report" button
+  const prefilledEmail = (location.state as { entityEmail?: string } | null)?.entityEmail ?? ''
 
-  const [name, setName] = useState(prefilledName)
+  const [email, setEmail] = useState(prefilledEmail)
+  const [emailOpen, setEmailOpen] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
   const [fraudType, setFraudType] = useState('')
   const [description, setDescription] = useState('')
   const [createReport, { isLoading: isSubmitting }] = useCreateReportMutation()
 
+  // Suggestions are the users the reporter actually worked with — the same
+  // list the backend validates fraud-report targets against
+  const { data: collaborators = [] } = useGetReportCollaboratorsQuery(undefined, {
+    skip: !emailOpen,
+  })
+  const filteredCollaborators = collaborators.filter((u) =>
+    u.email.toLowerCase().includes(email.trim().toLowerCase())
+  )
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value)
+    setEmailError(null)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim() || !fraudType || !description.trim() || !userId) return
+    if (!email.trim() || !fraudType || !description.trim() || !userId) return
     try {
       await createReport({
         reporterId: userId,
         type: 'fraud',
         targetType: isCompany ? 'driver' : 'company',
-        targetName: name.trim(),
+        targetEmail: email.trim(),
         category: fraudTypes.find((t) => t.value === fraudType)?.label ?? fraudType,
         description: description.trim(),
       }).unwrap()
       navigate(RoutePath.Report)
-    } catch {
-      // error toast handled by the mutation
+    } catch (err) {
+      // toast handled by the mutation; surface target-validation errors inline
+      const { status, data } = (err ?? {}) as { status?: number; data?: { message?: string } }
+      if (status === 404 || status === 403) {
+        setEmailError(
+          data?.message ??
+            `No ${isCompany ? 'driver' : 'company'} you have worked with matches that email`
+        )
+      }
     }
   }
 
@@ -89,14 +122,59 @@ export default function ReportFraud() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="name">{isCompany ? 'Driver' : 'Company'} name</Label>
-                <Input
-                  id="name"
-                  placeholder={`Enter ${isCompany ? 'driver' : 'company'} name...`}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
+                <Label htmlFor="email">{isCompany ? 'Driver' : 'Company'} email</Label>
+                <Combobox
+                  open={emailOpen}
+                  onOpenChange={setEmailOpen}
+                  inputValue={email}
+                  onInputValueChange={(val, details) => {
+                    // Only treat genuine typing as an edit — Base UI also
+                    // fires this on selection and on popup close
+                    if (details.reason === 'input-change') {
+                      handleEmailChange(val)
+                    }
+                  }}
+                  items={filteredCollaborators.map((u) => ({
+                    value: u.email,
+                    label: u.email,
+                  }))}
+                  onValueChange={(val) => {
+                    if (val) {
+                      handleEmailChange(val as string)
+                      setEmailOpen(false)
+                    }
+                  }}
+                >
+                  <ComboboxInput
+                    id="email"
+                    placeholder={`Search a ${isCompany ? 'driver' : 'company'} you've worked with...`}
+                    onFocus={() => setEmailOpen(true)}
+                    required
+                  />
+                  <ComboboxContent>
+                    <ComboboxList>
+                      {filteredCollaborators.map((u) => (
+                        <ComboboxItem key={u._id} value={u.email}>
+                          <div className="flex flex-col">
+                            <span>{u.name}</span>
+                            <span className="text-xs text-muted-foreground">{u.email}</span>
+                          </div>
+                        </ComboboxItem>
+                      ))}
+                      {filteredCollaborators.length === 0 && (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                          Only {isCompany ? 'drivers' : 'companies'} you've worked with can be
+                          reported.
+                        </div>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
+                {emailError && (
+                  <p className="text-xs text-destructive bg-destructive/10 rounded px-2 py-1">
+                    {emailError}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -135,7 +213,7 @@ export default function ReportFraud() {
                   type="submit"
                   variant="destructive"
                   className="bg-red-500 hover:bg-red-600 text-white"
-                  disabled={!name.trim() || !fraudType || !description.trim() || isSubmitting}
+                  disabled={!email.trim() || !fraudType || !description.trim() || isSubmitting}
                 >
                   {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   Submit Report

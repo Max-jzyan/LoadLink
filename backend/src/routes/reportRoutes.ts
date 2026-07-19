@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import {
   createReport,
+  getReportCollaborators,
+  getReportLoads,
   getReportsByReporter,
   getAllReports,
   updateReportStatus,
@@ -14,6 +16,8 @@ const router = Router()
 const adminOnly = [requireAuth, requireRole(USER_ROLES.ADMIN)]
 
 router.post('/reports', requireAuth, createReport)
+router.get('/reports/collaborators', requireAuth, getReportCollaborators)
+router.get('/reports/loads', requireAuth, getReportLoads)
 // Admin view — all reports across users
 router.get('/reports', adminOnly, getAllReports)
 router.get('/reports/user/:userId', requireAuth, requireSelfParam('userId'), getReportsByReporter)

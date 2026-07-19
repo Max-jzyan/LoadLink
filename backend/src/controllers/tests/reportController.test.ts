@@ -4,6 +4,8 @@ import { ApiError } from '../../utils/ApiError'
 import * as reportService from '../../services/reportService'
 import {
   createReport,
+  getReportCollaborators,
+  getReportLoads,
   getReportsByReporter,
   getAllReports,
   updateReportStatus,
@@ -12,6 +14,8 @@ import {
 jest.mock('../../services/reportService')
 
 const createReportMock = jest.mocked(reportService.createReport)
+const getReportableCollaboratorsMock = jest.mocked(reportService.getReportableCollaborators)
+const getReportableLoadsMock = jest.mocked(reportService.getReportableLoads)
 const getReportsByReporterMock = jest.mocked(reportService.getReportsByReporter)
 const getAllReportsMock = jest.mocked(reportService.getAllReports)
 const updateReportStatusMock = jest.mocked(reportService.updateReportStatus)
@@ -54,6 +58,74 @@ describe('createReport', () => {
     const next = jest.fn()
 
     await createReport(req, res, next)
+
+    expect(next).toHaveBeenCalledWith(expect.any(ApiError))
+  })
+})
+
+describe('getReportCollaborators', () => {
+  it("200s with the caller's collaborators", async () => {
+    getReportableCollaboratorsMock.mockResolvedValue([
+      { _id: '000000000000000000000022', name: 'Acme', email: 'acme@example.com' },
+    ])
+    const req = httpMocks.createRequest()
+    req.user = { _id: USER_ID } as never
+    const res = httpMocks.createResponse()
+    const next = jest.fn()
+
+    await getReportCollaborators(req, res, next)
+
+    expect(getReportableCollaboratorsMock).toHaveBeenCalledWith(USER_ID)
+    expect(res.statusCode).toBe(StatusCodes.OK)
+    expect(res._getJSONData()).toEqual([
+      { _id: '000000000000000000000022', name: 'Acme', email: 'acme@example.com' },
+    ])
+  })
+
+  it('forwards errors to next', async () => {
+    getReportableCollaboratorsMock.mockRejectedValue(new ApiError(StatusCodes.BAD_REQUEST, 'bad id'))
+    const req = httpMocks.createRequest()
+    req.user = { _id: USER_ID } as never
+    const res = httpMocks.createResponse()
+    const next = jest.fn()
+
+    await getReportCollaborators(req, res, next)
+
+    expect(next).toHaveBeenCalledWith(expect.any(ApiError))
+  })
+})
+
+describe('getReportLoads', () => {
+  it("200s with loads the caller's worked with", async () => {
+    getReportableLoadsMock.mockResolvedValue([
+      {
+        _id: '000000000000000000000101',
+        originAddress: 'Origin Rd',
+        destinationAddress: 'Destination Ave',
+        commodity: 'Steel Coils',
+        status: 'booked',
+      },
+    ])
+    const req = httpMocks.createRequest()
+    req.user = { _id: USER_ID } as never
+    const res = httpMocks.createResponse()
+    const next = jest.fn()
+
+    await getReportLoads(req, res, next)
+
+    expect(getReportableLoadsMock).toHaveBeenCalledWith(USER_ID)
+    expect(res.statusCode).toBe(StatusCodes.OK)
+    expect(res._getJSONData()).toHaveLength(1)
+  })
+
+  it('forwards errors to next', async () => {
+    getReportableLoadsMock.mockRejectedValue(new ApiError(StatusCodes.BAD_REQUEST, 'bad id'))
+    const req = httpMocks.createRequest()
+    req.user = { _id: USER_ID } as never
+    const res = httpMocks.createResponse()
+    const next = jest.fn()
+
+    await getReportLoads(req, res, next)
 
     expect(next).toHaveBeenCalledWith(expect.any(ApiError))
   })

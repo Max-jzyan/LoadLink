@@ -18,6 +18,35 @@ export const createReport = async (req: Request, res: Response, next: NextFuncti
 }
 
 /**
+ * GET /api/reports/collaborators
+ * Users the caller has actually worked with — the only valid fraud-report
+ * targets; feeds the report page's autocomplete.
+ */
+export const getReportCollaborators = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const collaborators = await reportService.getReportableCollaborators(req.user!._id)
+    res.status(StatusCodes.OK).json(collaborators)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * GET /api/reports/loads
+ * Loads the calling driver has actually worked with (bid on or been
+ * assigned) — the only valid inaccurate-report targets; feeds the report
+ * page's load picker.
+ */
+export const getReportLoads = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const loads = await reportService.getReportableLoads(req.user!._id)
+    res.status(StatusCodes.OK).json(loads)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
  * GET /api/reports/user/:userId
  * Fetch reports submitted by a user, newest first.
  */

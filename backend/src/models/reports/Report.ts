@@ -34,9 +34,12 @@ const ReportSchema = new Schema(
       enum: [REPORT_TARGET_TYPES.DRIVER, REPORT_TARGET_TYPES.COMPANY],
       required: true,
     },
-    // Free-text name as entered by the reporter — the target may not be a registered user
+    // Human-readable label for the target: a collaborator's name (fraud
+    // reports, and company-submitted inaccurate reports), or a load's route
+    // (driver-submitted inaccurate-load reports)
     targetName: { type: String, required: true, trim: true },
-    // Resolved User ref when targetName matches a registered user, else null
+    // The reported user: the matched collaborator, or the company that
+    // posted the reported load
     targetId: { type: Types.ObjectId, ref: 'User', default: null, index: true },
     category: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
