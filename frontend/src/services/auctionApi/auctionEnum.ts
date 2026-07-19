@@ -64,6 +64,7 @@ export interface Auction {
   status: string
   claimedByDriverId?: string | null
   autoAcceptedBidId?: string | null
+  bestBidAmount: number | null
   lastPriceUpdateAt: string
   createdAt: string
   updatedAt: string

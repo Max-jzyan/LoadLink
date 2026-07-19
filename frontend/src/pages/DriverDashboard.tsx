@@ -60,7 +60,7 @@ export default function DriverDashboard() {
     }
   }, [rawLoads, dispatch])
 
-  // Read from the slice so LoadActionsCell's optimistic updates are reflected
+  // Read from the slice so LoadManageDialog's optimistic updates are reflected
   const availableLoads = useSelector(selectDriverLoads)
 
   // Refresh timestamp tracking

@@ -136,7 +136,9 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     navGroup: null,
     roles: ['company'],
   },
-  [RoutePath.Map]: { label: 'Map', icon: MapPin, navGroup: 'main', roles: ['driver', 'company'] },
+  // Not in the sidebar — reached only via a loadId query param from an
+  // in-transit row's "Track"/"Notify Company" button.
+  [RoutePath.Map]: { label: 'Map', icon: MapPin, navGroup: null, roles: ['driver', 'company'] },
   [RoutePath.CompanyProfile]: {
     label: 'Profile',
     icon: User,

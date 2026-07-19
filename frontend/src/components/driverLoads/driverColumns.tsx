@@ -2,20 +2,14 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { Load, AuctionSummary } from '@/services/loadApi/loadEnum'
 import type { Truck } from '@/services/driverApi/driverEnum'
 import { StatusBadge } from '@/components/shared/StatusBadge'
-import { LoadActionsCell } from './LoadActionsCell'
+import { LoadManageDialog, truckDisplayName } from './LoadManageDialog'
 import { type LoadStatus } from '@/types/enums'
 import { TRUCK_TYPES } from '@/types/enums'
-import { Badge } from '@/components/ui/badge'
-import { Truck as TruckIcon } from 'lucide-react'
 import CompanyNameLink from '@/components/shared/CompanyNameLink'
 
 const TRUCK_LABELS: Record<string, string> = Object.fromEntries(
   TRUCK_TYPES.map((t) => [t.value, t.label])
 )
-
-function truckDisplayName(t: Truck) {
-  return `${t.year} ${t.make} ${t.model} (${t.trailerLengthFt}ft)`
-}
 
 export const columns = (trucks: Truck[] = []): ColumnDef<Load>[] => [
   {
@@ -176,49 +170,18 @@ export const columns = (trucks: Truck[] = []): ColumnDef<Load>[] => [
     },
   },
   {
-    id: 'truck',
-    header: 'My Truck',
+    id: 'manage',
+    header: 'Manage',
     accessorFn: (row) => {
       const truck = trucks.find((t) => t._id === row.selectedTruckId)
       return truck ? truckDisplayName(truck) : ''
     },
-    cell: ({ row }) => {
-      const load = row.original
-      const truck = trucks.find((t) => t._id === load.selectedTruckId)
-      if (!truck) {
-        return (
-          <Badge
-            variant="outline"
-            className="border-amber-300 text-amber-600 gap-1"
-            title="No truck selected for this load"
-          >
-            <TruckIcon className="h-3 w-3" />
-            No Truck
-          </Badge>
-        )
-      }
-      return (
-        <span className="text-sm block max-w-[200px] truncate" title={truckDisplayName(truck)}>
-          {truckDisplayName(truck)}
-        </span>
-      )
-    },
-    maxSize: 200,
+    cell: ({ row }) => <LoadManageDialog load={row.original} trucks={trucks} />,
+    size: 110,
+    // Always visible — this is the driver's sole action surface for a load,
+    // so it can't be responsively hidden the way informational columns can.
     meta: {
-      responsive: 'lg',
-    },
-  },
-  {
-    id: 'actions',
-    header: 'Actions',
-    cell: ({ row }) => (
-      <div className="w-[140px] min-w-[140px]">
-        <LoadActionsCell load={row.original} trucks={trucks} />
-      </div>
-    ),
-    size: 140,
-    meta: {
-      responsive: '2xl',
+      responsive: 'always',
     },
   },
 ]

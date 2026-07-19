@@ -72,6 +72,8 @@ export interface Load {
 export interface PopulatedCompany {
   _id: string
   name: string
+  email: string
+  companyName: string
 }
 
 export interface PopulatedLoad extends Omit<Load, 'companyId' | 'auctionId'> {

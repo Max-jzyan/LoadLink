@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import {
   DataTable,
   type OnTableReadyPayload,
@@ -10,29 +10,12 @@ import type { Table } from '@tanstack/react-table'
 import { columns } from './driverColumns'
 import LoadTablePagination from './loadTablePagination'
 import DynamicCard from '../layout/DynamicCard'
-import { TRUCK_TYPES, type LoadStatus, DRIVER_STATUSES, LOAD_STATUSES } from '@/types/enums'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { useSelectTruckForLoadMutation } from '@/services/driverApi/driverSlice'
-import { useUpdateLoadStatusMutation } from '@/services/loadApi/loadSlice'
-import { useDispatch, useSelector } from 'react-redux'
-import { selectMongoId } from '@/services/authSlice'
-import { updateLoadInList } from '@/services/driverLoadsSlice'
-import type { AppDispatch } from '@/services/store'
+import { TRUCK_TYPES } from '@/types/enums'
 import DocumentLinks from '@/components/shared/DocumentLinks'
 
 const TRUCK_LABELS: Record<string, string> = Object.fromEntries(
   TRUCK_TYPES.map((t) => [t.value, t.label])
 )
-
-function truckDisplayName(t: Truck) {
-  return `${t.year} ${t.make} ${t.model} (${t.trailerLengthFt}ft)`
-}
 
 function isPopulatedCompany(value: Load['companyId']): value is CompanySummary {
   return typeof value === 'object' && value !== null && 'companyName' in value
@@ -57,47 +40,22 @@ export default function DriverLoadTable({
   onRowClick,
   selectedId,
 }: DriverLoadTableProps) {
-  const dispatch = useDispatch<AppDispatch>()
-  const driverId = useSelector(selectMongoId)
-  const [selectTruck] = useSelectTruckForLoadMutation()
-  const [updateLoadStatus] = useUpdateLoadStatusMutation()
   const [table, setTable] = useState<Table<Load> | null>(null)
   const [pageIndex, setPageIndex] = useState(0)
-  const [, forceRender] = useState(0)
-  const pendingChangesRef = useRef<Map<string, { status?: LoadStatus; truckId?: string | null }>>(
-    new Map()
-  )
 
   const handleTableReady = (payload: OnTableReadyPayload<Load>) => {
     setTable(payload.table)
     setPageIndex(payload.pageIndex)
   }
 
-  const handleSelectTruck = useCallback((loadId: string, truckId: string | null) => {
-    pendingChangesRef.current.set(loadId, {
-      ...(pendingChangesRef.current.get(loadId) ?? {}),
-      truckId,
-    })
-    forceRender((k) => k + 1)
-  }, [])
-
-  const handleStatusChange = useCallback((loadId: string, newStatus: LoadStatus) => {
-    pendingChangesRef.current.set(loadId, {
-      ...(pendingChangesRef.current.get(loadId) ?? {}),
-      status: newStatus,
-    })
-    forceRender((k) => k + 1)
-  }, [])
-
-  const getStatusKey = useCallback((statusValue: string) => {
-    return Object.entries(LOAD_STATUSES).find(([, v]) => v === statusValue)?.[0] ?? statusValue
-  }, [])
-
-  const drawerTitle = useCallback((load: Load) => {
+  const drawerTitle = (load: Load) => {
     const company = isPopulatedCompany(load.companyId) ? load.companyId : null
     return company?.companyName?.toUpperCase() || load.commodity.toUpperCase()
-  }, [])
+  }
 
+  // Read-only, company-posted load info. Anything the driver can *act* on
+  // (truck assignment, status transitions, notifying the company) lives in
+  // the "Manage" dialog on the row instead — see LoadManageDialog.
   const drawerFields = useMemo<DrawerField<Load>[]>(
     () => [
       {
@@ -165,63 +123,8 @@ export default function DriverLoadTable({
           )
         },
       },
-      {
-        label: 'Status',
-        renderValue: (load) => {
-          const pending = pendingChangesRef.current.get(load._id)
-          const status = (pending?.status ?? load.status) as LoadStatus
-          return (
-            <Select
-              value={status}
-              onValueChange={(val) => handleStatusChange(load._id, val as LoadStatus)}
-            >
-              <SelectTrigger className="w-full max-w-[240px] h-8 text-sm">
-                <SelectValue placeholder="Select status..." />
-              </SelectTrigger>
-              <SelectContent>
-                {DRIVER_STATUSES.map((statusValue) => {
-                  const key = getStatusKey(statusValue)
-                  return (
-                    <SelectItem key={statusValue} value={statusValue}>
-                      {key.replace(/([A-Z])/g, ' $1').trim()}
-                    </SelectItem>
-                  )
-                })}
-              </SelectContent>
-            </Select>
-          )
-        },
-      },
-      {
-        label: 'Assigned Truck',
-        renderValue: (load) => {
-          if (trucks.length === 0) {
-            return <span className="text-sm text-muted-foreground">No trucks registered</span>
-          }
-          const pending = pendingChangesRef.current.get(load._id)
-          const selectedTruckId = pending?.truckId ?? load.selectedTruckId ?? '__none__'
-          return (
-            <Select
-              value={selectedTruckId}
-              onValueChange={(val) => handleSelectTruck(load._id, val === '__none__' ? null : val)}
-            >
-              <SelectTrigger className="w-full max-w-[240px] h-8 text-sm">
-                <SelectValue placeholder="Select a truck..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">None</SelectItem>
-                {trucks.map((t) => (
-                  <SelectItem key={t._id} value={t._id}>
-                    {truckDisplayName(t)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )
-        },
-      },
     ],
-    [trucks, getStatusKey, handleStatusChange, handleSelectTruck]
+    []
   )
 
   const documentDrawerFields = useMemo<DrawerField<Load>[]>(
@@ -232,48 +135,6 @@ export default function DriverLoadTable({
       },
     ],
     []
-  )
-
-  const drawerSubmit = useCallback(
-    async (load: Load) => {
-      if (!driverId) return
-      const changes = pendingChangesRef.current.get(load._id)
-      if (!changes) return
-
-      dispatch(
-        updateLoadInList({
-          loadId: load._id,
-          changes: {
-            ...(changes.status && { status: changes.status }),
-            ...(changes.truckId !== undefined && { selectedTruckId: changes.truckId }),
-          },
-        })
-      )
-
-      const promises: Promise<unknown>[] = []
-      if (changes.status) {
-        promises.push(updateLoadStatus({ driverId, loadId: load._id, status: changes.status }))
-      }
-      if (changes.truckId !== undefined) {
-        promises.push(selectTruck({ loadId: load._id, truckId: changes.truckId }))
-      }
-
-      const results = await Promise.allSettled(promises)
-      results.forEach((r) => {
-        if (
-          r.status === 'rejected' ||
-          (r.status === 'fulfilled' && (r.value as { error?: unknown })?.error)
-        ) {
-          console.error(
-            'Failed to save changes:',
-            r.status === 'rejected' ? r.reason : (r.value as { error?: unknown }).error
-          )
-        }
-      })
-
-      pendingChangesRef.current.delete(load._id)
-    },
-    [driverId, dispatch, selectTruck, updateLoadStatus]
   )
 
   return (
@@ -290,7 +151,6 @@ export default function DriverLoadTable({
         getId={(load) => load._id}
         drawerTitle={drawerTitle}
         drawerFields={[...drawerFields, ...documentDrawerFields]}
-        drawerSubmit={drawerSubmit}
       />
     </DynamicCard>
   )

@@ -1,6 +1,5 @@
 import { useCallback, useState, useMemo } from 'react'
 import type { Table } from '@tanstack/react-table'
-import { Link } from 'react-router-dom'
 import {
   DataTable,
   type OnTableReadyPayload,
@@ -11,9 +10,7 @@ import LoadTablePagination from '@/components/driverLoads/loadTablePagination'
 import type { LoadWithDetails } from '@/services/companyApi/companyTypes'
 import type { DriverSummary } from '@/services/loadApi/loadEnum'
 import { companyColumns } from './companyColumns'
-import { TRUCK_TYPES, LOAD_STATUSES, type LoadStatus } from '@/types/enums'
-import { Button } from '@/components/ui/button'
-import { RoutePath } from '@/config/routes'
+import { TRUCK_TYPES, type LoadStatus } from '@/types/enums'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import DriverNameLink from '@/components/shared/DriverNameLink'
 import DocumentLinks from '@/components/shared/DocumentLinks'
@@ -21,13 +18,6 @@ import DocumentLinks from '@/components/shared/DocumentLinks'
 const TRUCK_LABELS: Record<string, string> = Object.fromEntries(
   TRUCK_TYPES.map((t) => [t.value, t.label])
 )
-
-const NON_EDITABLE_STATUSES = [
-  LOAD_STATUSES.InTransit,
-  LOAD_STATUSES.Booked,
-  LOAD_STATUSES.Completed,
-  LOAD_STATUSES.Cancelled,
-] as const
 
 interface CompanyLoadTableProps {
   title?: string
@@ -148,32 +138,6 @@ export default function CompanyLoadTable({
     []
   )
 
-  const drawerFooter = useCallback((load: LoadWithDetails) => {
-    const canEdit = !(NON_EDITABLE_STATUSES as readonly string[]).includes(load.status)
-    return (
-      <div className="flex w-full flex-col gap-2">
-        {load.status === LOAD_STATUSES.InTransit ? (
-          <Button className="w-full" size="sm" asChild>
-            <Link to={RoutePath.Map}>Track</Link>
-          </Button>
-        ) : (
-          <Button className="w-full" size="sm" asChild>
-            <Link to={`/loads/${load._id}`} state={{ from: RoutePath.CompanyDashboard }}>
-              View
-            </Link>
-          </Button>
-        )}
-        {canEdit && (
-          <Button className="w-full" size="sm" variant="ghost" asChild>
-            <Link to={`/loads/${load._id}/edit`} state={{ from: RoutePath.CompanyDashboard }}>
-              Edit
-            </Link>
-          </Button>
-        )}
-      </div>
-    )
-  }, [])
-
   return (
     <DynamicCard
       title={title}
@@ -188,7 +152,6 @@ export default function CompanyLoadTable({
         getId={(load) => load._id}
         drawerTitle={drawerTitle}
         drawerFields={drawerFields}
-        drawerFooter={drawerFooter}
       />
     </DynamicCard>
   )

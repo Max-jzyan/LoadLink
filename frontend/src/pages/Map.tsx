@@ -1,10 +1,13 @@
 import { DriverMap, type RouteCoordinate } from '@/components/driverLoads/Map'
+import { LoadCard } from '@/components/shared/LoadCard'
 import PageShell from '@/components/layout/PageShell'
-import { selectMongoId, selectRole } from '@/services/authSlice'
-import { useListCompanyLoadsQuery } from '@/services/loadApi/loadSlice'
-import { useListDriverLoadsQuery } from '@/services/driverApi/driverSlice'
+import { ROLE_HOME } from '@/config/routes'
+import { selectRole } from '@/services/authSlice'
+import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
+import { Loader2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
+import { Navigate, useSearchParams } from 'react-router-dom'
 
 const GEOAPIFY_KEY = import.meta.env.VITE_GEOAPIFY_KEY as string | undefined
 const GEOAPIFY_ROUTING = 'https://api.geoapify.com/v1/routing'
@@ -39,73 +42,77 @@ async function fetchRoadPositions(
 }
 
 export default function MapPage() {
-  const mongoId = useSelector(selectMongoId)
   const role = useSelector(selectRole)
+  const [searchParams] = useSearchParams()
+  const loadId = searchParams.get('loadId')
 
-  // Pick the right query based on user role
-  const isCompany = role === 'company'
+  const { data: load, isLoading, isError } = useGetLoadQuery(loadId ?? '', { skip: !loadId })
 
-  const {
-    data: companyLoads,
-    isLoading: companyLoading,
-    isError: companyError,
-  } = useListCompanyLoadsQuery(mongoId ?? '', { skip: !isCompany || !mongoId })
-
-  const {
-    data: driverLoads,
-    isLoading: driverLoading,
-    isError: driverError,
-  } = useListDriverLoadsQuery({ driverId: mongoId! }, { skip: isCompany || !mongoId })
-
-  const loads = isCompany ? companyLoads : driverLoads
-  const isLoading = isCompany ? companyLoading : driverLoading
-  const isError = isCompany ? companyError : driverError
-
-  // loadId -> road [lat, lng][] positions fetched from Geoapify for loads without a stored polyline
-  const [roadPositions, setRoadPositions] = useState<Map<string, [number, number][]>>(new Map())
-  // Track IDs we have already started fetching so StrictMode doublefire doesnt duplicate requests
-  const fetchingRef = useRef<Set<string>>(new Set())
+  // Road [lat, lng][] positions fetched from Geoapify when the load has no stored polyline
+  const [roadPositions, setRoadPositions] = useState<[number, number][] | null>(null)
+  // Track the load ID we've already started fetching so StrictMode doublefire doesn't duplicate requests
+  const fetchingRef = useRef<string | null>(null)
 
   useEffect(() => {
-    if (!loads?.length) return
+    if (!load || load.route?.polyline) return
+    if (fetchingRef.current === load._id) return
+    fetchingRef.current = load._id
 
-    const loadsWithoutRoute = loads.filter((l) => !l.route?.polyline)
-    if (!loadsWithoutRoute.length) return
+    fetchRoadPositions(load.originCoords, load.destinationCoords).then(setRoadPositions)
+  }, [load])
 
-    loadsWithoutRoute.forEach((load) => {
-      if (fetchingRef.current.has(load._id)) return
-      fetchingRef.current.add(load._id)
+  // Map is only reachable via a loadId param now (from an in-transit row's
+  // "Track"/"Notify Company" button) — bounce back to the role's home page
+  // for a bare /map visit (stale bookmark, typed URL, etc.)
+  if (!loadId) {
+    return <Navigate to={role ? ROLE_HOME[role] : '/'} replace />
+  }
 
-      fetchRoadPositions(load.originCoords, load.destinationCoords).then((pts) => {
-        if (!pts) return
-        setRoadPositions((prev) => new Map(prev).set(load._id, pts))
-      })
-    })
-  }, [loads])
+  if (isLoading) {
+    return (
+      <PageShell title="Route Map">
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </PageShell>
+    )
+  }
 
-  const routes: RouteCoordinate[] = (loads ?? []).map((load) => ({
-    id: load._id,
-    origin: [load.originCoords.lat, load.originCoords.lng],
-    originName: load.originAddress,
-    destination: [load.destinationCoords.lat, load.destinationCoords.lng],
-    destinationName: load.destinationAddress,
-    status: load.status,
-    polyline: load.route?.polyline,
-    positions: roadPositions.get(load._id),
-  }))
+  if (isError || !load) {
+    return (
+      <PageShell title="Route Map">
+        <p className="text-sm text-destructive">
+          Failed to load this load. It may have been removed.
+        </p>
+      </PageShell>
+    )
+  }
 
-  const count = routes.length
+  const routes: RouteCoordinate[] = [
+    {
+      id: load._id,
+      origin: [load.originCoords.lat, load.originCoords.lng],
+      originName: load.originAddress,
+      destination: [load.destinationCoords.lat, load.destinationCoords.lng],
+      destinationName: load.destinationAddress,
+      status: load.status,
+      polyline: load.route?.polyline,
+      positions: roadPositions ?? undefined,
+    },
+  ]
 
   return (
     <PageShell
       title="Route Map"
-      subtitle={!isLoading && !isError ? `${count} load${count !== 1 ? 's' : ''}` : undefined}
+      subtitle={`${load.originAddress.split(',')[0].trim()} → ${load.destinationAddress
+        .split(',')[0]
+        .trim()}`}
     >
-      {isError && (
-        <p className="text-sm text-destructive mb-2">Failed to load routes. Please try again.</p>
-      )}
+      <div className="mb-3">
+        <LoadCard load={load} />
+      </div>
 
-      <div className="h-[calc(100vh-125px)] rounded-xl border overflow-hidden">
+      <div className="h-[calc(100vh-280px)] rounded-xl border overflow-hidden">
         <DriverMap routes={routes} height="100%" />
       </div>
     </PageShell>
