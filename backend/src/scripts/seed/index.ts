@@ -2,11 +2,15 @@ import 'dotenv/config'
 import mongoose, { Types } from 'mongoose'
 import { BidModel } from '../../models/loads/Bid'
 import { NotificationModel } from '../../models/notifications/Notification'
+import { BlocklistModel } from '../../models/blocklist/Blocklist'
+import { ReportModel } from '../../models/reports/Report'
+import { TrailerModel } from '../../models/trucks/Trailer'
 import { seedAuctions } from './auctions'
 import { seedBids } from './bids'
 import { seedLoads } from './loads'
 import { seedUsers, type SeedDriverKey } from './users'
 import { seedTrucks } from './trucks'
+import { seedTrailers } from './trailers'
 import { seedReviews } from './reviews'
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://mongo:27017/loadlink'
@@ -104,8 +108,10 @@ const BID_SPECS_BY_LOAD: Record<
 async function main() {
   await mongoose.connect(MONGODB_URI)
   try {
-    // Clear notifications on seed to ensure clean state
+    // Clear transient collections to ensure clean state between instantiations
     await NotificationModel.deleteMany({})
+    await BlocklistModel.deleteMany({})
+    await ReportModel.deleteMany({})
 
     const { companies, drivers } = await seedUsers()
 
@@ -150,6 +156,8 @@ async function main() {
 
     const trucks = await seedTrucks(drivers)
 
+    const trailers = await seedTrailers(drivers)
+
     const reviews = await seedReviews(
       [...activeLoads, ...completedLoads],
       {
@@ -175,7 +183,7 @@ async function main() {
 
     const userCount = Object.keys(companies).length + Object.keys(drivers).length
     console.log(
-      `SEEDED ${userCount} users, ${activeLoads.length + completedLoads.length} loads, ${auctions.length + completedLoads.length} auctions, ${bidCount} bids, ${trucks.length} trucks, ${reviews.length} reviews`
+      `SEEDED ${userCount} users, ${activeLoads.length + completedLoads.length} loads, ${auctions.length + completedLoads.length} auctions, ${bidCount} bids, ${trucks.length} trucks, ${trailers.length} trailers, ${reviews.length} reviews`
     )
     process.exit(0)
   } catch (err) {
