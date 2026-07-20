@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
 import { LOAD_STATUSES } from '@/types/enums'
 import { MAX_FUZZ_RADIUS_METERS } from '@/lib/geoFuzz'
+import { resolveRoutePath } from '@/lib/routePath'
 
 // Fix default Leaflet icon issue with bundlers
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
@@ -66,43 +67,6 @@ function relativeTimeFromNow(iso: string): string {
   if (diffMin < 1) return 'just now'
   if (diffMin < 60) return `${diffMin}m ago`
   return `${Math.round(diffMin / 60)}h ago`
-}
-
-/**
- * AI helped heavily
- * Decode a Google-encoded polyline string into an array of [lat, lng] pairs.
- * Implements the standard precision-5 algorithm used by OSRM / Google Maps.
- */
-function decodePolyline(encoded: string): [number, number][] {
-  const points: [number, number][] = []
-  let index = 0
-  const len = encoded.length
-  let lat = 0
-  let lng = 0
-
-  while (index < len) {
-    let b: number
-    let shift = 0
-    let result = 0
-    do {
-      b = encoded.charCodeAt(index++) - 63
-      result |= (b & 0x1f) << shift
-      shift += 5
-    } while (b >= 0x20)
-    lat += result & 1 ? ~(result >> 1) : result >> 1
-
-    shift = 0
-    result = 0
-    do {
-      b = encoded.charCodeAt(index++) - 63
-      result |= (b & 0x1f) << shift
-      shift += 5
-    } while (b >= 0x20)
-    lng += result & 1 ? ~(result >> 1) : result >> 1
-
-    points.push([lat / 1e5, lng / 1e5])
-  }
-  return points
 }
 
 export type RouteCoordinate = {
@@ -279,12 +243,7 @@ function FlyToRoute({
     // otherwise fall back to origin→destination straight line.
     const tempBounds = L.latLngBounds([])
 
-    // Try to use the same positions the polyline would render
-    const positions: LatLngExpression[] = route.positions
-      ? route.positions
-      : route.polyline
-        ? decodePolyline(route.polyline)
-        : [route.origin, route.destination]
+    const positions: LatLngExpression[] = resolveRoutePath(route)
 
     for (const pos of positions) {
       tempBounds.extend(pos)
@@ -320,12 +279,7 @@ function RouteLine({
   const map = useMap()
   const polylineRef = useRef<L.Polyline>(null)
 
-  // Priority is prefetched positions -> decoded polyline -> straight line
-  const positions: LatLngExpression[] = route.positions
-    ? route.positions
-    : route.polyline
-      ? decodePolyline(route.polyline)
-      : [route.origin, route.destination]
+  const positions: LatLngExpression[] = resolveRoutePath(route)
 
   const isRoad = !!(route.positions || route.polyline)
 

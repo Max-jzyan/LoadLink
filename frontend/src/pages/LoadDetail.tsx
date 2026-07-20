@@ -8,8 +8,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RoutePath } from '@/config/routes'
 import { formatMoney } from '@/lib/format'
+import { fetchRoadPositions } from '@/lib/routing'
 import useAuth from '@/hooks/useAuth'
 import { useGetLoadQuery, useGetAcceptedBidQuery } from '@/services/loadApi/loadSlice'
+import { useStreamNotificationsQuery } from '@/services/notificationApi/notificationSlice'
+import { NOTIFICATION_TYPES } from '@/services/notificationApi/notificationEnum'
 import { LOAD_STATUSES } from '@/types/enums'
 import {
   ArrowLeft,
@@ -23,7 +26,7 @@ import {
   Truck,
   Weight,
 } from 'lucide-react'
-import { useMemo, useEffect } from 'react'
+import { useMemo, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { setBreadcrumbLabel } from '@/services/breadcrumbSlice'
@@ -68,7 +71,12 @@ export default function LoadDetail() {
   const { loadId } = useParams<{ loadId: string }>()
   const location = useLocation()
   const backTarget = (location.state as { from?: RoutePath } | null)?.from ?? RoutePath.Loads
-  const { data: load, isLoading, isError } = useGetLoadQuery(loadId ?? '', { skip: !loadId })
+  const {
+    data: load,
+    isLoading,
+    isError,
+    refetch: refetchLoad,
+  } = useGetLoadQuery(loadId ?? '', { skip: !loadId })
   const { user } = useAuth()
   const isBooked =
     load?.status === LOAD_STATUSES.Booked ||
@@ -97,9 +105,37 @@ export default function LoadDetail() {
     }
   }, [loadId, load, dispatch])
 
+  // Reuses the same notification SSE stream NotificationBell already
+  // subscribes to (RTK Query dedupes by query args, so this doesn't open a
+  // second EventSource). When a check-in notification for this exact load
+  // comes in, refetch so an already-open detail page picks up the new
+  // check-in marker without a manual reload.
+  const { data: streamData } = useStreamNotificationsQuery(undefined)
+
+  useEffect(() => {
+    if (!streamData || !loadId) return
+    if (!('_id' in streamData) || !('type' in streamData)) return
+    if (streamData.type !== NOTIFICATION_TYPES.DRIVER_CHECKED_IN) return
+    if (streamData.data?.loadId !== loadId) return
+    refetchLoad()
+  }, [streamData, loadId, refetchLoad])
+
   const auction = load?.auctionId ?? null
   const canEdit = load ? !NON_EDITABLE_STATUSES.includes(load.status) : false
   const isAuctionLive = load?.status === LOAD_STATUSES.AuctionLive
+
+  // Road [lat, lng][] positions fetched from Geoapify when the load has no stored polyline
+  const [roadPositions, setRoadPositions] = useState<[number, number][] | null>(null)
+  // Track the load ID we've already started fetching so StrictMode doublefire doesn't duplicate requests
+  const fetchingRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!load || load.route?.polyline) return
+    if (fetchingRef.current === load._id) return
+    fetchingRef.current = load._id
+
+    fetchRoadPositions(load.originCoords, load.destinationCoords).then(setRoadPositions)
+  }, [load])
 
   const routes = useMemo(() => {
     if (!load) return []
@@ -112,9 +148,17 @@ export default function LoadDetail() {
         destinationName: load.destinationAddress,
         status: load.status,
         polyline: load.route?.polyline,
+        positions: roadPositions ?? undefined,
       },
     ]
-  }, [load])
+  }, [load, roadPositions])
+
+  const checkIn = load?.lastCheckIn
+    ? {
+        position: [load.lastCheckIn.coords.lat, load.lastCheckIn.coords.lng] as [number, number],
+        checkedInAt: load.lastCheckIn.checkedInAt,
+      }
+    : null
 
   if (isLoading) {
     return (
@@ -271,7 +315,12 @@ export default function LoadDetail() {
         </Col>
         <Col size={7}>
           <DynamicCard title="Route Map" expand>
-            <DriverMap routes={routes} selectedRouteId={load._id} height="460px" />
+            <DriverMap
+              routes={routes}
+              selectedRouteId={load._id}
+              height="460px"
+              checkIn={checkIn}
+            />
           </DynamicCard>
         </Col>
       </Row>

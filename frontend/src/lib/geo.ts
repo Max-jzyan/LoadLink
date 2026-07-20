@@ -2,9 +2,11 @@
  * Calculate the great-circle distance between two coordinates on Earth
  * using the Haversine formula.
  *
- * @returns Distance in kilometres, rounded to the nearest integer.
+ * @returns Distance in kilometres, unrounded. Use this (not
+ * `haversineDistanceKm`) when summing many short segments — e.g. walking a
+ * road path — since rounding each segment would distort the running total.
  */
-export function haversineDistanceKm(
+export function haversineDistanceKmRaw(
   lat1: number,
   lng1: number,
   lat2: number,
@@ -17,7 +19,22 @@ export function haversineDistanceKm(
     Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return Math.round(R * c)
+  return R * c
+}
+
+/**
+ * Calculate the great-circle distance between two coordinates on Earth
+ * using the Haversine formula.
+ *
+ * @returns Distance in kilometres, rounded to the nearest integer.
+ */
+export function haversineDistanceKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  return Math.round(haversineDistanceKmRaw(lat1, lng1, lat2, lng2))
 }
 
 import type { Load } from '@/services/loadApi/loadEnum'

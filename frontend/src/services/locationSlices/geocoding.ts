@@ -23,6 +23,25 @@ interface GeoapifyResponse {
   features: GeoapifyFeature[]
 }
 
+export interface ReverseGeocodeResult {
+  /** "City, PROVINCE" (or the best available fallback if a city can't be resolved) */
+  label: string
+}
+
+interface GeoapifyReverseFeature {
+  properties: {
+    city?: string
+    county?: string
+    state?: string
+    state_code?: string
+    formatted: string
+  }
+}
+
+interface GeoapifyReverseResponse {
+  features: GeoapifyReverseFeature[]
+}
+
 export const geocodingApi = api.injectEndpoints({
   endpoints: (build) => ({
     autocompleteAddress: build.query<GeocodeResult[], string>({
@@ -51,8 +70,36 @@ export const geocodingApi = api.injectEndpoints({
         }
       },
     }),
+
+    // Resolves a lat/lng pair to a "City, Province" label, e.g. for labeling
+    // checkpoints along a route. Cached per coordinate pair by RTK Query.
+    reverseGeocode: build.query<ReverseGeocodeResult, { lat: number; lng: number }>({
+      queryFn: async ({ lat, lng }) => {
+        try {
+          const params = new URLSearchParams({
+            lat: String(lat),
+            lon: String(lng),
+            apiKey: GEOAPIFY_KEY,
+          })
+          const res = await fetch(`${BASE_URL}/reverse?${params}`)
+          if (!res.ok) return { error: { status: res.status, data: res.statusText } }
+
+          const data: GeoapifyReverseResponse = await res.json()
+          const props = data.features[0]?.properties
+          if (!props) return { error: { status: 'FETCH_ERROR' as const, error: 'No result' } }
+
+          const place = props.city ?? props.county
+          const province = props.state_code ?? props.state
+          const label = place && province ? `${place}, ${province}` : props.formatted
+
+          return { data: { label } }
+        } catch (error) {
+          return { error: { status: 'FETCH_ERROR' as const, error: String(error) } }
+        }
+      },
+    }),
   }),
   overrideExisting: false,
 })
 
-export const { useAutocompleteAddressQuery } = geocodingApi
+export const { useAutocompleteAddressQuery, useReverseGeocodeQuery } = geocodingApi
