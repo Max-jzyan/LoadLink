@@ -19,6 +19,8 @@ import ReviewCard from '@/components/shared/ReviewCard'
 import Col from '@/components/layout/Col'
 import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
+import Spinner from '@/components/shared/Spinner'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useRequiredMongoId } from '@/hooks/useAuth'
 import type { ScoreWeights, Trailer, Truck } from '@/services/driverApi/driverEnum'
 import {
@@ -34,7 +36,6 @@ import {
   useUpdateTrailerMutation,
 } from '@/services/trailerApi/trailerSlice'
 import { useGetReviewsForTargetQuery } from '@/services/reviewApi/reviewSlice'
-import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 type ProfileTab = 'profile' | 'reviews'
@@ -43,9 +44,14 @@ export default function DriverProfile() {
   const driverId = useRequiredMongoId()
   const [activeTab, setActiveTab] = useState<ProfileTab>('profile')
 
-  const { data: driver, isLoading } = useGetDriverProfileQuery(driverId)
+  const {
+    data: driver,
+    isSuccess: profileSuccess,
+  } = useGetDriverProfileQuery(driverId)
 
-  const { data: trailers = [] } = useListDriverTrailersQuery(driverId, { skip: !driverId })
+  const {
+    data: trailers = [],
+  } = useListDriverTrailersQuery(driverId, { skip: !driverId })
 
   const {
     data: reviewsPayload,
@@ -83,14 +89,14 @@ export default function DriverProfile() {
 
   // Close driver info drawer when profile update succeeds
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     if (infoSaved) setDriverInfoDrawerOpen(false)
   }, [infoSaved])
 
   // Close trailer drawer when create or update succeeds
   useEffect(() => {
     if (trailerCreated || trailerUpdated) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setTrailerDrawerOpen(false)
       setEditTrailer(null)
     }
@@ -216,11 +222,11 @@ export default function DriverProfile() {
     [driverId, updateDriverProfile]
   )
 
-  if (isLoading || !driver) {
+  if (!profileSuccess || !driver) {
     return (
       <PageShell title="My Profile">
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Spinner />
         </div>
       </PageShell>
     )
@@ -229,8 +235,10 @@ export default function DriverProfile() {
   const reviewsBody = (() => {
     if (isReviewsLoading) {
       return (
-        <div className="flex items-center justify-center py-10">
-          <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-lg" />
+          ))}
         </div>
       )
     }
@@ -354,13 +362,13 @@ export default function DriverProfile() {
       />
 
       {/* Trailer Add/Edit Drawer */}
-      <TrailerDrawer
-        open={trailerDrawerOpen}
-        onOpenChange={handleTrailerDrawerOpenChange}
-        editTrailer={editTrailer}
-        isLoading={isCreatingTrailer || isUpdatingTrailer}
-        onSubmit={handleTrailerSubmit}
-      />
+        <TrailerDrawer
+          open={trailerDrawerOpen}
+          onOpenChange={handleTrailerDrawerOpenChange}
+          editTrailer={editTrailer}
+          isLoading={isCreatingTrailer || isUpdatingTrailer}
+          onSubmit={handleTrailerSubmit}
+        />
 
       {/* Driver Info Edit Drawer */}
       <DriverInfoDrawer

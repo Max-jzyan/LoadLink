@@ -1,6 +1,7 @@
 import { ArrowRight, CalendarClock, MapPin, Truck, Weight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { AuctionSummary, CompanySummary, Load, LoadStatus } from '@/services/loadApi/loadEnum'
 import type { EligibilityFlags } from '@/services/driverApi/driverEnum'
 import { EligibilityBadge } from '@/components/driverLoads/EligibilityBadge'
@@ -58,6 +59,38 @@ interface LoadCardProps {
   recommendationScore?: number
   severity?: 'critical' | 'minor'
   highScoreHighlights?: string[]
+}
+
+export function LoadCardSkeleton() {
+  return (
+    <Card className="rounded-xl">
+      <CardContent className="px-4 py-3 flex flex-row items-stretch gap-0">
+        <div className="flex flex-col gap-2 flex-1 min-w-0 justify-center">
+          <div className="flex items-baseline gap-1.5">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-8" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+          <div className="flex items-center gap-1.5 text-sm font-semibold min-w-0">
+            <Skeleton className="h-3 w-3 shrink-0" />
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-3 shrink-0" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+          <div className="flex items-center gap-3 flex-wrap text-xs">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-3 w-28" />
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-between shrink-0 py-0.5 min-w-[160px] gap-1 pl-4">
+          <Skeleton className="h-5 w-20 rounded-full" />
+          <Skeleton className="h-14 w-32" />
+          <Skeleton className="h-7 w-20 rounded-md" />
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 export function LoadCard({

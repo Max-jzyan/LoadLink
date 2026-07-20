@@ -20,22 +20,21 @@ export default function LoadSummaryCard({
 }: LoadSummaryCardProps) {
   const isLive = auction.status === AUCTION_STATUSES.Active
 
+  const nameContent = (() => {
+    if (companyName && companyId) {
+      return <CompanyNameLink name={companyName} companyId={companyId} className="text-xl font-bold" />
+    }
+    if (companyName) {
+      return <>{`${companyName} `}</>
+    }
+    return null
+  })()
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xl font-bold">
-          {companyName && companyId ? (
-            <CompanyNameLink
-              name={companyName}
-              companyId={companyId}
-              className="text-xl font-bold"
-            />
-          ) : companyName ? (
-            `${companyName} `
-          ) : (
-            ''
-          )}
-          №{load._id.slice(-7)}
+          {nameContent}№{load._id.slice(-7)}
         </h2>
         <div className="flex items-center gap-2">
           {isLive && (

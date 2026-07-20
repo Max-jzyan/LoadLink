@@ -9,13 +9,14 @@ import ReviewCard from '@/components/shared/ReviewCard'
 import Col from '@/components/layout/Col'
 import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
+import Spinner from '@/components/shared/Spinner'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useRequiredMongoId } from '@/hooks/useAuth'
 import {
   useGetCompanyProfileQuery,
   useUpdateCompanyProfileMutation,
 } from '@/services/companyApi/companyApi'
 import { useGetReviewsForTargetQuery } from '@/services/reviewApi/reviewSlice'
-import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 type ProfileTab = 'profile' | 'reviews'
@@ -42,7 +43,7 @@ export default function CompanyProfile() {
 
   // Close drawer when update succeeds
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     if (infoSaved) setInfoDrawerOpen(false)
   }, [infoSaved])
 
@@ -66,9 +67,7 @@ export default function CompanyProfile() {
   if (isLoading) {
     return (
       <PageShell title="My Company Profile">
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <Spinner fullPage />
       </PageShell>
     )
   }
@@ -86,8 +85,10 @@ export default function CompanyProfile() {
   const reviewsBody = (() => {
     if (isReviewsLoading) {
       return (
-        <div className="flex items-center justify-center py-10">
-          <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-lg" />
+          ))}
         </div>
       )
     }

@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import PageShell from '@/components/layout/PageShell'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useRequiredMongoId } from '@/hooks/useAuth'
 import { api } from '@/services/api'
 import { LoadTag } from '@/services/apiTypes'
 import { AUCTION_STATUSES } from '@/services/auctionApi/auctionEnum'
-import { Gavel, ArrowRight, Loader2, RefreshCw } from 'lucide-react'
+import { Gavel, ArrowRight, RefreshCw } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { RoutePath } from '@/config/routes'
 import { format } from 'date-fns'
@@ -161,8 +162,10 @@ export default function CompanyAuctions() {
       )}
 
       {isLoading && (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <div className="space-y-2">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-xl" />
+          ))}
         </div>
       )}
       {!isLoading && filtered.length === 0 && (

@@ -123,7 +123,12 @@ export default function ScoreWeightsDrawer({ open, onOpenChange, weights, onSave
     }
   }, [localWeights, onSave, onOpenChange])
 
-  const totalColor = total === 1.0 ? 'text-green-600' : total < 1.0 ? 'text-amber-600' : 'text-destructive'
+  let totalColor = 'text-destructive'
+  if (total === 1.0) {
+    totalColor = 'text-green-600'
+  } else if (total < 1.0) {
+    totalColor = 'text-amber-600'
+  }
 
   return (
     <DrawerShell

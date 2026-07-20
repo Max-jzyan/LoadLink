@@ -13,10 +13,11 @@ import {
 import { useSelector, useDispatch } from 'react-redux'
 import { selectRole, selectMongoId } from '@/services/authSlice'
 import { setBreadcrumbLabel } from '@/services/breadcrumbSlice'
-import { Loader2 } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import { ReviewsSection } from '@/components/shared/PublicProfileLayout'
 import ReviewCard from '@/components/shared/ReviewCard'
+import Spinner from '@/components/shared/Spinner'
+import { Skeleton } from '@/components/ui/skeleton'
 import UnifiedReviewForm from '@/components/review/UnifiedReviewForm'
 import ForbiddenPage from '@/pages/ForbiddenPage'
 import type { RatingCategories } from '@/services/driverApi/driverEnum'
@@ -128,9 +129,7 @@ export default function CompanyPublicProfile() {
   if (isCompanyLoading) {
     return (
       <PageShell title="Company Profile">
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <Spinner fullPage />
       </PageShell>
     )
   }
@@ -149,8 +148,10 @@ export default function CompanyPublicProfile() {
 
   if (isReviewsLoading) {
     reviewsBody = (
-      <div className="flex items-center justify-center py-10">
-        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+      <div className="space-y-3">
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} className="h-24 rounded-lg" />
+        ))}
       </div>
     )
   } else if (isReviewsError) {

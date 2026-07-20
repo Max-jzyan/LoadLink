@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   Building2,
   ClipboardList,
-  Loader2,
   ShieldAlert,
   User,
 } from 'lucide-react'
@@ -20,6 +19,7 @@ import { selectRole } from '@/services/authSlice'
 import { useRequiredMongoId } from '@/hooks/useAuth'
 import { useGetMyReportsQuery } from '@/services/reportApi/reportSlice'
 import type { Report, ReportStatus } from '@/services/reportApi/reportEnum'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const STATUS_CONFIG: Record<ReportStatus, { label: string; cls: string }> = {
   under_review: {
@@ -166,8 +166,20 @@ export default function ReportHub() {
         }
       >
         {isLoading && (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="space-y-0 divide-y">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-start gap-3 py-3">
+                <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-4 w-16 rounded-full" />
+                  </div>
+                  <Skeleton className="h-3 w-72" />
+                  <Skeleton className="h-3 w-full" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
         {!isLoading && visibleReports.length === 0 && (

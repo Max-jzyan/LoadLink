@@ -1,10 +1,11 @@
 import { LoadForm, type LoadFormValues } from '@/components/LoadForm'
 import PageShell from '@/components/layout/PageShell'
+import Spinner from '@/components/shared/Spinner'
 import { Button } from '@/components/ui/button'
 import { RoutePath } from '@/config/routes'
 import { useGetLoadQuery, useUpdateLoadMutation } from '@/services/loadApi/loadSlice'
 import { LOAD_STATUSES } from '@/types/enums'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useMemo, useEffect } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 
@@ -75,9 +76,7 @@ export default function LoadEdit() {
   if (isLoading) {
     return (
       <PageShell title="Edit Load">
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <Spinner fullPage />
       </PageShell>
     )
   }

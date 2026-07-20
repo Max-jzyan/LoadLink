@@ -5,10 +5,25 @@ import {
   useGetPlatformStatsQuery,
   useListRateConfirmationsQuery,
 } from '@/services/adminApi/adminSlice'
-import { Loader2, FileText, Users, Truck, ClipboardList, Package, ShieldCheck } from 'lucide-react'
+import { FileText, Users, Truck, ClipboardList, Package, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Link } from 'react-router-dom'
+import { Skeleton } from '@/components/ui/skeleton'
+
+function StatCardSkeleton() {
+  return (
+    <div className="rounded-xl border bg-card p-5 flex items-center gap-4">
+      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-muted shrink-0">
+        <Skeleton className="h-5 w-5 rounded-full" />
+      </div>
+      <div className="space-y-2 flex-1">
+        <Skeleton className="h-7 w-16" />
+        <Skeleton className="h-4 w-20" />
+      </div>
+    </div>
+  )
+}
 
 function StatCard({
   label,
@@ -38,7 +53,7 @@ function StatCard({
 }
 
 export default function AdminDashboard() {
-  const { data: stats } = useGetPlatformStatsQuery()
+  const { data: stats, isLoading: statsLoading } = useGetPlatformStatsQuery()
   const { data: rcList = [], isLoading: rcLoading } = useListRateConfirmationsQuery()
 
   const recentRc = rcList.slice(0, 5)
@@ -46,18 +61,26 @@ export default function AdminDashboard() {
   return (
     <PageShell title="Admin Dashboard" subtitle="Platform overview and quick actions">
       {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <StatCard label="Drivers" value={stats?.totalDrivers} icon={Truck} />
-        <StatCard label="Companies" value={stats?.totalCompanies} icon={Users} />
-        <StatCard label="Loads" value={stats?.totalLoads} icon={Package} />
-        <StatCard label="Bids" value={stats?.totalBids} icon={ClipboardList} />
-        <StatCard
-          label="Docs to Review"
-          value={stats?.driversWithDocs}
-          icon={FileText}
-          description="Drivers with uploaded docs"
-        />
-      </div>
+      {statsLoading ? (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          <StatCard label="Drivers" value={stats?.totalDrivers} icon={Truck} />
+          <StatCard label="Companies" value={stats?.totalCompanies} icon={Users} />
+          <StatCard label="Loads" value={stats?.totalLoads} icon={Package} />
+          <StatCard label="Bids" value={stats?.totalBids} icon={ClipboardList} />
+          <StatCard
+            label="Docs to Review"
+            value={stats?.driversWithDocs}
+            icon={FileText}
+            description="Drivers with uploaded docs"
+          />
+        </div>
+      )}
 
       {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
@@ -90,15 +113,15 @@ export default function AdminDashboard() {
         }
         className="mt-6"
       >
-        {rcLoading && (
-          <div className="flex justify-center py-6">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        {rcLoading && !statsLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-lg" />
+            ))}
           </div>
-        )}
-        {!rcLoading && recentRc.length === 0 && (
+        ) : !rcLoading && recentRc.length === 0 ? (
           <p className="text-sm text-muted-foreground italic">No rate confirmations yet.</p>
-        )}
-        {!rcLoading && recentRc.length > 0 && (
+        ) : (
           <div className="space-y-2">
             {recentRc.map((bid) => {
               const load = typeof bid.loadId === 'object' ? bid.loadId : null

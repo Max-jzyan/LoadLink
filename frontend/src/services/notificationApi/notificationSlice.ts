@@ -19,7 +19,7 @@ export { NOTIFICATION_TYPES } from './notificationEnum'
  * Payload sent via SSE when a notification is created.
  * The backend sends the full notification document.
  */
-export interface NotificationStreamPayload extends Notification {}
+export type NotificationStreamPayload = Notification
 
 export const notificationApi = api.injectEndpoints({
   endpoints: (build) => ({

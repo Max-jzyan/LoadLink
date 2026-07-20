@@ -13,6 +13,7 @@ import DriverNameLink from '@/components/shared/DriverNameLink'
 import LoadSummaryCard from '@/components/auction/LoadSummaryCard'
 import PriceTracker from '@/components/auction/PriceTracker'
 import ReopenAuctionDialog from '@/components/auction/ReopenAuctionDialog'
+import Spinner from '@/components/shared/Spinner'
 import { useEventSource } from '@/components/auction/useEventSource'
 import { AUCTION_STATUSES, BID_STATUSES } from '@/services/auctionApi/auctionEnum'
 import type { BidsStreamPayload, PriceStreamPayload } from '@/services/auctionApi/auctionEnum'
@@ -180,6 +181,14 @@ export default function AuctionLive() {
   )
 
   const subtitle = loadId ? `Load #${loadId.slice(-6).toUpperCase()}` : undefined
+
+  if (isLoading) {
+    return (
+      <PageShell title="Live Auction" subtitle={subtitle}>
+        <Spinner fullPage />
+      </PageShell>
+    )
+  }
 
   return (
     <PageShell title="Live Auction" subtitle={subtitle} stickyBar={stickyBanners}>

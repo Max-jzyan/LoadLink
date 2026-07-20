@@ -25,7 +25,7 @@ interface DrawerShellProps {
   /** State setter function */
   onOpenChange: (open: boolean) => void
   /** Drawer title */
-  title: string
+  title: ReactNode
   /** Optional description/subtitle */
   description?: string
   /** Size variant: sm (384px), md (500px), lg (700px) */

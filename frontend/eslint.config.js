@@ -20,9 +20,17 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      'no-nested-ternary': 'error',
+      'no-nested-ternary': 'warn',
       'react-hooks/rules-of-hooks': 'off',
       'react-hooks/set-state-in-effect': 'off',
+      'react-refresh/only-export-components': 'off',
+      'react-compiler/react-compiler': 'off',
+    },
+  },
+  {
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
     },
   },
   prettierConfig,

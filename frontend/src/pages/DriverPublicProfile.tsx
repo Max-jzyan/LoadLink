@@ -6,6 +6,8 @@ import Row from '@/components/layout/Row'
 import UnifiedReviewForm from '@/components/review/UnifiedReviewForm'
 import { ReviewsSection } from '@/components/shared/PublicProfileLayout'
 import ReviewCard from '@/components/shared/ReviewCard'
+import Spinner from '@/components/shared/Spinner'
+import { Skeleton } from '@/components/ui/skeleton'
 import ForbiddenPage from '@/pages/ForbiddenPage'
 import { selectMongoId, selectRole } from '@/services/authSlice'
 import { setBreadcrumbLabel } from '@/services/breadcrumbSlice'
@@ -17,7 +19,6 @@ import {
   useGetReviewsForTargetQuery,
 } from '@/services/reviewApi/reviewSlice'
 import { LOAD_STATUSES } from '@/types/enums'
-import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
@@ -123,9 +124,7 @@ export default function DriverPublicProfile() {
   if (isDriverLoading) {
     return (
       <PageShell title="Driver Profile">
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <Spinner fullPage />
       </PageShell>
     )
   }
@@ -143,8 +142,10 @@ export default function DriverPublicProfile() {
   let reviewsBody: React.ReactNode
   if (isReviewsLoading) {
     reviewsBody = (
-      <div className="flex items-center justify-center py-10">
-        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+      <div className="space-y-3">
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} className="h-24 rounded-lg" />
+        ))}
       </div>
     )
   } else if (isReviewsError) {

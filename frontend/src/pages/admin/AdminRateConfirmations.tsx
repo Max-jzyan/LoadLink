@@ -8,9 +8,10 @@ import {
   useGenerateRateConfirmationMutation,
   type RateConfirmationBid,
 } from '@/services/adminApi/adminSlice'
-import { Loader2, Search, Download, RefreshCw, FileText } from 'lucide-react'
+import { Search, Download, RefreshCw, FileText, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { showSuccess, showError } from '@/lib/toast'
+import { Skeleton } from '@/components/ui/skeleton'
 
 function RcRow({ bid }: { bid: RateConfirmationBid }) {
   const [generate, { isLoading, isSuccess, data, isError, error }] = useGenerateRateConfirmationMutation()
@@ -141,8 +142,10 @@ export default function AdminRateConfirmations() {
       </div>
 
       {isLoading && (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-lg" />
+          ))}
         </div>
       )}
       {!isLoading && filtered.length === 0 && (

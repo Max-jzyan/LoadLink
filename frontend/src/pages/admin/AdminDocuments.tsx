@@ -19,12 +19,12 @@ import {
   XCircle,
   FileText,
   ExternalLink,
-  Loader2,
   Search,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react'
 import { format } from 'date-fns'
+import { Skeleton } from '@/components/ui/skeleton'
 
 /** View button that fetches a short-lived presigned S3 URL before opening. */
 function DocViewButton({ docKey }: { docKey: string }) {
@@ -243,6 +243,27 @@ function CertDocRow({ doc, idx, driverId }: { doc: CertDoc; idx: number; driverI
   )
 }
 
+function DriverRowSkeleton() {
+  return (
+    <div className="rounded-xl border overflow-hidden">
+      <div className="w-full flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="min-w-0 space-y-2 flex-1">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-48" />
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+        </div>
+        <Skeleton className="h-4 w-4 shrink-0 ml-2" />
+      </div>
+    </div>
+  )
+}
+
 function DriverRow({ driver }: { driver: AdminDriver }) {
   const [expanded, setExpanded] = useState(false)
   const insCount = driver.insuranceCertificates?.length ?? 0
@@ -353,8 +374,10 @@ export default function AdminDocuments() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <DriverRowSkeleton key={i} />
+          ))}
         </div>
       ) : (
         <div className="space-y-2">

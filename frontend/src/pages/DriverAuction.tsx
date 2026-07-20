@@ -10,6 +10,7 @@ import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
 import Col from '@/components/layout/Col'
 import { InfoIconPopover } from '@/components/shared/InfoIconPopover'
+import Spinner from '@/components/shared/Spinner'
 import { RateConfirmationBanner } from '@/components/shared/RateConfirmationBanner'
 import { SeparatorWithText } from '@/components/shared/SeparatorWithText'
 import { Badge } from '@/components/ui/badge'
@@ -99,7 +100,6 @@ export default function DriverAuction() {
 
   const [effectiveBidPrice, setEffectiveBidPrice] = useState<number>(livePrice)
   const [bidActive, setBidActive] = useState<boolean>(false)
-
   const { data: trucks } = useListDriverTrucksQuery(mongoId, { skip: !mongoId })
 
   // Derive the full auction object from the populated load
@@ -109,7 +109,7 @@ export default function DriverAuction() {
   if (isLoading) {
     return (
       <PageShell title="Load Details" subtitle={truncateId(loadId)}>
-        <DynamicCard title="Loading load details…" description="Please wait" />
+        <Spinner fullPage />
       </PageShell>
     )
   }
@@ -117,7 +117,9 @@ export default function DriverAuction() {
   if (isError || !load) {
     return (
       <PageShell title="Load Details" subtitle={truncateId(loadId)}>
-        <DynamicCard title="Error" description="Could not load load details." />
+        <div className="flex flex-col items-center gap-3 py-20 text-center">
+          <p className="text-destructive">Failed to load this load. It may have been removed.</p>
+        </div>
       </PageShell>
     )
   }
@@ -157,6 +159,13 @@ export default function DriverAuction() {
   const companyIdStr =
     typeof load.companyId === 'string' ? load.companyId : (load.companyId as { _id?: string })._id
 
+  const distanceKm = haversineDistanceKm(
+    load.originCoords.lat,
+    load.originCoords.lng,
+    load.destinationCoords.lat,
+    load.destinationCoords.lng
+  )
+
   return (
     <PageShell
       title={
@@ -187,8 +196,8 @@ export default function DriverAuction() {
       <LayoutGrid>
         <Row size={16}>
           {/* ── Left column ── */}
-          <Col size={8}>
-            <div className="flex flex-col gap-3 -m-2">
+          <Col size={9}>
+            <div className="flex flex-col gap-3">
               {/* Route */}
               <div className="flex items-stretch gap-2">
                 <div className="flex-1 rounded-lg border bg-card p-3">{load.originAddress}</div>
@@ -197,12 +206,7 @@ export default function DriverAuction() {
                   {load.destinationAddress}
                 </div>
                 <div className="flex items-center justify-center rounded-lg border bg-blue-100/70 dark:bg-blue-950/30 border-blue-300/50 dark:border-blue-700/50 px-4 text-sm font-medium">
-                  {haversineDistanceKm(
-                    load.originCoords.lat,
-                    load.originCoords.lng,
-                    load.destinationCoords.lat,
-                    load.destinationCoords.lng
-                  )}{' '}
+                  {distanceKm}{' '}
                   km
                 </div>
               </div>
@@ -337,8 +341,8 @@ export default function DriverAuction() {
           </Col>
 
           {/* ── Right column ── */}
-          <Col size={8}>
-            <div className="flex flex-col gap-3 -m-2">
+          <Col size={7}>
+            <div className="flex flex-col gap-3">
               <DynamicCard
                 title="Route Preview"
                 action={load.originAddress + ' → ' + load.destinationAddress}
@@ -364,12 +368,7 @@ export default function DriverAuction() {
 
               <ProfitLossCard
                 load={load}
-                distanceKm={haversineDistanceKm(
-                  load.originCoords.lat,
-                  load.originCoords.lng,
-                  load.destinationCoords.lat,
-                  load.destinationCoords.lng
-                )}
+                distanceKm={distanceKm}
                 bidPrice={effectiveBidPrice}
                 trucks={(trucks as Truck[]) ?? []}
                 priceLabel={bidActive ? 'Using bid price' : 'Using Accept Now price'}

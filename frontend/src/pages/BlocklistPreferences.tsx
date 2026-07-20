@@ -1,5 +1,7 @@
 import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
+import Spinner from '@/components/shared/Spinner'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -45,7 +47,6 @@ import {
   ChevronRight,
   ClipboardList,
   EyeOff,
-  Loader2,
   ShieldAlert,
   User,
 } from 'lucide-react'
@@ -310,8 +311,10 @@ export default function BlocklistPreferences() {
             </div>
           )}
           {activeTab !== 'hidden' && isLoading && (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="space-y-2">
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="h-20 rounded-lg" />
+              ))}
             </div>
           )}
           {activeTab !== 'hidden' && !isLoading && blocked.length === 0 && (
@@ -413,7 +416,7 @@ export default function BlocklistPreferences() {
               onClick={handleBlock}
               disabled={!searchQuery?.trim() || !blockReason || isBlocking}
             >
-              {isBlocking && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isBlocking && <Spinner className="h-4 w-4 mr-1" />}
               Block
             </Button>
           </div>

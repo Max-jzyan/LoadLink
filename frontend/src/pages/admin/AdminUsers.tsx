@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/shared/DataTable'
 import { useListAdminUsersQuery } from '@/services/adminApi/adminSlice'
 import type { AdminUser } from '@/services/adminApi/adminEnum'
-import { Loader2, Search, User, Building2, ShieldCheck } from 'lucide-react'
+import { Search, User, Building2, ShieldCheck } from 'lucide-react'
 import { format } from 'date-fns'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const ROLE_BADGES: Record<string, React.ReactNode> = {
   driver: (
@@ -136,8 +137,19 @@ export default function AdminUsers() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <div className="rounded-xl border">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-3 border-b last:border-b-0">
+              <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-48" />
+              </div>
+              <Skeleton className="h-5 w-16 rounded-full" />
+              <Skeleton className="h-4 w-24 hidden sm:block" />
+              <Skeleton className="h-4 w-24 hidden lg:block" />
+            </div>
+          ))}
         </div>
       ) : (
         <DataTable columns={columns} data={filtered} getId={(user) => user._id} />

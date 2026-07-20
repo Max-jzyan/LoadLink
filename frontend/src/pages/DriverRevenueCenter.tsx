@@ -1,4 +1,5 @@
 import PageShell from '@/components/layout/PageShell'
+import Spinner from '@/components/shared/Spinner'
 import { GlobalExpenseDrawer } from '@/components/revenue/GlobalExpenseDrawer'
 import { RevenueChartGrid } from '@/components/revenue/RevenueChartStubs'
 import RevenueFilterBar from '@/components/revenue/RevenueFilterBar'
@@ -133,6 +134,14 @@ export default function DriverRevenueCenter() {
     refetch()
   }, [refetch])
 
+  if (!revenue) {
+    return (
+      <PageShell title="Revenue Center" subtitle={subtitle}>
+        <Spinner fullPage />
+      </PageShell>
+    )
+  }
+
   return (
     <PageShell
       title="Revenue Center"
@@ -177,12 +186,12 @@ export default function DriverRevenueCenter() {
       <div className="space-y-6">
         <RevenueSummaryCards revenue={revenue} viewMode={viewMode} />
 
-        {revenue && <RevenueStatsRow revenue={revenue} viewMode={viewMode} />}
+        <RevenueStatsRow revenue={revenue} viewMode={viewMode} />
 
-        <RevenueChartGrid loadBreakdown={revenue?.loadBreakdown ?? []} viewMode={viewMode} />
+        <RevenueChartGrid loadBreakdown={revenue.loadBreakdown ?? []} viewMode={viewMode} />
 
         <RevenueTable
-          loadBreakdown={revenue?.loadBreakdown ?? []}
+          loadBreakdown={revenue.loadBreakdown ?? []}
           onPerLoadSaved={handlePerLoadSaved}
           viewMode={viewMode}
         />

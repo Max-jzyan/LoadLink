@@ -32,7 +32,7 @@ const weightDescriptions: Record<keyof ScoreWeights, string> = {
 
 export default function ScoreWeightsCard({ driver, onEdit }: ScoreWeightsCardProps) {
   // Ensure all weights have defaults and compute total
-  const weights = driver.scoreWeights ?? {
+  const weights = useMemo(() => driver.scoreWeights ?? {
     rate: 0.25,
     value: 0.1,
     deadhead: 0.2,
@@ -40,7 +40,7 @@ export default function ScoreWeightsCard({ driver, onEdit }: ScoreWeightsCardPro
     temporalAdjacency: 0.15,
     truckTypeMatch: 0.05,
     competition: 0.05,
-  }
+  }, [driver.scoreWeights])
 
   const total = useMemo(
     () => Object.values(weights).reduce((sum, val) => sum + (val ?? 0), 0),
@@ -78,13 +78,15 @@ export default function ScoreWeightsCard({ driver, onEdit }: ScoreWeightsCardPro
 
         <div className="flex items-center justify-between border-t pt-2">
           <span className="text-xs text-muted-foreground">Total</span>
-          <span
-            className={`text-sm font-semibold ${
-              total === 1.0 ? 'text-green-600' : total < 1.0 ? 'text-amber-600' : 'text-destructive'
-            }`}
-          >
-            {(total * 100).toFixed(1)}% / 100%
-          </span>
+          {(() => {
+            let totalColorClass = 'text-destructive'
+            if (total === 1.0) {
+              totalColorClass = 'text-green-600'
+            } else if (total < 1.0) {
+              totalColorClass = 'text-amber-600'
+            }
+            return <span className={`text-sm font-semibold ${totalColorClass}`}>{(total * 100).toFixed(1)}% / 100%</span>
+          })()}
         </div>
       </div>
     </DynamicCard>

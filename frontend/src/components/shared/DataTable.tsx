@@ -1,7 +1,5 @@
 'use client'
 
-/* eslint-disable react-compiler/react-compiler */
-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   type ColumnDef,
@@ -26,6 +24,7 @@ import {
 import { Button } from '@/components/ui/button'
 import DrawerShell from '@/components/layout/DrawerShell'
 import { Field, FieldLabel } from '@/components/ui/field'
+import { Skeleton } from '@/components/ui/skeleton'
 
 import { cn } from '@/lib/utils'
 
@@ -73,10 +72,14 @@ interface DataTableProps<TData, TValue> {
   onRowClick?: (row: TData) => void
   selectedId?: string | null
   getId?: (row: TData) => string
+  /** Show skeleton rows instead of data */
+  loading?: boolean
+  /** Number of skeleton rows to show when loading. Default: 8 */
+  loadingRowCount?: number
   /** Enable detail drawer + trigger column. Default: true */
   enableDrawer?: boolean
   // Detail drawer props
-  drawerTitle?: (row: TData) => string
+  drawerTitle?: (row: TData) => React.ReactNode
   drawerFields?: DrawerField<TData>[]
   /** Standard form submit for drawer footer (Close + Save) */
   drawerSubmit?: (row: TData) => void
@@ -152,6 +155,8 @@ export function DataTable<TData, TValue>({
   onRowClick,
   selectedId,
   getId,
+  loading = false,
+  loadingRowCount = 8,
   enableDrawer = true,
   drawerTitle,
   drawerFields,
@@ -285,7 +290,21 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {loading ? (
+              Array.from({ length: loadingRowCount }).map((_, rowIndex) => (
+                <TableRow key={rowIndex}>
+                  {allColumns.map((col, colIndex) => {
+                    const meta = col.meta as DataTableColumnMeta | undefined
+                    const responsiveClass = meta?.responsive ? RESPONSIVE_CLASSES[meta.responsive] : ''
+                    return (
+                      <TableCell key={colIndex} className={cn(responsiveClass)}>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    )
+                  })}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => {
                 const rowId =
                   getId?.(row.original) ??

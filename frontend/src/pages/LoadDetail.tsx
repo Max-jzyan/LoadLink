@@ -4,6 +4,8 @@ import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import Spinner from '@/components/shared/Spinner'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { RoutePath } from '@/config/routes'
@@ -19,7 +21,6 @@ import {
   Calendar,
   Download,
   Gavel,
-  Loader2,
   MapPin,
   Package2,
   Pencil,
@@ -73,8 +74,8 @@ export default function LoadDetail() {
   const backTarget = (location.state as { from?: RoutePath } | null)?.from ?? RoutePath.Loads
   const {
     data: load,
-    isLoading,
-    isError,
+    isLoading: loadLoading,
+    isError: loadError,
     refetch: refetchLoad,
   } = useGetLoadQuery(loadId ?? '', { skip: !loadId })
   const { user } = useAuth()
@@ -83,7 +84,10 @@ export default function LoadDetail() {
     load?.status === LOAD_STATUSES.InTransit ||
     load?.status === LOAD_STATUSES.Completed
   const showRcButton = (user?.role === 'company' || user?.role === 'admin') && isBooked
-  const { data: acceptedBid } = useGetAcceptedBidQuery(loadId ?? '', {
+  const {
+    data: acceptedBid,
+    isLoading: acceptedBidLoading,
+  } = useGetAcceptedBidQuery(loadId ?? '', {
     skip: !loadId || !showRcButton,
   })
   const dispatch = useDispatch()
@@ -160,27 +164,11 @@ export default function LoadDetail() {
       }
     : null
 
-  if (isLoading) {
+  if (loadLoading || loadError || !load) {
     return (
       <PageShell title="Load Details">
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      </PageShell>
-    )
-  }
-
-  if (isError || !load) {
-    return (
-      <PageShell title="Load Details">
-        <div className="flex flex-col items-center gap-3 py-20 text-center">
-          <p className="text-destructive">Failed to load this load. It may have been removed.</p>
-          <Button variant="outline" asChild>
-            <Link to={backTarget}>
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Link>
-          </Button>
+          <Spinner />
         </div>
       </PageShell>
     )
@@ -217,17 +205,39 @@ export default function LoadDetail() {
               </Link>
             </Button>
           )}
-          {showRcButton && acceptedBid?.rateConfirmationUrl && (
-            <Button size="sm" variant="outline" asChild>
-              <a href={acceptedBid.rateConfirmationUrl} target="_blank" rel="noopener noreferrer">
-                <Download className="h-4 w-4" />
-                Rate Confirmation
-              </a>
-            </Button>
+          {showRcButton && (
+            <DynamicCard className="mt-4" title="Accepted Bid">
+              {acceptedBidLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-[200px]" />
+                  <Skeleton className="h-4 w-[150px]" />
+                </div>
+              ) : acceptedBid?.rateConfirmationUrl ? (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-muted-foreground">Rate confirmation available</span>
+                  <Button size="sm" variant="outline" asChild>
+                    <a href={acceptedBid.rateConfirmationUrl} target="_blank" rel="noopener noreferrer">
+                      <Download className="h-4 w-4" />
+                      View
+                    </a>
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No accepted bid yet.</p>
+              )}
+            </DynamicCard>
           )}
         </>
       }
     >
+      {showRcButton && acceptedBid?.rateConfirmationUrl && (
+        <Button size="sm" variant="outline" asChild>
+          <a href={acceptedBid.rateConfirmationUrl} target="_blank" rel="noopener noreferrer">
+            <Download className="h-4 w-4" />
+            Rate Confirmation
+          </a>
+        </Button>
+      )}
       <Row stackAt="lg">
         <Col size={9}>
           <DynamicCard title="Load Information" action={<StatusBadge status={load.status} />}>

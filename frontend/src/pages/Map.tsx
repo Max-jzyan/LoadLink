@@ -1,5 +1,5 @@
 import { DriverMap, type RouteCoordinate } from '@/components/driverLoads/Map'
-import { LoadCard } from '@/components/shared/LoadCard'
+import { LoadCard, LoadCardSkeleton } from '@/components/shared/LoadCard'
 import { CheckInDialog } from '@/components/map/CheckInDialog'
 import { CheckpointCheckIn } from '@/components/map/CheckpointCheckIn'
 import { resolveRoutePath } from '@/lib/routePath'
@@ -11,7 +11,7 @@ import { useGetLoadQuery } from '@/services/loadApi/loadSlice'
 import { LOAD_STATUSES } from '@/types/enums'
 import { useStreamNotificationsQuery } from '@/services/notificationApi/notificationSlice'
 import { NOTIFICATION_TYPES } from '@/services/notificationApi/notificationEnum'
-import { Loader2 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Navigate, useSearchParams } from 'react-router-dom'
@@ -72,8 +72,9 @@ export default function MapPage() {
   if (isLoading) {
     return (
       <PageShell title="Route Map">
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="space-y-3">
+          <LoadCardSkeleton />
+          <Skeleton className="h-[calc(100vh-280px)] w-full rounded-xl" />
         </div>
       </PageShell>
     )
@@ -142,10 +143,12 @@ export default function MapPage() {
 
       <div className="relative h-[calc(100vh-280px)] rounded-xl border overflow-hidden">
         <DriverMap routes={routes} height="100%" checkIn={checkIn} />
-        {isRoutePending && (
-          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-background/60 backdrop-blur-sm text-sm text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            Loading route…
+      {isRoutePending && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm text-sm text-muted-foreground">
+            <div className="flex flex-col items-center gap-2">
+              <Skeleton className="h-6 w-6 rounded-full animate-pulse" />
+              Loading route…
+            </div>
           </div>
         )}
       </div>

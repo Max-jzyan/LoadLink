@@ -9,6 +9,7 @@ import { AlertTriangle, LocateFixed, Loader2 } from 'lucide-react'
 import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
 import { LoadCard } from '@/components/shared/LoadCard'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
@@ -292,6 +293,12 @@ export default function DriverAuctions() {
     setDateRange(undefined)
   }
 
+  const layerLabel = (layer: MapLayer) => {
+    if (layer === 'route') return 'Route'
+    if (layer === 'fuel') return 'Fuel Stops'
+    return 'Rest Areas'
+  }
+
   // Shared helper: renders the map card
   const renderMapCard = useCallback(
     (expandable: boolean) => (
@@ -309,7 +316,7 @@ export default function DriverAuctions() {
                 className="h-7 px-2.5 text-xs"
                 onClick={() => setActiveLayer(layer)}
               >
-                {layer === 'route' ? 'Route' : layer === 'fuel' ? 'Fuel Stops' : 'Rest Areas'}
+                {layerLabel(layer)}
               </Button>
             ))}
           </div>
@@ -327,6 +334,12 @@ export default function DriverAuctions() {
     [mapDescription, activeLayer, mapRoutes, selectedLoad, handleMapRouteClick]
   )
 
+  const getEligibilityDescription = (scored: NonNullable<EnrichedLoad['_scored']>) => {
+    if (scored.recommendationScore >= 80) return 'This load is a top match for your profile'
+    if (scored.eligibilityFlags.isEligible) return 'You meet all eligibility requirements'
+    return 'Some requirements need attention'
+  }
+
   // Renders the details section for the mobile sheet: side-by-side eligibility + timeline
   const renderSheetDetails = useCallback(
     (load: EnrichedLoad | null) => (
@@ -335,13 +348,7 @@ export default function DriverAuctions() {
         {load?._scored && (
           <DynamicCard
             title="Eligibility Details"
-            description={
-              load._scored.recommendationScore >= 80
-                ? 'This load is a top match for your profile'
-                : load._scored.eligibilityFlags.isEligible
-                  ? 'You meet all eligibility requirements'
-                  : 'Some requirements need attention'
-            }
+            description={getEligibilityDescription(load._scored)}
             rounded="sm"
           >
             <DetailedEligibilityPanel
@@ -445,7 +452,7 @@ export default function DriverAuctions() {
           {isLoading && (
             <div className="space-y-2">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="h-28 rounded-xl border bg-accent/20 animate-pulse" />
+                <Skeleton key={i} className="h-28 rounded-xl" />
               ))}
             </div>
           )}

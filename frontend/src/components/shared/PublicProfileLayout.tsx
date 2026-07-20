@@ -1,8 +1,9 @@
-import { Loader2, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import Col from '@/components/layout/Col'
 import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
 import Row from '@/components/layout/Row'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { ReactNode } from 'react'
 
 interface ReviewsSectionProps {
@@ -67,9 +68,39 @@ export default function PublicProfileLayout({
   if (isLoading) {
     return (
       <PageShell title={title}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <Row>
+          <Col size={4}>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-16 w-16 rounded-full shrink-0" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-3 w-56" />
+                </div>
+              </div>
+              <Skeleton className="h-24 w-full rounded-lg" />
+              <div className="grid grid-cols-2 gap-2">
+                <Skeleton className="h-16 rounded-lg" />
+                <Skeleton className="h-16 rounded-lg" />
+              </div>
+            </div>
+            <div className="mt-6 space-y-3">
+              <Skeleton className="h-4 w-32" />
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-lg" />
+              ))}
+            </div>
+          </Col>
+
+          <Col size={12}>
+            <Skeleton className="h-6 w-48 mb-3" />
+            <div className="space-y-3">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <Skeleton key={i} className="h-40 w-full rounded-lg" />
+              ))}
+            </div>
+          </Col>
+        </Row>
       </PageShell>
     )
   }
