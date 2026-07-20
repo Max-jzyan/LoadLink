@@ -203,6 +203,8 @@ export interface LoadRevenue {
   status?: string
   originAddress: string
   destinationAddress: string
+  companyName?: string
+  companyId: string
   distanceKm: number
   payout: number
   fuelCost: number

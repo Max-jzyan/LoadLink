@@ -32,7 +32,7 @@ export function ExpenseBreakdownChart({ loadBreakdown }: ExpenseBreakdownChartPr
 
     return [
       { category: 'Fuel', value: totals.fuel, fill: 'var(--chart-1)' },
-      { category: 'Misc. Expenses', value: totals.maintenance, fill: 'var(--chart-2)' },
+      { category: 'Misc', value: totals.maintenance, fill: 'var(--chart-2)' },
       { category: 'Other', value: totals.other, fill: 'var(--chart-3)' },
     ].filter((item) => item.value > 0)
   }, [loadBreakdown])

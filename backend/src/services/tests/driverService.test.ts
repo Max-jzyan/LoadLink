@@ -367,26 +367,27 @@ describe('getDriverRevenue', () => {
   it('defaults to the completed-load status filter and computes revenue/expenses', async () => {
     findDriverByIdMock.mockReturnValue(queryChain({ expensePreferences: null }) as never)
     findTruckMock.mockReturnValue(queryChain([]) as never)
-    findLoadMock.mockReturnValue(
-      queryChain([
-        {
-          _id: 'load-1',
-          status: LOAD_STATUSES.Completed,
-          auctionId: { currentPrice: 1000, capPrice: 1200 },
-          route: { distanceKm: 200 },
-          selectedTruckId: null,
-        },
-      ]) as never
-    )
+     findLoadMock.mockReturnValue(
+       queryChain([
+         {
+           _id: 'load-1',
+           status: LOAD_STATUSES.Completed,
+           auctionId: { currentPrice: 1000, capPrice: 1200 },
+           route: { distanceKm: 200 },
+           selectedTruckId: null,
+           companyId: { companyName: 'Test Company', _id: 'company-1' },
+         },
+       ]) as never
+     )
 
-    const result = await getDriverRevenue(DRIVER_ID, {})
+     const result = await getDriverRevenue(DRIVER_ID, {})
 
-    expect(findLoadMock).toHaveBeenCalledWith(
-      expect.objectContaining({ status: { $in: [LOAD_STATUSES.Completed] } })
-    )
-    expect(result.totalRevenue).toBe(1000)
-    expect(result.completedLoadsCount).toBe(1)
-    expect(result.loadBreakdown[0]).toMatchObject({ payout: 1000, distanceKm: 200 })
+     expect(findLoadMock).toHaveBeenCalledWith(
+       expect.objectContaining({ status: { $in: [LOAD_STATUSES.Completed] } })
+     )
+     expect(result.totalRevenue).toBe(1000)
+     expect(result.completedLoadsCount).toBe(1)
+     expect(result.loadBreakdown[0]).toMatchObject({ payout: 1000, distanceKm: 200 })
   })
 
   it('splits a comma-separated status filter', async () => {

@@ -1,31 +1,31 @@
-import { RoutePath, ROLE_HOME } from '@/config/routes'
+import RoleRoute from '@/components/auth/RoleRoute'
+import { ROLE_HOME, RoutePath } from '@/config/routes'
 import AuctionLive from '@/pages/AuctionLive'
 import BlocklistPreferences from '@/pages/BlocklistPreferences'
-import ReportFraud from '@/pages/ReportFraud'
-import ReportHub from '@/pages/ReportHub'
-import ReportInaccurate from '@/pages/ReportInaccurate'
-import CompanyDashboard from '@/pages/CompanyDashboard'
 import CompanyAuctions from '@/pages/CompanyAuctions'
+import CompanyDashboard from '@/pages/CompanyDashboard'
 import CompanyProfile from '@/pages/CompanyProfile'
 import CompanyPublicProfile from '@/pages/CompanyPublicProfile'
-import Dashboard from '@/pages/Dashboard'
 import DriverAuction from '@/pages/DriverAuction'
 import DriverAuctions from '@/pages/DriverAuctions'
 import DriverDashboard from '@/pages/DriverDashboard'
 import DriverProfile from '@/pages/DriverProfile'
 import DriverPublicProfile from '@/pages/DriverPublicProfile'
+import DriverRevenueCenter from '@/pages/DriverRevenueCenter'
 import LoadDetail from '@/pages/LoadDetail'
 import LoadEdit from '@/pages/LoadEdit'
 import Loads from '@/pages/Loads'
 import MapPage from '@/pages/Map'
 import NotFound from '@/pages/NotFound'
 import PostLoad from '@/pages/PostLoad'
+import ReportFraud from '@/pages/ReportFraud'
+import ReportHub from '@/pages/ReportHub'
+import ReportInaccurate from '@/pages/ReportInaccurate'
 import Test from '@/pages/Test'
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminDocuments from '@/pages/admin/AdminDocuments'
-import AdminUsers from '@/pages/admin/AdminUsers'
 import AdminRateConfirmations from '@/pages/admin/AdminRateConfirmations'
-import RoleRoute from '@/components/auth/RoleRoute'
+import AdminUsers from '@/pages/admin/AdminUsers'
 import { selectRole } from '@/services/authSlice'
 import { useSelector } from 'react-redux'
 import { Navigate, Route, Routes } from 'react-router-dom'
@@ -46,7 +46,7 @@ export default function AppRoutes() {
         path={RoutePath.Dashboard}
         element={
           <RoleRoute path={RoutePath.Dashboard}>
-            <Dashboard />
+            <DriverRevenueCenter />
           </RoleRoute>
         }
       />

@@ -22,15 +22,12 @@ export function RevenueTimeChart({ loadBreakdown, viewMode = 'completed' }: Reve
     if (!loadBreakdown.length) return []
 
     // Group loads by time period
-    const grouped = new Map<string, { revenue: number; expenses: number; count: number }>()
+    const grouped = new Map<number, { revenue: number; expenses: number; count: number }>()
 
     loadBreakdown.forEach((load) => {
-      const date = new Date(load.completedAt)
-      let key: string
-
-      // Use week grouping for better visualization
+      const date = new Date(load.deliveryDate || load.completedAt)
       const weekStart = startOfWeek(date, { weekStartsOn: 1 })
-      key = format(weekStart, 'MMM d')
+      const key = weekStart.getTime()
 
       const existing = grouped.get(key) || { revenue: 0, expenses: 0, count: 0 }
       grouped.set(key, {
@@ -40,15 +37,15 @@ export function RevenueTimeChart({ loadBreakdown, viewMode = 'completed' }: Reve
       })
     })
 
-    // Convert to array and sort by date
+    // Convert to array and sort by numeric timestamp (then format to string)
     return Array.from(grouped.entries())
-      .map(([period, data]) => ({
-        period,
+      .sort(([a], [b]) => a - b)
+      .map(([ts, data]) => ({
+        period: format(new Date(ts), 'MMM d'),
         revenue: data.revenue,
         expenses: data.expenses,
         count: data.count,
       }))
-      .sort((a, b) => a.period.localeCompare(b.period))
   }, [loadBreakdown])
 
   const chartConfig = {

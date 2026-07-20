@@ -1,17 +1,18 @@
-import { useState, useMemo } from 'react'
+import CompanyNameLink from '@/components/shared/CompanyNameLink'
 import {
   DataTable,
-  type OnTableReadyPayload,
   type DrawerField,
+  type OnTableReadyPayload,
 } from '@/components/shared/DataTable'
-import type { Load, AuctionSummary, CompanySummary } from '@/services/loadApi/loadEnum'
+import DocumentLinks from '@/components/shared/DocumentLinks'
 import type { Truck } from '@/services/driverApi/driverEnum'
+import type { AuctionSummary, CompanySummary, Load } from '@/services/loadApi/loadEnum'
+import { TRUCK_TYPES } from '@/types/enums'
 import type { Table } from '@tanstack/react-table'
+import { useMemo, useState } from 'react'
+import DynamicCard from '../layout/DynamicCard'
 import { columns } from './driverColumns'
 import LoadTablePagination from './loadTablePagination'
-import DynamicCard from '../layout/DynamicCard'
-import { TRUCK_TYPES } from '@/types/enums'
-import DocumentLinks from '@/components/shared/DocumentLinks'
 
 const TRUCK_LABELS: Record<string, string> = Object.fromEntries(
   TRUCK_TYPES.map((t) => [t.value, t.label])
@@ -50,7 +51,16 @@ export default function DriverLoadTable({
 
   const drawerTitle = (load: Load) => {
     const company = isPopulatedCompany(load.companyId) ? load.companyId : null
-    return company?.companyName?.toUpperCase() || load.commodity.toUpperCase()
+    if (company) {
+      return (
+        <CompanyNameLink
+          name={company.companyName?.toUpperCase() ?? ''}
+          companyId={company._id}
+          className="font-semibold"
+        />
+      )
+    }
+    return load.commodity.toUpperCase()
   }
 
   // Read-only, company-posted load info. Anything the driver can *act* on

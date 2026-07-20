@@ -461,11 +461,17 @@ export const getDriverRevenue = async (driverId: string, queryParams: Record<str
     totalRevenue += payout
     totalDistanceKm += distanceKm
 
+    const company = load.companyId as { companyName?: string; _id?: Types.ObjectId } | undefined | null
+    const companyName = company?.companyName
+    const companyId = company?._id ? company._id.toString() : ''
+
     loadBreakdown.push({
       loadId: load._id,
       status: load.status,
       originAddress: load.originAddress,
       destinationAddress: load.destinationAddress,
+      companyName,
+      companyId,
       distanceKm: Math.round(distanceKm * 10) / 10,
       payout,
       fuelCost: Math.round(fuelCost * 100) / 100,

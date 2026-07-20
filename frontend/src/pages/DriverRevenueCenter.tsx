@@ -6,8 +6,8 @@ import { RevenueStatsRow } from '@/components/revenue/RevenueStatsRow'
 import { RevenueSummaryCards } from '@/components/revenue/RevenueSummaryCards'
 import { RevenueTable } from '@/components/revenue/RevenueTable'
 import { Button } from '@/components/ui/button'
-import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
 import { useRequiredMongoId } from '@/hooks/useAuth'
+import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
 import { relativeTime } from '@/lib/utils'
 import type {
   DashboardViewMode,
@@ -17,14 +17,14 @@ import type {
 } from '@/services/driverApi/driverEnum'
 import {
   useGetDriverRevenueQuery,
+  useListDriverTrucksQuery,
   useUpdateDriverExpensesMutation,
   useUpdateTruckExpensesMutation,
-  useListDriverTrucksQuery,
 } from '@/services/driverApi/driverSlice'
 import { RefreshCw, Settings2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
-export default function Dashboard() {
+export default function DriverRevenueCenter() {
   const driverId = useRequiredMongoId()
   const [viewMode, setViewMode] = useState<DashboardViewMode>('completed')
 

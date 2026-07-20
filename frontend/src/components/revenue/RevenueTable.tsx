@@ -4,6 +4,7 @@ import DynamicCard from '@/components/layout/DynamicCard'
 import { DataTable, type DrawerField } from '@/components/shared/DataTable'
 import { createColumns } from './revenueColumns'
 import { DrawerExpenseForm } from './DrawerExpenseForm'
+import CompanyNameLink from '@/components/shared/CompanyNameLink'
 import type { DashboardViewMode, LoadRevenue } from '@/services/driverApi/driverEnum'
 import { formatCAD } from '@/lib/utils'
 
@@ -20,7 +21,13 @@ export function RevenueTable({
   const columns = createColumns(onPerLoadSaved, viewMode)
 
   const drawerTitle = useCallback((load: LoadRevenue) => {
-    return load.originAddress?.split(',')[0] ?? 'Load Revenue'
+      return (
+        <CompanyNameLink
+          name={load.companyName?.toUpperCase() ?? ''}
+          companyId={load.companyId}
+          className="font-semibold"
+        />
+      )
   }, [])
 
   const drawerFields: DrawerField<LoadRevenue>[] = [
