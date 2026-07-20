@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import PageShell from '@/components/layout/PageShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,19 +13,26 @@ import { format } from 'date-fns'
 import { showSuccess, showError } from '@/lib/toast'
 
 function RcRow({ bid }: { bid: RateConfirmationBid }) {
-  const [generate, { isLoading }] = useGenerateRateConfirmationMutation()
+  const [generate, { isLoading, isSuccess, data, isError, error }] = useGenerateRateConfirmationMutation()
   const load = typeof bid.loadId === 'object' ? bid.loadId : null
   const driver = typeof bid.driverId === 'object' ? bid.driverId : null
 
-  async function handleRegenerate() {
-    const loadId = load?._id ?? String(bid.loadId)
-    try {
-      const result = await generate({ loadId, bidId: bid._id }).unwrap()
-      window.open(result.url, '_blank')
+  useEffect(() => {
+    if (isSuccess && data?.url) {
+      window.open(data.url, '_blank')
       showSuccess('Rate confirmation regenerated')
-    } catch {
+    }
+  }, [isSuccess, data])
+
+  useEffect(() => {
+    if (isError) {
       showError('Failed to regenerate rate confirmation')
     }
+  }, [isError, error])
+
+  function handleRegenerate() {
+    const loadId = load?._id ?? String(bid.loadId)
+    generate({ loadId, bidId: bid._id })
   }
 
   return (

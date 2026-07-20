@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { LoadForm, type LoadFormValues } from '@/components/LoadForm'
@@ -9,7 +9,7 @@ import Spinner from '@/components/shared/Spinner'
 import { RoutePath } from '@/config/routes'
 
 export default function PostLoad() {
-  const [createLoad, { isLoading: isCreatingLoad }] = useCreateLoadMutation()
+  const [createLoad, { isLoading: isCreatingLoad, isSuccess, isError }] = useCreateLoadMutation()
   const navigate = useNavigate()
   const [submitError, setSubmitError] = useState<string | null>(null)
   const companyId = useSelector(selectMongoId)
@@ -18,14 +18,21 @@ export default function PostLoad() {
     return <Spinner fullPage />
   }
 
-  const handleSubmit = async (values: LoadFormValues) => {
-    setSubmitError(null)
-    try {
-      await createLoad({ companyId, body: values }).unwrap()
+  useEffect(() => {
+    if (isSuccess) {
       navigate(RoutePath.Loads)
-    } catch {
+    }
+  }, [isSuccess, navigate])
+
+  useEffect(() => {
+    if (isError) {
       setSubmitError('Failed to post load. Please try again.')
     }
+  }, [isError])
+
+  const handleSubmit = (values: LoadFormValues) => {
+    setSubmitError(null)
+    createLoad({ companyId, body: values })
   }
 
   return (

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { signInWithPopup, signOut, type User } from 'firebase/auth'
@@ -43,7 +43,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [registerUser] = useRegisterUserMutation()
+  const [registerUser, { isSuccess, error, isLoading }] = useRegisterUserMutation()
+  const fbUserRef = useRef<User | null>(null)
   const [loading, setLoading] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [globalError, setGlobalError] = useState<string | null>(null)
@@ -99,19 +100,10 @@ export default function SignupPage() {
     }
   }
 
-  async function handleGoogle() {
-    setLoading(true)
-    setGlobalError(null)
+  const handleGoogleSuccess = useCallback(
+    async (fbUser: User) => {
+      fbUserRef.current = fbUser
 
-    let fbUser: User | null = null
-    try {
-      const result = await signInWithPopup(auth, googleProvider)
-      fbUser = result.user
-
-      // Upload any selected certification/business documents (and profile
-      // picture) directly to S3 before creating the Mongo profile, so the
-      // resulting URLs can be saved in the same request. Both share the same
-      // per-role folder (driverDocuments/companyDocuments) as other documents.
       const documentFiles = role === 'driver' ? certificationFiles : businessDocFiles
       let uploadedDocuments: Awaited<ReturnType<typeof uploadDocuments>> = []
       let profilePictureUrl: string | undefined
@@ -135,8 +127,7 @@ export default function SignupPage() {
         }
       }
 
-      // Register in MongoDB
-      const dbUser = await registerUser({
+      registerUser({
         name: fbUser.displayName ?? fbUser.email ?? 'Unknown',
         email: fbUser.email,
         role,
@@ -146,20 +137,63 @@ export default function SignupPage() {
               ...(profilePictureUrl ? { profilePictureUrl } : {}),
             }
           : { businessDocuments: uploadedDocuments }),
-      }).unwrap()
-      dispatch(
-        setUser({ uid: fbUser.uid, email: fbUser.email, mongoId: dbUser._id, role: dbUser.role })
-      )
-      navigate(ROLE_HOME[dbUser.role])
+      })
+    },
+    [role, certificationFiles, businessDocFiles, profilePictureFile, registerUser]
+  )
+
+  useEffect(() => {
+    if (isSuccess && error) {
+      const dbUser = (error as unknown as { data?: { _id?: string; role?: UserRole } })?.data
+      if (dbUser && dbUser._id && dbUser.role && fbUserRef.current) {
+        dispatch(
+          setUser({
+            uid: fbUserRef.current.uid,
+            email: fbUserRef.current.email,
+            mongoId: dbUser._id,
+            role: dbUser.role,
+          })
+        )
+        navigate(ROLE_HOME[dbUser.role])
+        fbUserRef.current = null
+      }
+    }
+  }, [isSuccess, error, dispatch, navigate])
+
+  useEffect(() => {
+    if (isLoading) {
+      return
+    }
+    const mutationError = error as { status?: number; data?: { code?: string; message?: string } } | null
+    if (mutationError?.data?.code) {
+      const code = mutationError.data.code
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        fbUserRef.current = null
+        return
+      }
+      const msg = mutationError.data?.message || 'Google sign-up failed. Please try again.'
+      setGlobalError(msg)
+    }
+  }, [isLoading, error])
+
+  async function handleGoogle() {
+    setLoading(true)
+    setGlobalError(null)
+
+    try {
+      const result = await signInWithPopup(auth, googleProvider)
+      await handleGoogleSuccess(result.user)
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code
 
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        fbUserRef.current = null
         return
       }
 
-      if (fbUser) {
+      if (fbUserRef.current) {
         await signOut(auth)
+        fbUserRef.current = null
       }
 
       const msg = err instanceof Error ? err.message : ''

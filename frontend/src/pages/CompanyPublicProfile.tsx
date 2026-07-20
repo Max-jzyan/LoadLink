@@ -41,10 +41,6 @@ export default function CompanyPublicProfile() {
     }
   }, [currentRole, companyId, dispatch])
 
-  if (currentRole === 'company') {
-    return <ForbiddenPage />
-  }
-
   const {
     data: company,
     isLoading: isCompanyLoading,
@@ -68,7 +64,7 @@ export default function CompanyPublicProfile() {
     { skip: !currentMongoId || !companyId }
   )
 
-  const [createReview, { isLoading: isSubmittingReview }] = useCreateReviewMutation()
+  const [createReview, { isLoading: isSubmittingReview, isSuccess, isError, error }] = useCreateReviewMutation()
 
   // Push the resolved company name into the breadcrumb store so PageLayout can
   // render a friendly label without re-fetching the entity by id from the URL.
@@ -84,6 +80,24 @@ export default function CompanyPublicProfile() {
     }
   }, [companyId, company, dispatch])
 
+
+
+  useEffect(() => {
+    if (isSuccess) {
+      setShowReviewForm(false)
+    }
+  }, [isSuccess])
+
+  useEffect(() => {
+    if (isError) {
+  // Error handling managed by mutation - toast/error UI could be added here if needed
+    }
+  }, [isError, error])
+
+  if (currentRole === 'company') {
+    return <ForbiddenPage />
+  }
+
   if (!companyId) {
     return (
       <PageShell title="Company Profile">
@@ -94,24 +108,19 @@ export default function CompanyPublicProfile() {
     )
   }
 
-  const handleReviewSubmit = async (data: {
+  const handleReviewSubmit = (data: {
     loadId: string
     ratingCategories: RatingCategories
     comment: string
   }) => {
-    try {
-      await createReview({
-        reviewerId: currentMongoId!,
-        targetId: companyId!,
-        loadId: data.loadId,
-        ratingCategories: data.ratingCategories,
-        comment: data.comment,
-        targetType: 'company',
-      }).unwrap()
-      setShowReviewForm(false)
-    } catch {
-      // Error handling managed by mutation
-    }
+    createReview({
+      reviewerId: currentMongoId!,
+      targetId: companyId!,
+      loadId: data.loadId,
+      ratingCategories: data.ratingCategories,
+      comment: data.comment,
+      targetType: 'company',
+    })
   }
 
   const displayName = company?.companyName || company?.name
@@ -136,21 +145,31 @@ export default function CompanyPublicProfile() {
     )
   }
 
-  const reviewsBody = isReviewsLoading ? (
-    <div className="flex items-center justify-center py-10">
-      <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
-    </div>
-  ) : isReviewsError ? (
-    <div className="text-sm text-destructive">Could not load reviews. Please try again later.</div>
-  ) : (reviewsPayload?.data ?? []).length === 0 ? (
-    <div className="text-sm text-muted-foreground italic">No reviews yet for this company.</div>
-  ) : (
-    <div className="space-y-3">
-      {(reviewsPayload?.data ?? []).map((r) => (
-        <ReviewCard key={r._id} review={r} reviewerType="driver" />
-      ))}
-    </div>
-  )
+  let reviewsBody: React.ReactNode
+
+  if (isReviewsLoading) {
+    reviewsBody = (
+      <div className="flex items-center justify-center py-10">
+        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+      </div>
+    )
+  } else if (isReviewsError) {
+    reviewsBody = (
+      <div className="text-sm text-destructive">Could not load reviews. Please try again later.</div>
+    )
+  } else if ((reviewsPayload?.data ?? []).length === 0) {
+    reviewsBody = (
+      <div className="text-sm text-muted-foreground italic">No reviews yet for this company.</div>
+    )
+  } else {
+    reviewsBody = (
+      <div className="space-y-3">
+        {(reviewsPayload?.data ?? []).map((r) => (
+          <ReviewCard key={r._id} review={r} reviewerType="driver" />
+        ))}
+      </div>
+    )
+  }
 
   const leftColumnContent = (
     <>

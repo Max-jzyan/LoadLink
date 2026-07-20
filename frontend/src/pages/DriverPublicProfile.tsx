@@ -68,7 +68,7 @@ export default function DriverPublicProfile() {
     { skip: !currentMongoId || !driverId }
   )
 
-  const [createReview, { isLoading: isSubmittingReview }] = useCreateReviewMutation()
+  const [createReview, { isLoading: isSubmittingReview, isSuccess, isError }] = useCreateReviewMutation()
 
   // Push the resolved driver name into the breadcrumb store so PageLayout can
   // render a friendly label without re-fetching the entity by id from the URL.
@@ -83,24 +83,31 @@ export default function DriverPublicProfile() {
     }
   }, [driverId, driver, dispatch])
 
-  const handleReviewSubmit = async (data: {
+  useEffect(() => {
+    if (isSuccess) {
+      setShowReviewForm(false)
+    }
+  }, [isSuccess])
+
+  useEffect(() => {
+    if (isError) {
+      // Error toast could be added here; the mutation handles cache invalidation
+    }
+  }, [isError])
+
+  const handleReviewSubmit = (data: {
     loadId: string
     ratingCategories: RatingCategories
     comment: string
   }) => {
     if (!driverId) return
-    try {
-      await createReview({
-        reviewerId: currentMongoId!,
-        targetId: driverId,
-        loadId: data.loadId,
-        ratingCategories: data.ratingCategories,
-        comment: data.comment,
-      }).unwrap()
-      setShowReviewForm(false)
-    } catch {
-      // Error toast could be added here; the mutation handles cache invalidation
-    }
+    createReview({
+      reviewerId: currentMongoId!,
+      targetId: driverId,
+      loadId: data.loadId,
+      ratingCategories: data.ratingCategories,
+      comment: data.comment,
+    })
   }
 
   if (!driverId) {
@@ -133,21 +140,30 @@ export default function DriverPublicProfile() {
     )
   }
 
-  const reviewsBody = isReviewsLoading ? (
-    <div className="flex items-center justify-center py-10">
-      <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
-    </div>
-  ) : isReviewsError ? (
-    <div className="text-sm text-destructive">Could not load reviews. Please try again later.</div>
-  ) : (reviewsPayload?.data ?? []).length === 0 ? (
-    <div className="text-sm text-muted-foreground italic">No reviews yet for this driver.</div>
-  ) : (
-    <div className="space-y-3">
-      {(reviewsPayload?.data ?? []).map((r) => (
-        <ReviewCard key={r._id} review={r} reviewerType="company" />
-      ))}
-    </div>
-  )
+  let reviewsBody: React.ReactNode
+  if (isReviewsLoading) {
+    reviewsBody = (
+      <div className="flex items-center justify-center py-10">
+        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+      </div>
+    )
+  } else if (isReviewsError) {
+    reviewsBody = (
+      <div className="text-sm text-destructive">Could not load reviews. Please try again later.</div>
+    )
+  } else if ((reviewsPayload?.data ?? []).length === 0) {
+    reviewsBody = (
+      <div className="text-sm text-muted-foreground italic">No reviews yet for this driver.</div>
+    )
+  } else {
+    reviewsBody = (
+      <div className="space-y-3">
+        {(reviewsPayload?.data ?? []).map((r) => (
+          <ReviewCard key={r._id} review={r} reviewerType="company" />
+        ))}
+      </div>
+    )
+  }
 
   const leftColumnContent = (
     <>

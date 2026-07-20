@@ -5,7 +5,7 @@ import { RoutePath } from '@/config/routes'
 import { useGetLoadQuery, useUpdateLoadMutation } from '@/services/loadApi/loadSlice'
 import { LOAD_STATUSES } from '@/types/enums'
 import { ArrowLeft, Loader2 } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 const NON_EDITABLE_STATUSES: readonly string[] = [
@@ -22,7 +22,7 @@ export default function LoadEdit() {
   const editState = location.state as { from?: RoutePath; viaDetail?: boolean } | null
   const backTarget = editState?.from ?? RoutePath.Loads
   const { data: load, isLoading, isError } = useGetLoadQuery(loadId ?? '', { skip: !loadId })
-  const [updateLoad, { isLoading: isSaving }] = useUpdateLoadMutation()
+  const [updateLoad, { isLoading: isSaving, isSuccess, isError: isMutationError }] = useUpdateLoadMutation()
 
   const canEdit = load ? !NON_EDITABLE_STATUSES.includes(load.status) : false
   const cancelTarget = editState?.viaDetail && load ? `/loads/${load._id}` : backTarget
@@ -55,14 +55,21 @@ export default function LoadEdit() {
     }
   }, [load])
 
-  const handleSubmit = async (values: LoadFormValues) => {
-    if (!loadId) return
-    try {
-      await updateLoad({ loadId, body: values }).unwrap()
+  useEffect(() => {
+    if (isSuccess && loadId) {
       navigate(`/loads/${loadId}`, { state: { from: backTarget } })
-    } catch {
+    }
+  }, [isSuccess, loadId, navigate, backTarget])
+
+  useEffect(() => {
+    if (isMutationError) {
       // error toast handled by the mutation
     }
+  }, [isMutationError])
+
+  const handleSubmit = (values: LoadFormValues) => {
+    if (!loadId) return
+    updateLoad({ loadId, body: values })
   }
 
   if (isLoading) {

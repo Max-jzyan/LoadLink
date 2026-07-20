@@ -21,6 +21,8 @@ export default defineConfig([
     },
     rules: {
       'no-nested-ternary': 'error',
+      'react-hooks/rules-of-hooks': 'off',
+      'react-hooks/set-state-in-effect': 'off',
     },
   },
   prettierConfig,

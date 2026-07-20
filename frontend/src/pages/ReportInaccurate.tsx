@@ -20,6 +20,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  DRIVER_INACCURACY_TYPES,
+  LOAD_INACCURACY_TYPES,
+} from '@/types/fraudTypes'
 import { RoutePath } from '@/config/routes'
 import { selectMongoId, selectRole } from '@/services/authSlice'
 import {
@@ -29,26 +33,9 @@ import {
 } from '@/services/reportApi/reportSlice'
 import type { ReportableLoad } from '@/services/reportApi/reportEnum'
 import { AlertTriangle, Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router-dom'
-
-const LOAD_INACCURACY_TYPES = [
-  { value: 'weight', label: 'Incorrect weight or dimensions' },
-  { value: 'pickup_delivery', label: 'Wrong pickup or delivery location' },
-  { value: 'equipment', label: 'Wrong equipment type required' },
-  { value: 'hazmat', label: 'Undisclosed hazmat or special handling' },
-  { value: 'dates', label: 'Incorrect pickup or delivery dates' },
-  { value: 'other', label: 'Other inaccuracy' },
-]
-
-const DRIVER_INACCURACY_TYPES = [
-  { value: 'license', label: 'Incorrect license or certification info' },
-  { value: 'equipment', label: 'Wrong equipment or truck type listed' },
-  { value: 'location', label: 'Inaccurate home location or service area' },
-  { value: 'availability', label: 'Incorrect availability or capacity' },
-  { value: 'other', label: 'Other inaccuracy' },
-]
 
 const loadLabel = (load: ReportableLoad) =>
   `Load #${load._id.slice(-6).toUpperCase()} — ${load.originAddress} → ${load.destinationAddress}`
@@ -65,7 +52,7 @@ export default function ReportInaccurate() {
 
   const [inaccuracyType, setInaccuracyType] = useState('')
   const [description, setDescription] = useState('')
-  const [createReport, { isLoading: isSubmitting }] = useCreateReportMutation()
+  const [createReport, { isLoading: isSubmitting, isSuccess, isError, error }] = useCreateReportMutation()
 
   // Company reports a driver — picked from drivers they've actually
   // collaborated with, the same list (and combobox) the fraud report page uses
@@ -107,35 +94,42 @@ export default function ReportInaccurate() {
     ? !!driverEmail.trim() && !!inaccuracyType && !!description.trim()
     : !!selectedLoadId && !!inaccuracyType && !!description.trim()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (isSuccess) {
+      navigate(RoutePath.Report)
+    }
+  }, [isSuccess, navigate])
+
+  useEffect(() => {
+    if (isError && error) {
+      const err = error as { status?: number; data?: { message?: string } }
+      if (err.status === 404 || err.status === 403) {
+        if (isCompany) {
+          setDriverEmailError(err.data?.message ?? 'No driver you have worked with matches that email')
+        } else {
+          setLoadError(err.data?.message ?? 'That load could not be found')
+        }
+      }
+    }
+  }, [isError, error, isCompany])
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!isFormComplete || !userId) return
     if (!isCompany && !selectedLoadId) {
       setLoadError('Select a load from the list')
       return
     }
-
-    try {
-      await createReport({
-        reporterId: userId,
-        type: 'inaccurate',
-        targetType: isCompany ? 'driver' : 'company',
-        ...(isCompany ? { targetEmail: driverEmail.trim() } : { targetName: selectedLoadId! }),
-        category: inaccuracyTypes.find((t) => t.value === inaccuracyType)?.label ?? inaccuracyType,
-        description: description.trim(),
-      }).unwrap()
-      navigate(RoutePath.Report)
-    } catch (err) {
-      // toast handled by the mutation; surface target-validation errors inline
-      const { status, data } = (err ?? {}) as { status?: number; data?: { message?: string } }
-      if (status === 404 || status === 403) {
-        if (isCompany) {
-          setDriverEmailError(data?.message ?? 'No driver you have worked with matches that email')
-        } else {
-          setLoadError(data?.message ?? 'That load could not be found')
-        }
-      }
-    }
+    setDriverEmailError(null)
+    setLoadError(null)
+    createReport({
+      reporterId: userId,
+      type: 'inaccurate',
+      targetType: isCompany ? 'driver' : 'company',
+      ...(isCompany ? { targetEmail: driverEmail.trim() } : { targetName: selectedLoadId! }),
+      category: inaccuracyTypes.find((t) => t.value === inaccuracyType)?.label ?? inaccuracyType,
+      description: description.trim(),
+    })
   }
 
   return (

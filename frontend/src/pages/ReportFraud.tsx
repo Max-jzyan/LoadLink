@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { COMPANY_FRAUD_TYPES, DRIVER_FRAUD_TYPES } from '@/types/fraudTypes'
 import { RoutePath } from '@/config/routes'
 import { selectMongoId, selectRole } from '@/services/authSlice'
 import {
@@ -27,25 +28,9 @@ import {
   useGetReportCollaboratorsQuery,
 } from '@/services/reportApi/reportSlice'
 import { Loader2, ShieldAlert } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router-dom'
-
-const DRIVER_FRAUD_TYPES = [
-  { value: 'fake_load', label: 'Fake or non-existent load posting' },
-  { value: 'no_payment', label: 'Refused to pay after delivery' },
-  { value: 'bait_switch', label: 'Bait-and-switch on load details' },
-  { value: 'identity', label: 'Identity or company impersonation' },
-  { value: 'other', label: 'Other fraudulent activity' },
-]
-
-const COMPANY_FRAUD_TYPES = [
-  { value: 'fake_credentials', label: 'Fake or forged credentials' },
-  { value: 'cargo_theft', label: 'Cargo theft' },
-  { value: 'identity', label: 'Identity impersonation' },
-  { value: 'billing', label: 'Fraudulent billing or claims' },
-  { value: 'other', label: 'Other fraudulent activity' },
-]
 
 export default function ReportFraud() {
   const role = useSelector(selectRole)
@@ -63,7 +48,7 @@ export default function ReportFraud() {
   const [emailError, setEmailError] = useState<string | null>(null)
   const [fraudType, setFraudType] = useState('')
   const [description, setDescription] = useState('')
-  const [createReport, { isLoading: isSubmitting }] = useCreateReportMutation()
+  const [createReport, { isLoading: isSubmitting, isSuccess, isError, error }] = useCreateReportMutation()
 
   // Suggestions are the users the reporter actually worked with — the same
   // list the backend validates fraud-report targets against
@@ -79,29 +64,36 @@ export default function ReportFraud() {
     setEmailError(null)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email.trim() || !fraudType || !description.trim() || !userId) return
-    try {
-      await createReport({
-        reporterId: userId,
-        type: 'fraud',
-        targetType: isCompany ? 'driver' : 'company',
-        targetEmail: email.trim(),
-        category: fraudTypes.find((t) => t.value === fraudType)?.label ?? fraudType,
-        description: description.trim(),
-      }).unwrap()
+  useEffect(() => {
+    if (isSuccess) {
       navigate(RoutePath.Report)
-    } catch (err) {
-      // toast handled by the mutation; surface target-validation errors inline
-      const { status, data } = (err ?? {}) as { status?: number; data?: { message?: string } }
-      if (status === 404 || status === 403) {
+    }
+  }, [isSuccess, navigate])
+
+  useEffect(() => {
+    if (isError && error) {
+      const err = error as { status?: number; data?: { message?: string } }
+      if (err.status === 404 || err.status === 403) {
         setEmailError(
-          data?.message ??
+          err.data?.message ??
             `No ${isCompany ? 'driver' : 'company'} you have worked with matches that email`
         )
       }
     }
+  }, [isError, error, isCompany])
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email.trim() || !fraudType || !description.trim() || !userId) return
+    setEmailError(null)
+    createReport({
+      reporterId: userId,
+      type: 'fraud',
+      targetType: isCompany ? 'driver' : 'company',
+      targetEmail: email.trim(),
+      category: fraudTypes.find((t) => t.value === fraudType)?.label ?? fraudType,
+      description: description.trim(),
+    })
   }
 
   return (

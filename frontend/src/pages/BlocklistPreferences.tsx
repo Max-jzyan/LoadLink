@@ -49,7 +49,7 @@ import {
   ShieldAlert,
   User,
 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 
@@ -177,8 +177,8 @@ export default function BlocklistPreferences() {
 
   const { data: blocked = [], isLoading } = useGetBlocklistQuery(userId)
   const { data: prefs = {} } = useGetFeedPreferencesQuery(userId)
-  const [blockUser, { isLoading: isBlocking }] = useBlockUserMutation()
-  const [unblockUser] = useUnblockUserMutation()
+  const [blockUser, { isLoading: isBlocking, isSuccess: isBlockSuccess }] = useBlockUserMutation()
+  const [unblockUser, { isSuccess: isUnblockSuccess }] = useUnblockUserMutation()
   const [updateFeedPreferences] = useUpdateFeedPreferencesMutation()
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -206,37 +206,40 @@ export default function BlocklistPreferences() {
     updateFeedPreferences({ userId, body: { [key]: value } })
   }
 
-  const confirmUnblock = async () => {
-    if (!pendingUnblock || !pendingUnblock.targetId) return
-    try {
-      await unblockUser({ userId, targetId: pendingUnblock.targetId._id }).unwrap()
-    } finally {
+  useEffect(() => {
+    if (isUnblockSuccess && pendingUnblock) {
       setPendingUnblock(null)
     }
+  }, [isUnblockSuccess, pendingUnblock])
+
+  const confirmUnblock = () => {
+    if (!pendingUnblock || !pendingUnblock.targetId) return
+    unblockUser({ userId, targetId: pendingUnblock.targetId._id })
   }
 
   const handleReport = (entry: BlocklistEntry) => {
     navigate(RoutePath.ReportFraud, { state: { entityEmail: entry.targetId?.email ?? '' } })
   }
 
-  const handleBlock = async () => {
-    if (!searchQuery?.trim()) return
-    try {
-      await blockUser({
-        userId,
-        body: {
-          targetName: searchQuery.trim(),
-          targetType: isCompany ? 'driver' : 'company',
-          reason: blockReasons.find((r) => r.value === blockReason)?.label ?? '',
-        },
-      }).unwrap()
+  useEffect(() => {
+    if (isBlockSuccess) {
       setSearchQuery('')
       setBlockReason('')
       setKnownUsersOpen(false)
       setActiveTab(tabs[0].key)
-    } catch {
-      // error toast handled by the mutation
     }
+  }, [isBlockSuccess])
+
+  const handleBlock = () => {
+    if (!searchQuery?.trim()) return
+    blockUser({
+      userId,
+      body: {
+        targetName: searchQuery.trim(),
+        targetType: isCompany ? 'driver' : 'company',
+        reason: blockReasons.find((r) => r.value === blockReason)?.label ?? '',
+      },
+    })
   }
 
   const interactionLabel = (type: KnownUser['interactionType']) => {

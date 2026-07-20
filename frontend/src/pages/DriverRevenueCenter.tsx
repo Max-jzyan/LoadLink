@@ -77,8 +77,8 @@ export default function DriverRevenueCenter() {
     } as RevenueFiltersQuery,
   })
 
-  const [updateExpenses, { isLoading: isUpdating }] = useUpdateDriverExpensesMutation()
-  const [updateTruckExpenses, { isLoading: isUpdatingTruck }] = useUpdateTruckExpensesMutation()
+  const [updateExpenses, { isLoading: isUpdating, isSuccess: isGlobalExpensesSuccess }] = useUpdateDriverExpensesMutation()
+  const [updateTruckExpenses, { isLoading: isUpdatingTruck, isSuccess: isTruckExpensesSuccess }] = useUpdateTruckExpensesMutation()
   const { data: trucks = [] } = useListDriverTrucksQuery(driverId)
 
   const [localExpenses, setLocalExpenses] = useState<ExpensePreferences | null>(null)
@@ -90,21 +90,22 @@ export default function DriverRevenueCenter() {
     }
   }, [revenue?.expensePreferences])
 
+  useEffect(() => {
+    if (isGlobalExpensesSuccess || isTruckExpensesSuccess) {
+      setGlobalDrawerOpen(false)
+    }
+  }, [isGlobalExpensesSuccess, isTruckExpensesSuccess])
+
   const handleSaveExpenses = useCallback(
-    async (form: ExpensePreferences, scope: string) => {
-      try {
-        if (scope === 'global') {
-          await updateExpenses({ driverId, body: form }).unwrap()
-        } else {
-          await updateTruckExpenses({
-            driverId,
-            truckId: scope,
-            body: form,
-          }).unwrap()
-        }
-        setGlobalDrawerOpen(false)
-      } catch {
-        // error handled by RTK
+    (form: ExpensePreferences, scope: string) => {
+      if (scope === 'global') {
+        updateExpenses({ driverId, body: form })
+      } else {
+        updateTruckExpenses({
+          driverId,
+          truckId: scope,
+          body: form,
+        })
       }
     },
     [driverId, updateExpenses, updateTruckExpenses]
