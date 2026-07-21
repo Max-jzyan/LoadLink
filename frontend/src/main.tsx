@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { store } from './services/store'
+import 'shepherd.js/dist/css/shepherd.css'
 import './index.css'
 import App from './App.tsx'
 

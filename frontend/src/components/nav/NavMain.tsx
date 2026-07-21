@@ -14,7 +14,7 @@ export function NavMain({ items }: { items: NavItem[] }) {
   return (
     <SidebarMenu>
       {items.map((item) => (
-        <SidebarMenuItem key={item.path}>
+        <SidebarMenuItem key={item.path} data-tour={`nav-${item.path}`}>
           <SidebarMenuButton asChild isActive={pathname === item.path} tooltip={item.label}>
             <Link to={item.path}>
               <item.icon />

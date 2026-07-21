@@ -5,6 +5,7 @@ import {
   LogOutIcon,
   MonitorIcon,
   MoonIcon,
+  PlayCircleIcon,
   Settings,
   SunIcon,
 } from 'lucide-react'
@@ -31,6 +32,7 @@ import { auth } from '@/lib/firebase'
 import { selectRole, setManualLogout } from '@/services/authSlice'
 import { useGetMyProfileQuery } from '@/services/userApi/userSlice'
 import { useSelector } from 'react-redux'
+import { useTourContext } from '@/contexts/TourContext'
 
 const THEME_ICONS: Record<Theme, React.ReactNode> = {
   light: <SunIcon className="h-4 w-4" />,
@@ -46,6 +48,7 @@ export function NavUser() {
 
   const role = useSelector(selectRole)
   const { data: profile } = useGetMyProfileQuery()
+  const { startTour } = useTourContext()
 
   async function handleLogout() {
     setManualLogout()
@@ -100,6 +103,7 @@ export function NavUser() {
                       <button
                         type="button"
                         title={displayName}
+                        data-tour="nav-user"
                         className="flex shrink-0 cursor-pointer items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
                       >
                         {avatarTrigger}
@@ -116,6 +120,7 @@ export function NavUser() {
                 <button
                   type="button"
                   title="Account menu"
+                  data-tour="nav-user"
                   className="flex cursor-pointer items-center gap-2 rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors pr-1"
                 >
                   {avatarTrigger}
@@ -178,6 +183,10 @@ export function NavUser() {
                 >
                   <Settings />
                   Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={startTour}>
+                  <PlayCircleIcon />
+                  Walkthrough
                 </DropdownMenuItem>
               </DropdownMenuGroup>
 

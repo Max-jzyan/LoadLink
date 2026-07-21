@@ -5,6 +5,7 @@ import { signInWithPopup, signOut, type User } from 'firebase/auth'
 import { auth, googleProvider } from '@/lib/firebase'
 import { type UserRole } from '@/types/enums'
 import { registerAndFetchUser, setUser } from '@/services/authSlice'
+import { setTourPending } from '@/hooks/useTour'
 import { useRegisterUserMutation } from '@/services/userApi/userSlice'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -83,6 +84,7 @@ export default function SignupPage() {
         role === 'driver' ? profilePictureFile : null
       )
       dispatch(setUser(authUser))
+      setTourPending()
       navigate(ROLE_HOME[role])
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
@@ -154,6 +156,7 @@ export default function SignupPage() {
             role: dbUser.role,
           })
         )
+        setTourPending()
         navigate(ROLE_HOME[dbUser.role])
         fbUserRef.current = null
       }

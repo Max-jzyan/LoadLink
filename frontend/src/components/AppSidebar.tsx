@@ -25,7 +25,7 @@ export function AppSidebar({ role }: AppSidebarProps) {
   const dashboardPath = ROLE_HOME[role]
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" data-tour="sidebar">
       <SidebarHeader className="flex flex-row items-center gap-1 p-2 group-data-[collapsible=icon]:justify-center">
         <Link
           to={dashboardPath}

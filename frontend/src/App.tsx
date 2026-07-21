@@ -18,6 +18,7 @@ import PageLayout from '@/components/PageLayout'
 import AppRoutes from '@/routes'
 import { selectRole, selectAuthLoading, setManualLogout } from '@/services/authSlice'
 import Spinner from '@/components/shared/Spinner'
+import { TourProvider } from '@/contexts/TourContext'
 
 // Picks the correct sidebar based on the server-resolved role (Redux is the
 // single source of truth). If we finish loading and still have no role
@@ -48,6 +49,7 @@ function RoleLayout() {
   }
 
   return (
+  <TourProvider>
     <SidebarProvider defaultOpen={false} className="h-svh">
       <AppSidebar role={role} />
       <SidebarInset>
@@ -56,7 +58,9 @@ function RoleLayout() {
         </PageLayout>
       </SidebarInset>
     </SidebarProvider>
-  )
+  </TourProvider>
+)
+
 }
 
 function App() {

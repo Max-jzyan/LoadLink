@@ -106,6 +106,7 @@ function NotificationItem({
         !notification.isRead ? 'bg-primary/5 border border-primary/10' : 'hover:bg-muted/50',
         target && 'cursor-pointer'
       )}
+      data-tour="notification-bell"
     >
       {/* Unread dot */}
       <div className="mt-1.5 shrink-0">
@@ -219,6 +220,7 @@ export default function NotificationBell() {
       {/* Bell trigger button */}
       <button
         onClick={() => setOpen(true)}
+        data-tour="notification-bell"
         className="relative flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
       >
