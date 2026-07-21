@@ -17,18 +17,6 @@ interface EligibilityBadgeProps {
   className?: string
 }
 
-
-const ELIGIBILITY_LABELS: Record<keyof EligibilityFlags, string> = {
-  eligibleTruckType: 'Wrong truck type',
-  eligibleTrailerLength: 'Trailer too long',
-  eligibleCertifications: 'Missing required certifications',
-  eligibleSchedule: 'Schedule conflict',
-  eligibleMinRate: 'Below minimum rate per mile',
-  eligibleMinValue: 'Below minimum load value',
-  eligibleDeadhead: 'Exceeds max deadhead',
-  isEligible: '',
-}
-
 type BadgeState = 'high-score' | 'eligible' | 'ineligible'
 /**
  * Renders a compact score indicator with a hover tooltip, using a thin Progress bar.
