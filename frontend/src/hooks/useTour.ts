@@ -21,13 +21,20 @@ function makeButton(text: string, action: () => void, secondary = false) {
   return {
     text,
     action,
-    classes: secondary
-      ? 'shepherd-button-secondary'
-      : 'shepherd-button-primary',
+    classes: secondary ? 'shepherd-button-secondary' : 'shepherd-button-primary',
   }
 }
 
-export function createTour(role: UserRole): Shepherd.Tour {
+/** Navigate to path then wait for React Router + first render to settle. */
+function navStep(navigate: (path: string) => void, path: string): () => Promise<void> {
+  return () =>
+    new Promise<void>((resolve) => {
+      navigate(path)
+      setTimeout(resolve, 350)
+    })
+}
+
+export function createTour(role: UserRole, navigate: (path: string) => void): Shepherd.Tour {
   const tour = new Shepherd.Tour({
     useModalOverlay: true,
     defaultStepOptions: {
@@ -48,38 +55,43 @@ export function createTour(role: UserRole): Shepherd.Tour {
   const doneBtn = makeButton('Done ✓', done)
   const skipBtn = makeButton('Skip tour', done, true)
 
-  // ── Step 1: Welcome ──────────────────────────────────────────────────
+  const roleHome = role === 'driver' ? '/dashboard' : '/company/dashboard'
+
+  // ── Step 1: Welcome ──────────────────────────────────────────────────────────
   tour.addStep({
     id: 'welcome',
     title: 'Welcome to LoadLink!',
     text: `<p>Let's take a quick tour so you know your way around. This will only take a minute.</p>`,
+    beforeShowPromise: navStep(navigate, roleHome),
     buttons: [skipBtn, nextBtn],
   })
 
-  // ── Step 2: Sidebar ──────────────────────────────────────────────────
+  // ── Step 2: Sidebar ──────────────────────────────────────────────────────────
   tour.addStep({
     id: 'sidebar',
     title: 'Navigation Sidebar',
-    text: '<p>This sidebar is your main navigation hub. You can collapse it by clicking the toggle icon at the top.</p>',
+    text: '<p>This sidebar is your main navigation hub. Click the toggle icon at the top to collapse or expand it.</p>',
     attachTo: { element: '[data-tour="sidebar"]', on: 'right' },
     buttons: [backBtn, nextBtn],
   })
 
-  // ── Role-specific nav steps ──────────────────────────────────────────
+  // ── Role-specific nav steps ──────────────────────────────────────────────────
   if (role === 'driver') {
     tour.addStep({
       id: 'nav-revenue',
       title: 'Revenue Center',
       text: '<p>Track your earnings, view profit/loss breakdowns, and manage your financial performance here.</p>',
       attachTo: { element: '[data-tour="nav-/dashboard"]', on: 'right' },
+      beforeShowPromise: navStep(navigate, '/dashboard'),
       buttons: [backBtn, nextBtn],
     })
 
     tour.addStep({
       id: 'nav-loads',
-      title: 'Available Loads',
-      text: '<p>Browse and claim loads assigned to you. Filter by eligibility, distance, and more.</p>',
+      title: 'My Loads',
+      text: '<p>Browse and manage loads assigned to you. Filter by eligibility, distance, weight, and more. Open the live map from any load row.</p>',
       attachTo: { element: '[data-tour="nav-/driverLoads"]', on: 'right' },
+      beforeShowPromise: navStep(navigate, '/driverLoads'),
       buttons: [backBtn, nextBtn],
     })
 
@@ -88,14 +100,7 @@ export function createTour(role: UserRole): Shepherd.Tour {
       title: 'Auctions',
       text: '<p>Place bids on loads posted by companies. Live auctions update in real-time.</p>',
       attachTo: { element: '[data-tour="nav-/driverAuctions"]', on: 'right' },
-      buttons: [backBtn, nextBtn],
-    })
-
-    tour.addStep({
-      id: 'nav-map',
-      title: 'Map',
-      text: '<p>View load origins and destinations on an interactive map to plan your routes.</p>',
-      attachTo: { element: '[data-tour="nav-/map"]', on: 'right' },
+      beforeShowPromise: navStep(navigate, '/driverAuctions'),
       buttons: [backBtn, nextBtn],
     })
   } else {
@@ -105,22 +110,16 @@ export function createTour(role: UserRole): Shepherd.Tour {
       title: 'Dashboard',
       text: '<p>Your company overview: active loads, spend metrics, and performance at a glance.</p>',
       attachTo: { element: '[data-tour="nav-/company/dashboard"]', on: 'right' },
+      beforeShowPromise: navStep(navigate, '/company/dashboard'),
       buttons: [backBtn, nextBtn],
     })
 
     tour.addStep({
       id: 'nav-loads',
       title: 'Loads',
-      text: '<p>View and manage all loads your company has posted. Track statuses and driver assignments.</p>',
+      text: '<p>View and manage all loads your company has posted. Track statuses and driver assignments. Use the Post Load button on this page to create new postings.</p>',
       attachTo: { element: '[data-tour="nav-/loads"]', on: 'right' },
-      buttons: [backBtn, nextBtn],
-    })
-
-    tour.addStep({
-      id: 'nav-post-load',
-      title: 'Post a Load',
-      text: '<p>Create a new load posting for drivers or put it up for auction. Fill in route, weight, and pay details.</p>',
-      attachTo: { element: '[data-tour="nav-/loads/post"]', on: 'right' },
+      beforeShowPromise: navStep(navigate, '/loads'),
       buttons: [backBtn, nextBtn],
     })
 
@@ -129,11 +128,32 @@ export function createTour(role: UserRole): Shepherd.Tour {
       title: 'Auctions',
       text: '<p>Manage your live auctions. Accept bids, set cap prices, and extend deadlines in real-time.</p>',
       attachTo: { element: '[data-tour="nav-/company/auctions"]', on: 'right' },
+      beforeShowPromise: navStep(navigate, '/company/auctions'),
       buttons: [backBtn, nextBtn],
     })
   }
 
-  // ── Step: Notifications ──────────────────────────────────────────────
+  // ── Messages (both roles) ────────────────────────────────────────────────────
+  tour.addStep({
+    id: 'nav-messages',
+    title: 'Messages',
+    text: '<p>Chat directly with drivers or companies about load details, check-ins, and coordination — all in one place.</p>',
+    attachTo: { element: '[data-tour="nav-/messages"]', on: 'right' },
+    beforeShowPromise: navStep(navigate, '/messages'),
+    buttons: [backBtn, nextBtn],
+  })
+
+  // ── Blocklist (both roles) ───────────────────────────────────────────────────
+  tour.addStep({
+    id: 'nav-blocklist',
+    title: 'Blocklist',
+    text: '<p>Manage your blocklist preferences to control which drivers or companies you work with.</p>',
+    attachTo: { element: '[data-tour="nav-/blocklist"]', on: 'right' },
+    beforeShowPromise: navStep(navigate, '/blocklist'),
+    buttons: [backBtn, nextBtn],
+  })
+
+  // ── Notifications ────────────────────────────────────────────────────────────
   tour.addStep({
     id: 'notifications',
     title: 'Notifications',
@@ -142,11 +162,11 @@ export function createTour(role: UserRole): Shepherd.Tour {
     buttons: [backBtn, nextBtn],
   })
 
-  // ── Step: Profile & Appearance ───────────────────────────────────────
+  // ── Profile & Appearance ─────────────────────────────────────────────────────
   tour.addStep({
     id: 'nav-user',
     title: 'Profile & Appearance',
-    text: '<p>Click your profile picture to access your settings, switch between <strong>Light / Dark / System</strong> themes, and log out. You can also restart this tour from that menu anytime.</p>',
+    text: '<p>Click your profile picture to access settings, switch between <strong>Light / Dark / System</strong> themes, and log out. You can also restart this tour from that menu anytime.</p>',
     attachTo: { element: '[data-tour="nav-user"]', on: 'right' },
     buttons: [backBtn, doneBtn],
   })

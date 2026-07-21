@@ -360,96 +360,107 @@ code {
 }
 
 /* ─── Shepherd.js tour overrides ─────────────────────────────────────────── */
+/* Use !important throughout to beat shepherd's built-in high-specificity rules
+   (.shepherd-has-title .shepherd-content .shepherd-header etc.).
+   CSS custom properties (var(--primary) etc.) compute correctly because shepherd
+   elements are DOM descendants of <html> where the token values are defined. */
+
 .shepherd-element {
-  max-width: 320px;
-  border-radius: 0.75rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  max-width: 320px !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18) !important;
+  background: var(--card) !important;
   z-index: 9999 !important;
 }
 
-.shepherd-header {
-  border-radius: 0.75rem 0.75rem 0 0;
-  padding: 1rem 1rem 0.25rem;
-  background: var(--card, #fff);
+.shepherd-content {
+  border-radius: 0.75rem !important;
 }
 
-.dark .shepherd-header {
-  background: var(--card, hsl(224 71% 4%));
+/* Override the high-specificity default: .shepherd-has-title .shepherd-content .shepherd-header */
+.shepherd-header,
+.shepherd-has-title .shepherd-content .shepherd-header {
+  border-radius: 0.75rem 0.75rem 0 0 !important;
+  padding: 1rem 1rem 0.25rem !important;
+  background: var(--card) !important;
 }
 
 .shepherd-title {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--card-foreground, #0f172a);
-}
-
-.dark .shepherd-title {
-  color: var(--card-foreground, #f8fafc);
+  font-size: 0.9375rem !important;
+  font-weight: 600 !important;
+  color: var(--card-foreground) !important;
 }
 
 .shepherd-text {
-  padding: 0.375rem 1rem 0.75rem;
-  font-size: 0.875rem;
-  line-height: 1.65;
-  color: var(--muted-foreground, #64748b);
-  background: var(--card, #fff);
-}
-
-.dark .shepherd-text {
-  background: var(--card, hsl(224 71% 4%));
-  color: var(--muted-foreground, #94a3b8);
+  padding: 0.375rem 1rem 0.75rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.65 !important;
+  color: var(--muted-foreground) !important;
+  background: var(--card) !important;
 }
 
 .shepherd-footer {
-  padding: 0.5rem 1rem 0.875rem;
-  gap: 0.5rem;
-  display: flex;
-  justify-content: flex-end;
-  background: var(--card, #fff);
-  border-radius: 0 0 0.75rem 0.75rem;
+  padding: 0.5rem 1rem 0.875rem !important;
+  gap: 0.5rem !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  background: var(--card) !important;
+  border-radius: 0 0 0.75rem 0.75rem !important;
 }
 
-.dark .shepherd-footer {
-  background: var(--card, hsl(224 71% 4%));
+/* Arrow tip — match card background */
+.shepherd-arrow:before {
+  background: var(--card) !important;
 }
 
+.shepherd-element.shepherd-has-title[data-popper-placement^='bottom'] > .shepherd-arrow:before {
+  background: var(--card) !important;
+}
+
+/* Buttons */
 .shepherd-button {
-  border-radius: 0.375rem;
-  padding: 0.375rem 0.875rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: opacity 0.15s, background 0.15s;
-  border: none;
+  border-radius: 0.375rem !important;
+  padding: 0.375rem 0.875rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: opacity 0.15s, background 0.15s !important;
+  margin-right: 0.375rem !important;
 }
 
+/* Primary: use the app's --primary token directly (already a valid CSS color) */
 .shepherd-button.shepherd-button-primary {
-  background: hsl(var(--primary, 221 83% 53%));
-  color: hsl(var(--primary-foreground, 0 0% 100%));
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border: none !important;
 }
 
-.shepherd-button.shepherd-button-primary:hover {
-  opacity: 0.88;
+.shepherd-button.shepherd-button-primary:not(:disabled):hover {
+  opacity: 0.88 !important;
 }
 
+/* Secondary: ghost style */
 .shepherd-button.shepherd-button-secondary {
-  background: transparent;
-  color: var(--muted-foreground, #64748b);
-  border: 1px solid var(--border, #e2e8f0);
+  background: transparent !important;
+  color: var(--muted-foreground) !important;
+  border: 1px solid var(--border) !important;
 }
 
-.shepherd-button.shepherd-button-secondary:hover {
-  background: var(--accent, #f1f5f9);
+.shepherd-button.shepherd-button-secondary:not(:disabled):hover {
+  background: var(--accent) !important;
 }
 
-.shepherd-cancel-icon {
-  color: var(--muted-foreground, #64748b);
-  font-size: 1.25rem;
-  line-height: 1;
+/* Cancel × icon — override the high-specificity defaults */
+.shepherd-cancel-icon,
+.shepherd-has-title .shepherd-content .shepherd-cancel-icon {
+  color: var(--muted-foreground) !important;
+  font-size: 1.25rem !important;
+  line-height: 1 !important;
 }
 
-.shepherd-cancel-icon:hover {
-  color: var(--foreground, #0f172a);
+.shepherd-cancel-icon:hover,
+.shepherd-has-title .shepherd-content .shepherd-cancel-icon:hover {
+  color: var(--foreground) !important;
 }
 
 .shepherd-modal-overlay-container {

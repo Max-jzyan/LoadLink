@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react'
 import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { selectRole } from '@/services/authSlice'
 import { createTour, isTourPending, consumeTourPending } from '@/hooks/useTour'
 import type Shepherd from 'shepherd.js'
@@ -16,6 +17,7 @@ export function useTourContext() {
 
 export function TourProvider({ children }: { children: ReactNode }) {
   const role = useSelector(selectRole)
+  const navigate = useNavigate()
   const tourRef = useRef<Shepherd.Tour | null>(null)
 
   function startTour() {
@@ -25,9 +27,9 @@ export function TourProvider({ children }: { children: ReactNode }) {
       tourRef.current.complete()
       tourRef.current = null
     }
-    const tour = createTour(role)
+    const tour = createTour(role, navigate)
     tourRef.current = tour
-    // Give the DOM a tick to settle (especially if sidebar just opened)
+    // Give the DOM a tick to settle (especially on first mount)
     requestAnimationFrame(() => {
       tour.start()
     })
@@ -44,12 +46,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
       }, 800)
       return () => clearTimeout(timer)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role])
 
-  return (
-    <TourContext.Provider value={{ startTour }}>
-      {children}
-    </TourContext.Provider>
-  )
+  return <TourContext.Provider value={{ startTour }}>{children}</TourContext.Provider>
 }
