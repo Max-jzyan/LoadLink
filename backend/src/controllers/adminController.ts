@@ -10,10 +10,7 @@ import { USER_ROLES } from '../models/enums'
 import { ApiError } from '../utils/ApiError'
 import { generateRateConfirmationPdf } from '../services/pdfService'
 import * as uploadService from '../services/uploadService'
-import {
-  notifyDocumentApproved,
-  notifyDocumentRejected,
-} from '../services/notificationService'
+import { notifyDocumentApproved, notifyDocumentRejected } from '../services/notificationService'
 
 /**
  * GET /api/admin/documents/download?key=<s3key>

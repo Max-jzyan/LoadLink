@@ -622,7 +622,6 @@ function getCurrentLocation(
   if (liveLocation) {
     return liveLocation
   }
-
   // Priority 1: newest load's destination (sorted dropoffTime desc by caller)
   if (allDriverLoads.length > 0) {
     const last = allDriverLoads[0] as any
@@ -875,13 +874,13 @@ export const getScoredLoads = async (driverId: string, liveLocation?: LatLng | n
 
     // Weighted total
     const recommendationScore = Math.round(
-      rateScore * weights.rate +
-        valueScore * weights.value +
-        deadheadScore * weights.deadhead +
-        proximityScore * weights.geographicProximity +
-        temporalScore * weights.temporalAdjacency +
-        truckMatchScore * weights.truckTypeMatch +
-        competitionScore * weights.competition
+      rateScore * SCORE_WEIGHTS.rate +
+        valueScore * SCORE_WEIGHTS.value +
+        deadheadScore * SCORE_WEIGHTS.deadhead +
+        proximityScore * SCORE_WEIGHTS.geographicProximity +
+        temporalScore * SCORE_WEIGHTS.temporalAdjacency +
+        truckMatchScore * SCORE_WEIGHTS.truckTypeMatch +
+        competitionScore * SCORE_WEIGHTS.competition
     )
 
     // Generate highlights for high-scoring loads (≥ 80)

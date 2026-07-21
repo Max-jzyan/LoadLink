@@ -174,7 +174,7 @@ export function NavUser() {
 
               <DropdownMenuGroup>
                 <DropdownMenuItem
-                  onClick={() => navigate(role === 'driver' ? '/driver' : '/company')}
+                  onClick={() => navigate(role === 'driver' ? '/driver/profile' : '/settings')}
                 >
                   <Settings />
                   Settings

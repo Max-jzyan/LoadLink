@@ -1,7 +1,46 @@
 import { NextFunction, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import * as driverService from '../services/driverService'
+import * as aiInsightsService from '../services/aiInsightsService'
 import { parseLatLng } from '../utils/geo'
+
+/**
+ * DELETE /api/driver/:driverId/documents/:docKey
+ * Remove a certification document from the driver's profile (by S3 key).
+ */
+export const removeCertificationDocument = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const driverId = req.params.driverId as string
+    const docKey = decodeURIComponent(req.params.docKey as string)
+    await driverService.removeCertificationDocument(driverId, docKey)
+    res.status(StatusCodes.NO_CONTENT).send()
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * DELETE /api/driver/:driverId/insurance/:idx
+ * Remove an insurance certificate by array index.
+ */
+export const removeInsuranceCertificate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const driverId = req.params.driverId as string
+    const idx = parseInt(req.params.idx as string, 10)
+    await driverService.removeInsuranceCertificate(driverId, idx)
+    res.status(StatusCodes.NO_CONTENT).send()
+  } catch (err) {
+    next(err)
+  }
+}
 
 // ── endpoints ────────────────────────────────────────────────────────────
 
@@ -127,6 +166,60 @@ export const getScoredLoads = async (req: Request, res: Response, next: NextFunc
     const liveLocation = parseLatLng(req.query.lat, req.query.lng)
     const scored = await driverService.getScoredLoads(driverId, liveLocation)
     res.status(StatusCodes.OK).json(scored)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * GET /api/driver/:driverId/ai-insights
+ * Returns an AI-generated natural-language insight about the driver's top recommended loads.
+ * Responds with { available: false } when OPENROUTER_API_KEY is not set — the frontend
+ * hides the feature entirely in that case so nothing breaks.
+ */
+export const getAiInsights = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const driverId = req.params.driverId as string
+    const result = await aiInsightsService.getLoadInsight(driverId)
+    res.status(StatusCodes.OK).json(result)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * GET /api/driver/:driverId/ai-insights/fuel-stops?loadId=<id>
+ * Returns AI-suggested fuel stop cities for a specific load's route.
+ * Responds with { available: false } when OPENROUTER_API_KEY is not set.
+ */
+export const getAiFuelStops = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const loadId = req.query.loadId as string | undefined
+    if (!loadId) {
+      res.status(StatusCodes.OK).json({ available: false })
+      return
+    }
+    const result = await aiInsightsService.getFuelStopSuggestions(loadId)
+    res.status(StatusCodes.OK).json(result)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * GET /api/driver/:driverId/ai-insights/rest-areas?loadId=<id>
+ * Returns AI-suggested truck rest area stops for a specific load's route.
+ * Responds with { available: false } when OPENROUTER_API_KEY is not set.
+ */
+export const getAiRestAreas = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const loadId = req.query.loadId as string | undefined
+    if (!loadId) {
+      res.status(StatusCodes.OK).json({ available: false })
+      return
+    }
+    const result = await aiInsightsService.getRestAreaSuggestions(loadId)
+    res.status(StatusCodes.OK).json(result)
   } catch (err) {
     next(err)
   }

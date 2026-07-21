@@ -33,6 +33,7 @@ export default function TrailerDrawer({
   open,
   onOpenChange,
   editTrailer,
+  isLoading = false,
   onSubmit,
 }: TrailerDrawerProps) {
   const formId = 'trailer-form'
@@ -107,8 +108,8 @@ export default function TrailerDrawer({
       size="md"
       drawerSubmit={{
         onSubmit: handleSubmit(onFormSubmit),
-        isSubmitting: formLoading,
-        submitLabel: formLoading ? undefined : isEdit ? 'Save Changes' : 'Add Trailer',
+        isSubmitting: isLoading,
+        submitLabel: isLoading ? undefined : isEdit ? 'Save Changes' : 'Add Trailer',
       }}
     >
       <form key={formKey} id={formId} onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">

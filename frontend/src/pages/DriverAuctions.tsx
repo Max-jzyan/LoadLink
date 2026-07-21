@@ -13,7 +13,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
-import { useGetScoredLoadsQuery, useListDriverBidsQuery } from '@/services/driverApi/driverSlice'
+import {
+  useGetScoredLoadsQuery,
+  useListDriverBidsQuery,
+  useGetAiStatusQuery,
+} from '@/services/driverApi/driverSlice'
 import type { Load } from '@/services/loadApi/loadEnum'
 import { useListAvailableLoadsQuery } from '@/services/loadApi/loadSlice'
 import { useGetFeedPreferencesQuery } from '@/services/blocklistApi/blocklistSlice'
@@ -23,6 +27,11 @@ import { useRequiredMongoId } from '@/hooks/useAuth'
 import { useCurrentLocation } from '@/hooks/useCurrentLocation'
 import type { ScoredLoad } from '@/services/driverApi/driverEnum'
 import { DriverLoadFilters } from '@/components/driverLoads/DriverLoadFilters'
+import {
+  AiInsightsPanel,
+  AiFuelStopsPanel,
+  AiRestAreasPanel,
+} from '@/components/driverLoads/AiInsightsPanel'
 import { showError, showSuccess } from '@/lib/toast'
 import { RoutePath } from '@/config/routes'
 
@@ -31,6 +40,12 @@ type MapLayer = 'route' | 'fuel' | 'rest'
 // Load enriched with scoring metadata from driver profile analysis
 export interface EnrichedLoad extends Load {
   _scored?: ScoredLoad
+}
+
+const MAP_LAYER_LABELS: Record<MapLayer, string> = {
+  route: 'Route',
+  fuel: 'Fuel Stops',
+  rest: 'Rest Areas',
 }
 
 import type { SortKey, EligibilityFilter } from '@/components/driverLoads/DriverLoadFilters.types'
@@ -54,6 +69,8 @@ export default function DriverAuctions() {
     location ? { driverId, lat: location.lat, lng: location.lng } : driverId
   )
   const { data: activeBids = [] } = useListDriverBidsQuery({ driverId, status: 'active' })
+  const { data: aiStatus } = useGetAiStatusQuery()
+  const aiAvailable = aiStatus?.openrouterConfigured ?? false
   const { data: feedPrefs } = useGetFeedPreferencesQuery(driverId)
   const hideBelowMinimum = feedPrefs?.hideBelowMinimum ?? false
 
@@ -73,6 +90,7 @@ export default function DriverAuctions() {
   }, [loadPostedEvent, refetchAvailable, refetchScored])
 
   const [selectedLoad, setSelectedLoad] = useState<EnrichedLoad | null>(null)
+  const [aiTriggered, setAiTriggered] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [activeLayer, setActiveLayer] = useState<MapLayer>('route')
   const [sortKey, setSortKey] = useState<SortKey>('recommended')
@@ -410,6 +428,8 @@ export default function DriverAuctions() {
               minor: visibleCounts.minor,
             }}
             onReset={handleResetFilters}
+            onAiClick={aiAvailable ? () => setAiTriggered(true) : undefined}
+            aiActive={aiTriggered}
           />
           <div className="flex items-center gap-2 mt-2">
             <Button
@@ -445,10 +465,12 @@ export default function DriverAuctions() {
     >
       <div className="flex gap-2 flex-1 min-h-0 h-full">
         {/* left panel: scrollable load feed */}
-        <div
-          ref={loadFeedRef}
-          className="flex-[5] min-w-0 lg:min-w-[400px] overflow-y-auto h-full space-y-2 pl-1 pr-1 pt-2 pb-2"
-        >
+        <div ref={loadFeedRef}
+          className="flex-[5] min-w-0 lg:min-w-[400px] overflow-y-auto h-full space-y-2 pl-1 pr-1 pt-2 pb-2">
+          {/* AI insight banner — mounts only when user clicks the sparkles button */}
+          {aiTriggered && (
+            <AiInsightsPanel driverId={driverId} onDismiss={() => setAiTriggered(false)} />
+          )}
           {isLoading && (
             <div className="space-y-2">
               {[0, 1, 2].map((i) => (
@@ -506,9 +528,66 @@ export default function DriverAuctions() {
           )}
         </div>
 
-        {/* right panel: map only (desktop) — expandable */}
-        <div className="hidden lg:flex flex-[11] min-w-0 flex-col pt-2 pb-2">
+        {/* right panel: map + AI panels + details (desktop) */}
+        <div className="hidden lg:flex flex-[11] min-w-0 flex-col space-y-2 pt-2 pb-2">
           {renderMapCard(true)}
+
+          {/* AI fuel stop suggestions — auto-populates when a load is selected */}
+          {activeLayer === 'fuel' && selectedLoad && (
+            <AiFuelStopsPanel driverId={driverId} loadId={selectedLoad._id} />
+          )}
+          {activeLayer === 'fuel' && !selectedLoad && (
+            <div className="rounded-xl border border-dashed border-amber-200 px-4 py-3 text-xs text-amber-600 text-center">
+              Select a load to see AI-suggested fuel stops
+            </div>
+          )}
+
+          {/* AI rest area suggestions — auto-populates when a load is selected */}
+          {activeLayer === 'rest' && selectedLoad && (
+            <AiRestAreasPanel driverId={driverId} loadId={selectedLoad._id} />
+          )}
+          {activeLayer === 'rest' && !selectedLoad && (
+            <div className="rounded-xl border border-dashed border-sky-200 px-4 py-3 text-xs text-sky-600 text-center">
+              Select a load to see AI-suggested rest stops
+            </div>
+          )}
+
+          {/* Delivery timeline */}
+          <DynamicCard
+            title="Delivery timeline"
+            rounded="sm"
+            action={
+              selectedLoad && (
+                <Button size="sm" asChild>
+                  <Link to={`/driverAuctions/${selectedLoad._id}`}>View Auction</Link>
+                </Button>
+              )
+            }
+          >
+            {selectedLoad ? (
+              <DeliveryTimeline load={selectedLoad} />
+            ) : (
+              <div className="flex items-center justify-center h-28 text-muted-foreground text-sm">
+                Select a load to view the delivery timeline
+              </div>
+            )}
+          </DynamicCard>
+
+          {/* Detailed Eligibility Panel */}
+          {selectedLoad?._scored && (
+            <DynamicCard
+              title="Eligibility Details"
+              description={getEligibilityDescription(selectedLoad._scored)}
+              rounded="sm"
+            >
+              <DetailedEligibilityPanel
+                flags={selectedLoad._scored.eligibilityFlags}
+                score={selectedLoad._scored.recommendationScore}
+                severity={selectedLoad._scored.eligibilitySeverity}
+                highlights={selectedLoad._scored.highScoreHighlights}
+              />
+            </DynamicCard>
+          )}
         </div>
 
         {/* Mobile sheet: shows when a load is selected (hidden on lg+) */}

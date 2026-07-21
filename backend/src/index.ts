@@ -18,6 +18,14 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+// OpenRouter config status — unauthenticated, safe to expose (shows only boolean, not the key)
+app.get('/api/ai/status', (_req, res) => {
+  res.json({
+    openrouterConfigured: (process.env.OPENROUTER_API_KEY ?? '').length > 0,
+    model: process.env.OPENROUTER_MODEL ?? 'google/gemma-4-26b-a4b-it:free',
+  })
+})
+
 import loadRouter from './routes/loadRoutes'
 import auctionRouter from './routes/auctionRoutes'
 import companyRouter from './routes/companyRoutes'

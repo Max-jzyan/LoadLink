@@ -18,6 +18,9 @@ import type {
   UpdateTruckPayload,
   UpdateDriverProfilePayload,
   RevenueFiltersQuery,
+  AiInsightsResult,
+  AiFuelStopsResult,
+  AiRestAreasResult,
 } from './driverEnum'
 
 export const driverApi = api.injectEndpoints({
@@ -135,6 +138,39 @@ export const driverApi = api.injectEndpoints({
         const driverId = typeof arg === 'string' ? arg : arg.driverId
         return [{ type: LoadTag.Load, id: `${driverId}-scored` }]
       },
+    }),
+
+    // GET /api/ai/status — unauthenticated; returns whether OpenRouter key is configured
+    // Used to conditionally render the sparkles button in the UI.
+    getAiStatus: build.query<{ openrouterConfigured: boolean; model: string }, void>({
+      query: () => 'ai/status',
+    }),
+
+    // GET /api/driver/:driverId/ai-insights — AI commentary on top scored loads
+    // Returns { available: false } when OPENROUTER_API_KEY is absent — the UI hides gracefully.
+    getAiInsights: build.query<AiInsightsResult, string>({
+      query: (driverId) => `driver/${driverId}/ai-insights`,
+      providesTags: (_result, _error, driverId) => [
+        { type: LoadTag.Load, id: `${driverId}-ai-insights` },
+      ],
+    }),
+
+    // GET /api/driver/:driverId/ai-insights/fuel-stops?loadId=<id>
+    // AI-suggested fuel stop cities for a specific load route.
+    getAiFuelStops: build.query<AiFuelStopsResult, { driverId: string; loadId: string }>({
+      query: ({ driverId, loadId }) => `driver/${driverId}/ai-insights/fuel-stops?loadId=${loadId}`,
+      providesTags: (_result, _error, { loadId }) => [
+        { type: LoadTag.Load, id: `fuel-stops-${loadId}` },
+      ],
+    }),
+
+    // GET /api/driver/:driverId/ai-insights/rest-areas?loadId=<id>
+    // AI-suggested truck rest area stops for a specific load route.
+    getAiRestAreas: build.query<AiRestAreasResult, { driverId: string; loadId: string }>({
+      query: ({ driverId, loadId }) => `driver/${driverId}/ai-insights/rest-areas?loadId=${loadId}`,
+      providesTags: (_result, _error, { loadId }) => [
+        { type: LoadTag.Load, id: `rest-areas-${loadId}` },
+      ],
     }),
 
     // GET /api/driver/:driverId/trucks — list driver's trucks
@@ -337,6 +373,10 @@ export const {
   useListDriverLoadsQuery,
   useGetRecommendedLoadsQuery,
   useGetScoredLoadsQuery,
+  useGetAiStatusQuery,
+  useGetAiInsightsQuery,
+  useGetAiFuelStopsQuery,
+  useGetAiRestAreasQuery,
   useListDriverTrucksQuery,
   useGetDriverProfileQuery,
   useUpdateDriverProfileMutation,

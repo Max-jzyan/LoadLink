@@ -18,27 +18,27 @@ import { AWS_REGION, S3_BUCKET, s3Client } from '../config/s3Client'
 
 export interface RateConfirmationData {
   // ── Identity
-  loadId: string       // maps to Order #
-  bidId: string        // maps to Platform Authorization ID
-  bolNumber?: string   // Bill of Lading # (auto-generated if not supplied)
-  proNumber?: string   // PRO / carrier tracking number
+  loadId: string // maps to Order #
+  bidId: string // maps to Platform Authorization ID
+  bolNumber?: string // Bill of Lading # (auto-generated if not supplied)
+  proNumber?: string // PRO / carrier tracking number
 
   // ── Company / Shipper
   companyName: string
   companyAddress?: string
-  companyCity?: string       // City / St / Zip of origin
-  companyContact?: string    // Contact name at origin
-  invoiceEmail?: string      // Where to email BOL/POD paperwork
+  companyCity?: string // City / St / Zip of origin
+  companyContact?: string // Contact name at origin
+  invoiceEmail?: string // Where to email BOL/POD paperwork
 
   // ── Carrier / Driver
   driverName: string
   driverPhone?: string
   driverEmail?: string
-  mcNumber?: string          // FMCSA Motor Carrier number
-  dotNumber?: string         // US DOT number
-  nscCvorNumber?: string     // NSC / CVOR (Canadian equivalent)
-  truckNumber?: string       // Truck unit number
-  trailerNumber?: string     // Trailer unit number
+  mcNumber?: string // FMCSA Motor Carrier number
+  dotNumber?: string // US DOT number
+  nscCvorNumber?: string // NSC / CVOR (Canadian equivalent)
+  truckNumber?: string // Truck unit number
+  trailerNumber?: string // Trailer unit number
 
   // ── Load & Equipment
   originAddress: string
@@ -49,20 +49,20 @@ export interface RateConfirmationData {
   destinationContact?: string
   pickupTime: Date
   dropoffTime: Date
-  poRelNumber?: string       // P.O. / Release # at origin
-  apptRefNumber?: string     // Appointment / Ref # at destination
+  poRelNumber?: string // P.O. / Release # at origin
+  apptRefNumber?: string // Appointment / Ref # at destination
   commodity: string
   weightLbs: number
-  truckType: string          // Equipment type
-  trailerLengthFt?: number   // trailer length
-  tempRequirement?: string   // reefer temp, if applicable
+  truckType: string // Equipment type
+  trailerLengthFt?: number // trailer length
+  tempRequirement?: string // reefer temp, if applicable
   specialInstructions?: string
 
   // ── Rate & Compensation
-  finalPayout: number        // Total to be paid to carrier
-  linehaulRate?: number      // Linehaul portion
-  fuelSurcharge?: number     // FSC
-  accessorials?: number      // Other accessorial charges
+  finalPayout: number // Total to be paid to carrier
+  linehaulRate?: number // Linehaul portion
+  fuelSurcharge?: number // FSC
+  accessorials?: number // Other accessorial charges
   currency: string
 
   // ── Meta
@@ -71,19 +71,19 @@ export interface RateConfirmationData {
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 
-const PW = 612   // letter width  (72 dpi)
-const PH = 792   // letter height
-const ML = 36    // left margin
+const PW = 612 // letter width  (72 dpi)
+const PH = 792 // letter height
+const ML = 36 // left margin
 const MR = PW - 36 // right margin
-const LH = 13    // standard line height
+const LH = 13 // standard line height
 const SMALL = 8
 const BODY = 9
 const SUB = 11
 const HEAD = 13
 
-const BRAND = rgb(0.10, 0.22, 0.56)   // dark navy
-const DARK  = rgb(0.08, 0.08, 0.08)
-const GRAY  = rgb(0.45, 0.45, 0.45)
+const BRAND = rgb(0.1, 0.22, 0.56) // dark navy
+const DARK = rgb(0.08, 0.08, 0.08)
+const GRAY = rgb(0.45, 0.45, 0.45)
 const LGRAY = rgb(0.85, 0.85, 0.85)
 const WHITE = rgb(1, 1, 1)
 const RULE_HEAVY = 1.5
@@ -118,21 +118,21 @@ function wrappedText(
   x: number,
   opts: { size?: number; font?: PDFFont; color?: ReturnType<typeof rgb>; maxWidth?: number } = {}
 ) {
-  const size     = opts.size     ?? BODY
-  const font     = opts.font     ?? ctx.reg
-  const color    = opts.color    ?? DARK
-  const maxWidth = opts.maxWidth ?? (MR - x)
-  const lines    = wrapLines(str, font, size, maxWidth)
+  const size = opts.size ?? BODY
+  const font = opts.font ?? ctx.reg
+  const color = opts.color ?? DARK
+  const maxWidth = opts.maxWidth ?? MR - x
+  const lines = wrapLines(str, font, size, maxWidth)
   for (const line of lines) {
     ctx.page.drawText(line, { x, y: ctx.y, size, font, color })
-    ctx.y -= size + 4   // tight line spacing for wrapped text
+    ctx.y -= size + 4 // tight line spacing for wrapped text
   }
 }
 
 function hRule(ctx: Ctx, thickness = RULE_LIGHT, color = LGRAY) {
   ctx.page.drawLine({
     start: { x: ML, y: ctx.y },
-    end:   { x: MR, y: ctx.y },
+    end: { x: MR, y: ctx.y },
     thickness,
     color,
   })
@@ -148,8 +148,8 @@ function text(
   ctx.page.drawText(str, {
     x,
     y: ctx.y,
-    size:  opts.size  ?? BODY,
-    font:  opts.font  ?? ctx.reg,
+    size: opts.size ?? BODY,
+    font: opts.font ?? ctx.reg,
     color: opts.color ?? DARK,
   })
 }
@@ -170,8 +170,10 @@ function kv(
 
 function sectionHeader(ctx: Ctx, title: string) {
   ctx.page.drawRectangle({
-    x: ML, y: ctx.y - 2,
-    width: MR - ML, height: LH + 4,
+    x: ML,
+    y: ctx.y - 2,
+    width: MR - ML,
+    height: LH + 4,
     color: BRAND,
   })
   text(ctx, title, ML + 4, { size: SUB, font: ctx.bold, color: WHITE })
@@ -191,11 +193,10 @@ function formatDT(d: Date) {
 export const generateRateConfirmationPdf = async (
   data: RateConfirmationData
 ): Promise<{ key: string; url: string }> => {
-
   const pdfDoc = await PDFDocument.create()
-  const page   = pdfDoc.addPage([PW, PH])
-  const bold   = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-  const reg    = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  const page = pdfDoc.addPage([PW, PH])
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  const reg = await pdfDoc.embedFont(StandardFonts.Helvetica)
 
   const ctx: Ctx = { page, bold, reg, y: PH - ML }
 
@@ -203,45 +204,72 @@ export const generateRateConfirmationPdf = async (
   page.drawRectangle({ x: 0, y: PH - 60, width: PW, height: 60, color: BRAND })
 
   // Left: logo PNG (backend/src/templates/logo.png) — graceful fallback if absent
-  const LOGO_SIZE = 40   // pt — logo is rendered as a square in the header
-  let brandX = ML        // will shift right if a logo is embedded
+  const LOGO_SIZE = 40 // pt — logo is rendered as a square in the header
+  let brandX = ML // will shift right if a logo is embedded
   try {
     const logoPngPath = path.resolve(__dirname, '../templates/logo.png')
     const logoPngBytes = fs.readFileSync(logoPngPath)
     const logoImage = await pdfDoc.embedPng(logoPngBytes)
     page.drawImage(logoImage, {
-      x:      ML,
-      y:      PH - 60 + (60 - LOGO_SIZE) / 2,   // vertically centred in the 60pt band
-      width:  LOGO_SIZE,
+      x: ML,
+      y: PH - 60 + (60 - LOGO_SIZE) / 2, // vertically centred in the 60pt band
+      width: LOGO_SIZE,
       height: LOGO_SIZE,
     })
-    brandX = ML + LOGO_SIZE + 6   // shift text 6 pt clear of logo's right edge
+    brandX = ML + LOGO_SIZE + 6 // shift text 6 pt clear of logo's right edge
   } catch {
     // logo.png not found — render header without it
   }
 
   // Left: LoadLink brand
   page.drawText('LoadLink', { x: brandX, y: PH - 24, size: 18, font: bold, color: WHITE })
-  page.drawText('Automated Freight Platform', { x: brandX, y: PH - 38, size: SMALL, font: reg, color: rgb(0.75, 0.85, 1) })
+  page.drawText('Automated Freight Platform', {
+    x: brandX,
+    y: PH - 38,
+    size: SMALL,
+    font: reg,
+    color: rgb(0.75, 0.85, 1),
+  })
 
   // Centre: RATE CONFIRMATION + Order/BOL
   const bolNum = data.bolNumber ?? `BOL-${data.loadId.slice(-6).toUpperCase()}`
   const orderNum = data.loadId.slice(-10).toUpperCase()
   page.drawText('RATE CONFIRMATION', { x: 210, y: PH - 22, size: HEAD, font: bold, color: WHITE })
-  page.drawText(`Order #: ${orderNum}`, { x: 210, y: PH - 36, size: SMALL, font: reg, color: WHITE })
-  page.drawText(`BOL #:   ${bolNum}`,   { x: 210, y: PH - 48, size: SMALL, font: reg, color: WHITE })
+  page.drawText(`Order #: ${orderNum}`, {
+    x: 210,
+    y: PH - 36,
+    size: SMALL,
+    font: reg,
+    color: WHITE,
+  })
+  page.drawText(`BOL #:   ${bolNum}`, { x: 210, y: PH - 48, size: SMALL, font: reg, color: WHITE })
 
   // Right: date / dispatch / Pro #
-  const dateStr = data.confirmedAt.toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' })
-  const proStr  = data.proNumber ?? `PRO-${data.bidId.slice(-6).toUpperCase()}`
-  page.drawText(`Date: ${dateStr}`,      { x: 430, y: PH - 22, size: SMALL, font: reg, color: WHITE })
-  page.drawText('Dispatch: +1 (519) 988-6223', { x: 430, y: PH - 34, size: SMALL, font: reg, color: WHITE })
-  page.drawText(`Pro #: ${proStr}`,      { x: 430, y: PH - 46, size: SMALL, font: reg, color: WHITE })
+  const dateStr = data.confirmedAt.toLocaleDateString('en-CA', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+  const proStr = data.proNumber ?? `PRO-${data.bidId.slice(-6).toUpperCase()}`
+  page.drawText(`Date: ${dateStr}`, { x: 430, y: PH - 22, size: SMALL, font: reg, color: WHITE })
+  page.drawText('Dispatch: +1 (519) 988-6223', {
+    x: 430,
+    y: PH - 34,
+    size: SMALL,
+    font: reg,
+    color: WHITE,
+  })
+  page.drawText(`Pro #: ${proStr}`, { x: 430, y: PH - 46, size: SMALL, font: reg, color: WHITE })
 
   ctx.y = PH - 70
 
   // Dispatch instructions line
-  text(ctx, `Dispatch instructions: Have driver confirm load info on LoadLink platform before pickup.`, ML, { size: SMALL, color: GRAY })
+  text(
+    ctx,
+    `Dispatch instructions: Have driver confirm load info on LoadLink platform before pickup.`,
+    ML,
+    { size: SMALL, color: GRAY }
+  )
   ctx.y -= LH
 
   // ── CARRIER INFORMATION ──────────────────────────────────────────────────────
@@ -286,18 +314,18 @@ export const generateRateConfirmationPdf = async (
 
   // Two-column headers
   const midX = ML + (MR - ML) / 2 + 5
-  page.drawRectangle({ x: ML, y: ctx.y - 2, width: (midX - ML) - 4, height: LH + 4, color: BRAND })
+  page.drawRectangle({ x: ML, y: ctx.y - 2, width: midX - ML - 4, height: LH + 4, color: BRAND })
   page.drawRectangle({ x: midX, y: ctx.y - 2, width: MR - midX, height: LH + 4, color: BRAND })
   text(ctx, 'ORIGIN', ML + 4, { size: SUB, font: bold, color: WHITE })
   text(ctx, 'DESTINATION', midX + 4, { size: SUB, font: bold, color: WHITE })
   ctx.y -= LH + 6
 
   const routeRows: [string, string, string, string][] = [
-    ['Shipper:', data.companyName,          'Consignee:', data.destinationAddress.split(',')[0] ?? '—'],
-    ['Address:', data.originAddress,         'Address:',  data.destinationAddress],
-    ['City/St:',  data.originCity ?? '—',   'City/St:',  data.destinationCity ?? '—'],
-    ['Contact:', data.companyContact ?? '—', 'Contact:',  data.destinationContact ?? '—'],
-    ['Date/Time:', formatDT(data.pickupTime),'Date/Time:', formatDT(data.dropoffTime)],
+    ['Shipper:', data.companyName, 'Consignee:', data.destinationAddress.split(',')[0] ?? '—'],
+    ['Address:', data.originAddress, 'Address:', data.destinationAddress],
+    ['City/St:', data.originCity ?? '—', 'City/St:', data.destinationCity ?? '—'],
+    ['Contact:', data.companyContact ?? '—', 'Contact:', data.destinationContact ?? '—'],
+    ['Date/Time:', formatDT(data.pickupTime), 'Date/Time:', formatDT(data.dropoffTime)],
     ['P.O./Rel #:', data.poRelNumber ?? '—', 'Appt/Ref #:', data.apptRefNumber ?? '—'],
   ]
 
@@ -314,12 +342,12 @@ export const generateRateConfirmationPdf = async (
   sectionHeader(ctx, 'RATE & COMPENSATION')
 
   const rateColLabel = ML
-  const rateColAmt   = MR - 80
+  const rateColAmt = MR - 80
 
-  const linehaul    = data.linehaulRate    ?? data.finalPayout
-  const fsc         = data.fuelSurcharge   ?? 0
-  const accessorial = data.accessorials    ?? 0
-  const total       = linehaul + fsc + accessorial
+  const linehaul = data.linehaulRate ?? data.finalPayout
+  const fsc = data.fuelSurcharge ?? 0
+  const accessorial = data.accessorials ?? 0
+  const total = linehaul + fsc + accessorial
 
   const rateRows: [string, number][] = [
     ['Linehaul:', linehaul],
@@ -331,12 +359,22 @@ export const generateRateConfirmationPdf = async (
     text(ctx, `${data.currency} $${amount.toFixed(2)}`, rateColAmt, { size: BODY, font: reg })
     ctx.y -= LH
   }
-  ctx.y -= 4   // extra gap so the highlight box does not clip Accessorials above
+  ctx.y -= 4 // extra gap so the highlight box does not clip Accessorials above
 
   // Total row — highlighted (rect sits strictly below ctx.y)
-  page.drawRectangle({ x: ML, y: ctx.y - 3, width: MR - ML, height: LH + 3, color: rgb(0.92, 0.95, 1) })
+  page.drawRectangle({
+    x: ML,
+    y: ctx.y - 3,
+    width: MR - ML,
+    height: LH + 3,
+    color: rgb(0.92, 0.95, 1),
+  })
   text(ctx, 'Total to be paid to Carrier:', rateColLabel, { size: BODY, font: bold, color: BRAND })
-  text(ctx, `${data.currency} $${total.toFixed(2)}`, rateColAmt, { size: HEAD, font: bold, color: BRAND })
+  text(ctx, `${data.currency} $${total.toFixed(2)}`, rateColAmt, {
+    size: HEAD,
+    font: bold,
+    color: BRAND,
+  })
   ctx.y -= LH + 10
 
   // Special instructions
@@ -349,7 +387,11 @@ export const generateRateConfirmationPdf = async (
 
   // ── OPERATIONAL RULES ────────────────────────────────────────────────────────
   hRule(ctx, RULE_LIGHT)
-  text(ctx, 'OPERATIONAL RULES & BILL OF LADING INSTRUCTIONS', ML, { font: bold, size: SMALL, color: BRAND })
+  text(ctx, 'OPERATIONAL RULES & BILL OF LADING INSTRUCTIONS', ML, {
+    font: bold,
+    size: SMALL,
+    color: BRAND,
+  })
   ctx.y -= LH
 
   const opRules = [
@@ -365,7 +407,11 @@ export const generateRateConfirmationPdf = async (
   ctx.y -= 5
 
   hRule(ctx, RULE_LIGHT)
-  text(ctx, 'LEGAL TERMS & CONDITIONS (US & CANADA COMPLIANT)', ML, { font: bold, size: SMALL, color: BRAND })
+  text(ctx, 'LEGAL TERMS & CONDITIONS (US & CANADA COMPLIANT)', ML, {
+    font: bold,
+    size: SMALL,
+    color: BRAND,
+  })
   ctx.y -= LH
 
   const legalItems = [
@@ -404,8 +450,18 @@ export const generateRateConfirmationPdf = async (
   ctx.y -= LH + 8
 
   // Signature line
-  page.drawLine({ start: { x: ML, y: ctx.y }, end: { x: ML + 280, y: ctx.y }, thickness: 0.5, color: DARK })
-  page.drawLine({ start: { x: ML + 310, y: ctx.y }, end: { x: MR, y: ctx.y }, thickness: 0.5, color: DARK })
+  page.drawLine({
+    start: { x: ML, y: ctx.y },
+    end: { x: ML + 280, y: ctx.y },
+    thickness: 0.5,
+    color: DARK,
+  })
+  page.drawLine({
+    start: { x: ML + 310, y: ctx.y },
+    end: { x: MR, y: ctx.y },
+    thickness: 0.5,
+    color: DARK,
+  })
   ctx.y -= LH - 2
   text(ctx, 'Carrier Authorized Representative (e-Signature)', ML, { size: SMALL, color: GRAY })
   text(ctx, 'Date', ML + 310, { size: SMALL, color: GRAY })
@@ -422,9 +478,9 @@ export const generateRateConfirmationPdf = async (
 
   await s3Client.send(
     new PutObjectCommand({
-      Bucket:      S3_BUCKET,
-      Key:         key,
-      Body:        Buffer.from(pdfBytes),
+      Bucket: S3_BUCKET,
+      Key: key,
+      Body: Buffer.from(pdfBytes),
       ContentType: 'application/pdf',
     })
   )

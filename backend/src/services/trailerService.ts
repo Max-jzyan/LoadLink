@@ -9,7 +9,10 @@ const assertValidId = (id: string, label: string) => {
 }
 
 export const listTrailers = async (driverId: string) =>
-  TrailerModel.find({ ownerDriverId: new Types.ObjectId(driverId) }).sort({ isPrimary: -1, createdAt: -1 })
+  TrailerModel.find({ ownerDriverId: new Types.ObjectId(driverId) }).sort({
+    isPrimary: -1,
+    createdAt: -1,
+  })
 
 export const getTrailer = async (driverId: string, trailerId: string) => {
   assertValidId(trailerId, 'trailerId')

@@ -302,6 +302,42 @@ export interface ScoredLoad {
 }
 
 export type EligibilityBadgeType = 'high-score' | 'eligible' | 'ineligible'
+// ── AI Insights (OpenRouter) ─────────────────────────────────────────────────
+
+export interface AiLoadInsight {
+  available: true
+  insight: string
+}
+
+export interface FuelStop {
+  city: string
+  province: string
+  reason: string
+}
+
+export interface AiFuelStops {
+  available: true
+  stops: FuelStop[]
+}
+
+export interface RestArea {
+  city: string
+  province: string
+  reason: string
+}
+
+export interface AiRestAreas {
+  available: true
+  areas: RestArea[]
+}
+
+export interface AiUnavailable {
+  available: false
+}
+
+export type AiInsightsResult = AiLoadInsight | AiUnavailable
+export type AiFuelStopsResult = AiFuelStops | AiUnavailable
+export type AiRestAreasResult = AiRestAreas | AiUnavailable
 
 export interface UpdateDriverProfilePayload {
   name?: string

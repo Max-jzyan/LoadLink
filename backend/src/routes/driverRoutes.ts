@@ -11,6 +11,9 @@ import {
   updateDriverProfile,
   removeCertificationDocument,
   removeInsuranceCertificate,
+  getAiInsights,
+  getAiFuelStops,
+  getAiRestAreas,
 } from '../controllers/driverController'
 import { requireAuth } from '../middleware/requireAuth'
 import { requireRole, requireSelfParam } from '../middleware/authorize'
@@ -31,5 +34,10 @@ router.get('/driver/:driverId/profile', requireAuth, getDriverProfile)
 router.delete('/driver/:driverId/documents/:docKey', middlewares, removeCertificationDocument)
 router.delete('/driver/:driverId/insurance/:idx', middlewares, removeInsuranceCertificate)
 router.get('/driver/:driverId/completed-loads/:companyId', middlewares, listDriverCompletedLoadsForCompany)
+
+// AI-powered endpoints — degrade gracefully when OPENROUTER_API_KEY is absent
+router.get('/driver/:driverId/ai-insights', middlewares, getAiInsights)
+router.get('/driver/:driverId/ai-insights/fuel-stops', middlewares, getAiFuelStops)
+router.get('/driver/:driverId/ai-insights/rest-areas', middlewares, getAiRestAreas)
 
 export default router

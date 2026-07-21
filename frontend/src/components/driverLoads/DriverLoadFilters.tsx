@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, X, ArrowUpDown } from 'lucide-react'
+import { Search, X, ArrowUpDown, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -31,6 +31,10 @@ interface DriverLoadFiltersProps {
     minor?: number
   }
   onReset: () => void
+  /** Called when the user clicks the AI insight sparkles button */
+  onAiClick?: () => void
+  /** True while the AI insight panel is visible (highlights the button) */
+  aiActive?: boolean
 }
 
 export function DriverLoadFilters({
@@ -44,14 +48,15 @@ export function DriverLoadFilters({
   onDateRangeChange,
   counts,
   onReset,
+  onAiClick,
+  aiActive,
 }: DriverLoadFiltersProps) {
   const [showSortDropdown, setShowSortDropdown] = useState(false)
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Filter inputs row */}
+      {/* Row 1: date picker + search + sort */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Date Range Picker */}
         <DatePickerWithRange
           label="Pickup Date"
           date={dateRange}
@@ -118,32 +123,19 @@ export function DriverLoadFilters({
             </>
           )}
         </div>
+      </div>
 
-        <Separator orientation="vertical" className="hidden md:block h-6" />
-        <Separator className="md:hidden w-full" />
-
-        {/* Eligibility filter buttons */}
-        <div className="flex items-center gap-0.5 ml-1">
+      {/* Row 2: eligibility filter buttons + AI button (far right) */}
+      <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-0.5">
           {FILTER_OPTIONS.map((opt) => {
-            let count = 0
-            if (opt.value === 'all') count = counts.all
-            else if (opt.value === 'eligible') count = counts.eligible
-            else if (opt.value === 'high-score') count = counts.highScore ?? 0
-            else if (opt.value === 'issues-critical') count = counts.critical ?? 0
-            else if (opt.value === 'issues-minor') count = counts.minor ?? 0
-
-            // Variant styling based on filter type
-            let buttonVariant: 'default' | 'outline' | 'destructive' | 'secondary' = 'outline'
-            if (eligibilityFilter === opt.value) {
-              if (opt.value === 'issues-critical') buttonVariant = 'destructive'
-              else if (opt.value === 'high-score') buttonVariant = 'default'
-              else buttonVariant = 'default'
-            }
-
+            const count = { all: counts.all, eligible: counts.eligible, issues: counts.issues }[
+              opt.value
+            ]
             return (
               <Button
                 key={opt.value}
-                variant={buttonVariant}
+                variant={eligibilityFilter === opt.value ? 'default' : 'outline'}
                 size="sm"
                 className="h-7 px-2 text-xs"
                 onClick={() => onEligibilityChange(opt.value)}
@@ -155,12 +147,31 @@ export function DriverLoadFilters({
           })}
         </div>
 
-        <Separator orientation="vertical" className="hidden md:block h-6" />
-
-        {/* Reset Filters Button */}
-        <Button variant="outline" size="sm" onClick={onReset}>
-          Reset Filters
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+          onClick={onReset}
+          title="Reset all filters"
+        >
+          Reset
         </Button>
+
+        {/* AI insight trigger — far right; only renders when caller provides onAiClick */}
+        {onAiClick && (
+          <Button
+            variant={aiActive ? 'default' : 'outline'}
+            size="icon"
+            className={cn(
+              'h-8 w-8 shrink-0 ml-auto',
+              aiActive && 'bg-violet-600 hover:bg-violet-700 border-violet-600'
+            )}
+            onClick={onAiClick}
+            title="Generate AI load insight"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+          </Button>
+        )}
       </div>
     </div>
   )
