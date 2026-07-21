@@ -61,6 +61,10 @@ function resolveNotificationTarget(n: Notification): { path?: string; url?: stri
     case NOTIFICATION_TYPES.DOCUMENT_UPLOADED:
       return { path: RoutePath.AdminDocuments }
 
+    // Either role receives these — the Messages archive lists the thread
+    case NOTIFICATION_TYPES.MESSAGE_RECEIVED:
+      return { path: RoutePath.Messages }
+
     default:
       return null
   }
@@ -248,7 +252,7 @@ export default function NotificationBell() {
               <Bell className="h-10 w-10 mb-3 opacity-20" />
               <p className="text-sm font-medium">No notifications yet</p>
               <p className="text-xs mt-1 opacity-70 text-center">
-                You'll see alerts about bids, auctions and documents here.
+                You'll see alerts about bids, auctions, messages and documents here.
               </p>
             </div>
           ) : (

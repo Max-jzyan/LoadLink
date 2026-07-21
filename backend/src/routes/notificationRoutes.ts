@@ -16,7 +16,10 @@ const router = Router()
 router.get('/notifications/stream', requireAuthSSE, streamNotifications)
 
 // All other notification routes require authentication via header.
-router.use(requireAuth)
+// Scoped to /notifications: an unscoped router.use(requireAuth) would also run
+// for every later-mounted /api router (e.g. the messages SSE stream, which
+// authenticates via query param and 401s on the missing header).
+router.use('/notifications', requireAuth)
 
 router.get('/notifications', listNotifications)
 router.get('/notifications/unread-count', getUnreadCount)

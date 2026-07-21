@@ -38,6 +38,7 @@ import blocklistRouter from './routes/blocklistRoutes'
 import reportRouter from './routes/reportRoutes'
 import uploadRouter from './routes/uploadRoutes'
 import notificationRouter from './routes/notificationRoutes'
+import messageRouter from './routes/messageRoutes'
 import adminRouter from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
 import { startHeartbeat } from './services/heartbeatService'
@@ -55,6 +56,7 @@ app.use('/api', blocklistRouter)
 app.use('/api', reportRouter)
 app.use('/api', uploadRouter)
 app.use('/api', notificationRouter)
+app.use('/api', messageRouter)
 app.use('/api', adminRouter)
 
 // Central error handler

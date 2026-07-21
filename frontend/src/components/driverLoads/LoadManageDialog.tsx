@@ -29,6 +29,7 @@ import type { AppDispatch } from '@/services/store'
 import { useCurrentLocation } from '@/hooks/useCurrentLocation'
 import { fuzzLocation } from '@/lib/geoFuzz'
 import { showError, showSuccess } from '@/lib/toast'
+import MessageButton from '@/components/messages/MessageButton'
 import {
   Settings2,
   Truck as TruckIcon,
@@ -228,6 +229,15 @@ export function LoadManageDialog({ load, trucks = [] }: { load: Load; trucks?: T
                 </SelectContent>
               </Select>
             )}
+          </div>
+
+          <div className="flex flex-col gap-2.5">
+            <p className="text-xs font-medium text-muted-foreground">Message Company</p>
+            <MessageButton
+              loadId={load._id}
+              label={company ? `Message ${company.companyName ?? company.name}` : 'Message Company'}
+              className="w-fit"
+            />
           </div>
 
           {actions.length > 0 && (

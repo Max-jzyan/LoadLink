@@ -16,6 +16,7 @@ import LoadDetail from '@/pages/LoadDetail'
 import LoadEdit from '@/pages/LoadEdit'
 import Loads from '@/pages/Loads'
 import MapPage from '@/pages/Map'
+import Messages from '@/pages/Messages'
 import NotFound from '@/pages/NotFound'
 import PostLoad from '@/pages/PostLoad'
 import ReportFraud from '@/pages/ReportFraud'
@@ -189,6 +190,16 @@ export default function AppRoutes() {
         element={
           <RoleRoute path={RoutePath.AuctionLive}>
             <AuctionLive />
+          </RoleRoute>
+        }
+      />
+
+      {/* Messages archive — driver and company */}
+      <Route
+        path={RoutePath.Messages}
+        element={
+          <RoleRoute path={RoutePath.Messages}>
+            <Messages />
           </RoleRoute>
         }
       />

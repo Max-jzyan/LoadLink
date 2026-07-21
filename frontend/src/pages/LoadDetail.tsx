@@ -1,4 +1,5 @@
 import { DriverMap } from '@/components/driverLoads/Map'
+import MessageButton from '@/components/messages/MessageButton'
 import Col from '@/components/layout/Col'
 import DynamicCard from '@/components/layout/DynamicCard'
 import PageShell from '@/components/layout/PageShell'
@@ -84,12 +85,12 @@ export default function LoadDetail() {
     load?.status === LOAD_STATUSES.InTransit ||
     load?.status === LOAD_STATUSES.Completed
   const showRcButton = (user?.role === 'company' || user?.role === 'admin') && isBooked
-  const {
-    data: acceptedBid,
-    isLoading: acceptedBidLoading,
-  } = useGetAcceptedBidQuery(loadId ?? '', {
-    skip: !loadId || !showRcButton,
-  })
+  const { data: acceptedBid, isLoading: acceptedBidLoading } = useGetAcceptedBidQuery(
+    loadId ?? '',
+    {
+      skip: !loadId || !showRcButton,
+    }
+  )
   const dispatch = useDispatch()
 
   // Push a friendly origin → destination label into the breadcrumb store for
@@ -205,6 +206,9 @@ export default function LoadDetail() {
               </Link>
             </Button>
           )}
+          {user?.role === 'company' && load.assignedDriverId && (
+            <MessageButton loadId={load._id} label="Message Driver" />
+          )}
           {showRcButton && (
             <DynamicCard className="mt-4" title="Accepted Bid">
               {acceptedBidLoading ? (
@@ -216,7 +220,11 @@ export default function LoadDetail() {
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-muted-foreground">Rate confirmation available</span>
                   <Button size="sm" variant="outline" asChild>
-                    <a href={acceptedBid.rateConfirmationUrl} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={acceptedBid.rateConfirmationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <Download className="h-4 w-4" />
                       View
                     </a>

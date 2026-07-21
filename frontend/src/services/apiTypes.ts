@@ -13,6 +13,7 @@ export const LoadTag = {
   FeedPrefs: 'FeedPrefs',
   Profile: 'Profile',
   Notification: 'Notification',
+  Message: 'Message',
   Auction: 'Auction',
   Admin: 'Admin',
 } as const

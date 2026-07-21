@@ -83,6 +83,7 @@ const AUTO_ACCEPT_TRIGGER_HOURS_BY_LOAD: Record<string, number> = {
 type SeedLoadRef = {
   _id: Types.ObjectId
   companyId: Types.ObjectId
+  // null matches the Load schema's default for unassigned loads
   assignedDriverId?: Types.ObjectId | null
 }
 

@@ -112,9 +112,16 @@ export async function fetchDbUser(): Promise<{ _id: string; role: UserRole } | n
  *   - If manual logout (_isManualLogout=true): just clean up, no dialog.
  *   - If token expiry (firebaseUser is null without manual flag): set
  *     sessionState to 'expired' so the UI can show a warning dialog.
+ *
+ * Track the last seen uid so a same-tab or cross-tab account swap resets the cache too
  */
+let _lastSeenUid: string | null = null
+
 export function subscribeToAuthChanges(dispatch: AppDispatch) {
   return onAuthStateChanged(auth, async (firebaseUser) => {
+    const uidChanged = firebaseUser?.uid !== _lastSeenUid
+    _lastSeenUid = firebaseUser?.uid ?? null
+
     if (!firebaseUser) {
       // Reset all RTK Query cached data so stale data from the previous
       // session is never shown when the next user logs in.
@@ -130,6 +137,10 @@ export function subscribeToAuthChanges(dispatch: AppDispatch) {
       dispatch(setSessionState('expired'))
       dispatch(setUser(null))
       return
+    }
+
+    if (uidChanged) {
+      dispatch(api.util.resetApiState())
     }
 
     // Clear any leftover session state when a user re-appears

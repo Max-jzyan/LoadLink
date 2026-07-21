@@ -159,6 +159,50 @@ export const notifyDocumentRejected = (
     data: { docType: opts.docType, reason: opts.reason },
   })
 
+/**
+ * Notify a user that they received an in-app message on a load thread.
+ *
+ * De-duplicated per thread: if the recipient already has an UNREAD
+ * message notification for this load, it is updated in place (latest preview,
+ * bumped timestamp) instead of piling up one bell entry per message.
+ */
+export const notifyMessageReceived = async (
+  recipientUserId: string,
+  opts: { loadId: string; senderName: string; preview: string; recipientRole: string }
+) => {
+  const title = `New message from ${opts.senderName}`
+  const message = opts.preview.length > 120 ? `${opts.preview.slice(0, 117)}…` : opts.preview
+  const data = { loadId: opts.loadId, recipientRole: opts.recipientRole }
+
+  try {
+    const existing = await NotificationModel.findOneAndUpdate(
+      {
+        userId: new Types.ObjectId(recipientUserId),
+        type: NOTIFICATION_TYPES.MESSAGE_RECEIVED,
+        isRead: false,
+        'data.loadId': opts.loadId,
+      },
+      { title, message, data, createdAt: new Date() },
+      { new: true, timestamps: false }
+    )
+    if (existing) {
+      // The upsert path bypasses createNotification, so push to SSE here too
+      emitNotification(recipientUserId, existing.toObject())
+      return existing
+    }
+  } catch (err) {
+    console.error('[notificationService] Failed to upsert message notification:', err)
+  }
+
+  return createNotification({
+    userId: recipientUserId,
+    type: NOTIFICATION_TYPES.MESSAGE_RECEIVED,
+    title,
+    message,
+    data,
+  })
+}
+
 // ── CRUD (used by controller) ─────────────────────────────────────────────────
 
 /** Paginated list of notifications for a user, newest first. */

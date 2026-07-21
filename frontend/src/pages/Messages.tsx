@@ -1,0 +1,251 @@
+import LoadMessagesDrawer from '@/components/messages/LoadMessagesDrawer'
+import PageShell from '@/components/layout/PageShell'
+import { StatusBadge } from '@/components/shared/StatusBadge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useRequiredMongoId } from '@/hooks/useAuth'
+import { cn } from '@/lib/utils'
+import {
+  useListMessageThreadsQuery,
+  type MessageThreadSummary,
+} from '@/services/messageApi/messageSlice'
+import { LOAD_STATUSES, type LoadStatus } from '@/types/enums'
+import { formatDistanceToNow } from 'date-fns'
+import { ArrowRight, Loader2, MessageSquare, RefreshCw, Search } from 'lucide-react'
+import { useMemo, useState } from 'react'
+
+type ThreadFilter = 'active' | 'completed' | 'cancelled' | 'all'
+
+const FILTER_OPTIONS: { value: ThreadFilter; label: string }[] = [
+  { value: 'active', label: 'Active' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'all', label: 'All' },
+]
+
+function matchesFilter(thread: MessageThreadSummary, filter: ThreadFilter): boolean {
+  switch (filter) {
+    case 'completed':
+      return thread.loadStatus === LOAD_STATUSES.Completed
+    case 'cancelled':
+      return thread.loadStatus === LOAD_STATUSES.Cancelled
+    case 'active':
+      return (
+        thread.loadStatus !== LOAD_STATUSES.Completed &&
+        thread.loadStatus !== LOAD_STATUSES.Cancelled
+      )
+    default:
+      return true
+  }
+}
+
+function ThreadRow({
+  thread,
+  isMine,
+  onOpen,
+}: {
+  thread: MessageThreadSummary
+  isMine: boolean
+  onOpen: (loadId: string) => void
+}) {
+  const originShort = thread.originAddress.split(',')[0].trim()
+  const destinationShort = thread.destinationAddress.split(',')[0].trim()
+  const hasUnread = thread.unreadCount > 0
+
+  return (
+    <div
+      onClick={(e) => {
+        // Blur before opening the drawer: the drawer marks the rest of the
+        // page aria-hidden while open, and a still-focused row underneath it
+        // would trip "aria-hidden on a focused element" a11y warnings.
+        e.currentTarget.blur()
+        onOpen(thread.loadId)
+      }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter') return
+        e.currentTarget.blur()
+        onOpen(thread.loadId)
+      }}
+      className={cn(
+        'rounded-xl border bg-card p-4 flex items-center gap-4 cursor-pointer transition-colors hover:bg-muted/30',
+        hasUnread && 'bg-primary/5 border-primary/20'
+      )}
+    >
+      <Avatar>
+        {thread.counterparty.profilePictureUrl && (
+          <AvatarImage src={thread.counterparty.profilePictureUrl} alt={thread.counterparty.name} />
+        )}
+        <AvatarFallback>{thread.counterparty.name.charAt(0).toUpperCase()}</AvatarFallback>
+      </Avatar>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+          <span className={cn('text-sm truncate', hasUnread ? 'font-semibold' : 'font-medium')}>
+            {thread.counterparty.name}
+          </span>
+          <span className="flex items-center gap-1 text-xs text-muted-foreground min-w-0">
+            <span className="truncate">{originShort}</span>
+            <ArrowRight className="h-3 w-3 shrink-0" />
+            <span className="truncate">{destinationShort}</span>
+          </span>
+          <StatusBadge status={thread.loadStatus as LoadStatus} />
+        </div>
+        <p
+          className={cn(
+            'text-xs truncate',
+            hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground'
+          )}
+        >
+          {isMine ? 'You: ' : ''}
+          {thread.lastMessage.body}
+        </p>
+      </div>
+
+      <div className="flex flex-col items-end gap-1 shrink-0">
+        <span className="text-xs text-muted-foreground/70">
+          {formatDistanceToNow(new Date(thread.lastMessage.createdAt), { addSuffix: true })}
+        </span>
+        {hasUnread && (
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground leading-none">
+            {thread.unreadCount > 9 ? '9+' : thread.unreadCount}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Message archive: every load conversation the user has ever had, newest
+ * activity first. Defaults to threads on active loads, with filters for
+ * completed and cancelled ones. Clicking a conversation opens the same
+ * per-load chat drawer used elsewhere in the app.
+ */
+export default function Messages() {
+  const myId = useRequiredMongoId()
+  const [filter, setFilter] = useState<ThreadFilter>('active')
+  const [search, setSearch] = useState('')
+  const [openLoadId, setOpenLoadId] = useState<string | null>(null)
+
+  // refetchOnMountOrArgChange: polling pauses while this page isn't mounted
+  // (e.g. the user navigated away), so a fresh visit — like clicking a
+  // "new message" notification — would otherwise serve a stale cached list
+  // instead of picking up messages sent while the page was closed.
+  const {
+    data: threads = [],
+    isLoading,
+    isFetching,
+    refetch,
+  } = useListMessageThreadsQuery(undefined, {
+    pollingInterval: 15_000,
+    refetchOnMountOrArgChange: true,
+  })
+
+  const filtered = useMemo(() => {
+    let result = threads.filter((t) => matchesFilter(t, filter))
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      result = result.filter(
+        (t) =>
+          t.counterparty.name.toLowerCase().includes(q) ||
+          t.originAddress.toLowerCase().includes(q) ||
+          t.destinationAddress.toLowerCase().includes(q)
+      )
+    }
+    return result
+  }, [threads, filter, search])
+
+  const totalUnread = threads.reduce((sum, t) => sum + t.unreadCount, 0)
+
+  return (
+    <PageShell
+      title="Messages"
+      subtitle={
+        totalUnread > 0
+          ? `${totalUnread} unread message${totalUnread !== 1 ? 's' : ''}`
+          : 'Conversations with your loads’ counterparties'
+      }
+      actions={
+        <Button variant="outline" size="sm" onClick={refetch} disabled={isFetching}>
+          <RefreshCw className={`h-4 w-4 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      }
+    >
+      {/* Search + status filter */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <div className="relative flex-1 max-w-sm min-w-48">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            placeholder="Search by name or route…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-1">
+          {FILTER_OPTIONS.map((opt) => (
+            <Button
+              key={opt.value}
+              variant={filter === opt.value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter(opt.value)}
+            >
+              {opt.label}
+            </Button>
+          ))}
+        </div>
+        <Badge variant="secondary">
+          {filtered.length} conversation{filtered.length !== 1 ? 's' : ''}
+        </Badge>
+      </div>
+
+      {isLoading && (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
+      {!isLoading && filtered.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <MessageSquare className="h-10 w-10 mb-3 opacity-30" />
+          <p className="text-sm font-medium">
+            {search || filter !== 'active'
+              ? 'No conversations match your filters.'
+              : 'No conversations yet.'}
+          </p>
+          <p className="text-xs mt-1 opacity-70 text-center max-w-sm">
+            {search || filter !== 'active'
+              ? 'Try a different search or status filter.'
+              : 'Once a load is awarded, you can message the other party from the load page. Conversations will show up here.'}
+          </p>
+        </div>
+      )}
+
+      {!isLoading && filtered.length > 0 && (
+        <div className="space-y-2">
+          {filtered.map((thread) => (
+            <ThreadRow
+              key={thread.loadId}
+              thread={thread}
+              isMine={thread.lastMessage.senderId === myId}
+              onOpen={setOpenLoadId}
+            />
+          ))}
+        </div>
+      )}
+
+      {openLoadId && (
+        <LoadMessagesDrawer
+          loadId={openLoadId}
+          open={!!openLoadId}
+          onOpenChange={(open) => !open && setOpenLoadId(null)}
+        />
+      )}
+    </PageShell>
+  )
+}

@@ -56,6 +56,7 @@ export const api = createApi({
     LoadTag.FeedPrefs,
     LoadTag.Profile,
     LoadTag.Notification,
+    LoadTag.Message,
     LoadTag.Auction,
     LoadTag.Admin,
   ],
