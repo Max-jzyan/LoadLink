@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import mongoose, { Types } from 'mongoose'
 import { BidModel } from '../../models/loads/Bid'
+import { MessageModel } from '../../models/messages/Message'
 import { NotificationModel } from '../../models/notifications/Notification'
 import { BlocklistModel } from '../../models/blocklist/Blocklist'
 import { ReportModel } from '../../models/reports/Report'
@@ -109,6 +110,7 @@ async function main() {
   await mongoose.connect(MONGODB_URI)
   try {
     // Clear transient collections to ensure clean state between instantiations
+    await MessageModel.deleteMany({})
     await NotificationModel.deleteMany({})
     await BlocklistModel.deleteMany({})
     await ReportModel.deleteMany({})
