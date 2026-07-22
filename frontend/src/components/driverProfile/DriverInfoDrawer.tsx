@@ -5,17 +5,21 @@ import { Input } from '@/components/ui/input'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { format } from 'date-fns'
+import type { DateRange } from 'react-day-picker'
 
 import DrawerShell from '@/components/layout/DrawerShell'
 import type { CertificationDocument, DriverProfile } from '@/services/driverApi/driverEnum'
-import { FileText, Trash2, CalendarClock, AlertTriangle, Clock } from 'lucide-react'
+import { FileText, Trash2, AlertTriangle, Clock } from 'lucide-react'
 
 import AvatarUploadField from '@/components/shared/AvatarUploadField'
+import { DatePickerWithRange } from '@/components/shared/DatePickerWithRange'
 import FileUploadField from '@/components/shared/FileUploadField'
 import { auth } from '@/lib/firebase'
-import { uploadDocuments } from '@/lib/uploadDocuments'
 import { useRequiredMongoId } from '@/hooks/useAuth'
-import { useRemoveCertificationDocumentMutation } from '@/services/driverApi/driverSlice'
+import {
+  useRemoveCertificationDocumentMutation,
+  useUploadDriverDocumentsMutation,
+} from '@/services/driverApi/driverSlice'
 import {
   Dialog,
   DialogContent,
@@ -67,12 +71,13 @@ export default function DriverInfoDrawer({
   const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null)
   const [pictureError, setPictureError] = useState<string | null>(null)
   const [certificationFiles, setCertificationFiles] = useState<File[]>([])
-  /** Parallel map of file-index → ISO expiry date string (empty = no expiry) */
-  const [certExpiries, setCertExpiries] = useState<Record<number, string>>({})
+  const [certExpiries, setCertExpiries] = useState<Record<number, DateRange>>({})
   const [certError, setCertError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [docToDelete, setDocToDelete] = useState<CertificationDocument | null>(null)
   const [removeCertDoc, { isLoading: isRemoving }] = useRemoveCertificationDocumentMutation()
+  const [uploadDriverDocs, { isLoading: isUploadingDocs }] =
+    useUploadDriverDocumentsMutation()
 
   const {
     register,
@@ -89,7 +94,6 @@ export default function DriverInfoDrawer({
     },
   })
 
-  // Reset form when drawer opens with driver data; clear when it closes
   useEffect(() => {
     if (open && driver) {
       reset({
@@ -117,42 +121,60 @@ export default function DriverInfoDrawer({
 
     if (profilePictureFile || certificationFiles.length > 0) {
       const user = auth.currentUser
-      if (user) {
-        setUploading(true)
-        try {
-          const idToken = await user.getIdToken()
+      if (!user) {
+        setPictureError('No authenticated user.')
+        return
+      }
 
-          if (profilePictureFile) {
-            const [uploaded] = await uploadDocuments(idToken, user.uid, 'driverDocuments', [
-              profilePictureFile,
-            ])
-            profilePictureUrl = uploaded.url
+      setUploading(true)
+      setPictureError(null)
+
+      try {
+        if (profilePictureFile) {
+          const result = await uploadDriverDocs({
+            driverId: driverId,
+            docType: 'driverDocuments',
+            files: [profilePictureFile],
+          })
+
+          if ('error' in result) {
+            throw new Error('upload_failed')
           }
 
-          if (certificationFiles.length > 0) {
-            const uploaded = await uploadDocuments(
-              idToken,
-              user.uid,
-              'driverDocuments',
-              certificationFiles
-            )
-            // Convert UploadedDocument to CertificationDocument format, preserving expiry
+          if (result.data && result.data.length) {
+            profilePictureUrl = result.data[0].url
+          }
+        }
+
+        if (certificationFiles.length > 0) {
+          const result = await uploadDriverDocs({
+            driverId: driverId,
+            docType: 'driverDocuments',
+            files: certificationFiles,
+          })
+
+          if ('error' in result) {
+            throw new Error('upload_failed')
+          }
+
+          if (result.data) {
             certificationDocuments = [
               ...(driver.certificationDocuments ?? []),
-              ...uploaded.map((doc, i) => ({
+              ...result.data.map((doc, i) => ({
                 name: doc.name,
                 url: doc.url,
                 key: doc.key,
                 uploadedAt: new Date().toISOString(),
-                expiresAt: certExpiries[i] ? new Date(certExpiries[i]).toISOString() : null,
+                expiresAt: certExpiries[i]?.from ? certExpiries[i].from!.toISOString() : null,
               })),
             ]
           }
-        } catch {
-          setPictureError('Failed to upload one or more files. Please try again.')
-          setUploading(false)
-          return
         }
+      } catch {
+        setPictureError('Failed to upload one or more files. Please try again.')
+        setUploading(false)
+        return
+      } finally {
         setUploading(false)
       }
     }
@@ -199,7 +221,7 @@ export default function DriverInfoDrawer({
         size="md"
         drawerSubmit={{
           onSubmit: handleSubmit(onFormSubmit),
-          isSubmitting: isSubmitting || uploading,
+          isSubmitting: isSubmitting || uploading || isUploadingDocs,
           submitLabel: 'Save Changes',
         }}
       >
@@ -212,7 +234,7 @@ export default function DriverInfoDrawer({
               existingUrl={driver.profilePictureUrl}
               fallbackText={getInitials(driver.name)}
               onError={setPictureError}
-              disabled={isSubmitting || uploading}
+              disabled={isSubmitting || uploading || isUploadingDocs}
             />
             <FieldDescription className="mt-2 text-center">
               Click the pencil icon to upload a profile picture
@@ -281,110 +303,101 @@ export default function DriverInfoDrawer({
           <Field>
             <FieldLabel>Certifications</FieldLabel>
             {driver.certificationDocuments && driver.certificationDocuments.length > 0 && (
-                <ul className="space-y-1.5 mb-2">
-                  {driver.certificationDocuments.map((doc) => {
-                    const status = doc.verificationStatus ?? 'pending'
-                    const now = new Date()
-                    const expiry = doc.expiresAt ? new Date(doc.expiresAt) : null
-                    const isExpired = expiry && expiry < now
-                    const isExpiringSoon =
-                      expiry && !isExpired && expiry <= new Date(now.getTime() + 30 * 24 * 3600_000)
-                    return (
-                      <li
-                        key={doc.key}
-                        className="flex items-start gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm"
-                      >
-                        <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <span className="truncate block">{doc.name}</span>
-                          {expiry && (
-                            <span
-                              className={`text-xs flex items-center gap-1 mt-0.5 ${
-                                isExpired
-                                  ? 'text-destructive'
-                                  : isExpiringSoon
-                                    ? 'text-amber-600'
-                                    : 'text-muted-foreground'
-                              }`}
-                            >
-                              {isExpired && <AlertTriangle className="h-3 w-3" />}
-                              {isExpiringSoon && <Clock className="h-3 w-3" />}
-                              {isExpired
-                                ? `Expired ${format(expiry, 'MMM d, yyyy')}`
-                                : `Expires ${format(expiry, 'MMM d, yyyy')}`}
-                            </span>
-                          )}
-                        </div>
-                        <Badge variant={docStatusVariant(status)} className="text-xs shrink-0">
-                          {status === 'approved' && 'Verified'}
-                          {status === 'rejected' && 'Rejected'}
-                          {status === 'pending' && 'Pending Review'}
-                          {!['approved', 'rejected', 'pending'].includes(status) && 'Pending Review'}
-                        </Badge>
-                        <button
-                          type="button"
-                          onClick={() => setDocToDelete(doc)}
-                          className="shrink-0 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                          title="Remove document"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-              <FileUploadField
-                files={certificationFiles}
-                onChange={(files) => {
-                  setCertificationFiles(files)
-                  // Prune expiries for removed files
-                  setCertExpiries((prev) => {
-                    const next: Record<number, string> = {}
-                    files.forEach((_, i) => {
-                      if (prev[i]) next[i] = prev[i]
-                    })
-                    return next
-                  })
-                }}
-                onError={setCertError}
-                multiple
-                disabled={isSubmitting || uploading}
-                buttonLabel="Upload certification"
-              />
-              {/* Per-file expiry date inputs */}
-              {certificationFiles.length > 0 && (
-                <ul className="space-y-2 mt-2">
-                  {certificationFiles.map((file, i) => (
+              <ul className="space-y-1.5 mb-2">
+                {driver.certificationDocuments.map((doc) => {
+                  const status = doc.verificationStatus ?? 'pending'
+                  const now = new Date()
+                  const expiry = doc.expiresAt ? new Date(doc.expiresAt) : null
+                  const isExpired = expiry && expiry < now
+                  const isExpiringSoon =
+                    expiry && !isExpired && expiry <= new Date(now.getTime() + 30 * 24 * 3600_000)
+                  return (
                     <li
-                      key={i}
-                      className="rounded-md border border-border bg-muted/40 px-3 py-2 space-y-1.5"
+                      key={doc.key}
+                      className="flex items-start gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm"
                     >
-                      <p className="text-xs font-medium truncate flex items-center gap-1.5">
-                        <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        {file.name}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <CalendarClock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        <label className="text-xs text-muted-foreground whitespace-nowrap">
-                          Expiry date
-                        </label>
-                        <Input
-                          type="date"
-                          className="h-7 text-xs py-0 px-2"
-                          value={certExpiries[i] ?? ''}
-                          onChange={(e) =>
-                            setCertExpiries((prev) => ({ ...prev, [i]: e.target.value }))
-                          }
-                          disabled={isSubmitting || uploading}
-                        />
+                      <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <span className="truncate block">{doc.name}</span>
+                        {expiry && (
+                          <span
+                            className={`text-xs flex items-center gap-1 mt-0.5 ${
+                              isExpired
+                                ? 'text-destructive'
+                                : isExpiringSoon
+                                  ? 'text-amber-600'
+                                  : 'text-muted-foreground'
+                            }`}
+                          >
+                            {isExpired && <AlertTriangle className="h-3 w-3" />}
+                            {isExpiringSoon && <Clock className="h-3 w-3" />}
+                            {isExpired
+                              ? `Expired ${format(expiry, 'MMM d, yyyy')}`
+                              : `Expires ${format(expiry, 'MMM d, yyyy')}`}
+                          </span>
+                        )}
                       </div>
+                      <Badge variant={docStatusVariant(status)} className="text-xs shrink-0">
+                        {status === 'approved' && 'Verified'}
+                        {status === 'rejected' && 'Rejected'}
+                        {status === 'pending' && 'Pending Review'}
+                        {!['approved', 'rejected', 'pending'].includes(status) && 'Pending Review'}
+                      </Badge>
+                      <button
+                        type="button"
+                        onClick={() => setDocToDelete(doc)}
+                        className="shrink-0 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                        title="Remove document"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </li>
-                  ))}
-                </ul>
-              )}
-              <FieldDescription>Optional: Add proof of any certifications</FieldDescription>
-              <FieldError message={certError ?? undefined} />
+                  )
+                })}
+              </ul>
+            )}
+            <FileUploadField
+              files={certificationFiles}
+              onChange={(files) => {
+                setCertificationFiles(files)
+    setCertExpiries((prev) => {
+      const next: Record<number, DateRange> = {}
+      files.forEach((_, i) => {
+        if (prev[i]) next[i] = prev[i]
+      })
+      return next
+    })
+              }}
+              onError={setCertError}
+              multiple
+              disabled={isSubmitting || uploading || isUploadingDocs}
+              buttonLabel="Upload certification"
+            />
+            {certificationFiles.length > 0 && (
+              <ul className="space-y-2 mt-2">
+                {certificationFiles.map((file, i) => (
+                  <li
+                    key={i}
+                    className="rounded-md border border-border bg-muted/40 px-3 py-2 space-y-1.5"
+                  >
+                    <p className="text-xs font-medium truncate flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      {file.name}
+                    </p>
+                    <DatePickerWithRange
+                      mode="single"
+                      label="Expiry date"
+                      date={certExpiries[i]}
+                      onRangeChange={(range) =>
+                        setCertExpiries((prev) => ({ ...prev, [i]: range }))
+                      }
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <FieldDescription>Optional: Add proof of any certifications</FieldDescription>
+            <FieldError message={certError ?? undefined} />
           </Field>
         </form>
       </DrawerShell>

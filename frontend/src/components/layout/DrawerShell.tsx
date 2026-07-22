@@ -8,6 +8,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { Loader2, X } from 'lucide-react'
 import { type ReactNode } from 'react'
 
@@ -92,6 +93,8 @@ export default function DrawerShell({
   showCloseButton = true,
   direction = 'right',
 }: DrawerShellProps) {
+  const isMobile = useIsMobile();
+
   const resolvedFooter = drawerSubmit ? (
     drawerSubmit.cancelLabel === '' && drawerSubmit.submitLabel === 'Close' ? (
       <Button
@@ -123,7 +126,13 @@ export default function DrawerShell({
   )
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction={direction} modal>
+    <Drawer
+      open={open}
+      onOpenChange={onOpenChange}
+      direction={direction}
+      modal
+      handleOnly={!isMobile}
+    >
       <DrawerContent className={sizeClasses[size]}>
         <DrawerHeader>
           <div className="flex items-start justify-between">
@@ -144,7 +153,12 @@ export default function DrawerShell({
           </div>
         </DrawerHeader>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-4">{children}</div>
+        <div
+          className="flex-1 overflow-y-auto px-4 pb-4"
+          style={{ touchAction: isMobile ? 'none' : 'auto' }}
+        >
+          {children}
+        </div>
 
         {resolvedFooter && <DrawerFooter>{resolvedFooter}</DrawerFooter>}
       </DrawerContent>

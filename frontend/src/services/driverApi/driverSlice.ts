@@ -22,6 +22,7 @@ import type {
   AiFuelStopsResult,
   AiRestAreasResult,
 } from './driverEnum'
+import type { UploadedDocument } from '@/lib/uploadDocuments'
 
 export const driverApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -344,13 +345,37 @@ export const driverApi = api.injectEndpoints({
       },
     }),
 
+    // multipart presign + S3 PUT, then invalidates profile caches
+    uploadDriverDocuments: build.mutation<UploadedDocument[], { driverId: string; docType: 'driverDocuments'; files: File[] }>({
+      queryFn: async ({ driverId: _driverId, docType, files }) => {
+        // auth token is supplied by prepareHeaders in api baseQuery,
+        // but we also need a Firebase ID token for the presign endpoint.
+        const { auth } = await import('@/lib/firebase')
+        const user = auth.currentUser
+        if (!user) {
+          return { error: { status: 401, data: 'No authenticated user' } as any }
+        }
+        const idToken = await user.getIdToken()
+        const { uploadDocuments } = await import('@/lib/uploadDocuments')
+        const result = await uploadDocuments(idToken, user.uid, docType, files)
+        return { data: result }
+      },
+      invalidatesTags: (_r, _e, { driverId }) => [
+        { type: LoadTag.Driver, id: driverId },
+        { type: LoadTag.Profile, id: 'ME' },
+      ],
+    }),
+
     // DELETE /api/driver/:driverId/documents/:docKey — remove a certification doc
     removeCertificationDocument: build.mutation<void, { driverId: string; docKey: string }>({
       query: ({ driverId, docKey }) => ({
         url: `driver/${driverId}/documents/${encodeURIComponent(docKey)}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (_r, _e, { driverId }) => [{ type: LoadTag.Profile, id: driverId }],
+      invalidatesTags: (_r, _e, { driverId }) => [
+        { type: LoadTag.Driver, id: driverId },
+        { type: LoadTag.Profile, id: driverId },
+      ],
     }),
 
     // DELETE /api/driver/:driverId/insurance/:idx — remove an insurance cert
@@ -359,7 +384,10 @@ export const driverApi = api.injectEndpoints({
         url: `driver/${driverId}/insurance/${idx}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (_r, _e, { driverId }) => [{ type: LoadTag.Profile, id: driverId }],
+      invalidatesTags: (_r, _e, { driverId }) => [
+        { type: LoadTag.Driver, id: driverId },
+        { type: LoadTag.Profile, id: driverId },
+      ],
     }),
   }),
   overrideExisting: false,
@@ -390,4 +418,5 @@ export const {
   useRemoveCertificationDocumentMutation,
   useRemoveInsuranceCertificateMutation,
   useListDriverCompletedLoadsForCompanyQuery,
+  useUploadDriverDocumentsMutation,
 } = driverApi

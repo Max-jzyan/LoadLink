@@ -175,35 +175,12 @@ export async function registerAndFetchUser(
   password: string,
   name: string,
   role: UserRole,
-  documentFiles: File[] = [],
-  profilePictureFile: File | null = null
+  uploadedDocuments: UploadedDocument[] = [],
+  profilePictureUrl: string | undefined = undefined
 ): Promise<AuthUser> {
   try {
     const { user: fbUser } = await createUserWithEmailAndPassword(auth, email, password)
     const token = await fbUser.getIdToken()
-
-    // Upload any selected certification/business documents (and profile
-    // picture) directly to S3 before creating the Mongo profile, so the
-    // resulting URLs can be saved in the same request. Both share the same
-    // per-role folder (driverDocuments/companyDocuments) as other documents.
-    let uploadedDocuments: UploadedDocument[] = []
-    let profilePictureUrl: string | undefined
-    const docType = role === 'driver' ? 'driverDocuments' : 'companyDocuments'
-    if (documentFiles.length > 0 || (role === 'driver' && profilePictureFile)) {
-      try {
-        if (documentFiles.length > 0) {
-          uploadedDocuments = await uploadDocuments(token, fbUser.uid, docType, documentFiles)
-        }
-
-        if (role === 'driver' && profilePictureFile) {
-          const [uploaded] = await uploadDocuments(token, fbUser.uid, docType, [profilePictureFile])
-          profilePictureUrl = uploaded.url
-        }
-      } catch (uploadError) {
-        await signOut(auth)
-        throw uploadError
-      }
-    }
 
     const res = await fetch('/api/users/register', {
       method: 'POST',

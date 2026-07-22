@@ -321,12 +321,12 @@ export default function DriverAuctions() {
   const renderMapCard = useCallback(
     (expandable: boolean) => (
       <DynamicCard
-        title="Shipment route overview"
+        title="Auction Routes"
         description={mapDescription}
         {...(expandable ? { expand: true } : {})}
         action={
           <div className="flex gap-1">
-            {(['route', 'fuel', 'rest'] as MapLayer[]).map((layer) => (
+            {aiTriggered && (['route', 'fuel', 'rest'] as MapLayer[]).map((layer) => (
               <Button
                 key={layer}
                 size="sm"
@@ -531,47 +531,50 @@ export default function DriverAuctions() {
         {/* right panel: map + AI panels + details (desktop) */}
         <div className="hidden lg:flex flex-[11] min-w-0 flex-col space-y-2 pt-2 pb-2">
           {renderMapCard(true)}
+          {aiTriggered && (
+            <>
+              {/* AI fuel stop suggestions — auto-populates when a load is selected */}
+              {activeLayer === 'fuel' && selectedLoad && (
+                <AiFuelStopsPanel driverId={driverId} loadId={selectedLoad._id} />
+              )}
+              {activeLayer === 'fuel' && !selectedLoad && (
+                <div className="rounded-xl border border-dashed border-amber-200 px-4 py-3 text-xs text-amber-600 text-center">
+                  Select a load to see AI-suggested fuel stops
+                </div>
+              )}
 
-          {/* AI fuel stop suggestions — auto-populates when a load is selected */}
-          {activeLayer === 'fuel' && selectedLoad && (
-            <AiFuelStopsPanel driverId={driverId} loadId={selectedLoad._id} />
-          )}
-          {activeLayer === 'fuel' && !selectedLoad && (
-            <div className="rounded-xl border border-dashed border-amber-200 px-4 py-3 text-xs text-amber-600 text-center">
-              Select a load to see AI-suggested fuel stops
-            </div>
-          )}
+              {/* AI rest area suggestions — auto-populates when a load is selected */}
+              {activeLayer === 'rest' && selectedLoad && (
+                <AiRestAreasPanel driverId={driverId} loadId={selectedLoad._id} />
+              )}
+              {activeLayer === 'rest' && !selectedLoad && (
+                <div className="rounded-xl border border-dashed border-sky-200 px-4 py-3 text-xs text-sky-600 text-center">
+                  Select a load to see AI-suggested rest stops
+                </div>
+              )}
 
-          {/* AI rest area suggestions — auto-populates when a load is selected */}
-          {activeLayer === 'rest' && selectedLoad && (
-            <AiRestAreasPanel driverId={driverId} loadId={selectedLoad._id} />
+              {/* Delivery timeline */}
+              <DynamicCard
+                title="Delivery timeline"
+                rounded="sm"
+                action={
+                  selectedLoad && (
+                    <Button size="sm" asChild>
+                      <Link to={`/driverAuctions/${selectedLoad._id}`}>View Auction</Link>
+                    </Button>
+                  )
+                }
+              >
+                {selectedLoad ? (
+                  <DeliveryTimeline load={selectedLoad} />
+                ) : (
+                  <div className="flex items-center justify-center h-28 text-muted-foreground text-sm">
+                    Select a load to view the delivery timeline
+                  </div>
+                )}
+              </DynamicCard>
+            </>
           )}
-          {activeLayer === 'rest' && !selectedLoad && (
-            <div className="rounded-xl border border-dashed border-sky-200 px-4 py-3 text-xs text-sky-600 text-center">
-              Select a load to see AI-suggested rest stops
-            </div>
-          )}
-
-          {/* Delivery timeline */}
-          <DynamicCard
-            title="Delivery timeline"
-            rounded="sm"
-            action={
-              selectedLoad && (
-                <Button size="sm" asChild>
-                  <Link to={`/driverAuctions/${selectedLoad._id}`}>View Auction</Link>
-                </Button>
-              )
-            }
-          >
-            {selectedLoad ? (
-              <DeliveryTimeline load={selectedLoad} />
-            ) : (
-              <div className="flex items-center justify-center h-28 text-muted-foreground text-sm">
-                Select a load to view the delivery timeline
-              </div>
-            )}
-          </DynamicCard>
 
           {/* Detailed Eligibility Panel */}
           {selectedLoad?._scored && (

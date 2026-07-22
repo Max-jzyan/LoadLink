@@ -11,9 +11,16 @@ interface DatePickerWithRangeProps {
   label?: string
   date?: DateRange | undefined
   onRangeChange?: (range: DateRange | undefined) => void
+  /** When 'single', only a single date selection is shown (uses date.from as the selected date). Defaults to 'range'. */
+  mode?: 'range' | 'single'
 }
 
-export function DatePickerWithRange({ label, date, onRangeChange }: DatePickerWithRangeProps) {
+export function DatePickerWithRange({
+  label,
+  date,
+  onRangeChange,
+  mode = 'range',
+}: DatePickerWithRangeProps) {
   // Internal state for the calendar selection
   const [internalRange, setInternalRange] = React.useState<DateRange | undefined>(undefined)
 
@@ -31,14 +38,22 @@ export function DatePickerWithRange({ label, date, onRangeChange }: DatePickerWi
     onRangeChange?.(range)
   }
 
+  const defaultLabel = mode === 'single' ? 'Pick a date' : 'Pick a date range'
+
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm font-medium whitespace-nowrap">{label || 'Date Range'}</span>
+      <span className="text-sm font-medium whitespace-nowrap">{label || defaultLabel}</span>
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="outline" className="justify-start px-2.5 font-normal w-56">
             <CalendarIcon />
-            {internalRange?.from ? (
+            {mode === 'single' ? (
+              internalRange?.from ? (
+                format(internalRange.from, 'LLL dd, y')
+              ) : (
+                <span>{defaultLabel}</span>
+              )
+            ) : internalRange?.from ? (
               internalRange.to ? (
                 <>
                   {format(internalRange.from, 'LLL dd, y')} -{' '}
@@ -48,19 +63,30 @@ export function DatePickerWithRange({ label, date, onRangeChange }: DatePickerWi
                 format(internalRange.from, 'LLL dd, y')
               )
             ) : (
-              <span>Pick a date range</span>
+              <span>{defaultLabel}</span>
             )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="range"
-            defaultMonth={internalRange?.from}
-            selected={internalRange}
-            onSelect={handleSelect}
-            numberOfMonths={2}
-            showOutsideDays={true}
-          />
+          {mode === 'single' ? (
+            <Calendar
+              mode="single"
+              defaultMonth={internalRange?.from}
+              selected={internalRange?.from}
+              onSelect={(day) => handleSelect(day ? { from: day, to: undefined } : undefined)}
+              numberOfMonths={1}
+              showOutsideDays={true}
+            />
+          ) : (
+            <Calendar
+              mode="range"
+              defaultMonth={internalRange?.from}
+              selected={internalRange}
+              onSelect={handleSelect}
+              numberOfMonths={2}
+              showOutsideDays={true}
+            />
+          )}
         </PopoverContent>
       </Popover>
     </div>

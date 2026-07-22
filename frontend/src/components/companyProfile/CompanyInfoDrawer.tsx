@@ -8,8 +8,7 @@ import DrawerShell from '@/components/layout/DrawerShell'
 import type { BusinessDocument, CompanyProfile } from '@/services/companyApi/companyEnum'
 
 import AvatarUploadField from '@/components/shared/AvatarUploadField'
-import { auth } from '@/lib/firebase'
-import { uploadDocuments } from '@/lib/uploadDocuments'
+import { useUploadCompanyDocumentsMutation } from '@/services/companyApi/companyApi'
 import {
   Dialog,
   DialogContent,
@@ -61,6 +60,8 @@ export default function CompanyInfoDrawer({
   const [, setDocError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [docToDelete, setDocToDelete] = useState<BusinessDocument | null>(null)
+  const [uploadCompanyDocs, { isLoading: isUploadingDocs, isError }] =
+    useUploadCompanyDocumentsMutation()
 
   const {
     register,
@@ -76,7 +77,6 @@ export default function CompanyInfoDrawer({
     },
   })
 
-  // Reset form when drawer opens with company data; clear when it closes
   useEffect(() => {
     if (open && company) {
       reset({
@@ -106,29 +106,41 @@ export default function CompanyInfoDrawer({
     let businessDocuments: BusinessDocument[] | undefined = undefined
 
     if (profilePictureFile || businessDocFiles.length > 0) {
-      const user = auth.currentUser
-      if (user) {
-        setUploading(true)
-        try {
-          const idToken = await user.getIdToken()
+      setUploading(true)
+      setPictureError(null)
 
-          if (profilePictureFile) {
-            const [uploaded] = await uploadDocuments(idToken, user.uid, 'companyDocuments', [
-              profilePictureFile,
-            ])
-            profilePictureUrl = uploaded.url
+      try {
+        if (profilePictureFile) {
+          const result = await uploadCompanyDocs({
+            companyId: '',
+            docType: 'companyDocuments',
+            files: [profilePictureFile],
+          })
+
+          if ('error' in result) {
+            throw new Error('upload_failed')
           }
 
-          if (businessDocFiles.length > 0) {
-            const uploaded = await uploadDocuments(
-              idToken,
-              user.uid,
-              'companyDocuments',
-              businessDocFiles
-            )
+          if (result.data && result.data.length) {
+            profilePictureUrl = result.data[0].url
+          }
+        }
+
+        if (businessDocFiles.length > 0) {
+          const result = await uploadCompanyDocs({
+            companyId: '',
+            docType: 'companyDocuments',
+            files: businessDocFiles,
+          })
+
+          if ('error' in result) {
+            throw new Error('upload_failed')
+          }
+
+          if (result.data) {
             businessDocuments = [
               ...(company.businessDocuments ?? []),
-              ...uploaded.map((doc) => ({
+              ...result.data.map((doc) => ({
                 name: doc.name,
                 url: doc.url,
                 key: doc.key,
@@ -136,11 +148,12 @@ export default function CompanyInfoDrawer({
               })),
             ]
           }
-        } catch {
-          setPictureError('Failed to upload one or more files. Please try again.')
-          setUploading(false)
-          return
         }
+      } catch {
+        setPictureError('Failed to upload one or more files. Please try again.')
+        setUploading(false)
+        return
+      } finally {
         setUploading(false)
       }
     }
@@ -177,7 +190,7 @@ export default function CompanyInfoDrawer({
         size="md"
         drawerSubmit={{
           onSubmit: handleSubmit(onFormSubmit),
-          isSubmitting: isSubmitting || uploading,
+          isSubmitting: isSubmitting || uploading || isUploadingDocs,
           submitLabel: 'Save Changes',
         }}
       >
@@ -190,7 +203,7 @@ export default function CompanyInfoDrawer({
               existingUrl={company.profilePictureUrl}
               fallbackText={getInitials(company.companyName || company.name)}
               onError={setPictureError}
-              disabled={isSubmitting || uploading}
+              disabled={isSubmitting || uploading || isUploadingDocs}
             />
             <FieldDescription className="mt-2 text-center">
               Click the pencil icon to upload a company logo
