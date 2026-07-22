@@ -47,7 +47,7 @@ export default function TrailerDrawer({
     handleSubmit,
     control,
     reset,
-    formState: { errors, isLoading: formLoading },
+    formState: { errors },
   } = useForm<TrailerFormValues>({
     defaultValues: {
       plateNumber: '',

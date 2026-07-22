@@ -6,7 +6,11 @@ import { AUCTION_STATUSES, BID_STATUSES, LOAD_STATUSES } from '../models/enums'
 import { emitBidsAndPrice, settleAuctionWithBid } from './auctionService'
 import { HEARTBEAT_INTERVAL_MS, MS_PER_HOUR } from '../constants/auction'
 import { DriverModel } from '../models/users/Driver'
-import { NotificationModel, NOTIFICATION_TYPES } from '../models/notifications/Notification'
+import {
+  NotificationModel,
+  NOTIFICATION_TYPES,
+  type NotificationType,
+} from '../models/notifications/Notification'
 import {
   notifyDocumentExpiringSoon,
   notifyDocumentExpired,
@@ -184,7 +188,7 @@ const NOTIFY_DEDUP_MS = 23 * MS_PER_HOUR
  */
 const recentlyNotified = async (
   userId: string,
-  type: string
+  type: NotificationType
 ): Promise<boolean> => {
   const since = new Date(Date.now() - NOTIFY_DEDUP_MS)
   const exists = await NotificationModel.exists({

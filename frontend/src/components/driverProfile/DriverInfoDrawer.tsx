@@ -71,7 +71,7 @@ export default function DriverInfoDrawer({
   const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null)
   const [pictureError, setPictureError] = useState<string | null>(null)
   const [certificationFiles, setCertificationFiles] = useState<File[]>([])
-  const [certExpiries, setCertExpiries] = useState<Record<number, DateRange>>({})
+  const [certExpiries, setCertExpiries] = useState<Record<number, DateRange | undefined>>({})
   const [certError, setCertError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [docToDelete, setDocToDelete] = useState<CertificationDocument | null>(null)

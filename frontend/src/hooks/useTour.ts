@@ -1,4 +1,4 @@
-import Shepherd from 'shepherd.js'
+import Shepherd, { type Tour } from 'shepherd.js'
 import type { UserRole } from '@/types/enums'
 
 const TOUR_PENDING_KEY = 'loadlink_tour_pending'
@@ -34,7 +34,7 @@ function navStep(navigate: (path: string) => void, path: string): () => Promise<
     })
 }
 
-export function createTour(role: UserRole, navigate: (path: string) => void): Shepherd.Tour {
+export function createTour(role: UserRole, navigate: (path: string) => void): Tour {
   const tour = new Shepherd.Tour({
     useModalOverlay: true,
     defaultStepOptions: {

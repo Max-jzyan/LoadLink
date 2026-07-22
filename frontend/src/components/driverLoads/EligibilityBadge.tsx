@@ -17,7 +17,6 @@ interface EligibilityBadgeProps {
   className?: string
 }
 
-type BadgeState = 'high-score' | 'eligible' | 'ineligible'
 /**
  * Renders a compact score indicator with a hover tooltip, using a thin Progress bar.
  * Highlights exceptional loads (≥80) in green, eligible loads in emerald,

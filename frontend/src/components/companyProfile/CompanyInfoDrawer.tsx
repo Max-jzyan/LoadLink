@@ -60,8 +60,7 @@ export default function CompanyInfoDrawer({
   const [, setDocError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [docToDelete, setDocToDelete] = useState<BusinessDocument | null>(null)
-  const [uploadCompanyDocs, { isLoading: isUploadingDocs, isError }] =
-    useUploadCompanyDocumentsMutation()
+  const [uploadCompanyDocs, { isLoading: isUploadingDocs }] = useUploadCompanyDocumentsMutation()
 
   const {
     register,

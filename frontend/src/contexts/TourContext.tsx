@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { selectRole } from '@/services/authSlice'
 import { createTour, isTourPending, consumeTourPending } from '@/hooks/useTour'
-import type Shepherd from 'shepherd.js'
+import type { Tour } from 'shepherd.js'
 
 interface TourContextValue {
   startTour: () => void
@@ -18,7 +18,7 @@ export function useTourContext() {
 export function TourProvider({ children }: { children: ReactNode }) {
   const role = useSelector(selectRole)
   const navigate = useNavigate()
-  const tourRef = useRef<Shepherd.Tour | null>(null)
+  const tourRef = useRef<Tour | null>(null)
 
   function startTour() {
     if (!role) return
