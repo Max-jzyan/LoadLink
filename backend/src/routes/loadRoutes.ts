@@ -2,6 +2,8 @@ import { Router } from 'express'
 import {
   getLoad,
   getAcceptedBid,
+  getBol,
+  submitSignedBol,
   createLoad,
   updateLoad,
   updateLoadStatus,
@@ -35,6 +37,18 @@ router.get(
   canViewLoad,
   notBlockedByLoadCompany,
   getAcceptedBid
+)
+
+// BOL: accessible to driver (assigned) + company (owner) + admin — handled by canViewLoad
+router.get('/loads/:loadId/bol', requireAuth, canViewLoad, notBlockedByLoadCompany, getBol)
+
+// Signed BOL submission: driver only (ownership enforced inside controller)
+router.post(
+  '/loads/:loadId/bol/signed',
+  requireAuth,
+  requireRole(USER_ROLES.DRIVER),
+  requireOwns(driverOwnsAssignedLoad),
+  submitSignedBol
 )
 
 router.get(

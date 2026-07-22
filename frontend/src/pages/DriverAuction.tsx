@@ -96,7 +96,8 @@ export default function DriverAuction() {
     skip: !auctionClosed || !loadId,
   })
   const isWinner = acceptedBid?.driverId === mongoId
-  const rcUrl = isWinner ? acceptedBid?.rateConfirmationUrl : null
+  const rcUrl = isWinner ? (acceptedBid?.rateConfirmationUrl ?? null) : null
+  const bolUrl = isWinner ? (acceptedBid?.bolUrl ?? null) : null
 
   const [effectiveBidPrice, setEffectiveBidPrice] = useState<number>(livePrice)
   const [bidActive, setBidActive] = useState<boolean>(false)
@@ -191,7 +192,11 @@ export default function DriverAuction() {
           </Badge>
         )
       }
-      banner={auctionClosed && isWinner ? <RateConfirmationBanner rcUrl={rcUrl} /> : undefined}
+      banner={
+        auctionClosed && isWinner ? (
+          <RateConfirmationBanner rcUrl={rcUrl} bolUrl={bolUrl} />
+        ) : undefined
+      }
     >
       <LayoutGrid>
         <Row size={16}>

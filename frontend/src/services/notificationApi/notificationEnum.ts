@@ -7,6 +7,8 @@ export const NOTIFICATION_TYPES = {
   AUCTION_CANCELLED: 'auction_cancelled',
   LOAD_STATUS_CHANGED: 'load_status_changed',
   RATE_CONFIRMATION_READY: 'rate_confirmation_ready',
+  BOL_READY: 'bol_ready',
+  BOL_SIGNED_SUBMITTED: 'bol_signed_submitted',
   DOCUMENT_UPLOADED: 'document_uploaded',
   DOCUMENT_APPROVED: 'document_approved',
   DOCUMENT_REJECTED: 'document_rejected',

@@ -105,6 +105,45 @@ export const notifyRateConfirmationReady = (
     data: { loadId: opts.loadId, bidId: opts.bidId, rateConfirmationUrl: opts.url },
   })
 
+/**
+ * Notify BOTH the driver and the company that the Bill of Lading is ready.
+ * The BOL is generated at booking; the driver should print it and bring it
+ * to the pickup location for the shipper to sign.
+ */
+export const notifyBolReady = (
+  userId: string,
+  opts: { loadId: string; bidId: string; url: string; isDriver: boolean }
+) =>
+  createNotification({
+    userId,
+    type: NOTIFICATION_TYPES.BOL_READY,
+    title: 'Bill of Lading ready',
+    message: opts.isDriver
+      ? 'Your Bill of Lading is ready. Print it and bring it to the pickup location for the shipper to sign.'
+      : 'The Bill of Lading for this load is ready for your records.',
+    data: { loadId: opts.loadId, bidId: opts.bidId, bolUrl: opts.url },
+  })
+
+/**
+ * Notify the COMPANY that the driver has uploaded a signed/stamped BOL
+ * after completing the delivery. The company should review and retain the copy.
+ */
+export const notifyBolSignedSubmitted = (
+  companyUserId: string,
+  opts: { loadId: string; bidId: string; driverName: string; signedBolUrl: string }
+) =>
+  createNotification({
+    userId: companyUserId,
+    type: NOTIFICATION_TYPES.BOL_SIGNED_SUBMITTED,
+    title: 'Signed Bill of Lading received',
+    message: `${opts.driverName} submitted a signed Bill of Lading for load #${opts.loadId.slice(-6).toUpperCase()}. Please review and retain for your records.`,
+    data: {
+      loadId: opts.loadId,
+      bidId: opts.bidId,
+      signedBolUrl: opts.signedBolUrl,
+    },
+  })
+
 export const notifyDriverCheckedIn = (
   companyUserId: string,
   opts: {

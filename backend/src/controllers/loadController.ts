@@ -7,6 +7,9 @@ import { ApiError } from '../utils/ApiError'
 import * as loadService from '../services/loadService'
 import { LOAD_STATUSES, BID_STATUSES } from '../models/enums'
 import { parseLatLng } from '../utils/geo'
+import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { s3Client, S3_BUCKET } from '../config/s3Client'
 
 /**
  * GET /api/loads/:loadId/accepted-bid
@@ -23,7 +26,9 @@ export const getAcceptedBid = async (req: Request, res: Response, next: NextFunc
       loadId: new Types.ObjectId(loadId),
       status: BID_STATUSES.Accepted,
     })
-      .select('_id driverId amount acceptedAt rateConfirmationUrl rateConfirmationKey')
+      .select(
+        '_id driverId amount acceptedAt rateConfirmationUrl rateConfirmationKey bolKey bolUrl signedBolKey signedBolUrl'
+      )
       .lean()
 
     res.status(StatusCodes.OK).json(bid ?? null)
@@ -247,6 +252,181 @@ export const selectTruckForLoad = async (req: Request, res: Response, next: Next
     const driverId = String(driver._id as Types.ObjectId)
     const load = await loadService.selectTruckForLoad(loadId, driverId, truckId)
     res.status(StatusCodes.OK).json(load)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * GET /api/loads/:loadId/bol
+ * Return a fresh presigned URL for the Bill of Lading PDF on the accepted bid.
+ * Accessible to the assigned driver, the load's company, and admins.
+ */
+export const getBol = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const loadId = req.params.loadId as string
+    if (!isValidObjectId(loadId)) throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid loadId')
+
+    const TTL = 7 * 24 * 3600 // 7 days
+
+    // ── Helper: generate + store BOL from load data ──────────────────────────
+    const generateAndStore = async (
+      load: Awaited<ReturnType<typeof LoadModel.findById>> & { [k: string]: any },
+      bidId: string | null
+    ) => {
+      const { generateBillOfLadingPdf } = await import('../services/pdfService')
+      const company = load.companyId as any
+      const driver = load.assignedDriverId as any
+      const bolResult = await generateBillOfLadingPdf({
+        loadId,
+        bidId: bidId ?? loadId, // use loadId as synthetic bidId for seeded/direct loads
+        shipperName: company?.companyName ?? 'Unknown Shipper',
+        shipperAddress: company?.businessAddress,
+        shipperContact: company?.contactName,
+        carrierName: driver?.name ?? 'Unknown Carrier',
+        driverName: driver?.name ?? 'Unknown Driver',
+        driverPhone: driver?.phone,
+        originAddress: load.originAddress,
+        destinationAddress: load.destinationAddress,
+        commodity: load.commodity,
+        weightLbs: load.weightLbs,
+        currency: 'CAD',
+        pickupDate: new Date(load.pickupTime),
+        deliveryDate: new Date(load.dropoffTime),
+        issuedAt: new Date(),
+      })
+      return bolResult
+    }
+
+    // ── 1. Try the accepted bid first (auction flow) ─────────────────────────
+    const bid = await BidModel.findOne({
+      loadId: new Types.ObjectId(loadId),
+      status: BID_STATUSES.Accepted,
+    })
+      .select('_id bolKey bolUrl signedBolKey signedBolUrl')
+      .lean()
+
+    if (bid?.bolKey) {
+      // Known key — just refresh the presigned URL
+      const getCmd = new GetObjectCommand({ Bucket: S3_BUCKET, Key: bid.bolKey })
+      const freshBolUrl = await getSignedUrl(s3Client, getCmd, { expiresIn: TTL })
+
+      let freshSignedBolUrl: string | null = null
+      if (bid.signedBolKey) {
+        const sCmd = new GetObjectCommand({ Bucket: S3_BUCKET, Key: bid.signedBolKey })
+        freshSignedBolUrl = await getSignedUrl(s3Client, sCmd, { expiresIn: TTL })
+      }
+
+      await BidModel.findByIdAndUpdate(bid._id, {
+        bolUrl: freshBolUrl,
+        ...(freshSignedBolUrl ? { signedBolUrl: freshSignedBolUrl } : {}),
+      })
+
+      return res.status(StatusCodes.OK).json({
+        bidId: bid._id,
+        bolUrl: freshBolUrl,
+        signedBolUrl: freshSignedBolUrl,
+      })
+    }
+
+    // ── 2. No accepted bid (seeded / directly-assigned loads) ────────────────
+    // Fall back to bolKey stored directly on the Load document.
+    const load = await LoadModel.findById(loadId)
+      .populate<{ companyId: any }>('companyId')
+      .populate<{ assignedDriverId: any }>('assignedDriverId')
+      .lean()
+
+    if (!load) throw new ApiError(StatusCodes.NOT_FOUND, 'Load not found')
+    if (!load.assignedDriverId) {
+      // No driver assigned yet — cannot generate BOL
+      return res.status(StatusCodes.OK).json({ bidId: null, bolUrl: null, signedBolUrl: null })
+    }
+
+    if ((load as any).bolKey) {
+      // Already generated for this load — just refresh the URL
+      const getCmd = new GetObjectCommand({ Bucket: S3_BUCKET, Key: (load as any).bolKey })
+      const freshBolUrl = await getSignedUrl(s3Client, getCmd, { expiresIn: TTL })
+      await LoadModel.findByIdAndUpdate(loadId, { bolUrl: freshBolUrl })
+      return res.status(StatusCodes.OK).json({ bidId: null, bolUrl: freshBolUrl, signedBolUrl: null })
+    }
+
+    // ── 3. Lazy-generate for the first time ──────────────────────────────────
+    try {
+      const bolResult = await generateAndStore(load as any, bid?._id?.toString() ?? null)
+      // Store on both Bid (if exists) and Load (fallback)
+      if (bid) {
+        await BidModel.findByIdAndUpdate(bid._id, { bolKey: bolResult.key, bolUrl: bolResult.url })
+      }
+      await LoadModel.findByIdAndUpdate(loadId, { bolKey: bolResult.key, bolUrl: bolResult.url })
+
+      return res.status(StatusCodes.OK).json({
+        bidId: bid?._id ?? null,
+        bolUrl: bolResult.url,
+        signedBolUrl: null,
+      })
+    } catch (err) {
+      console.error('[loadController] Lazy BOL generation failed:', err)
+      return res.status(StatusCodes.OK).json({ bidId: null, bolUrl: null, signedBolUrl: null })
+    }
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * POST /api/loads/:loadId/bol/signed
+ * Driver submits their signed/stamped Bill of Lading after delivery.
+ * Body: { s3Key: string } — the S3 key of the scanned signed BOL the driver
+ * already uploaded via the standard document upload pipeline.
+ *
+ * On success:
+ *  - Stores the signed BOL key/URL on the accepted bid.
+ *  - Notifies the company that the signed copy is ready to review.
+ */
+export const submitSignedBol = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const loadId = req.params.loadId as string
+    const driverId = req.user!._id
+
+    if (!isValidObjectId(loadId)) throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid loadId')
+
+    const { s3Key } = req.body as { s3Key?: string }
+    if (!s3Key) throw new ApiError(StatusCodes.BAD_REQUEST, 'Missing s3Key in request body')
+
+    const load = await LoadModel.findById(loadId).lean()
+    if (!load) throw new ApiError(StatusCodes.NOT_FOUND, 'Load not found')
+
+    // Only the assigned driver may submit
+    if (!load.assignedDriverId || load.assignedDriverId.toString() !== driverId) {
+      throw new ApiError(StatusCodes.FORBIDDEN, 'Only the assigned driver may submit the signed BOL')
+    }
+
+    const bid = await BidModel.findOne({
+      loadId: new Types.ObjectId(loadId),
+      status: BID_STATUSES.Accepted,
+    })
+    if (!bid) throw new ApiError(StatusCodes.NOT_FOUND, 'No accepted bid found for this load')
+
+    // Generate presigned URL for the uploaded signed document
+    const getCmd = new GetObjectCommand({ Bucket: S3_BUCKET, Key: s3Key })
+    const signedBolUrl = await getSignedUrl(s3Client, getCmd, { expiresIn: 7 * 24 * 3600 })
+
+    await BidModel.findByIdAndUpdate(bid._id, { signedBolKey: s3Key, signedBolUrl })
+
+    // Notify the company a signed BOL is ready for review
+    const { notifyBolSignedSubmitted } = await import('../services/notificationService')
+    const { DriverModel } = await import('../models/users/Driver')
+    const driver = await DriverModel.findOne({ firebaseUid: req.firebaseUid }).lean()
+    const driverName = (driver as any)?.name ?? 'Your driver'
+
+    await notifyBolSignedSubmitted(load.companyId.toString(), {
+      loadId,
+      bidId: bid._id.toString(),
+      driverName,
+      signedBolUrl,
+    })
+
+    res.status(StatusCodes.OK).json({ signedBolUrl })
   } catch (err) {
     next(err)
   }

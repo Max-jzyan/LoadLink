@@ -8,10 +8,11 @@ import { AUCTION_STATUSES, BID_STATUSES, LOAD_STATUSES } from '../models/enums'
 import { emitBidsUpdate, emitPriceUpdate } from '../events/auctionEvents'
 import { ApiError } from '../utils/ApiError'
 import { MS_PER_MINUTE, MS_PER_HOUR } from '../constants/auction'
-import { generateRateConfirmationPdf } from './pdfService'
+import { generateRateConfirmationPdf, generateBillOfLadingPdf } from './pdfService'
 import {
   notifyBidAccepted,
   notifyRateConfirmationReady,
+  notifyBolReady,
   notifyLoadClaimed,
 } from './notificationService'
 
@@ -238,6 +239,45 @@ export const acceptBid = async (loadId: string, bidId: string) => {
     console.error('[auctionService] Rate confirmation PDF generation failed:', err)
   }
 
+  // Generate Bill of Lading PDF (blank — driver prints and brings to pickup for shipper signature)
+  let bolUrl: string | null = null
+  try {
+    const load = await LoadModel.findById(loadId)
+      .populate<{ companyId: { companyName: string; businessAddress?: string; contactName?: string } }>('companyId')
+      .populate<{ assignedDriverId: { name: string; email: string; phone?: string } | null }>('assignedDriverId')
+      .lean()
+
+    if (load) {
+      const company = load.companyId as any
+      const driver = load.assignedDriverId as any
+      const bolResult = await generateBillOfLadingPdf({
+        loadId,
+        bidId,
+        shipperName: company?.companyName ?? 'Unknown Shipper',
+        shipperAddress: company?.businessAddress,
+        shipperContact: company?.contactName,
+        carrierName: company?.companyName ?? 'Unknown Carrier',
+        driverName: driver?.name ?? 'Unknown Driver',
+        driverPhone: driver?.phone,
+        originAddress: load.originAddress,
+        destinationAddress: load.destinationAddress,
+        commodity: load.commodity,
+        weightLbs: load.weightLbs,
+        currency: auction.currency ?? 'CAD',
+        pickupDate: new Date(load.pickupTime),
+        deliveryDate: new Date(load.dropoffTime),
+        issuedAt: new Date(),
+      })
+      bolUrl = bolResult.url
+      await BidModel.findByIdAndUpdate(bidId, {
+        bolKey: bolResult.key,
+        bolUrl: bolResult.url,
+      })
+    }
+  } catch (err) {
+    console.error('[auctionService] Bill of Lading PDF generation failed:', err)
+  }
+
   // Notify the driver their bid was accepted (includes RC download URL if available)
   await notifyBidAccepted(bid.driverId.toString(), {
     loadId,
@@ -253,11 +293,28 @@ export const acceptBid = async (loadId: string, bidId: string) => {
     })
   }
 
+  if (bolUrl) {
+    const driverIdStr = bid.driverId.toString()
+    // Notify driver (print & bring to pickup for shipper signature)
+    await notifyBolReady(driverIdStr, { loadId, bidId, url: bolUrl, isDriver: true })
+    // Notify company (for their records)
+    const load = await LoadModel.findById(loadId).lean()
+    if (load?.companyId) {
+      await notifyBolReady(load.companyId.toString(), {
+        loadId,
+        bidId,
+        url: bolUrl,
+        isDriver: false,
+      })
+    }
+  }
+
   return {
     loadId,
     driverId: bid.driverId.toString(),
     finalPayout: bid.amount,
     rateConfirmationUrl,
+    bolUrl,
   }
 }
 
@@ -413,6 +470,46 @@ export const claimLoad = async (
     console.error('[auctionService] Rate confirmation PDF generation failed (claim):', err)
   }
 
+  // Generate Bill of Lading PDF for claimed load
+  let bolUrl: string | null = null
+  try {
+    const loadForBol = await LoadModel.findById(loadId)
+      .populate<{ companyId: { companyName: string; businessAddress?: string; contactName?: string } }>('companyId')
+      .populate<{ assignedDriverId: { name: string; email: string; phone?: string } | null }>('assignedDriverId')
+      .lean()
+
+    if (loadForBol) {
+      const company = loadForBol.companyId as any
+      const driver = loadForBol.assignedDriverId as any
+      const bidIdStr = bid._id.toString()
+      const bolResult = await generateBillOfLadingPdf({
+        loadId,
+        bidId: bidIdStr,
+        shipperName: company?.companyName ?? 'Unknown Shipper',
+        shipperAddress: company?.businessAddress,
+        shipperContact: company?.contactName,
+        carrierName: driverNameForNotification,
+        driverName: driverNameForNotification,
+        driverPhone: driver?.phone,
+        originAddress: loadForBol.originAddress,
+        destinationAddress: loadForBol.destinationAddress,
+        commodity: loadForBol.commodity,
+        weightLbs: loadForBol.weightLbs,
+        currency: auction.currency ?? 'CAD',
+        pickupDate: new Date(loadForBol.pickupTime),
+        deliveryDate: new Date(loadForBol.dropoffTime),
+        issuedAt: new Date(),
+      })
+      bolUrl = bolResult.url
+      await BidModel.findByIdAndUpdate(bidIdStr, {
+        bolKey: bolResult.key,
+        bolUrl: bolResult.url,
+      })
+    }
+  } catch (err) {
+    console.error('[auctionService] Bill of Lading PDF generation failed (claim):', err)
+  }
+
   // Notify driver their claim succeeded (include RC link if generated)
   await notifyBidAccepted(driverId, {
     loadId,
@@ -428,6 +525,17 @@ export const claimLoad = async (
     })
   }
 
+  if (bolUrl) {
+    const bidIdStr = bid._id.toString()
+    await notifyBolReady(driverId, { loadId, bidId: bidIdStr, url: bolUrl, isDriver: true })
+    await notifyBolReady(auction.companyId.toString(), {
+      loadId,
+      bidId: bidIdStr,
+      url: bolUrl,
+      isDriver: false,
+    })
+  }
+
   // Notify the company their load was claimed
   await notifyLoadClaimed(auction.companyId.toString(), {
     loadId,
@@ -440,6 +548,7 @@ export const claimLoad = async (
     driverId: bid.driverId.toString(),
     finalPayout: auction.currentPrice,
     rateConfirmationUrl,
+    bolUrl,
   }
 }
 

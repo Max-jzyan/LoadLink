@@ -10,7 +10,8 @@ async function getPresignedUrl(
   idToken: string,
   firebaseUid: string,
   docType: UploadDocType,
-  file: File
+  file: File,
+  loadId?: string
 ) {
   const res = await fetch('/api/uploads/presign', {
     method: 'POST',
@@ -20,7 +21,13 @@ async function getPresignedUrl(
     },
     // firebaseUID used for local dev mode. when firebase admin credentials are set,
     // backend uses the verified uid instead of the one sent in the request body.
-    body: JSON.stringify({ firebaseUid, docType, fileName: file.name, contentType: file.type }),
+    body: JSON.stringify({
+      firebaseUid,
+      docType,
+      fileName: file.name,
+      contentType: file.type,
+      ...(loadId ? { loadId } : {}),
+    }),
   })
 
   if (!res.ok) {
@@ -38,12 +45,19 @@ export async function uploadDocuments(
   idToken: string,
   firebaseUid: string,
   docType: UploadDocType,
-  files: File[]
+  files: File[],
+  loadId?: string
 ): Promise<UploadedDocument[]> {
   const uploaded: UploadedDocument[] = []
 
   for (const file of files) {
-    const { uploadUrl, key, fileUrl } = await getPresignedUrl(idToken, firebaseUid, docType, file)
+    const { uploadUrl, key, fileUrl } = await getPresignedUrl(
+      idToken,
+      firebaseUid,
+      docType,
+      file,
+      loadId
+    )
 
     const putRes = await fetch(uploadUrl, {
       method: 'PUT',

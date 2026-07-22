@@ -109,6 +109,12 @@ const LoadSchema = new Schema(
       type: CheckInSchema,
       default: null,
     },
+
+    // Bill of Lading — stored on the load itself as a fallback for loads that
+    // were booked without going through the normal auction bid acceptance
+    // flow (e.g. seeded loads, or loads assigned directly by an admin).
+    bolKey: { type: String, default: null },
+    bolUrl: { type: String, default: null },
   },
   { timestamps: true }
 )

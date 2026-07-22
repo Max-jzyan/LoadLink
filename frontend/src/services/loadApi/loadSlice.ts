@@ -59,11 +59,41 @@ export const loadApi = api.injectEndpoints({
         acceptedAt: string | null
         rateConfirmationUrl: string | null
         rateConfirmationKey: string | null
+        bolKey: string | null
+        bolUrl: string | null
+        signedBolKey: string | null
+        signedBolUrl: string | null
       } | null,
       string
     >({
       query: (loadId) => `loads/${loadId}/accepted-bid`,
       providesTags: (_result, _error, loadId) => [{ type: LoadTag.Bid, id: `accepted-${loadId}` }],
+    }),
+
+    // GET /api/loads/:loadId/bol — returns fresh presigned URLs for the BOL and signed BOL
+    getBol: build.query<
+      {
+        bidId: string
+        bolUrl: string
+        signedBolUrl: string | null
+      },
+      string
+    >({
+      query: (loadId) => `loads/${loadId}/bol`,
+      providesTags: (_result, _error, loadId) => [{ type: LoadTag.Bid, id: `bol-${loadId}` }],
+    }),
+
+    // POST /api/loads/:loadId/bol/signed — driver submits signed BOL after delivery
+    submitSignedBol: build.mutation<{ signedBolUrl: string }, { loadId: string; s3Key: string }>({
+      query: ({ loadId, s3Key }) => ({
+        url: `loads/${loadId}/bol/signed`,
+        method: 'POST',
+        body: { s3Key },
+      }),
+      invalidatesTags: (_result, _error, { loadId }) => [
+        { type: LoadTag.Bid, id: `bol-${loadId}` },
+        { type: LoadTag.Bid, id: `accepted-${loadId}` },
+      ],
     }),
 
     // GET /api/company/:companyId/loads — list company loads, optionally filtered by driver, status, and/or excluding reviewed loads
@@ -210,6 +240,8 @@ export const {
   useListAvailableLoadsQuery,
   useGetLoadQuery,
   useGetAcceptedBidQuery,
+  useGetBolQuery,
+  useSubmitSignedBolMutation,
   useListCompanyLoadsQuery,
   useCreateLoadMutation,
   useCreateAuctionMutation,

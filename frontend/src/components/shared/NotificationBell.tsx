@@ -32,6 +32,8 @@ function resolveNotificationTarget(n: Notification): { path?: string; url?: stri
   const data = n.data as Record<string, unknown>
   const loadId = data?.loadId as string | undefined
   const rcUrl = data?.rateConfirmationUrl as string | undefined
+  const bolUrl = data?.bolUrl as string | undefined
+  const signedBolUrl = data?.signedBolUrl as string | undefined
 
   switch (n.type) {
     // Company receives these
@@ -55,6 +57,19 @@ function resolveNotificationTarget(n: Notification): { path?: string; url?: stri
     case NOTIFICATION_TYPES.RATE_CONFIRMATION_READY:
       if (rcUrl) return { url: rcUrl }
       return loadId ? { path: `${RoutePath.DriverAuctions}/${loadId}` } : null
+
+    // BOL_READY — sent to both driver AND company at booking
+    // Opens the PDF directly (same behaviour as Rate Confirmation)
+    case NOTIFICATION_TYPES.BOL_READY:
+      if (bolUrl) return { url: bolUrl }
+      return loadId ? { path: `/loads/${loadId}` } : null
+
+    // BOL_SIGNED_SUBMITTED — sent to company when driver submits signed copy
+    // Navigates to the load detail page where company can review it
+    case NOTIFICATION_TYPES.BOL_SIGNED_SUBMITTED:
+      if (signedBolUrl) return { url: signedBolUrl }
+      return loadId ? { path: `/loads/${loadId}` } : null
+
     case NOTIFICATION_TYPES.DOCUMENT_APPROVED:
     case NOTIFICATION_TYPES.DOCUMENT_REJECTED:
     case NOTIFICATION_TYPES.DOCUMENT_EXPIRING_SOON:

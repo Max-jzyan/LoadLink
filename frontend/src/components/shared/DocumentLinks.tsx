@@ -1,23 +1,25 @@
 import { useMemo } from 'react'
-import { useGetAcceptedBidQuery } from '@/services/loadApi/loadSlice'
+import { useGetAcceptedBidQuery, useGetBolQuery } from '@/services/loadApi/loadSlice'
 import { Button } from '@/components/ui/button'
-import { Download } from 'lucide-react'
+import { Download, FileText } from 'lucide-react'
 
 interface DocumentLinksProps {
   loadId: string
+  /** Pass true when the load is booked/in-transit/completed so the BOL query fires. */
+  isBooked?: boolean
 }
 
 interface Document {
   label: string
-  url: string | null
+  url: string
   icon?: React.ReactNode
 }
 
-export default function DocumentLinks({ loadId }: DocumentLinksProps) {
-  const { data: acceptedBid } = useGetAcceptedBidQuery(loadId, {
-    // Only fetch when component is mounted - DrawerShell handles mount/unmount
-    skip: !loadId,
-  })
+export default function DocumentLinks({ loadId, isBooked = true }: DocumentLinksProps) {
+  const { data: acceptedBid } = useGetAcceptedBidQuery(loadId, { skip: !loadId })
+
+  // BOL query fires for any booked/assigned load (also lazily generates on first fetch)
+  const { data: bolData } = useGetBolQuery(loadId, { skip: !loadId || !isBooked })
 
   const documents = useMemo<Document[]>(() => {
     const docs: Document[] = []
@@ -31,25 +33,37 @@ export default function DocumentLinks({ loadId }: DocumentLinksProps) {
       })
     }
 
-    // Future document types can be added here as the backend provides them
-    // e.g., Bill of Lading, Proof of Delivery, etc.
-    // if (acceptedBid?.billOfLadingUrl) {
-    //   docs.push({ label: 'Bill of Lading', url: acceptedBid.billOfLadingUrl })
-    // }
+    // Bill of Lading (blank — driver prints and brings to pickup)
+    if (bolData?.bolUrl) {
+      docs.push({
+        label: 'Bill of Lading',
+        url: bolData.bolUrl,
+        icon: <FileText className="h-3.5 w-3.5" />,
+      })
+    }
+
+    // Signed Bill of Lading (submitted by driver after delivery)
+    if (bolData?.signedBolUrl) {
+      docs.push({
+        label: 'Signed BOL',
+        url: bolData.signedBolUrl,
+        icon: <FileText className="h-3.5 w-3.5" />,
+      })
+    }
 
     return docs
-  }, [acceptedBid])
+  }, [acceptedBid, bolData])
 
   if (documents.length === 0) {
     return <span className="text-sm text-muted-foreground">No documents available</span>
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-wrap gap-2">
       {documents.map((doc) => (
         <a
           key={doc.label}
-          href={doc.url!}
+          href={doc.url}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex"

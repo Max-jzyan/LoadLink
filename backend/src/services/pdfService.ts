@@ -491,3 +491,416 @@ export const generateRateConfirmationPdf = async (
 
   return { key, url }
 }
+
+// ── Bill of Lading ────────────────────────────────────────────────────────────
+
+export interface BillOfLadingData {
+  // ── Identity
+  loadId: string
+  bidId: string
+  bolNumber?: string // auto-generated if absent
+
+  // ── Shipper (Company / Origin)
+  shipperName: string
+  shipperAddress?: string
+  shipperCity?: string
+  shipperContact?: string
+  shipperPhone?: string
+
+  // ── Consignee (Destination) — falls back to destinationAddress if not supplied
+  consigneeName?: string
+  consigneeAddress?: string
+  consigneeCity?: string
+  consigneeContact?: string
+  consigneePhone?: string
+
+  // ── Carrier / Driver
+  carrierName: string
+  driverName: string
+  driverPhone?: string
+  mcNumber?: string
+  dotNumber?: string
+  truckNumber?: string
+  trailerNumber?: string
+
+  // ── Freight
+  commodity: string
+  weightLbs: number
+  pieceCount?: number
+  freightClass?: string // NMFC freight class e.g. "70"
+  nmfcNumber?: string
+  packageType?: string // Pallet, Box, Drum, etc.
+  hazmat?: boolean
+  declaredValue?: number
+  currency: string
+
+  // ── Routing
+  originAddress: string
+  originCity?: string
+  destinationAddress: string
+  destinationCity?: string
+  pickupDate: Date
+  deliveryDate: Date
+
+  // ── Special handling
+  tempRequirement?: string
+  specialInstructions?: string
+  sealNumber?: string
+  poNumber?: string
+
+  // ── Meta
+  issuedAt: Date
+}
+
+export const generateBillOfLadingPdf = async (
+  data: BillOfLadingData
+): Promise<{ key: string; url: string }> => {
+  const pdfDoc = await PDFDocument.create()
+  const page = pdfDoc.addPage([PW, PH])
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  const reg = await pdfDoc.embedFont(StandardFonts.Helvetica)
+
+  const ctx: Ctx = { page, bold, reg, y: PH - ML }
+
+  // ── HEADER BAND ─────────────────────────────────────────────────────────────
+  page.drawRectangle({ x: 0, y: PH - 60, width: PW, height: 60, color: BRAND })
+
+  let brandX = ML
+  try {
+    const logoPngPath = path.resolve(__dirname, '../templates/logo.png')
+    const logoPngBytes = fs.readFileSync(logoPngPath)
+    const logoImage = await pdfDoc.embedPng(logoPngBytes)
+    const LOGO_SIZE = 40
+    page.drawImage(logoImage, {
+      x: ML,
+      y: PH - 60 + (60 - LOGO_SIZE) / 2,
+      width: LOGO_SIZE,
+      height: LOGO_SIZE,
+    })
+    brandX = ML + LOGO_SIZE + 6
+  } catch {
+    // no logo — render without it
+  }
+
+  page.drawText('LoadLink', { x: brandX, y: PH - 24, size: 18, font: bold, color: WHITE })
+  page.drawText('Automated Freight Platform', {
+    x: brandX,
+    y: PH - 38,
+    size: SMALL,
+    font: reg,
+    color: rgb(0.75, 0.85, 1),
+  })
+
+  // Centre: BOL title + number
+  const bolNum = data.bolNumber ?? `BOL-${data.loadId.slice(-6).toUpperCase()}`
+  page.drawText('BILL OF LADING', { x: 205, y: PH - 22, size: HEAD, font: bold, color: WHITE })
+  page.drawText(`BOL #: ${bolNum}`, { x: 205, y: PH - 36, size: SMALL, font: reg, color: WHITE })
+  if (data.poNumber) {
+    page.drawText(`P.O. #: ${data.poNumber}`, {
+      x: 205,
+      y: PH - 48,
+      size: SMALL,
+      font: reg,
+      color: WHITE,
+    })
+  }
+
+  // Right: date + load ref
+  const dateStr = data.issuedAt.toLocaleDateString('en-CA', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+  page.drawText(`Date: ${dateStr}`, { x: 430, y: PH - 22, size: SMALL, font: reg, color: WHITE })
+  page.drawText(`Load Ref: ${data.loadId.slice(-10).toUpperCase()}`, {
+    x: 430,
+    y: PH - 34,
+    size: SMALL,
+    font: reg,
+    color: WHITE,
+  })
+  if (data.truckNumber) {
+    page.drawText(`Truck: ${data.truckNumber}`, {
+      x: 430,
+      y: PH - 46,
+      size: SMALL,
+      font: reg,
+      color: WHITE,
+    })
+  }
+
+  ctx.y = PH - 70
+
+  // ── NOTICE BAR ───────────────────────────────────────────────────────────────
+  text(
+    ctx,
+    'RECEIVED, subject to the terms and conditions set forth below, to be delivered to the consignee named herein.',
+    ML,
+    { size: SMALL, color: GRAY }
+  )
+  ctx.y -= LH
+
+  // ── PARTIES (3-column: Shipper | Consignee | Carrier) ────────────────────────
+  hRule(ctx, RULE_HEAVY, BRAND)
+  ctx.y += 2
+
+  const partW = (MR - ML - 8) / 3
+  const col2Start = ML + partW + 4
+  const col3Start = ML + 2 * (partW + 4)
+
+  // Column headers
+  page.drawRectangle({ x: ML, y: ctx.y - 2, width: partW, height: LH + 4, color: BRAND })
+  page.drawRectangle({ x: col2Start, y: ctx.y - 2, width: partW, height: LH + 4, color: BRAND })
+  page.drawRectangle({ x: col3Start, y: ctx.y - 2, width: partW, height: LH + 4, color: BRAND })
+  text(ctx, 'SHIPPER / ORIGIN', ML + 4, { size: SUB, font: bold, color: WHITE })
+  text(ctx, 'CONSIGNEE / DESTINATION', col2Start + 4, { size: SUB, font: bold, color: WHITE })
+  text(ctx, 'CARRIER INFORMATION', col3Start + 4, { size: SUB, font: bold, color: WHITE })
+  ctx.y -= LH + 6
+
+  // Row 1
+  text(ctx, data.shipperName, ML, { font: bold, size: BODY, color: DARK })
+  const resolvedConsAddr = data.consigneeAddress ?? data.destinationAddress
+  text(ctx, data.consigneeName ?? resolvedConsAddr.split(',')[0], col2Start, {
+    font: bold,
+    size: BODY,
+    color: DARK,
+  })
+  text(ctx, data.carrierName, col3Start, { font: bold, size: BODY, color: DARK })
+  ctx.y -= LH
+
+  // Row 2 — addresses
+  const shipAddr = data.shipperAddress ?? data.originAddress
+  const shipAddrShort = shipAddr.length > 28 ? shipAddr.slice(0, 26) + '…' : shipAddr
+  text(ctx, shipAddrShort, ML, { size: SMALL, color: DARK })
+  const consAddr = resolvedConsAddr
+  const consAddrShort = consAddr.length > 28 ? consAddr.slice(0, 26) + '…' : consAddr
+  text(ctx, consAddrShort, col2Start, { size: SMALL, color: DARK })
+  text(ctx, `Driver: ${data.driverName}`, col3Start, { size: SMALL, color: DARK })
+  ctx.y -= LH
+
+  // Row 3 — city / contact / phone
+  const shipCity = data.shipperCity ?? ''
+  if (shipCity) text(ctx, shipCity, ML, { size: SMALL, color: GRAY })
+  const consCity = data.consigneeCity ?? ''
+  if (consCity) text(ctx, consCity, col2Start, { size: SMALL, color: GRAY })
+  if (data.driverPhone)
+    text(ctx, `Ph: ${data.driverPhone}`, col3Start, { size: SMALL, color: GRAY })
+  ctx.y -= LH
+
+  // Row 4 — contact names + carrier numbers
+  if (data.shipperContact)
+    text(ctx, `Contact: ${data.shipperContact}`, ML, { size: SMALL, color: GRAY })
+  if (data.consigneeContact)
+    text(ctx, `Contact: ${data.consigneeContact}`, col2Start, { size: SMALL, color: GRAY })
+  if (data.mcNumber)
+    text(ctx, `MC #: ${data.mcNumber}`, col3Start, { size: SMALL, color: GRAY })
+  ctx.y -= LH
+
+  // Row 5 — phone + DOT
+  if (data.shipperPhone)
+    text(ctx, `Ph: ${data.shipperPhone}`, ML, { size: SMALL, color: GRAY })
+  if (data.consigneePhone)
+    text(ctx, `Ph: ${data.consigneePhone}`, col2Start, { size: SMALL, color: GRAY })
+  if (data.dotNumber)
+    text(ctx, `DOT #: ${data.dotNumber}`, col3Start, { size: SMALL, color: GRAY })
+  ctx.y -= LH + 2
+
+  // Pickup / Delivery dates row
+  const pickupStr = data.pickupDate.toLocaleDateString('en-CA', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+  const delivStr = data.deliveryDate.toLocaleDateString('en-CA', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+  text(ctx, `Pickup: ${pickupStr}`, ML, { font: bold, size: SMALL, color: DARK })
+  text(ctx, `Delivery: ${delivStr}`, col2Start, { font: bold, size: SMALL, color: DARK })
+  if (data.trailerNumber)
+    text(ctx, `Trailer #: ${data.trailerNumber}`, col3Start, { size: SMALL, color: GRAY })
+  ctx.y -= LH + 4
+
+  // ── FREIGHT DESCRIPTION TABLE ─────────────────────────────────────────────────
+  hRule(ctx, RULE_HEAVY, BRAND)
+  ctx.y += 2
+  sectionHeader(ctx, 'FREIGHT DESCRIPTION')
+
+  // Table header row
+  const tCols = {
+    qty: ML,
+    pkgType: ML + 45,
+    desc: ML + 110,
+    weight: ML + 290,
+    cls: ML + 360,
+    hazmat: ML + 410,
+    value: ML + 460,
+  }
+  page.drawRectangle({ x: ML, y: ctx.y - 2, width: MR - ML, height: LH + 3, color: LGRAY })
+  const thOpts = { size: SMALL, font: bold, color: GRAY }
+  text(ctx, 'QTY', tCols.qty, thOpts)
+  text(ctx, 'PKG TYPE', tCols.pkgType, thOpts)
+  text(ctx, 'DESCRIPTION / COMMODITY', tCols.desc, thOpts)
+  text(ctx, 'WEIGHT', tCols.weight, thOpts)
+  text(ctx, 'CLASS', tCols.cls, thOpts)
+  text(ctx, 'HM', tCols.hazmat, thOpts)
+  text(ctx, 'DECL. VALUE', tCols.value, thOpts)
+  ctx.y -= LH + 4
+
+  // Single freight line
+  const qty = data.pieceCount != null ? String(data.pieceCount) : '1'
+  const pkgType = data.packageType ?? 'Pallet'
+  const descStr =
+    data.commodity.length > 26 ? data.commodity.slice(0, 24) + '…' : data.commodity
+  const wtStr = `${data.weightLbs.toLocaleString()} lbs`
+  const clsStr = data.freightClass ?? '—'
+  const hmStr = data.hazmat ? 'Y' : 'N'
+  const valStr =
+    data.declaredValue != null
+      ? `${data.currency} $${data.declaredValue.toFixed(2)}`
+      : 'No Decl.'
+
+  text(ctx, qty, tCols.qty, { size: BODY })
+  text(ctx, pkgType, tCols.pkgType, { size: BODY })
+  text(ctx, descStr, tCols.desc, { size: BODY })
+  text(ctx, wtStr, tCols.weight, { size: BODY })
+  text(ctx, clsStr, tCols.cls, { size: BODY })
+  text(ctx, hmStr, tCols.hazmat, { size: BODY, color: data.hazmat ? rgb(0.8, 0.1, 0.1) : DARK })
+  text(ctx, valStr, tCols.value, { size: BODY })
+  ctx.y -= LH
+
+  // NMFC line if supplied
+  if (data.nmfcNumber) {
+    text(ctx, `NMFC Item #: ${data.nmfcNumber}`, tCols.desc, { size: SMALL, color: GRAY })
+    ctx.y -= LH
+  }
+  ctx.y -= 2
+
+  // Weight totals row
+  page.drawRectangle({ x: ML, y: ctx.y - 3, width: MR - ML, height: LH + 3, color: rgb(0.92, 0.95, 1) })
+  text(ctx, 'Total Weight:', tCols.weight - 60, { font: bold, size: BODY, color: BRAND })
+  text(ctx, `${data.weightLbs.toLocaleString()} lbs`, tCols.weight, {
+    font: bold,
+    size: BODY,
+    color: BRAND,
+  })
+  ctx.y -= LH + 8
+
+  // ── SPECIAL INSTRUCTIONS & SEAL ──────────────────────────────────────────────
+  hRule(ctx, RULE_LIGHT)
+  sectionHeader(ctx, 'SPECIAL INSTRUCTIONS & HANDLING')
+
+  const instrCols = { left: ML, right: ML + (MR - ML) / 2 + 4 }
+
+  // Seal number box (left)
+  text(ctx, 'Seal Number:', instrCols.left, { font: bold, size: BODY })
+  text(ctx, data.sealNumber ?? '___________________', instrCols.left + 80, { size: BODY })
+  // Temp req (right)
+  text(ctx, 'Temp Requirement:', instrCols.right, { font: bold, size: BODY })
+  text(ctx, data.tempRequirement ?? 'N/A', instrCols.right + 110, { size: BODY })
+  ctx.y -= LH + 2
+
+  if (data.specialInstructions) {
+    text(ctx, 'Instructions:', instrCols.left, { font: bold, size: BODY })
+    ctx.y -= LH
+    wrappedText(ctx, data.specialInstructions, instrCols.left + 10, {
+      size: SMALL,
+      color: DARK,
+      maxWidth: MR - instrCols.left - 10,
+    })
+  } else {
+    text(ctx, 'No special instructions.', instrCols.left, { size: SMALL, color: GRAY })
+    ctx.y -= LH
+  }
+  ctx.y -= 4
+
+  // ── LEGAL / TERMS ─────────────────────────────────────────────────────────────
+  hRule(ctx, RULE_LIGHT)
+  text(ctx, 'TERMS & CONDITIONS', ML, { font: bold, size: SMALL, color: BRAND })
+  ctx.y -= LH
+
+  const bolTerms = [
+    'This Bill of Lading constitutes the entire agreement between the Shipper and Carrier for the transportation of the above-described freight.',
+    'Carrier liability is limited per the Carmack Amendment (49 U.S.C. §14706) for US shipments, or applicable provincial Highway Traffic Acts for Canadian shipments, unless a higher Declared Value is stated above.',
+    'Hazardous materials, if any (marked "Y" in HM column), must comply with all applicable transport regulations (49 CFR / TDG Act). Carrier must possess all required permits prior to acceptance.',
+    'Claims for loss or damage must be filed within 9 months of delivery or refusal date.',
+  ]
+  for (const term of bolTerms) {
+    ctx.y -= 2
+    wrappedText(ctx, `- ${term}`, ML + 8, { size: SMALL, color: GRAY, maxWidth: MR - ML - 8 })
+  }
+  ctx.y -= 4
+
+  // ── CERTIFICATION & SIGNATURES ────────────────────────────────────────────────
+  hRule(ctx, RULE_HEAVY, BRAND)
+  ctx.y += 2
+  sectionHeader(ctx, 'CERTIFICATION & SIGNATURES')
+
+  const sigW = (MR - ML - 20) / 2
+  const sigCol2 = ML + sigW + 20
+
+  // Shipper cert text
+  wrappedText(
+    ctx,
+    'SHIPPER CERTIFIES that the above-named materials are properly classified, described, packaged, marked and labelled, and are in proper condition for transportation.',
+    ML,
+    { size: SMALL, color: GRAY, maxWidth: sigW }
+  )
+  ctx.y -= 4
+
+  // Carrier cert text (right column — reset y to align)
+  const shipperSigY = ctx.y
+  ctx.y = ctx.y + 22 // go back up to draw beside shipper text
+  wrappedText(
+    ctx,
+    'CARRIER acknowledges receipt of the packages and required placards. Carrier certifies emergency response information was made available.',
+    sigCol2,
+    { size: SMALL, color: GRAY, maxWidth: sigW }
+  )
+  ctx.y = shipperSigY // restore
+
+  ctx.y -= 4
+
+  // Signature lines for Shipper and Carrier
+  page.drawLine({ start: { x: ML, y: ctx.y }, end: { x: ML + sigW, y: ctx.y }, thickness: 0.5, color: DARK })
+  page.drawLine({ start: { x: sigCol2, y: ctx.y }, end: { x: sigCol2 + sigW, y: ctx.y }, thickness: 0.5, color: DARK })
+  ctx.y -= LH - 2
+  text(ctx, 'Shipper Signature & Date', ML, { size: SMALL, color: GRAY })
+  text(ctx, 'Carrier / Driver Signature & Date', sigCol2, { size: SMALL, color: GRAY })
+  ctx.y -= LH + 4
+
+  // Received in good condition line
+  page.drawLine({ start: { x: ML, y: ctx.y }, end: { x: MR, y: ctx.y }, thickness: 0.5, color: DARK })
+  ctx.y -= LH - 2
+  text(
+    ctx,
+    'Consignee: Received above freight in apparent good condition except as noted. Date: ___________________  Signature: ___________________________',
+    ML,
+    { size: SMALL, color: GRAY }
+  )
+
+  // ── Footer ───────────────────────────────────────────────────────────────────
+  page.drawText(
+    `Generated by LoadLink · ${data.issuedAt.toISOString()} · ${bolNum}`,
+    { x: ML, y: 20, size: 7, font: reg, color: LGRAY }
+  )
+
+  // ── Serialize & upload to S3 ─────────────────────────────────────────────────
+  const pdfBytes = await pdfDoc.save()
+  const key = `billoflading/${data.loadId}/bol_${data.bidId}.pdf`
+
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: key,
+      Body: Buffer.from(pdfBytes),
+      ContentType: 'application/pdf',
+    })
+  )
+
+  const getCmd = new GetObjectCommand({ Bucket: S3_BUCKET, Key: key })
+  const url = await getSignedUrl(s3Client, getCmd, { expiresIn: 7 * 24 * 3600 })
+
+  return { key, url }
+}

@@ -53,6 +53,30 @@ const BidSchema = new Schema(
       type: String,
       default: null,
     },
+
+    // S3 key for the Bill of Lading PDF (set alongside rate confirmation)
+    bolKey: {
+      type: String,
+      default: null,
+    },
+
+    // Presigned URL for the BOL (short-lived; re-generated on demand)
+    bolUrl: {
+      type: String,
+      default: null,
+    },
+
+    // S3 key for the SIGNED Bill of Lading uploaded by the driver after delivery
+    signedBolKey: {
+      type: String,
+      default: null,
+    },
+
+    // Presigned URL for the signed BOL
+    signedBolUrl: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 )
