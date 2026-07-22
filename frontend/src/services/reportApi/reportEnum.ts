@@ -44,3 +44,23 @@ export interface CreateReportPayload {
   category: string
   description: string
 }
+
+/** Minimal user info populated onto admin report rows */
+export interface ReportUserRef {
+  _id: string
+  name: string
+  email: string
+  role: string
+}
+
+/** Report as returned by the admin listing endpoint — reporterId/targetId populated */
+export interface AdminReport extends Omit<Report, 'reporterId' | 'targetId'> {
+  reporterId: ReportUserRef | null
+  targetId: ReportUserRef | null
+}
+
+export interface UpdateReportStatusPayload {
+  reportId: string
+  status: ReportStatus
+  adminId?: string
+}

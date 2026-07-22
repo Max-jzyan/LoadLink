@@ -16,6 +16,7 @@ export const NOTIFICATION_TYPES = {
   DOCUMENT_EXPIRED: 'document_expired',
   MESSAGE_RECEIVED: 'message_received',
   DRIVER_CHECKED_IN: 'driver_checked_in',
+  REPORT_STATUS_UPDATED: 'report_status_updated',
 } as const
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES]

@@ -14,6 +14,7 @@ import { BidModel } from '../models/loads/Bid'
 import { LoadModel } from '../models/loads/Load'
 import { UserModel } from '../models/users/User'
 import { ApiError } from '../utils/ApiError'
+import { notifyReportStatusUpdated } from './notificationService'
 
 const assertValidId = (id: string, label: string) => {
   if (!isValidObjectId(id)) {
@@ -41,9 +42,7 @@ const ASSIGNED_LOAD_STATUSES = [
   LOAD_STATUSES.Completed,
 ]
 
-export const getReportableCollaborators = async (
-  userId: string
-): Promise<ReportCollaborator[]> => {
+export const getReportableCollaborators = async (userId: string): Promise<ReportCollaborator[]> => {
   assertValidId(userId, 'userId')
 
   const uid = new Types.ObjectId(userId)
@@ -349,6 +348,12 @@ export const updateReportStatus = async (
   if (!report) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Report not found')
   }
+
+  await notifyReportStatusUpdated(report.reporterId.toString(), {
+    reportId: report._id.toString(),
+    targetName: report.targetName,
+    status: report.status,
+  })
 
   return report
 }

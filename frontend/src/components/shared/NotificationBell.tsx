@@ -3,8 +3,10 @@ import { Button } from '@/components/ui/button'
 import DrawerShell from '@/components/layout/DrawerShell'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
+import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import {
+  notificationApi,
   useGetUnreadCountQuery,
   useListNotificationsQuery,
   useMarkAsReadMutation,
@@ -66,6 +68,8 @@ function resolveNotificationTarget(n: Notification): { path?: string; url?: stri
     // Either role receives these — the Messages archive lists the thread
     case NOTIFICATION_TYPES.MESSAGE_RECEIVED:
       return { path: RoutePath.Messages }
+    case NOTIFICATION_TYPES.REPORT_STATUS_UPDATED:
+      return { path: RoutePath.Report }
 
     default:
       return null
@@ -160,9 +164,7 @@ function NotificationItem({
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false)
-
-  // Track unread count statefully (handles SSE updates)
-  const [unreadCount, setUnreadCount] = useState(0)
+  const dispatch = useDispatch()
 
   // SSE stream for real-time notifications (always active for authenticated users)
   const { data: streamData } = useStreamNotificationsQuery(undefined, {
@@ -186,27 +188,22 @@ export default function NotificationBell() {
   const [markAllAsRead] = useMarkAllAsReadMutation()
   const [deleteNotification] = useDeleteNotificationMutation()
 
-  // Handle SSE stream updates: can be unread count or notification
+  // Patch the getUnreadCount cache directly so the badge has one source of truth.
   useEffect(() => {
     if (!streamData) return
 
-    // SSE updates are now handled in the slice for proper cache updates
-    // This effect only handles the badge count state
-    if (isNotification(streamData)) {
-      // Increment the badge count
-      setUnreadCount((prev) => prev + 1)
-    } else {
-      // It's an unread count update
-      setUnreadCount(streamData!.unreadCount)
-    }
-  }, [streamData])
+    dispatch(
+      notificationApi.util.updateQueryData('getUnreadCount', undefined, (draft) => {
+        if (isNotification(streamData)) {
+          draft.unreadCount += 1
+        } else {
+          draft.unreadCount = streamData.unreadCount
+        }
+      })
+    )
+  }, [streamData, dispatch])
 
-  // Sync with initial query data on mount
-  useEffect(() => {
-    if (countData?.unreadCount !== undefined) {
-      setUnreadCount(countData.unreadCount)
-    }
-  }, [countData])
+  const unreadCount = countData?.unreadCount ?? 0
 
   // Refetch list when drawer opens
   useEffect(() => {

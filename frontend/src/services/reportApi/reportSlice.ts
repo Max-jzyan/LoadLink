@@ -1,7 +1,15 @@
 import { getHttpErrorMessage, showError, showSuccess, getErrorStatus } from '@/lib/toast'
 import { api } from '../api'
 import { LoadTag } from '../apiTypes'
-import type { CreateReportPayload, Report, ReportCollaborator, ReportableLoad } from './reportEnum'
+import type {
+  AdminReport,
+  CreateReportPayload,
+  Report,
+  ReportCollaborator,
+  ReportableLoad,
+  ReportStatus,
+  UpdateReportStatusPayload,
+} from './reportEnum'
 
 /** Prefer the backend's { message } body over the generic status text */
 const getServerErrorMessage = (error: unknown, fallbackStatus: number) => {
@@ -48,6 +56,30 @@ export const reportApi = api.injectEndpoints({
         }
       },
     }),
+
+    // GET /api/reports?status= — admin view of all reports across users
+    getAllReports: build.query<AdminReport[], { status?: ReportStatus } | void>({
+      query: (args) => `reports${args?.status ? `?status=${args.status}` : ''}`,
+      providesTags: [{ type: LoadTag.Report, id: 'ADMIN_LIST' }],
+    }),
+
+    // PATCH /api/reports/:reportId/status — admin resolves/dismisses/reopens a report
+    updateReportStatus: build.mutation<AdminReport, UpdateReportStatusPayload>({
+      query: ({ reportId, status, adminId }) => ({
+        url: `reports/${reportId}/status`,
+        method: 'PATCH',
+        body: { status, adminId },
+      }),
+      invalidatesTags: [{ type: LoadTag.Report, id: 'ADMIN_LIST' }],
+      async onQueryStarted(_arg, { queryFulfilled }) {
+        try {
+          await queryFulfilled
+          showSuccess('Report status updated')
+        } catch (error) {
+          showError(getServerErrorMessage(error, getErrorStatus(error)))
+        }
+      },
+    }),
   }),
   overrideExisting: false,
 })
@@ -57,4 +89,6 @@ export const {
   useGetReportCollaboratorsQuery,
   useGetReportableLoadsQuery,
   useCreateReportMutation,
+  useGetAllReportsQuery,
+  useUpdateReportStatusMutation,
 } = reportApi

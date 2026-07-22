@@ -5,6 +5,7 @@ import {
   NOTIFICATION_TYPES,
   type NotificationType,
 } from '../models/notifications/Notification'
+import type { ReportStatus } from '../models/reports/Report'
 import { ApiError } from '../utils/ApiError'
 import { emitNotification } from '../events/notificationEvents'
 
@@ -120,6 +121,24 @@ export const notifyDriverCheckedIn = (
     title: 'Driver checked in',
     message: `${opts.driverName} has checked in for load #${opts.loadId.slice(-6).toUpperCase()} (${opts.commodity}).`,
     data: { loadId: opts.loadId, coords: opts.coords, checkedInAt: opts.checkedInAt.toISOString() },
+  })
+
+const REPORT_STATUS_MESSAGES: Record<ReportStatus, string> = {
+  resolved: 'has been reviewed and resolved',
+  dismissed: 'has been reviewed and dismissed',
+  under_review: 'has been reopened for review',
+}
+
+export const notifyReportStatusUpdated = (
+  reporterUserId: string,
+  opts: { reportId: string; targetName: string; status: ReportStatus }
+) =>
+  createNotification({
+    userId: reporterUserId,
+    type: NOTIFICATION_TYPES.REPORT_STATUS_UPDATED,
+    title: 'Report status updated',
+    message: `Your report about ${opts.targetName} ${REPORT_STATUS_MESSAGES[opts.status]}.`,
+    data: { reportId: opts.reportId, status: opts.status },
   })
 
 export const notifyDocumentUploaded = (

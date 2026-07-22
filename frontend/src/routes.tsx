@@ -25,6 +25,7 @@ import Test from '@/pages/Test'
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminDocuments from '@/pages/admin/AdminDocuments'
 import AdminRateConfirmations from '@/pages/admin/AdminRateConfirmations'
+import AdminReports from '@/pages/admin/AdminReports'
 import AdminUsers from '@/pages/admin/AdminUsers'
 import { selectRole } from '@/services/authSlice'
 import { useSelector } from 'react-redux'
@@ -163,6 +164,14 @@ export default function AppRoutes() {
         element={
           <RoleRoute path={RoutePath.AdminRateConfirmations}>
             <AdminRateConfirmations />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path={RoutePath.AdminReports}
+        element={
+          <RoleRoute path={RoutePath.AdminReports}>
+            <AdminReports />
           </RoleRoute>
         }
       />
