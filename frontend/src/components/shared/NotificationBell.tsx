@@ -55,6 +55,8 @@ function resolveNotificationTarget(n: Notification): { path?: string; url?: stri
       return loadId ? { path: `${RoutePath.DriverAuctions}/${loadId}` } : null
     case NOTIFICATION_TYPES.DOCUMENT_APPROVED:
     case NOTIFICATION_TYPES.DOCUMENT_REJECTED:
+    case NOTIFICATION_TYPES.DOCUMENT_EXPIRING_SOON:
+    case NOTIFICATION_TYPES.DOCUMENT_EXPIRED:
       return { path: RoutePath.DriverProfile }
 
     // Admin receives these

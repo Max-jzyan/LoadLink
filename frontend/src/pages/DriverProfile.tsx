@@ -23,6 +23,7 @@ import Spinner from '@/components/shared/Spinner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRequiredMongoId } from '@/hooks/useAuth'
 import type { ScoreWeights, Trailer, Truck } from '@/services/driverApi/driverEnum'
+import { useDriverExpiryBanner } from '@/hooks/useDriverExpiryBanner'
 import {
   useCreateTruckMutation,
   useGetDriverProfileQuery,
@@ -86,6 +87,12 @@ export default function DriverProfile() {
 
   // Score weights drawer state
   const [scoreWeightsDrawerOpen, setScoreWeightsDrawerOpen] = useState(false)
+
+  // Expiry banner — must be called unconditionally (Rules of Hooks)
+  const expiryBanner = useDriverExpiryBanner({
+    driverId,
+    onUpdateClick: () => setDriverInfoDrawerOpen(true),
+  })
 
   // Close driver info drawer when profile update succeeds
   useEffect(() => {
@@ -268,6 +275,7 @@ export default function DriverProfile() {
   return (
     <PageShell
       title="My Profile"
+      banner={expiryBanner}
       tabs={{
         options: [
           { value: 'profile', label: 'Profile' },

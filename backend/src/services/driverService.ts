@@ -25,7 +25,7 @@ const withViewableUrls = async (
   }
 
   const certificationDocuments = driver.certificationDocuments as
-    | { name: string; url: string; key: string; uploadedAt: string }[]
+    | { name: string; url: string; key: string; uploadedAt: string; expiresAt?: string | null; verificationStatus?: string; reviewNotes?: string }[]
     | undefined
   if (certificationDocuments?.length) {
     driver.certificationDocuments = await Promise.all(

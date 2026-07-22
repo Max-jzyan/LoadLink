@@ -7,6 +7,7 @@ export interface CertificationDocument {
   url: string
   key: string
   uploadedAt: string
+  expiresAt?: string | null
   verificationStatus?: DocVerificationStatus
   reviewNotes?: string
 }

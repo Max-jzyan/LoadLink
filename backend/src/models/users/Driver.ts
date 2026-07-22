@@ -63,6 +63,7 @@ const CertificationDocumentSchema = new Schema(
     url: { type: String, required: true },
     key: { type: String, required: true },
     uploadedAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date, default: null },
     verificationStatus: {
       type: String,
       enum: DOC_VERIFICATION_STATUSES,

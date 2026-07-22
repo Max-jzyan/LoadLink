@@ -1,10 +1,16 @@
-import { HydratedDocument } from 'mongoose'
+import { HydratedDocument, Types } from 'mongoose'
 import { AuctionModel, IAuction } from '../models/loads/Auction'
 import { BidModel } from '../models/loads/Bid'
 import { LoadModel } from '../models/loads/Load'
 import { AUCTION_STATUSES, BID_STATUSES, LOAD_STATUSES } from '../models/enums'
 import { emitBidsAndPrice, settleAuctionWithBid } from './auctionService'
 import { HEARTBEAT_INTERVAL_MS, MS_PER_HOUR } from '../constants/auction'
+import { DriverModel } from '../models/users/Driver'
+import { NotificationModel, NOTIFICATION_TYPES } from '../models/notifications/Notification'
+import {
+  notifyDocumentExpiringSoon,
+  notifyDocumentExpired,
+} from './notificationService'
 
 // Convenience alias -> AI helped with this
 type AuctionDoc = HydratedDocument<IAuction>
@@ -162,5 +168,130 @@ export const startHeartbeat = (): (() => void) => {
   return () => {
     clearInterval(timer)
     console.log('[debugging heartbeat] Stopped')
+  }
+}
+
+// ── Document expiry scanner ───────────────────────────────────────────────────
+
+const EXPIRY_WARN_DAYS = 30
+const EXPIRY_CHECK_INTERVAL_MS = 24 * MS_PER_HOUR
+/** Re-notify at most once per 23h to survive server restarts without double-firing */
+const NOTIFY_DEDUP_MS = 23 * MS_PER_HOUR
+
+/**
+ * Check whether a notification of the given type was already sent to `userId`
+ * within the last NOTIFY_DEDUP_MS milliseconds.
+ */
+const recentlyNotified = async (
+  userId: string,
+  type: string
+): Promise<boolean> => {
+  const since = new Date(Date.now() - NOTIFY_DEDUP_MS)
+  const exists = await NotificationModel.exists({
+    userId: new Types.ObjectId(userId),
+    type,
+    createdAt: { $gte: since },
+  })
+  return !!exists
+}
+
+/**
+ * Scan every driver's insurance certs + certification documents for
+ * upcoming or already-expired documents and fire a single per-driver
+ * notification per category (expiring-soon / expired).
+ */
+const runExpiryCheck = async (): Promise<void> => {
+  const now = new Date()
+  const warnCutoff = new Date(now.getTime() + EXPIRY_WARN_DAYS * 24 * MS_PER_HOUR)
+
+  // Only load drivers who have *any* document with an expiresAt set
+  const drivers = await DriverModel.find({
+    $or: [
+      { 'insuranceCertificates.expiresAt': { $ne: null, $exists: true } },
+      { 'certificationDocuments.expiresAt': { $ne: null, $exists: true } },
+    ],
+  })
+    .select('_id insuranceCertificates certificationDocuments')
+    .lean()
+
+  for (const driver of drivers) {
+    const driverId = (driver._id as Types.ObjectId).toString()
+
+    // Build flat list of { name, expiresAt } across both doc types
+    const allDocs: { name: string; expiresAt: Date }[] = [
+      ...((driver.insuranceCertificates ?? [])
+        .filter((c) => c.expiresAt)
+        .map((c) => ({ name: `Insurance (${(c as any).insurer ?? 'cert'})`, expiresAt: new Date(c.expiresAt as Date) }))),
+      ...((driver.certificationDocuments ?? [])
+        .filter((d) => (d as any).expiresAt)
+        .map((d) => ({ name: d.name, expiresAt: new Date((d as any).expiresAt) }))),
+    ]
+
+    const expiredDocs = allDocs.filter((d) => d.expiresAt <= now)
+    const expiringSoon = allDocs.filter((d) => d.expiresAt > now && d.expiresAt <= warnCutoff)
+
+    // --- Expired ---
+    if (expiredDocs.length > 0) {
+      const alreadyNotified = await recentlyNotified(driverId, NOTIFICATION_TYPES.DOCUMENT_EXPIRED)
+      if (!alreadyNotified) {
+        await notifyDocumentExpired(driverId, {
+          docNames: expiredDocs.map((d) => d.name),
+        })
+        console.log(
+          `[expiry-check] Notified driver ${driverId} of ${expiredDocs.length} expired doc(s)`
+        )
+      }
+    }
+
+    // --- Expiring soon ---
+    if (expiringSoon.length > 0) {
+      const alreadyNotified = await recentlyNotified(
+        driverId,
+        NOTIFICATION_TYPES.DOCUMENT_EXPIRING_SOON
+      )
+      if (!alreadyNotified) {
+        // Report the minimum days-until-expiry for the message
+        const minDays = Math.max(
+          1,
+          Math.floor(
+            (Math.min(...expiringSoon.map((d) => d.expiresAt.getTime())) - now.getTime()) /
+              (24 * MS_PER_HOUR)
+          )
+        )
+        await notifyDocumentExpiringSoon(driverId, {
+          docNames: expiringSoon.map((d) => d.name),
+          daysUntilExpiry: minDays,
+        })
+        console.log(
+          `[expiry-check] Notified driver ${driverId} of ${expiringSoon.length} doc(s) expiring within ${EXPIRY_WARN_DAYS}d`
+        )
+      }
+    }
+  }
+}
+
+/**
+ * Start the daily document-expiry checker.
+ * Returns a cleanup function that stops the interval.
+ */
+export const startDocumentExpiryChecker = (): (() => void) => {
+  console.log('[expiry-check] Starting — interval 24h')
+
+  // Boot scan after a short delay so the DB connection is fully ready
+  setTimeout(() => {
+    runExpiryCheck().catch((err) =>
+      console.error('[expiry-check] Boot scan failed:', err)
+    )
+  }, 5_000)
+
+  const timer = setInterval(() => {
+    runExpiryCheck().catch((err) =>
+      console.error('[expiry-check] Daily scan failed:', err)
+    )
+  }, EXPIRY_CHECK_INTERVAL_MS)
+
+  return () => {
+    clearInterval(timer)
+    console.log('[expiry-check] Stopped')
   }
 }

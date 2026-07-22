@@ -119,6 +119,7 @@ let _lastSeenUid: string | null = null
 
 export function subscribeToAuthChanges(dispatch: AppDispatch) {
   return onAuthStateChanged(auth, async (firebaseUser) => {
+    const prevUid = _lastSeenUid
     const uidChanged = firebaseUser?.uid !== _lastSeenUid
     _lastSeenUid = firebaseUser?.uid ?? null
 
@@ -133,8 +134,14 @@ export function subscribeToAuthChanges(dispatch: AppDispatch) {
         return
       }
 
-      // Token expired / forced sign-out — show warning dialog
-      dispatch(setSessionState('expired'))
+      // Only show the "session expired" dialog when there WAS a previous
+      // authenticated session that just ended (prevUid was set). If the user
+      // was never logged in on this page load (prevUid === null), firing the
+      // expired state would immediately redirect them away from /admin before
+      // they ever see the login form.
+      if (prevUid !== null) {
+        dispatch(setSessionState('expired'))
+      }
       dispatch(setUser(null))
       return
     }

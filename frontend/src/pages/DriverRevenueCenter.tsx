@@ -8,7 +8,9 @@ import { RevenueSummaryCards } from '@/components/revenue/RevenueSummaryCards'
 import { RevenueTable } from '@/components/revenue/RevenueTable'
 import { Button } from '@/components/ui/button'
 import { useRequiredMongoId } from '@/hooks/useAuth'
+import { useDriverExpiryBanner } from '@/hooks/useDriverExpiryBanner'
 import { useRefreshTimestamp } from '@/hooks/useRefreshTimestamp'
+import { RoutePath } from '@/config/routes'
 import { relativeTime } from '@/lib/utils'
 import type {
   DashboardViewMode,
@@ -24,9 +26,15 @@ import {
 } from '@/services/driverApi/driverSlice'
 import { RefreshCw, Settings2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 export default function DriverRevenueCenter() {
   const driverId = useRequiredMongoId()
+  const navigate = useNavigate()
+  const expiryBanner = useDriverExpiryBanner({
+    driverId,
+    onUpdateClick: () => navigate(RoutePath.DriverProfile),
+  })
   const [viewMode, setViewMode] = useState<DashboardViewMode>('completed')
 
   const [filters, setFilters] = useState<RevenueFilters>({
@@ -146,6 +154,7 @@ export default function DriverRevenueCenter() {
     <PageShell
       title="Revenue Center"
       subtitle={subtitle}
+      banner={expiryBanner}
       tabs={{
         options: [
           { value: 'completed', label: 'Completed' },

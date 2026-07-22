@@ -160,6 +160,41 @@ export const notifyDocumentRejected = (
   })
 
 /**
+ * Notify a driver that one or more of their documents are expiring within 30 days.
+ * Sent at most once per ~23 hours (dedup handled by the caller).
+ */
+export const notifyDocumentExpiringSoon = (
+  userId: string,
+  opts: { docNames: string[]; daysUntilExpiry: number }
+) => {
+  const list = opts.docNames.join(', ')
+  const plural = opts.docNames.length > 1 ? 'documents are' : 'document is'
+  return createNotification({
+    userId,
+    type: NOTIFICATION_TYPES.DOCUMENT_EXPIRING_SOON,
+    title: 'Document renewal required',
+    message: `Your ${list} ${plural} expiring in ${opts.daysUntilExpiry} day${opts.daysUntilExpiry !== 1 ? 's' : ''}. Please upload a renewed copy.`,
+    data: { docNames: opts.docNames, daysUntilExpiry: opts.daysUntilExpiry },
+  })
+}
+
+/**
+ * Notify a driver that one or more of their documents have already expired.
+ * Sent at most once per ~23 hours (dedup handled by the caller).
+ */
+export const notifyDocumentExpired = (userId: string, opts: { docNames: string[] }) => {
+  const list = opts.docNames.join(', ')
+  const plural = opts.docNames.length > 1 ? 'documents have' : 'document has'
+  return createNotification({
+    userId,
+    type: NOTIFICATION_TYPES.DOCUMENT_EXPIRED,
+    title: 'Document expired',
+    message: `Your ${list} ${plural} expired. Please upload renewed documents as soon as possible.`,
+    data: { docNames: opts.docNames },
+  })
+}
+
+/**
  * Notify a user that they received an in-app message on a load thread.
  *
  * De-duplicated per thread: if the recipient already has an UNREAD

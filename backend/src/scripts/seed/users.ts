@@ -16,12 +16,7 @@ const TEST_USER3_ID = new Types.ObjectId('000000000000000000000013')
 const TEST_USER4_ID = new Types.ObjectId('000000000000000000000014')
 const TEST_USER5_ID = new Types.ObjectId('000000000000000000000015')
 
-export type SeedDriverKey =
-  | 'testUser1'
-  | 'testUser2'
-  | 'testUser3'
-  | 'testUser4'
-  | 'testUser5'
+export type SeedDriverKey = 'testUser1' | 'testUser2' | 'testUser3' | 'testUser4' | 'testUser5'
 
 export type SeedCompanyKey = 'testCompany1' | 'testCompany2'
 
@@ -56,7 +51,11 @@ export async function seedUsers() {
     firebaseUid: string,
     name: string,
     email: string,
-    pricing: { minimumRatePerMile: number; minimumLoadValue: number; preferredMaxDeadheadMiles: number },
+    pricing: {
+      minimumRatePerMile: number
+      minimumLoadValue: number
+      preferredMaxDeadheadMiles: number
+    },
     extra: Partial<{
       professionalTitle: string
       mcNumber: string
@@ -84,7 +83,12 @@ export async function seedUsers() {
     'testUser1',
     'testuser1@example.com',
     { minimumRatePerMile: 2.25, minimumLoadValue: 400, preferredMaxDeadheadMiles: 75 },
-    { professionalTitle: 'Owner-Operator', mcNumber: 'MC-123456', dotNumber: 'DOT-789012', homeLocation: { city: 'Calgary', province: 'AB' } }
+    {
+      professionalTitle: 'Owner-Operator',
+      mcNumber: 'MC-123456',
+      dotNumber: 'DOT-789012',
+      homeLocation: { city: 'Calgary', province: 'AB' },
+    }
   )
 
   const testUser2 = await driverSeed(
@@ -93,7 +97,13 @@ export async function seedUsers() {
     'testUser2',
     'testuser2@example.com',
     { minimumRatePerMile: 3.25, minimumLoadValue: 600, preferredMaxDeadheadMiles: 50 },
-    { professionalTitle: 'Flatbed Specialist', mcNumber: 'MC-234567', dotNumber: 'DOT-890123', certifications: ['Hazmat'], homeLocation: { city: 'Surrey', province: 'BC' } }
+    {
+      professionalTitle: 'Flatbed Specialist',
+      mcNumber: 'MC-234567',
+      dotNumber: 'DOT-890123',
+      certifications: ['Hazmat'],
+      homeLocation: { city: 'Surrey', province: 'BC' },
+    }
   )
 
   const testUser3 = await driverSeed(
@@ -111,7 +121,13 @@ export async function seedUsers() {
     'testUser4',
     'testuser4@example.com',
     { minimumRatePerMile: 2.75, minimumLoadValue: 500, preferredMaxDeadheadMiles: 60 },
-    { professionalTitle: 'Reefer Operator', mcNumber: 'MC-345678', dotNumber: 'DOT-901234', certifications: ['Reefer HACCP', 'Hazmat'], homeLocation: { city: 'Toronto', province: 'ON' } }
+    {
+      professionalTitle: 'Reefer Operator',
+      mcNumber: 'MC-345678',
+      dotNumber: 'DOT-901234',
+      certifications: ['Reefer HACCP', 'Hazmat'],
+      homeLocation: { city: 'Toronto', province: 'ON' },
+    }
   )
 
   const testUser5 = await driverSeed(
@@ -120,7 +136,12 @@ export async function seedUsers() {
     'testUser5',
     'testuser5@example.com',
     { minimumRatePerMile: 3.5, minimumLoadValue: 700, preferredMaxDeadheadMiles: 80 },
-    { professionalTitle: 'Step Deck Pro', mcNumber: 'MC-456789', dotNumber: 'DOT-012345', homeLocation: { city: 'Winnipeg', province: 'MB' } }
+    {
+      professionalTitle: 'Step Deck Pro',
+      mcNumber: 'MC-456789',
+      dotNumber: 'DOT-012345',
+      homeLocation: { city: 'Winnipeg', province: 'MB' },
+    }
   )
 
   const admin = await AdminModel.create({

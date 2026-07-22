@@ -12,6 +12,8 @@ export const NOTIFICATION_TYPES = {
   DOCUMENT_UPLOADED: 'document_uploaded',
   DOCUMENT_APPROVED: 'document_approved',
   DOCUMENT_REJECTED: 'document_rejected',
+  DOCUMENT_EXPIRING_SOON: 'document_expiring_soon',
+  DOCUMENT_EXPIRED: 'document_expired',
   MESSAGE_RECEIVED: 'message_received',
   DRIVER_CHECKED_IN: 'driver_checked_in',
 } as const

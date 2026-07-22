@@ -32,6 +32,7 @@ export interface CertDoc {
   url: string
   key: string
   uploadedAt: string
+  expiresAt?: string | null
   verificationStatus?: 'pending' | 'approved' | 'rejected'
   reviewNotes?: string
 }

@@ -41,7 +41,7 @@ import notificationRouter from './routes/notificationRoutes'
 import messageRouter from './routes/messageRoutes'
 import adminRouter from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
-import { startHeartbeat } from './services/heartbeatService'
+import { startHeartbeat, startDocumentExpiryChecker } from './services/heartbeatService'
 
 // Routes
 app.use('/api', userRouter)
@@ -72,14 +72,16 @@ mongoose
 
     // Start the heartbeat engine once the DB is ready
     const stopHeartbeat = startHeartbeat()
+    const stopExpiryChecker = startDocumentExpiryChecker()
 
     const server = app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`)
     })
 
-    // Stop heartbeat before closing gracefullu
+    // Stop background jobs before closing gracefully
     const shutdown = () => {
       stopHeartbeat()
+      stopExpiryChecker()
       server.close(() => process.exit(0))
     }
     process.once('SIGTERM', shutdown)
