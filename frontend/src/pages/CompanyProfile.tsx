@@ -2,7 +2,6 @@ import type { CompanyInfoFormValues } from '@/components/companyProfile/CompanyI
 import CompanyInfoCard from '@/components/companyProfile/CompanyInfoCard'
 import CompanyInfoDrawer from '@/components/companyProfile/CompanyInfoDrawer'
 import BusinessDocumentsCard from '@/components/companyProfile/BusinessDocumentsCard'
-import NotificationPreferencesCard from '@/components/driverProfile/NotificationPreferencesCard'
 import CompanyPerformanceCard from '@/components/companyProfile/CompanyPerformanceCard'
 import { ReviewsSection } from '@/components/shared/PublicProfileLayout'
 import ReviewCard from '@/components/shared/ReviewCard'
@@ -155,13 +154,6 @@ export default function CompanyProfile() {
                 <BusinessDocumentsCard
                   documents={company.businessDocuments ?? []}
                   onEdit={() => setInfoDrawerOpen(true)}
-                />
-              </Col>
-            </Row>
-            <Row>
-              <Col size={16}>
-                <NotificationPreferencesCard
-                  notificationPreferences={company.notificationPreferences}
                 />
               </Col>
             </Row>

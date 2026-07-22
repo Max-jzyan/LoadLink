@@ -6,7 +6,6 @@ import {
   MonitorIcon,
   MoonIcon,
   PlayCircleIcon,
-  Settings,
   SunIcon,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -178,12 +177,6 @@ export function NavUser() {
               <DropdownMenuSeparator />
 
               <DropdownMenuGroup>
-                <DropdownMenuItem
-                  onClick={() => navigate(role === 'driver' ? '/driver/profile' : '/settings')}
-                >
-                  <Settings />
-                  Settings
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={startTour}>
                   <PlayCircleIcon />
                   Walkthrough

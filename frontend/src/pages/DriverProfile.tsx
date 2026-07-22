@@ -3,7 +3,6 @@ import ContactInfoCard from '@/components/driverProfile/ContactInfoCard'
 import DriverInfoCard from '@/components/driverProfile/DriverInfoCard'
 import type { DriverInfoFormValues } from '@/components/driverProfile/DriverInfoDrawer'
 import DriverInfoDrawer from '@/components/driverProfile/DriverInfoDrawer'
-import NotificationPreferencesCard from '@/components/driverProfile/NotificationPreferencesCard'
 import PerformanceCard from '@/components/driverProfile/PerformanceCard'
 import type { PricingFormValues } from '@/components/driverProfile/PricingPreferencesCard'
 import PricingPreferencesCard from '@/components/driverProfile/PricingPreferencesCard'
@@ -335,13 +334,6 @@ export default function DriverProfile() {
             <Row>
               <Col size={16}>
                 <ScoreWeightsCard driver={driver} onEdit={() => setScoreWeightsDrawerOpen(true)} />
-              </Col>
-            </Row>
-            <Row>
-              <Col size={16}>
-                <NotificationPreferencesCard
-                  notificationPreferences={driver.notificationPreferences}
-                />
               </Col>
             </Row>
           </Col>
