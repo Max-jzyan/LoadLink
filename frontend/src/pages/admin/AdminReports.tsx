@@ -1,10 +1,18 @@
 import { useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
+import { Link } from 'react-router-dom'
 import PageShell from '@/components/layout/PageShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/shared/DataTable'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { useRequiredMongoId } from '@/hooks/useAuth'
@@ -14,6 +22,13 @@ import {
 } from '@/services/reportApi/reportSlice'
 import type { AdminReport, ReportStatus, ReportType } from '@/services/reportApi/reportEnum'
 import { AlertTriangle, Building2, RefreshCw, ShieldAlert, User } from 'lucide-react'
+
+/** Public profile path for a driver or company user, given their id and role. */
+function profilePath(id: string, role: 'driver' | 'company' | string): string | null {
+  if (role === 'driver') return `/driver/${id}`
+  if (role === 'company') return `/company/${id}`
+  return null
+}
 
 const STATUS_CONFIG: Record<ReportStatus, { label: string; cls: string }> = {
   under_review: {
@@ -70,11 +85,19 @@ const columns: ColumnDef<AdminReport>[] = [
     cell: ({ row }) => {
       const reporter = row.original.reporterId
       if (!reporter) return <span className="text-sm text-muted-foreground">Unknown</span>
-      return (
+      const content = (
         <div className="min-w-0">
           <p className="font-medium text-sm truncate">{reporter.name}</p>
           <p className="text-xs text-muted-foreground truncate">{reporter.email}</p>
         </div>
+      )
+      const path = profilePath(reporter._id, reporter.role)
+      return path ? (
+        <Link to={path} className="hover:underline">
+          {content}
+        </Link>
+      ) : (
+        content
       )
     },
   },
@@ -82,6 +105,7 @@ const columns: ColumnDef<AdminReport>[] = [
     accessorKey: 'type',
     header: 'Type',
     cell: ({ row }) => <ReportTypeBadge type={row.getValue<ReportType>('type')} />,
+    meta: { responsive: 'sm' },
   },
   {
     id: 'target',
@@ -89,13 +113,22 @@ const columns: ColumnDef<AdminReport>[] = [
     cell: ({ row }) => {
       const report = row.original
       const Icon = ENTITY_ICON[report.targetType]
-      return (
+      const content = (
         <div className="flex items-center gap-1.5 text-sm min-w-0">
           <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
           <span className="truncate">{report.targetName}</span>
         </div>
       )
+      const path = report.targetId && profilePath(report.targetId._id, report.targetType)
+      return path ? (
+        <Link to={path} className="hover:underline">
+          {content}
+        </Link>
+      ) : (
+        content
+      )
     },
+    meta: { responsive: 'md' },
   },
   {
     accessorKey: 'category',
@@ -148,22 +181,39 @@ export default function AdminReports() {
       title="Reports"
       subtitle="Fraud and inaccurate-details reports submitted by companies and drivers."
       stickyBar={
-        <div className="flex rounded-lg border border-border overflow-hidden w-fit">
-          {filters.map((f) => (
-            <Button
-              key={f.key}
-              variant="ghost"
-              size="sm"
-              onClick={() => setStatusFilter(f.key)}
-              className={cn(
-                'rounded-none border-0',
-                statusFilter === f.key ? 'filter-btn-active' : 'filter-btn-inactive'
-              )}
-            >
-              {f.label} ({f.count})
-            </Button>
-          ))}
-        </div>
+        <>
+          {/* Narrow screens: dropdown (segmented pill doesn't fit alongside Refresh) */}
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+            <SelectTrigger className="w-full sm:hidden">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {filters.map((f) => (
+                <SelectItem key={f.key} value={f.key}>
+                  {f.label} ({f.count})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Wider screens: segmented pill */}
+          <div className="hidden sm:flex rounded-lg border border-border overflow-hidden w-fit">
+            {filters.map((f) => (
+              <Button
+                key={f.key}
+                variant="ghost"
+                size="sm"
+                onClick={() => setStatusFilter(f.key)}
+                className={cn(
+                  'rounded-none border-0 shrink-0',
+                  statusFilter === f.key ? 'filter-btn-active' : 'filter-btn-inactive'
+                )}
+              >
+                {f.label} ({f.count})
+              </Button>
+            ))}
+          </div>
+        </>
       }
       actions={
         <Button
@@ -196,12 +246,24 @@ export default function AdminReports() {
           columns={columns}
           data={visibleReports}
           getId={(report) => report._id}
-          drawerTitle={(report) => report.targetName}
+          drawerTitle={(report) =>
+            `${report.type === 'fraud' ? 'Fraud' : 'Inaccuracy'} report for ${report.targetName}`
+          }
           drawerFields={[
             {
               label: 'Reporter',
-              renderValue: (r) =>
-                r.reporterId ? `${r.reporterId.name} (${r.reporterId.email})` : 'Unknown',
+              renderValue: (r) => {
+                if (!r.reporterId) return 'Unknown'
+                const label = `${r.reporterId.name} (${r.reporterId.email})`
+                const path = profilePath(r.reporterId._id, r.reporterId.role)
+                return path ? (
+                  <Link to={path} className="hover:underline">
+                    {label}
+                  </Link>
+                ) : (
+                  label
+                )
+              },
             },
             {
               label: 'Type',
@@ -209,7 +271,17 @@ export default function AdminReports() {
             },
             {
               label: 'Target',
-              renderValue: (r) => `${r.targetName} · ${r.targetType}`,
+              renderValue: (r) => {
+                const label = `${r.targetName} · ${r.targetType}`
+                const path = r.targetId && profilePath(r.targetId._id, r.targetType)
+                return path ? (
+                  <Link to={path} className="hover:underline">
+                    {label}
+                  </Link>
+                ) : (
+                  label
+                )
+              },
             },
             { label: 'Category', renderValue: (r) => r.category },
             { label: 'Description', renderValue: (r) => r.description },

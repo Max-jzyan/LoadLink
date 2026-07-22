@@ -19,6 +19,7 @@ import {
 import { NOTIFICATION_TYPES, type Notification } from '@/services/notificationApi/notificationEnum'
 import { formatDistanceToNow } from 'date-fns'
 import { RoutePath } from '@/config/routes'
+import { LoadTag } from '@/services/apiTypes'
 
 // Type guard to distinguish Notification from UnreadCountResponse in SSE stream
 function isNotification(
@@ -216,6 +217,16 @@ export default function NotificationBell() {
         }
       })
     )
+
+    // A report the current user filed just changed status elsewhere (admin
+    // action) — refetch it so an already-open "My Reports" page updates live
+    // instead of showing a stale status until the user manually refreshes.
+    if (
+      isNotification(streamData) &&
+      streamData.type === NOTIFICATION_TYPES.REPORT_STATUS_UPDATED
+    ) {
+      dispatch(notificationApi.util.invalidateTags([{ type: LoadTag.Report }]))
+    }
   }, [streamData, dispatch])
 
   const unreadCount = countData?.unreadCount ?? 0
