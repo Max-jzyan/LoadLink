@@ -175,12 +175,31 @@ export async function registerAndFetchUser(
   password: string,
   name: string,
   role: UserRole,
-  uploadedDocuments: UploadedDocument[] = [],
-  profilePictureUrl: string | undefined = undefined
+  documentFiles: File[] = [],
+  profilePictureFile: File | null = null
 ): Promise<AuthUser> {
   try {
     const { user: fbUser } = await createUserWithEmailAndPassword(auth, email, password)
     const token = await fbUser.getIdToken()
+
+    // Files must be uploaded to S3 (via presigned URL) before registration, since the
+    // register endpoint expects UploadedDocument[]/URL strings, not raw File objects.
+    let uploadedDocuments: UploadedDocument[] = []
+    let profilePictureUrl: string | undefined
+    const docType = role === 'driver' ? 'driverDocuments' : 'companyDocuments'
+
+    try {
+      if (documentFiles.length > 0) {
+        uploadedDocuments = await uploadDocuments(token, fbUser.uid, docType, documentFiles)
+      }
+      if (role === 'driver' && profilePictureFile) {
+        const [uploaded] = await uploadDocuments(token, fbUser.uid, docType, [profilePictureFile])
+        profilePictureUrl = uploaded.url
+      }
+    } catch {
+      await signOut(auth)
+      throw new Error('Failed to upload one or more files. Please try again.')
+    }
 
     const res = await fetch('/api/users/register', {
       method: 'POST',
