@@ -5,6 +5,21 @@ import * as aiInsightsService from '../services/aiInsightsService'
 import { parseLatLng } from '../utils/geo'
 
 /**
+ * GET /api/driver/:driverId/conflicting-bids/:loadId
+ * Return any submitted bids whose loads have scheduling overlap with the target load.
+ */
+export const getConflictingBids = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const driverId = req.params.driverId as string
+    const loadId = req.params.loadId as string
+    const conflicts = await driverService.getConflictingBids(driverId, loadId)
+    res.status(StatusCodes.OK).json(conflicts)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
  * DELETE /api/driver/:driverId/documents/:docKey
  * Remove a certification document from the driver's profile (by S3 key).
  */

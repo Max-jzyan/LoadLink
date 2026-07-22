@@ -70,7 +70,8 @@ export default function AuctionLive() {
   const companyId = load?.companyId?._id
 
   const bids = bidsPayload?.bids ?? []
-  const bestBid = bids[0]
+  const activeBids = bids.filter((b) => b.status !== 'withdrawn')
+  const bestBid = activeBids[0]
 
   // Derive auction state from SSE payload
   const liveEventType = pricePayload?.loadEventType ?? bidsPayload?.loadEventType

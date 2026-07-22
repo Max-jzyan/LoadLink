@@ -336,6 +336,16 @@ export interface AiUnavailable {
   available: false
 }
 
+export interface ConflictingBid {
+  loadId: string
+  originAddress: string
+  destinationAddress: string
+  pickupTime: string
+  dropoffTime: string
+  bidAmount: number
+  conflictType: 'accepted_job' | 'pending_bid'
+}
+
 export type AiInsightsResult = AiLoadInsight | AiUnavailable
 export type AiFuelStopsResult = AiFuelStops | AiUnavailable
 export type AiRestAreasResult = AiRestAreas | AiUnavailable

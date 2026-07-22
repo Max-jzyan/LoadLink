@@ -22,7 +22,10 @@ interface BidListProps {
 export default function BidList({ bids, auction, onAccept, accepting }: BidListProps) {
   const [selectedBid, setSelectedBid] = useState<PopulatedBid | null>(null)
 
-  const best = bids[0]
+  // Exclude withdrawn bids from best-bid ranking so they cannot be accepted
+  // as the "best" or highlighted via the auto-accept / best-bid card.
+  const activeBids = bids.filter((b) => b.status !== 'withdrawn')
+  const best = activeBids[0]
   const isLive = auction.status === AUCTION_STATUSES.Active
   const ceiling = auction.capPrice * (1 + auction.autoAcceptPercent / 100)
 

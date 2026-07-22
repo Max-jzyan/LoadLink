@@ -1,4 +1,4 @@
-import { HydratedDocument, isValidObjectId } from 'mongoose'
+import { HydratedDocument, isValidObjectId, Types } from 'mongoose'
 import { StatusCodes } from 'http-status-codes'
 import { BidModel, type Bid } from '../models/loads/Bid'
 import { AuctionModel, type IAuction } from '../models/loads/Auction'
@@ -72,7 +72,59 @@ export const emitBidsAndPrice = async (loadId: string) => {
 }
 
 /**
+ * After a driver wins a load (via bid acceptance or claim), find any other
+ * submitted bids by the same driver that would be impossible to fulfil due
+ * to scheduling overlap, and cancel them (set status → withdrawn).
+ * Also pushes SSE updates for each affected load.
+ */
+const cancelConflictingBidsForDriver = async (driverId: string, acceptedLoadId: string) => {
+  // 1. Fetch the accepted load's schedule window
+  const acceptedLoad = await LoadModel.findById(acceptedLoadId).lean()
+  if (!acceptedLoad) return
+
+  const targetPickup = new Date(acceptedLoad.pickupTime).getTime()
+  const targetDropoff = new Date(acceptedLoad.dropoffTime).getTime()
+
+  // 2. Find all submitted bids by this driver for other loads
+  const conflictingBids = await BidModel.find({
+    driverId: new Types.ObjectId(driverId),
+    loadId: { $ne: new Types.ObjectId(acceptedLoadId) },
+    status: BID_STATUSES.Submitted,
+  })
+    .populate<{ loadId: any }>('loadId')
+    .lean()
+
+  // 3. Withdraw any that overlap
+  const withdrawnLoadIds: string[] = []
+  for (const bid of conflictingBids) {
+    const otherLoad = bid.loadId as any
+    if (!otherLoad || !otherLoad.pickupTime || !otherLoad.dropoffTime) continue
+
+    const otherPickup = new Date(otherLoad.pickupTime).getTime()
+    const otherDropoff = new Date(otherLoad.dropoffTime).getTime()
+
+    if (targetPickup < otherDropoff && targetDropoff > otherPickup) {
+      await BidModel.findByIdAndUpdate(bid._id, { status: BID_STATUSES.Withdrawn })
+      withdrawnLoadIds.push(otherLoad._id.toString())
+      console.log(
+        `[auctionService] Withdrew bid ${bid._id} on load ${otherLoad._id} due to schedule conflict with accepted load ${acceptedLoadId}`
+      )
+    }
+  }
+
+  // 4. Emit updates for each withdrawn bid's load so SSE clients see the change
+  await Promise.all(
+    [...new Set(withdrawnLoadIds)].map((lid) =>
+      emitBidsAndPrice(lid).catch((err) =>
+        console.error(`[auctionService] Failed to emit after withdrawing conflicting bid:`, err)
+      )
+    )
+  )
+}
+
+/**
  * Flip a bid to accepted, close its auction, and book the load with that driver.
+ * Also cancels any conflicting bids the driver may have on other loads.
  */
 export const settleAuctionWithBid = async (
   auction: HydratedDocument<IAuction>,
@@ -91,6 +143,9 @@ export const settleAuctionWithBid = async (
     status: LOAD_STATUSES.Booked,
     assignedDriverId: bid.driverId,
   })
+
+  // Cancel conflicting bids for this driver on other loads
+  await cancelConflictingBidsForDriver(bid.driverId.toString(), auction.loadId.toString())
 }
 
 interface CreateAuctionData {
@@ -178,6 +233,13 @@ export const acceptBid = async (loadId: string, bidId: string) => {
   const bid = await BidModel.findById(bidId)
   if (!bid || bid.loadId.toString() !== loadId) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Bid not found for this load')
+  }
+
+  if (bid.status !== BID_STATUSES.Submitted) {
+    throw new ApiError(
+      StatusCodes.CONFLICT,
+      `Bid cannot be accepted (status: ${bid.status})`
+    )
   }
 
   await settleAuctionWithBid(auction, bid)
@@ -408,6 +470,9 @@ export const claimLoad = async (
   }
 
   await LoadModel.findByIdAndUpdate(loadId, loadUpdate)
+
+  // Cancel conflicting bids for this driver on other loads
+  await cancelConflictingBidsForDriver(driverId, loadId)
 
   await emitBidsAndPrice(loadId)
 

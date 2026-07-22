@@ -33,7 +33,7 @@ const BID_STATUS_BADGE: Record<string, BadgeConfig> = {
   [BID_STATUSES.Withdrawn]: {
     variant: 'outline',
     label: 'Withdrawn',
-    className: 'border-gray-200 bg-gray-50 text-gray-800',
+    className: 'border-red-200 bg-red-50 text-red-800',
   },
   [BID_STATUSES.Rejected]: {
     variant: 'outline',

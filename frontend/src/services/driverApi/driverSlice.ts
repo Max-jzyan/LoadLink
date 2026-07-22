@@ -21,11 +21,20 @@ import type {
   AiInsightsResult,
   AiFuelStopsResult,
   AiRestAreasResult,
+  ConflictingBid,
 } from './driverEnum'
 import type { UploadedDocument } from '@/lib/uploadDocuments'
 
 export const driverApi = api.injectEndpoints({
   endpoints: (build) => ({
+    // GET /api/driver/:driverId/conflicting-bids/:loadId — check for scheduling conflicts
+    getConflictingBids: build.query<ConflictingBid[], { driverId: string; loadId: string }>({
+      query: ({ driverId, loadId }) => `driver/${driverId}/conflicting-bids/${loadId}`,
+      providesTags: (_result, _error, { driverId }) => [
+        { type: LoadTag.Bid, id: `${driverId}-conflicts` },
+      ],
+    }),
+
     // POST /api/auctions/:loadId/bids — place a driver bid
     placeBid: build.mutation<Bid, { loadId: string; body: PlaceBidPayload }>({
       query: ({ loadId, body }) => ({
@@ -395,6 +404,7 @@ export const driverApi = api.injectEndpoints({
 
 // Auto-generated hooks
 export const {
+  useGetConflictingBidsQuery,
   usePlaceBidMutation,
   useClaimLoadMutation,
   useListDriverBidsQuery,

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import {
+  getConflictingBids,
   getDriverProfile,
   getRecommendedLoads,
   getDriverRevenue,
@@ -23,6 +24,7 @@ export const router = Router()
 
 const middlewares = [requireAuth, requireRole(USER_ROLES.DRIVER), requireSelfParam('driverId')]
 
+router.get('/driver/:driverId/conflicting-bids/:loadId', middlewares, getConflictingBids)
 router.get('/driver/:driverId/bids', middlewares, listDriverBids)
 router.get('/driver/:driverId/loads', middlewares, listDriverLoads)
 router.get('/driver/:driverId/recommended-loads', middlewares, getRecommendedLoads)

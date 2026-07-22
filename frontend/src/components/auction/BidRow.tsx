@@ -33,14 +33,19 @@ const timeAgo = (iso: string) => {
 export default function BidRow({ bid, isBest, withinAutoAccept, onClick }: BidRowProps) {
   const driver = bid.driverId
   const rating = driver.ratingSummary?.average
+  const isWithdrawn = bid.status === 'withdrawn'
 
   return (
     <div
       className={`flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors ${
-        onClick ? 'cursor-pointer hover:bg-muted/50' : ''
+        isWithdrawn
+          ? 'border-red-300 dark:border-red-800 bg-red-100 dark:bg-red-950/30 opacity-70'
+          : onClick
+            ? 'cursor-pointer hover:bg-muted/50'
+            : ''
       }`}
-      onClick={onClick}
-      role={onClick ? 'button' : undefined}
+      onClick={isWithdrawn ? undefined : onClick}
+      role={!isWithdrawn && onClick ? 'button' : undefined}
     >
       <div className="flex items-center gap-3">
         <Avatar>
@@ -51,16 +56,22 @@ export default function BidRow({ bid, isBest, withinAutoAccept, onClick }: BidRo
             <DriverNameLink name={driver.name} driverId={driver._id} />
           </p>
           <p className="text-xs text-muted-foreground">
-            Driver{typeof rating === 'number' ? ` · ${rating.toFixed(1)} ★` : ''}
+            {isWithdrawn ? (
+              <span className="text-red-700 dark:text-red-400">Withdrawn — scheduling conflict</span>
+            ) : (
+              <>Driver{typeof rating === 'number' ? ` · ${rating.toFixed(1)} ★` : ''}</>
+            )}
           </p>
         </div>
       </div>
 
       <div className="flex flex-col items-end gap-1">
-        <span className="text-lg font-semibold">{formatMoney(bid.amount)}</span>
+        <span className={`text-lg font-semibold ${isWithdrawn ? 'text-red-700 dark:text-red-400 line-through' : ''}`}>
+          {formatMoney(bid.amount)}
+        </span>
         <div className="flex items-center gap-1">
-          {isBest && <Badge variant="default">Best</Badge>}
-          {withinAutoAccept && <Badge variant="secondary">Within auto-accept</Badge>}
+          {isBest && !isWithdrawn && <Badge variant="default">Best</Badge>}
+          {withinAutoAccept && !isWithdrawn && <Badge variant="secondary">Within auto-accept</Badge>}
           <BidStatusBadge status={bid.status} />
         </div>
         <span className="text-xs text-muted-foreground">{timeAgo(bid.createdAt)}</span>

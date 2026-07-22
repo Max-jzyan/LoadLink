@@ -216,6 +216,32 @@ export default function DriverAuction() {
                 </div>
               </div>
 
+              {/* Dates */}
+              <div className="grid grid-cols-2 gap-2">
+                <DynamicCard
+                  title="Pickup"
+                  noBorder
+                  size="sm"
+                  titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                >
+                  <span className="flex items-center gap-1 text-sm">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    {formatDate(load.pickupTime)}
+                  </span>
+                </DynamicCard>
+                <DynamicCard
+                  title="Dropoff"
+                  noBorder
+                  size="sm"
+                  titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                >
+                  <span className="flex items-center gap-1 text-sm">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    {formatDate(load.dropoffTime)}
+                  </span>
+                </DynamicCard>
+              </div>
+
               {/* Specifications */}
               <div className="grid grid-cols-3 gap-2">
                 <DynamicCard
@@ -241,32 +267,6 @@ export default function DriverAuction() {
                   titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
                 >
                   {weightLabel}
-                </DynamicCard>
-              </div>
-
-              {/* Dates */}
-              <div className="grid grid-cols-2 gap-2">
-                <DynamicCard
-                  title="Pickup"
-                  noBorder
-                  size="sm"
-                  titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
-                >
-                  <span className="flex items-center gap-1 text-sm">
-                    <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    {formatDate(load.pickupTime)}
-                  </span>
-                </DynamicCard>
-                <DynamicCard
-                  title="Dropoff"
-                  noBorder
-                  size="sm"
-                  titleClassName="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
-                >
-                  <span className="flex items-center gap-1 text-sm">
-                    <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    {formatDate(load.dropoffTime)}
-                  </span>
                 </DynamicCard>
               </div>
 

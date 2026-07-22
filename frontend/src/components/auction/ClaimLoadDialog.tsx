@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { formatMoney } from '@/lib/format'
 import { useClaimLoadMutation } from '@/services/driverApi/driverSlice'
+import ScheduleConflictWarning from '@/components/auction/ScheduleConflictWarning'
 
 interface ClaimLoadDialogProps {
   loadId: string
@@ -20,6 +21,17 @@ interface ClaimLoadDialogProps {
   originAddress: string
   destinationAddress: string
   isAuctionLive: boolean
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleString('en-CA', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
 }
 
 export default function ClaimLoadDialog({
@@ -72,6 +84,13 @@ export default function ClaimLoadDialog({
             <p className="text-2xl font-bold text-primary">{formatMoney(livePrice)}</p>
           </div>
         </div>
+
+        <ScheduleConflictWarning
+          driverId={driverId}
+          loadId={loadId}
+          isAuctionLive={isAuctionLive}
+          isOpen={open}
+        />
 
         {isError && (
           <p className="text-sm text-destructive">Could not claim the load. Please try again.</p>

@@ -52,6 +52,7 @@ export default function AcceptBidDialog({
 
   const driver = bid.driverId
   const rating = driver.ratingSummary?.average
+  const isWithdrawn = bid.status === 'withdrawn'
 
   const submittedAt = (() => {
     try {
@@ -86,8 +87,10 @@ export default function AcceptBidDialog({
             </p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-2xl font-bold text-primary">{formatMoney(bid.amount)}</p>
-            {isBest && (
+            <p className={`text-2xl font-bold ${isWithdrawn ? 'text-red-700 line-through' : 'text-primary'}`}>
+              {formatMoney(bid.amount)}
+            </p>
+            {isBest && !isWithdrawn && (
               <Badge variant="default" className="mt-1 text-xs">
                 Best offer
               </Badge>
@@ -95,8 +98,19 @@ export default function AcceptBidDialog({
           </div>
         </div>
 
+        {/* Withdrawn warning */}
+        {isWithdrawn && (
+          <div className="flex items-start gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-400">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              This bid has been <strong>withdrawn</strong> by the driver due to a scheduling
+              conflict and cannot be accepted.
+            </span>
+          </div>
+        )}
+
         {/* Cheaper-offer warning — only shown when this isn't the lowest bid */}
-        {!isBest && (
+        {!isBest && !isWithdrawn && (
           <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-700 dark:text-amber-400">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
@@ -110,8 +124,8 @@ export default function AcceptBidDialog({
           <Button variant="outline" onClick={onClose} disabled={accepting}>
             Cancel
           </Button>
-          <Button onClick={onAccept} disabled={!isLive || accepting}>
-            {accepting ? 'Accepting…' : `Accept — ${formatMoney(bid.amount)}`}
+          <Button onClick={onAccept} disabled={!isLive || accepting || isWithdrawn}>
+            {accepting ? 'Accepting…' : isWithdrawn ? 'Bid withdrawn' : `Accept — ${formatMoney(bid.amount)}`}
           </Button>
         </DialogFooter>
       </DialogContent>

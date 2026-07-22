@@ -1,6 +1,6 @@
 import { isValidObjectId, Types } from 'mongoose'
 import { StatusCodes } from 'http-status-codes'
-import { LOAD_STATUSES } from '../models/enums'
+import { BID_STATUSES, LOAD_STATUSES } from '../models/enums'
 import { BidModel } from '../models/loads/Bid'
 import { LoadModel } from '../models/loads/Load'
 import { TruckModel } from '../models/trucks/Truck'
@@ -84,6 +84,99 @@ interface ScoredLoad {
 /**
  * List all bids placed by a driver. Optional status filter.
  */
+/**
+ * For a given driver and target load, find any of the driver's submitted bids
+ * whose associated loads have a scheduling time conflict.
+ * Returns minimal load/bid info for frontend display.
+ */
+export const getConflictingBids = async (driverId: string, targetLoadId: string) => {
+  assertValidId(driverId, 'driverId')
+  assertValidId(targetLoadId, 'targetLoadId')
+
+  // 1. Fetch the target load to get its schedule window
+  const targetLoad = await LoadModel.findById(targetLoadId).lean()
+  if (!targetLoad) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Target load not found')
+  }
+
+  const targetPickup = new Date(targetLoad.pickupTime).getTime()
+  const targetDropoff = new Date(targetLoad.dropoffTime).getTime()
+
+  // 2. Fetch all submitted bids by this driver (excluding the target load)
+  const bids = await BidModel.find({
+    driverId: new Types.ObjectId(driverId),
+    loadId: { $ne: new Types.ObjectId(targetLoadId) },
+    status: BID_STATUSES.Submitted,
+  })
+    .populate<{ loadId: any }>('loadId')
+    .lean()
+
+  // 3. Fetch the driver's currently accepted/assigned loads (booked or in_transit)
+  const assignedLoads = await LoadModel.find({
+    assignedDriverId: new Types.ObjectId(driverId),
+    status: { $in: [LOAD_STATUSES.Booked, LOAD_STATUSES.InTransit] },
+  }).lean()
+
+  // 4. Combine and filter to conflicting schedules and build response
+  const conflicts: {
+    loadId: string
+    originAddress: string
+    destinationAddress: string
+    pickupTime: string
+    dropoffTime: string
+    bidAmount: number
+    conflictType: 'accepted_job' | 'pending_bid'
+  }[] = []
+
+  for (const bid of bids) {
+    const otherLoad = bid.loadId as any
+    if (!otherLoad || !otherLoad.pickupTime || !otherLoad.dropoffTime) continue
+
+    const otherPickup = new Date(otherLoad.pickupTime).getTime()
+    const otherDropoff = new Date(otherLoad.dropoffTime).getTime()
+
+    // Standard overlap check: target pickup < other dropoff && target dropoff > other pickup
+    if (targetPickup < otherDropoff && targetDropoff > otherPickup) {
+      conflicts.push({
+        loadId: otherLoad._id.toString(),
+        originAddress: otherLoad.originAddress ?? 'Unknown',
+        destinationAddress: otherLoad.destinationAddress ?? 'Unknown',
+        pickupTime: otherLoad.pickupTime,
+        dropoffTime: otherLoad.dropoffTime,
+        bidAmount: bid.amount,
+        conflictType: 'pending_bid',
+      })
+    }
+  }
+
+  for (const load of assignedLoads) {
+    if (!load.pickupTime || !load.dropoffTime) continue
+
+    const otherPickup = new Date(load.pickupTime).getTime()
+    const otherDropoff = new Date(load.dropoffTime).getTime()
+
+    if (targetPickup < otherDropoff && targetDropoff > otherPickup) {
+      conflicts.push({
+        loadId: load._id.toString(),
+        originAddress: load.originAddress ?? 'Unknown',
+        destinationAddress: load.destinationAddress ?? 'Unknown',
+        pickupTime: load.pickupTime,
+        dropoffTime: load.dropoffTime,
+        bidAmount: -1,
+        conflictType: 'accepted_job',
+      })
+    }
+  }
+
+  // Sort so accepted jobs appear first (higher priority)
+  conflicts.sort((a, b) => {
+    if (a.conflictType === b.conflictType) return 0
+    return a.conflictType === 'accepted_job' ? -1 : 1
+  })
+
+  return conflicts
+}
+
 export const listDriverBids = async (driverId: string, status?: string) => {
   assertValidId(driverId, 'driverId')
 

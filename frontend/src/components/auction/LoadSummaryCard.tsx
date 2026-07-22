@@ -1,4 +1,4 @@
-import { MapPin } from 'lucide-react'
+import { MapPin, CalendarDays } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { AUCTION_STATUSES, type Auction } from '@/services/auctionApi/auctionEnum'
 import type { PopulatedLoad } from '@/services/loadApi/loadEnum'
@@ -52,6 +52,13 @@ export default function LoadSummaryCard({
 
       <p className="text-sm text-muted-foreground">
         {load.commodity} · {load.truckType} · {load.weightLbs.toLocaleString()} lbs
+      </p>
+
+      <p className="flex items-center gap-2 text-sm">
+        <CalendarDays className="h-4 w-4 text-muted-foreground" />
+        {new Date(load.pickupTime).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
+        {' → '}
+        {new Date(load.dropoffTime).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
       </p>
 
       <p className="flex items-center gap-2 text-sm font-medium">

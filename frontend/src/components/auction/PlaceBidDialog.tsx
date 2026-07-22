@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { formatMoney } from '@/lib/format'
 import { usePlaceBidMutation } from '@/services/driverApi/driverSlice'
+import ScheduleConflictWarning from '@/components/auction/ScheduleConflictWarning'
 
 interface PlaceBidDialogProps {
   loadId: string
@@ -80,6 +81,13 @@ export default function PlaceBidDialog({
             <p className="text-2xl font-bold text-primary">{formatMoney(bidAmount)}</p>
           </div>
         </div>
+
+        <ScheduleConflictWarning
+          driverId={driverId}
+          loadId={loadId}
+          isAuctionLive={isAuctionLive}
+          isOpen={open}
+        />
 
         {isError && (
           <p className="text-sm text-destructive">Could not place your bid. Please try again.</p>
