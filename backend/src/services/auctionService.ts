@@ -187,19 +187,36 @@ export const acceptBid = async (loadId: string, bidId: string) => {
   try {
     const load = await LoadModel.findById(loadId)
       .populate<{ companyId: { companyName: string; businessAddress?: string } }>('companyId')
-      .populate<{ assignedDriverId: { name: string; email: string } | null }>('assignedDriverId')
+      .populate<{
+        assignedDriverId: {
+          name: string
+          email: string
+          phone?: string
+          mcNumber?: string
+          dotNumber?: string
+        } | null
+      }>('assignedDriverId')
+      .populate<{ selectedTruckId: { plateNumber: string; trailerLengthFt?: number } | null }>(
+        'selectedTruckId'
+      )
       .lean()
 
     if (load) {
       const company = load.companyId as any
       const driver = load.assignedDriverId as any
+      const truck = load.selectedTruckId as any
       const pdfResult = await generateRateConfirmationPdf({
         loadId,
         bidId,
         companyName: company?.companyName ?? 'Unknown Company',
         companyAddress: company?.businessAddress,
         driverName: driver?.name ?? 'Unknown Driver',
+        driverPhone: driver?.phone || undefined,
         driverEmail: driver?.email,
+        mcNumber: driver?.mcNumber || undefined,
+        dotNumber: driver?.dotNumber || undefined,
+        truckNumber: truck?.plateNumber || undefined,
+        trailerLengthFt: truck?.trailerLengthFt || undefined,
         originAddress: load.originAddress,
         destinationAddress: load.destinationAddress,
         pickupTime: new Date(load.pickupTime),
@@ -343,12 +360,24 @@ export const claimLoad = async (
   try {
     const load = await LoadModel.findById(loadId)
       .populate<{ companyId: { companyName: string; businessAddress?: string } }>('companyId')
-      .populate<{ assignedDriverId: { name: string; email: string } | null }>('assignedDriverId')
+      .populate<{
+        assignedDriverId: {
+          name: string
+          email: string
+          phone?: string
+          mcNumber?: string
+          dotNumber?: string
+        } | null
+      }>('assignedDriverId')
+      .populate<{ selectedTruckId: { plateNumber: string; trailerLengthFt?: number } | null }>(
+        'selectedTruckId'
+      )
       .lean()
 
     if (load) {
       const company = load.companyId as any
       const driver = load.assignedDriverId as any
+      const truck = load.selectedTruckId as any
       driverNameForNotification = driver?.name ?? driverId
       const bidIdStr = bid._id.toString()
       const pdfResult = await generateRateConfirmationPdf({
@@ -357,7 +386,12 @@ export const claimLoad = async (
         companyName: company?.companyName ?? 'Unknown Company',
         companyAddress: company?.businessAddress,
         driverName: driverNameForNotification,
+        driverPhone: driver?.phone || undefined,
         driverEmail: driver?.email,
+        mcNumber: driver?.mcNumber || undefined,
+        dotNumber: driver?.dotNumber || undefined,
+        truckNumber: truck?.plateNumber || undefined,
+        trailerLengthFt: truck?.trailerLengthFt || undefined,
         originAddress: load.originAddress,
         destinationAddress: load.destinationAddress,
         pickupTime: new Date(load.pickupTime),
