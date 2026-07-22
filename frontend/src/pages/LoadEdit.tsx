@@ -21,13 +21,12 @@ export default function LoadEdit() {
   const navigate = useNavigate()
   const location = useLocation()
   const editState = location.state as { from?: RoutePath; viaDetail?: boolean } | null
-  const backTarget = editState?.from ?? RoutePath.Loads
+  const backTarget = editState?.from ?? RoutePath.CompanyAuctions
   const { data: load, isLoading, isError } = useGetLoadQuery(loadId ?? '', { skip: !loadId })
-  const [updateLoad, { isLoading: isSaving, isSuccess, isError: isMutationError }] = useUpdateLoadMutation()
+  const [updateLoad, { isLoading: isSaving, isSuccess, isError: isMutationError }] =
+    useUpdateLoadMutation()
 
   const canEdit = load ? !NON_EDITABLE_STATUSES.includes(load.status) : false
-  const cancelTarget = editState?.viaDetail && load ? `/loads/${load._id}` : backTarget
-  const cancelState = editState?.viaDetail ? { from: backTarget } : undefined
 
   // Map the fetched load (+ its auction) back into LoadForm's initial values
   const initialValues = useMemo<Partial<LoadFormValues> | undefined>(() => {
@@ -117,18 +116,7 @@ export default function LoadEdit() {
   }
 
   return (
-    <PageShell
-      title="Edit Load"
-      subtitle={`Load #${load._id.slice(-6).toUpperCase()}`}
-      actions={
-        <Button variant="outline" size="sm" asChild>
-          <Link to={cancelTarget} state={cancelState}>
-            <ArrowLeft className="h-4 w-4" />
-            Cancel
-          </Link>
-        </Button>
-      }
-    >
+    <PageShell title="Edit Load" subtitle={`Load #${load._id.slice(-6).toUpperCase()}`}>
       <LoadForm initialValues={initialValues} onSubmit={handleSubmit} isSubmitting={isSaving} />
     </PageShell>
   )

@@ -34,7 +34,6 @@ export const RoutePath = {
   DriverPublicProfile: '/driver/:driverId',
   CompanyProfile: '/company/',
   CompanyPublicProfile: '/company/:companyId',
-  Loads: '/loads',
   AuctionLive: '/auctionLive',
   PostLoad: '/loads/post',
   LoadDetail: '/loads/:loadId',
@@ -60,6 +59,10 @@ export interface RouteMeta {
   navGroup: 'main' | 'bottom' | null
   // which roles can see this nav item, where undefined = visible to all roles
   roles?: UserRole[]
+  /** Suppresses the top breadcrumb bar for this route — used when the page has its own Back/Cancel control instead. */
+  hideBreadcrumb?: boolean
+  /** When set (and hideBreadcrumb is true), the top bar renders a Back link in place of the breadcrumb, targeting location.state.from if present, else this route. */
+  headerBackFallback?: RoutePath
 }
 
 export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
@@ -114,7 +117,6 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     icon: ShieldAlert,
     navGroup: null,
   },
-  [RoutePath.Loads]: { label: 'Loads', icon: ClipboardList, navGroup: 'main', roles: ['company'] },
   [RoutePath.AuctionLive]: {
     label: 'Auction Live',
     icon: Gavel,
@@ -131,12 +133,16 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     icon: ClipboardList,
     navGroup: null,
     roles: ['company'],
+    hideBreadcrumb: true,
+    headerBackFallback: RoutePath.CompanyAuctions,
   },
   [RoutePath.LoadEdit]: {
     label: 'Edit Load',
     icon: ClipboardList,
     navGroup: null,
     roles: ['company'],
+    hideBreadcrumb: true,
+    headerBackFallback: RoutePath.CompanyAuctions,
   },
   // Not in the sidebar — reached only via a loadId query param from an
   // in-transit row's "Track"/"Notify Company" button.

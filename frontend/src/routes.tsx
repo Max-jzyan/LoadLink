@@ -14,7 +14,6 @@ import DriverPublicProfile from '@/pages/DriverPublicProfile'
 import DriverRevenueCenter from '@/pages/DriverRevenueCenter'
 import LoadDetail from '@/pages/LoadDetail'
 import LoadEdit from '@/pages/LoadEdit'
-import Loads from '@/pages/Loads'
 import MapPage from '@/pages/Map'
 import Messages from '@/pages/Messages'
 import NotFound from '@/pages/NotFound'
@@ -106,14 +105,6 @@ export default function AppRoutes() {
         element={
           <RoleRoute path={RoutePath.CompanyProfile}>
             <CompanyProfile />
-          </RoleRoute>
-        }
-      />
-      <Route
-        path={RoutePath.Loads}
-        element={
-          <RoleRoute path={RoutePath.Loads}>
-            <Loads />
           </RoleRoute>
         }
       />

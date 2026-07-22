@@ -20,7 +20,7 @@ export default function PostLoad() {
 
   useEffect(() => {
     if (isSuccess) {
-      navigate(RoutePath.Loads)
+      navigate(RoutePath.CompanyAuctions)
     }
   }, [isSuccess, navigate])
 

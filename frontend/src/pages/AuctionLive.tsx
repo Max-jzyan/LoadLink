@@ -99,10 +99,10 @@ export default function AuctionLive() {
           <Gavel className="h-10 w-10 text-muted-foreground/50" />
           <p className="text-sm font-medium">No auction selected</p>
           <p className="text-xs text-muted-foreground max-w-sm">
-            Open an auction from your loads list — each live load has a View Auction action.
+            Open an auction from your auctions list — each live load has a View Auction action.
           </p>
           <Button variant="outline" asChild>
-            <Link to={RoutePath.Loads}>Go to Loads</Link>
+            <Link to={RoutePath.CompanyAuctions}>Go to Auctions</Link>
           </Button>
         </div>
       </PageShell>

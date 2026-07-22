@@ -7,11 +7,14 @@ import { useRequiredMongoId } from '@/hooks/useAuth'
 import { api } from '@/services/api'
 import { LoadTag } from '@/services/apiTypes'
 import { AUCTION_STATUSES } from '@/services/auctionApi/auctionEnum'
-import { Gavel, ArrowRight, RefreshCw } from 'lucide-react'
+import { Gavel, ArrowRight, RefreshCw, Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { RoutePath } from '@/config/routes'
 import { format } from 'date-fns'
-import { DEFAULT_FILTERS, type CompanyAuctionFilters } from '@/components/auction/CompanyAuctionFilterBar'
+import {
+  DEFAULT_FILTERS,
+  type CompanyAuctionFilters,
+} from '@/components/auction/CompanyAuctionFilterBar'
 import CompanyAuctionFilterBar from '@/components/auction/CompanyAuctionFilterBar'
 
 interface AuctionEntry {
@@ -148,10 +151,23 @@ export default function CompanyAuctions() {
       title="My Auctions"
       subtitle={`${live} live · ${closed} closed`}
       actions={
-        <Button variant="outline" size="sm" onClick={refetch} disabled={isFetching}>
-          <RefreshCw className={`h-4 w-4 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={refetch}
+            disabled={isFetching}
+            title="Refresh"
+          >
+            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button size="sm" asChild>
+            <Link to={RoutePath.PostLoad}>
+              <Plus className="h-4 w-4 mr-1" />
+              Post New Load
+            </Link>
+          </Button>
+        </>
       }
       stickyBar={<CompanyAuctionFilterBar filters={filters} onFiltersChange={setFilters} />}
     >
@@ -172,7 +188,9 @@ export default function CompanyAuctions() {
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <Gavel className="h-10 w-10 mb-3 opacity-30" />
           <p className="text-sm">
-            {Object.values(filters).some((v) => v !== '' && v !== null && v !== 'all' && v !== undefined)
+            {Object.values(filters).some(
+              (v) => v !== '' && v !== null && v !== 'all' && v !== undefined
+            )
               ? 'No auctions match your filters.'
               : 'No auctions yet.'}
           </p>
@@ -237,7 +255,7 @@ export default function CompanyAuctions() {
                     </Link>
                   </Button>
                 )}
-                {auction.status !== AUCTION_STATUSES.Active && load && (
+                {load && (
                   <Button size="sm" variant="outline" asChild>
                     <Link to={`/loads/${loadId}`} state={{ from: RoutePath.CompanyAuctions }}>
                       Details

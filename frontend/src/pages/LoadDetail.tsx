@@ -17,17 +17,7 @@ import { useGetLoadQuery, useGetAcceptedBidQuery } from '@/services/loadApi/load
 import { useStreamNotificationsQuery } from '@/services/notificationApi/notificationSlice'
 import { NOTIFICATION_TYPES } from '@/services/notificationApi/notificationEnum'
 import { LOAD_STATUSES } from '@/types/enums'
-import {
-  ArrowLeft,
-  Calendar,
-  Download,
-  Gavel,
-  MapPin,
-  Package2,
-  Pencil,
-  Truck,
-  Weight,
-} from 'lucide-react'
+import { Calendar, Download, Gavel, MapPin, Package2, Pencil, Truck, Weight } from 'lucide-react'
 import { useMemo, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
@@ -72,7 +62,8 @@ function DetailField({
 export default function LoadDetail() {
   const { loadId } = useParams<{ loadId: string }>()
   const location = useLocation()
-  const backTarget = (location.state as { from?: RoutePath } | null)?.from ?? RoutePath.Loads
+  const backTarget =
+    (location.state as { from?: RoutePath } | null)?.from ?? RoutePath.CompanyAuctions
   const {
     data: load,
     isLoading: loadLoading,
@@ -184,12 +175,6 @@ export default function LoadDetail() {
       subtitle={`${originShort} → ${destinationShort} · Load #${load._id.slice(-6).toUpperCase()}`}
       actions={
         <>
-          <Button variant="outline" size="sm" asChild>
-            <Link to={backTarget}>
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Link>
-          </Button>
           {canEdit && (
             <Button variant="outline" size="sm" asChild>
               <Link to={`/loads/${load._id}/edit`} state={{ from: backTarget, viaDetail: true }}>
@@ -209,43 +194,9 @@ export default function LoadDetail() {
           {user?.role === 'company' && load.assignedDriverId && (
             <MessageButton loadId={load._id} label="Message Driver" />
           )}
-          {showRcButton && (
-            <DynamicCard className="mt-4" title="Accepted Bid">
-              {acceptedBidLoading ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-6 w-[200px]" />
-                  <Skeleton className="h-4 w-[150px]" />
-                </div>
-              ) : acceptedBid?.rateConfirmationUrl ? (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">Rate confirmation available</span>
-                  <Button size="sm" variant="outline" asChild>
-                    <a
-                      href={acceptedBid.rateConfirmationUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Download className="h-4 w-4" />
-                      View
-                    </a>
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No accepted bid yet.</p>
-              )}
-            </DynamicCard>
-          )}
         </>
       }
     >
-      {showRcButton && acceptedBid?.rateConfirmationUrl && (
-        <Button size="sm" variant="outline" asChild>
-          <a href={acceptedBid.rateConfirmationUrl} target="_blank" rel="noopener noreferrer">
-            <Download className="h-4 w-4" />
-            Rate Confirmation
-          </a>
-        </Button>
-      )}
       <Row stackAt="lg">
         <Col size={9}>
           <DynamicCard title="Load Information" action={<StatusBadge status={load.status} />}>
@@ -330,6 +281,50 @@ export default function LoadDetail() {
               </div>
             )}
           </DynamicCard>
+          {showRcButton && (
+            <DynamicCard
+              className="mt-4"
+              title="Accepted Bid"
+              description={
+                acceptedBid?.acceptedAt
+                  ? `Accepted ${formatDateTime(acceptedBid.acceptedAt)}`
+                  : undefined
+              }
+            >
+              {acceptedBidLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-[200px]" />
+                  <Skeleton className="h-4 w-[150px]" />
+                </div>
+              ) : acceptedBid ? (
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Accepted Amount</p>
+                    <p className="text-2xl font-bold">{formatMoney(acceptedBid.amount)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to={`/driver/${acceptedBid.driverId}`}>View Driver</Link>
+                    </Button>
+                    {acceptedBid.rateConfirmationUrl && (
+                      <Button size="sm" variant="outline" asChild>
+                        <a
+                          href={acceptedBid.rateConfirmationUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Download className="h-4 w-4" />
+                          Rate Confirmation
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No accepted bid yet.</p>
+              )}
+            </DynamicCard>
+          )}
         </Col>
         <Col size={7}>
           <DynamicCard title="Route Map" expand>

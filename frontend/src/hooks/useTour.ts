@@ -115,18 +115,9 @@ export function createTour(role: UserRole, navigate: (path: string) => void): To
     })
 
     tour.addStep({
-      id: 'nav-loads',
-      title: 'Loads',
-      text: '<p>View and manage all loads your company has posted. Track statuses and driver assignments. Use the Post Load button on this page to create new postings.</p>',
-      attachTo: { element: '[data-tour="nav-/loads"]', on: 'right' },
-      beforeShowPromise: navStep(navigate, '/loads'),
-      buttons: [backBtn, nextBtn],
-    })
-
-    tour.addStep({
       id: 'nav-auctions',
       title: 'Auctions',
-      text: '<p>Manage your live auctions. Accept bids, set cap prices, and extend deadlines in real-time.</p>',
+      text: '<p>Manage your live auctions and view all posted loads. Accept bids, set cap prices, and extend deadlines in real-time.</p>',
       attachTo: { element: '[data-tour="nav-/company/auctions"]', on: 'right' },
       beforeShowPromise: navStep(navigate, '/company/auctions'),
       buttons: [backBtn, nextBtn],
