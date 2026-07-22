@@ -12,6 +12,7 @@ export interface UseCurrentLocationResult {
   status: GeolocationStatus
   error: string | null
   requestLocation: () => void
+  clearLocation: () => void
 }
 
 function describeGeolocationError(err: GeolocationPositionError): string {
@@ -60,5 +61,11 @@ export function useCurrentLocation(): UseCurrentLocationResult {
     )
   }, [])
 
-  return { location, status, error, requestLocation }
+  const clearLocation = useCallback(() => {
+    setLocation(null)
+    setStatus('idle')
+    setError(null)
+  }, [])
+
+  return { location, status, error, requestLocation, clearLocation }
 }

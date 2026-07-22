@@ -59,7 +59,7 @@ function createColoredIcon(color: string) {
 
 const originIcon = createColoredIcon('#22c55e') // green
 const destinationIcon = createColoredIcon('#ef4444') // red
-const checkInIcon = createColoredIcon('#8b5cf6') // violet
+const checkInIcon = createColoredIcon('var(--primary)')
 
 /** Formats an ISO timestamp as a short relative "Xm ago" / "Xh ago" string. */
 function relativeTimeFromNow(iso: string): string {
@@ -95,6 +95,10 @@ type DriverMapProps = {
   onRouteClick?: (routeId: string) => void
   /** Driver's most recent (fuzzed) check-in ping, if any */
   checkIn?: CheckInPoint | null
+  /** Optional driver live location [lat, lng] to fly to and pin on the map */
+  driverLocation?: { lat: number; lng: number } | null
+  /** Max deadhead radius in meters to display around the driver location */
+  driverDeadheadRadiusMeters?: number | null
 }
 
 export function DriverMap({
@@ -103,6 +107,8 @@ export function DriverMap({
   selectedRouteId,
   onRouteClick,
   checkIn,
+  driverLocation,
+  driverDeadheadRadiusMeters,
 }: DriverMapProps) {
   const isDark = useDarkMode()
   const tile = isDark ? TILES.dark : TILES.light
@@ -124,12 +130,32 @@ export function DriverMap({
 
         <FitBoundsToRoutes routes={routes} selectedRouteId={selectedRouteId} />
         <FlyToRoute routes={routes} selectedRouteId={selectedRouteId} />
+        {driverLocation && (
+          <FlyToLocation location={driverLocation} radiusMeters={driverDeadheadRadiusMeters ?? undefined} />
+        )}
+        <ResetMapOnLocationClear routes={routes} driverLocation={driverLocation} />
 
         {routes.map((route) => (
           <RouteLine key={route.id} route={route} onRouteClick={onRouteClick} />
         ))}
 
         {checkIn && <CheckInMarker checkIn={checkIn} />}
+        {driverLocation && (
+          <Marker position={[driverLocation.lat, driverLocation.lng]} icon={checkInIcon}>
+            <Popup>
+              <strong>Your location</strong>
+              <br />
+              {driverLocation.lat.toFixed(5)}, {driverLocation.lng.toFixed(5)}
+            </Popup>
+          </Marker>
+        )}
+        {driverLocation && driverDeadheadRadiusMeters != null && driverDeadheadRadiusMeters > 0 && (
+          <Circle
+            className="deadhead-circle"
+            center={[driverLocation.lat, driverLocation.lng]}
+            radius={driverDeadheadRadiusMeters}
+          />
+        )}
       </MapContainer>
     </div>
   )
@@ -155,7 +181,7 @@ function CheckInMarker({ checkIn }: { checkIn: CheckInPoint }) {
       <Circle
         center={checkIn.position}
         radius={MAX_FUZZ_RADIUS_METERS}
-        pathOptions={{ color: '#8b5cf6', fillColor: '#8b5cf6', fillOpacity: 0.1, weight: 1 }}
+        pathOptions={{ color: '#9ca3af', fillColor: '#9ca3af', fillOpacity: 0.08, weight: 1 }}
       />
     </>
   )
@@ -267,6 +293,75 @@ function getRouteColor(status: string): string {
 
 function isRouteDashed(status: string): boolean {
   return status === LOAD_STATUSES.Booked
+}
+
+/** Zooms the map to include the driver's full deadhead circle once when it first becomes available */
+function FlyToLocation({
+  location,
+  radiusMeters,
+}: {
+  location: { lat: number; lng: number }
+  radiusMeters?: number
+}) {
+  const map = useMap()
+  const hasFlownRef = useRef(false)
+
+  useEffect(() => {
+    if (hasFlownRef.current) return
+    hasFlownRef.current = true
+
+    if (typeof radiusMeters === 'number' && radiusMeters > 0) {
+      const metersPerDegLat = 110_574
+      const latRad = (location.lat * Math.PI) / 180
+      const metersPerDegLng = 111_320 * Math.cos(latRad)
+
+      const dLat = radiusMeters / metersPerDegLat
+      const dLng = radiusMeters / metersPerDegLng
+
+      const southWest: [number, number] = [location.lat - dLat, location.lng - dLng]
+      const northEast: [number, number] = [location.lat + dLat, location.lng + dLng]
+
+      const bounds = L.latLngBounds(southWest, northEast)
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 })
+      }
+    } else {
+      map.flyTo([location.lat, location.lng], 14, { duration: 1.5 })
+    }
+  }, [map, location.lat, location.lng, radiusMeters])
+
+  return null
+}
+
+/** Resets the map view back to all routes after location is cleared */
+function ResetMapOnLocationClear({
+  routes,
+  driverLocation,
+}: {
+  routes: RouteCoordinate[]
+  driverLocation?: { lat: number; lng: number } | null
+}) {
+  const map = useMap()
+  const prevLocationRef = useRef(driverLocation)
+
+  useEffect(() => {
+    const prevLocation = prevLocationRef.current
+    if (prevLocation && !driverLocation) {
+      // transitioning from set → cleared
+      if (routes.length === 0) return
+      const bounds = L.latLngBounds([])
+      for (const route of routes) {
+        bounds.extend(route.origin)
+        bounds.extend(route.destination)
+      }
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [50, 50] })
+      }
+    }
+    prevLocationRef.current = driverLocation
+  }, [map, routes, driverLocation])
+
+  return null
 }
 
 function RouteLine({

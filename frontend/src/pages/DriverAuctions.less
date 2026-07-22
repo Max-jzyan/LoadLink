@@ -1,0 +1,49 @@
+/* Rotating glow for the active location button */
+@property --location-glow-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes location-glow-spin {
+  from {
+    --location-glow-angle: 0deg;
+  }
+  to {
+    --location-glow-angle: 360deg;
+  }
+}
+
+.location-active-glow {
+  position: relative;
+  isolation: isolate;
+}
+
+.location-active-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--location-glow-angle),
+    transparent 75%,
+    color-mix(in oklch, var(--primary) 45%, transparent) 100%
+  );
+  z-index: -1;
+  opacity: 0.3;
+  animation: location-glow-spin 6s linear infinite;
+  pointer-events: none;
+}
+
+.deadhead-circle {
+  stroke: var(--primary);
+  fill: var(--primary);
+  fill-opacity: 0.08;
+  stroke-width: 2;
+  stroke-dasharray: 6, 6;
+}
+
+.location-container-active {
+  border-color: color-mix(in oklch, var(--primary) 40%, transparent);
+  background-color: color-mix(in oklch, var(--primary) 5%, transparent);
+}

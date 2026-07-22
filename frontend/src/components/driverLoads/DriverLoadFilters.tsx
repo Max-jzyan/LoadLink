@@ -55,7 +55,7 @@ export function DriverLoadFilters({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Row 1: date picker + search + sort */}
+      {/* Row 1: date picker + search + sort + (eligibility filters when no AI) */}
       <div className="flex flex-wrap items-center gap-2">
         <DatePickerWithRange
           label="Pickup Date"
@@ -123,42 +123,86 @@ export function DriverLoadFilters({
             </>
           )}
         </div>
+
+        {/* Eligibility filters — only on Row 1 when AI button is absent */}
+        {!onAiClick && (
+          <>
+            <Separator orientation="vertical" className="hidden md:block h-6" />
+            <Separator className="md:hidden w-full" />
+            <div className="flex items-center gap-0.5">
+              {FILTER_OPTIONS.map((opt) => {
+                const count = {
+                  all: counts.all,
+                  eligible: counts.eligible,
+                  'high-score': counts.highScore,
+                  'issues-critical': counts.critical,
+                  'issues-minor': counts.minor,
+                }[opt.value]
+                return (
+                  <Button
+                    key={opt.value}
+                    variant={eligibilityFilter === opt.value ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => onEligibilityChange(opt.value)}
+                  >
+                    {opt.label}
+                    <span className="ml-1 text-[10px] opacity-70">({count})</span>
+                  </Button>
+                )
+              })}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+              onClick={onReset}
+              title="Reset all filters"
+            >
+              Reset
+            </Button>
+          </>
+        )}
       </div>
 
-      {/* Row 2: eligibility filter buttons + AI button (far right) */}
-      <div className="flex items-center gap-1.5">
-        <div className="flex items-center gap-0.5">
-          {FILTER_OPTIONS.map((opt) => {
-            const count = { all: counts.all, eligible: counts.eligible, issues: counts.issues }[
-              opt.value
-            ]
-            return (
-              <Button
-                key={opt.value}
-                variant={eligibilityFilter === opt.value ? 'default' : 'outline'}
-                size="sm"
-                className="h-7 px-2 text-xs"
-                onClick={() => onEligibilityChange(opt.value)}
-              >
-                {opt.label}
-                <span className="ml-1 text-[10px] opacity-70">({count})</span>
-              </Button>
-            )
-          })}
-        </div>
+      {/* Row 2: eligibility filter buttons + AI button — only renders when caller provides onAiClick */}
+      {onAiClick && (
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-0.5">
+            {FILTER_OPTIONS.map((opt) => {
+              const count = {
+                all: counts.all,
+                eligible: counts.eligible,
+                'high-score': counts.highScore,
+                'issues-critical': counts.critical,
+                'issues-minor': counts.minor,
+              }[opt.value]
+              return (
+                <Button
+                  key={opt.value}
+                  variant={eligibilityFilter === opt.value ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => onEligibilityChange(opt.value)}
+                >
+                  {opt.label}
+                  <span className="ml-1 text-[10px] opacity-70">({count})</span>
+                </Button>
+              )
+            })}
+          </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-          onClick={onReset}
-          title="Reset all filters"
-        >
-          Reset
-        </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+            onClick={onReset}
+            title="Reset all filters"
+          >
+            Reset
+          </Button>
 
-        {/* AI insight trigger — far right; only renders when caller provides onAiClick */}
-        {onAiClick && (
+          {/* AI insight trigger — far right */}
           <Button
             variant={aiActive ? 'default' : 'outline'}
             size="icon"
@@ -171,8 +215,8 @@ export function DriverLoadFilters({
           >
             <Sparkles className="w-3.5 h-3.5" />
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

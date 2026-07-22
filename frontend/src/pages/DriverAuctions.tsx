@@ -17,6 +17,7 @@ import {
   useGetScoredLoadsQuery,
   useListDriverBidsQuery,
   useGetAiStatusQuery,
+  useGetDriverProfileQuery,
 } from '@/services/driverApi/driverSlice'
 import type { Load } from '@/services/loadApi/loadEnum'
 import { useListAvailableLoadsQuery } from '@/services/loadApi/loadSlice'
@@ -35,6 +36,8 @@ import {
 import { showError, showSuccess } from '@/lib/toast'
 import { RoutePath } from '@/config/routes'
 
+import './DriverAuctions.less';
+
 type MapLayer = 'route' | 'fuel' | 'rest'
 
 // Load enriched with scoring metadata from driver profile analysis
@@ -42,11 +45,6 @@ export interface EnrichedLoad extends Load {
   _scored?: ScoredLoad
 }
 
-const MAP_LAYER_LABELS: Record<MapLayer, string> = {
-  route: 'Route',
-  fuel: 'Fuel Stops',
-  rest: 'Rest Areas',
-}
 
 import type { SortKey, EligibilityFilter } from '@/components/driverLoads/DriverLoadFilters.types'
 
@@ -64,7 +62,12 @@ export default function DriverAuctions() {
     status: locationStatus,
     error: locationError,
     requestLocation,
+    clearLocation,
   } = useCurrentLocation()
+  const { data: driverProfile } = useGetDriverProfileQuery(driverId)
+  const driverMaxDeadheadMiles = driverProfile?.pricingPreferences?.preferredMaxDeadheadMiles ?? 0
+  const driverDeadheadRadiusMeters = driverMaxDeadheadMiles * 1609.34
+
   const { data: scoredLoads = [], refetch: refetchScored } = useGetScoredLoadsQuery(
     location ? { driverId, lat: location.lat, lng: location.lng } : driverId
   )
@@ -80,7 +83,7 @@ export default function DriverAuctions() {
     } else if (locationStatus === 'error' && locationError) {
       showError(locationError)
     }
-  }, [locationStatus])
+  }, [locationError, locationStatus])
 
   const { data: loadPostedEvent } = useEventSource<{ loadId: string }>('/api/loads/stream')
   useEffect(() => {
@@ -346,10 +349,13 @@ export default function DriverAuctions() {
           selectedRouteId={selectedLoad?._id ?? null}
           height={expandable ? '100%' : '300px'}
           onRouteClick={handleMapRouteClick}
+          checkIn={location ? { position: [location.lat, location.lng], checkedInAt: new Date().toISOString() } : null}
+          driverLocation={location}
+          driverDeadheadRadiusMeters={location ? driverDeadheadRadiusMeters : undefined}
         />
       </DynamicCard>
     ),
-    [mapDescription, activeLayer, mapRoutes, selectedLoad, handleMapRouteClick]
+    [mapDescription, aiTriggered, mapRoutes, selectedLoad?._id, handleMapRouteClick, location, driverDeadheadRadiusMeters, activeLayer]
   )
 
   const getEligibilityDescription = (scored: NonNullable<EnrichedLoad['_scored']>) => {
@@ -431,12 +437,18 @@ export default function DriverAuctions() {
             onAiClick={aiAvailable ? () => setAiTriggered(true) : undefined}
             aiActive={aiTriggered}
           />
-          <div className="flex items-center gap-2 mt-2">
+          <div
+            className={cn(
+              'flex items-center gap-2 mt-2 rounded-md border px-3 py-2 transition-colors',
+              location ? 'location-container-active' : 'border-transparent'
+            )}
+          >
             <Button
               variant={location ? 'secondary' : 'outline'}
               size="sm"
-              onClick={requestLocation}
+              onClick={() => (location ? clearLocation() : requestLocation())}
               disabled={locationStatus === 'locating'}
+              className={cn(location && 'location-active-glow')}
             >
               {locationStatus === 'locating' ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
