@@ -79,7 +79,7 @@ export async function seedUsers() {
 
   const testUser1 = await driverSeed(
     TEST_USER1_ID,
-    '64HOtArwogXs2H4nXD4kyxRw2wk2',
+    'rNV7q6oxEFNcqAMFYOAiMJuGhvJ3',
     'testUser1',
     'testuser1@example.com',
     { minimumRatePerMile: 2.25, minimumLoadValue: 400, preferredMaxDeadheadMiles: 75 },
@@ -93,7 +93,7 @@ export async function seedUsers() {
 
   const testUser2 = await driverSeed(
     TEST_USER2_ID,
-    '4Y6LYPl2kyQpyPtR99FaeaVOph62',
+    '3MENcnJWEhSo1YWfdwBZRezwbd83',
     'testUser2',
     'testuser2@example.com',
     { minimumRatePerMile: 3.25, minimumLoadValue: 600, preferredMaxDeadheadMiles: 50 },
@@ -108,7 +108,7 @@ export async function seedUsers() {
 
   const testUser3 = await driverSeed(
     TEST_USER3_ID,
-    'qYIxX5L2P5UoEBgDOh9UUHOX5HU2',
+    'lypJLFWC9yMdEP3qlOd68OpCBoQ2',
     'testUser3',
     'testuser3@example.com',
     { minimumRatePerMile: 2.25, minimumLoadValue: 400, preferredMaxDeadheadMiles: 75 },
