@@ -35,6 +35,7 @@ import truckRouter from './routes/truckRoutes'
 import trailerRouter from './routes/trailerRoutes'
 import reviewRouter from './routes/reviewRoutes'
 import blocklistRouter from './routes/blocklistRoutes'
+import favoriteAddressRouter from './routes/favoriteAddressRoutes'
 import reportRouter from './routes/reportRoutes'
 import uploadRouter from './routes/uploadRoutes'
 import notificationRouter from './routes/notificationRoutes'
@@ -53,6 +54,7 @@ app.use('/api', truckRouter)
 app.use('/api', trailerRouter)
 app.use('/api', reviewRouter)
 app.use('/api', blocklistRouter)
+app.use('/api', favoriteAddressRouter)
 app.use('/api', reportRouter)
 app.use('/api', uploadRouter)
 app.use('/api', notificationRouter)

@@ -16,6 +16,7 @@ export const LoadTag = {
   Message: 'Message',
   Auction: 'Auction',
   Admin: 'Admin',
+  FavoriteAddress: 'FavoriteAddress',
 } as const
 
 export type LoadTag = (typeof LoadTag)[keyof typeof LoadTag]

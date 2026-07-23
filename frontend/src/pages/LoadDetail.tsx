@@ -25,7 +25,6 @@ import { LOAD_STATUSES } from '@/types/enums'
 import { uploadDocuments } from '@/lib/uploadDocuments'
 import { auth } from '@/lib/firebase'
 import {
-  ArrowLeft,
   Calendar,
   CheckCircle2,
   Clock,

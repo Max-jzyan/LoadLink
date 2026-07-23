@@ -20,6 +20,7 @@ import { NOTIFICATION_TYPES, type Notification } from '@/services/notificationAp
 import { formatDistanceToNow } from 'date-fns'
 import { RoutePath } from '@/config/routes'
 import { LoadTag } from '@/services/apiTypes'
+import type { AppDispatch } from '@/services/store'
 
 // Type guard to distinguish Notification from UnreadCountResponse in SSE stream
 function isNotification(
@@ -180,7 +181,7 @@ function NotificationItem({
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false)
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
 
   // SSE stream for real-time notifications (always active for authenticated users)
   const { data: streamData } = useStreamNotificationsQuery(undefined, {

@@ -13,6 +13,7 @@ import { seedUsers, type SeedDriverKey } from './users'
 import { seedTrucks } from './trucks'
 import { seedTrailers } from './trailers'
 import { seedReviews } from './reviews'
+import { seedFavoriteAddresses } from './favoriteAddresses'
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://mongo:27017/loadlink'
 
@@ -160,6 +161,8 @@ async function main() {
 
     const trailers = await seedTrailers(drivers)
 
+    const favoriteAddresses = await seedFavoriteAddresses(companies.testCompany1._id)
+
     const reviews = await seedReviews(
       [...activeLoads, ...completedLoads],
       {
@@ -185,7 +188,7 @@ async function main() {
 
     const userCount = Object.keys(companies).length + Object.keys(drivers).length
     console.log(
-      `SEEDED ${userCount} users, ${activeLoads.length + completedLoads.length} loads, ${auctions.length + completedLoads.length} auctions, ${bidCount} bids, ${trucks.length} trucks, ${trailers.length} trailers, ${reviews.length} reviews`
+      `SEEDED ${userCount} users, ${activeLoads.length + completedLoads.length} loads, ${auctions.length + completedLoads.length} auctions, ${bidCount} bids, ${trucks.length} trucks, ${trailers.length} trailers, ${reviews.length} reviews, ${favoriteAddresses.length} favorite addresses`
     )
     process.exit(0)
   } catch (err) {

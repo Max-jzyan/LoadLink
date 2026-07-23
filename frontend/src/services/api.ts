@@ -59,6 +59,7 @@ export const api = createApi({
     LoadTag.Message,
     LoadTag.Auction,
     LoadTag.Admin,
+    LoadTag.FavoriteAddress,
   ],
   endpoints: () => ({}),
 })

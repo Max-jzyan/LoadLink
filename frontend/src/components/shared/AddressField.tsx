@@ -9,44 +9,28 @@ import {
 } from '@/components/ui/command'
 import { cn } from '@/lib/utils'
 import { useAutocompleteAddressQuery } from '@/services/locationSlices/geocoding'
-import { Check, ChevronsUpDown, Loader2 } from 'lucide-react'
+import { useRequiredMongoId } from '@/hooks/useAuth'
+import {
+  useGetFavoriteAddressesQuery,
+  useAddFavoriteAddressMutation,
+  useDeleteFavoriteAddressMutation,
+} from '@/services/favoriteAddressApi/favoriteAddressSlice'
+import { Check, ChevronsUpDown, Loader2, Star, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { FieldDescription, FieldLabel } from '@/components/ui/field'
-
-const savedAddresses: AddressOption[] = [
-  {
-    value: '1234 main st, Vancouver, bc v5k 0a1',
-    label: 'pickup point 1 - 1234 main st, Vancouver, bc v5k 0a1',
-    lat: 49.2827,
-    lon: -123.1207,
-  },
-  {
-    value: '5678 elm st, Langley, bc v1m 2n3',
-    label: 'pickup point 2 - 5678 elm st, Langley, bc v1m 2n3',
-    lat: 49.1044,
-    lon: -122.6604,
-  },
-  {
-    value: '9101 oak st, Toronto, on m4b 1c2',
-    label: 'dropoff point 1 - 9101 oak st, Toronto, on m4b 1c2',
-    lat: 43.6532,
-    lon: -79.3832,
-  },
-  {
-    value: '1213 pine st, Montreal, qc h2x 3y4',
-    label: 'dropoff point 2 - 1213 pine st, Montreal, qc h2x 3y4',
-    lat: 45.5017,
-    lon: -73.5673,
-  },
-]
 
 export interface AddressOption {
   value: string
   label: string
   lat?: number
   lon?: number
+}
+
+/** A favorite-address option, tagged with the id needed to delete it. */
+interface FavoriteOption extends AddressOption {
+  favoriteId: string
 }
 
 export interface AddressFieldProps {
@@ -78,6 +62,11 @@ export function AddressField({
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
 
+  const companyId = useRequiredMongoId()
+  const { data: favorites = [] } = useGetFavoriteAddressesQuery(companyId, { skip: !companyId })
+  const [addFavoriteAddress, { isLoading: isSavingFavorite }] = useAddFavoriteAddressMutation()
+  const [deleteFavoriteAddress] = useDeleteFavoriteAddressMutation()
+
   useEffect(() => {
     const id = setTimeout(() => setDebouncedQuery(query), 400)
     return () => clearTimeout(id)
@@ -86,6 +75,14 @@ export function AddressField({
   const { data: geocodeResults = [], isFetching } = useAutocompleteAddressQuery(debouncedQuery, {
     skip: debouncedQuery.length < 6,
   })
+
+  const savedAddresses: FavoriteOption[] = favorites.map((f) => ({
+    value: f.address,
+    label: f.address,
+    lat: f.lat,
+    lon: f.lng,
+    favoriteId: f._id,
+  }))
 
   const suggestions: AddressOption[] = geocodeResults.map((r) => ({
     value: r.formatted,
@@ -100,12 +97,37 @@ export function AddressField({
   ]
   const selected = options.find((option) => option.value === address)
 
+  // Filtered explicitly so each group's visibility reflects its real member count.
+  const q = query.trim().toLowerCase()
+  const visibleSavedAddresses = q
+    ? savedAddresses.filter((s) => s.label.toLowerCase().includes(q))
+    : savedAddresses
+  const visibleSuggestions = suggestions.filter(
+    (s) => !savedAddresses.some((saved) => saved.value === s.value)
+  )
+
   const handleSelect = (value: string) => {
     setAddress(value)
     setOpen(false)
     onValueChange?.(value)
     const option = options.find((o) => o.value === value)
     if (option) onSelect?.(option)
+  }
+
+  const handleSaveFavorite = (e: React.MouseEvent, option: AddressOption) => {
+    e.stopPropagation()
+    e.preventDefault()
+    if (!companyId || option.lat == null || option.lon == null) return
+    addFavoriteAddress({
+      companyId,
+      body: { address: option.value, lat: option.lat, lng: option.lon },
+    })
+  }
+
+  const handleDeleteFavorite = (e: React.MouseEvent, favoriteId: string) => {
+    e.stopPropagation()
+    e.preventDefault()
+    deleteFavoriteAddress({ companyId, addressId: favoriteId })
   }
 
   return (
@@ -134,7 +156,7 @@ export function AddressField({
         </PopoverTrigger>
 
         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-          <Command>
+          <Command shouldFilter={false}>
             <CommandInput
               placeholder="Choose from saved or enter new address..."
               value={query}
@@ -157,36 +179,88 @@ export function AddressField({
             </CommandEmpty>
 
             <CommandList>
-              <CommandGroup className="overflow-y-auto">
-                {options.map((option) => (
-                  <CommandItem
-                    key={option.label}
-                    tabIndex={0}
-                    value={option.label}
-                    onSelect={() => {
-                      handleSelect(option.value)
-                    }}
-                    onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
-                      if (event.key === 'Enter') {
-                        event.stopPropagation()
-                        handleSelect(option.value)
-                      }
-                    }}
-                    className={cn(
-                      'cursor-pointer',
-                      'focus:!bg-accent hover:!bg-accent aria-selected:bg-transparent'
-                    )}
-                  >
-                    <Check
+              {visibleSavedAddresses.length > 0 && (
+                <CommandGroup heading="Saved Addresses" className="overflow-y-auto">
+                  {visibleSavedAddresses.map((option) => (
+                    <CommandItem
+                      key={option.favoriteId}
+                      tabIndex={0}
+                      value={option.label}
+                      onSelect={() => handleSelect(option.value)}
+                      onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
+                        if (event.key === 'Enter') {
+                          event.stopPropagation()
+                          handleSelect(option.value)
+                        }
+                      }}
                       className={cn(
-                        'mr-2 h-4 w-4 min-h-4 min-w-4',
-                        selected?.value === option.value ? 'opacity-100' : 'opacity-0'
+                        'cursor-pointer',
+                        'focus:!bg-accent hover:!bg-accent aria-selected:bg-transparent'
                       )}
-                    />
-                    {option.label}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+                    >
+                      <Check
+                        className={cn(
+                          'mr-2 h-4 w-4 min-h-4 min-w-4',
+                          selected?.value === option.value ? 'opacity-100' : 'opacity-0'
+                        )}
+                      />
+                      <span className="flex-1 min-w-0 truncate">{option.label}</span>
+                      <button
+                        type="button"
+                        aria-label="Remove favorite"
+                        onClick={(e) => handleDeleteFavorite(e, option.favoriteId)}
+                        className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+
+              {visibleSuggestions.length > 0 && (
+                <CommandGroup heading="Search Results" className="overflow-y-auto">
+                  {visibleSuggestions.map((option) => (
+                    <CommandItem
+                      key={option.label}
+                      tabIndex={0}
+                      value={option.label}
+                      onSelect={() => {
+                        handleSelect(option.value)
+                      }}
+                      onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
+                        if (event.key === 'Enter') {
+                          event.stopPropagation()
+                          handleSelect(option.value)
+                        }
+                      }}
+                      className={cn(
+                        'cursor-pointer',
+                        'focus:!bg-accent hover:!bg-accent aria-selected:bg-transparent'
+                      )}
+                    >
+                      <Check
+                        className={cn(
+                          'mr-2 h-4 w-4 min-h-4 min-w-4',
+                          selected?.value === option.value ? 'opacity-100' : 'opacity-0'
+                        )}
+                      />
+                      <span className="flex-1 min-w-0 truncate">{option.label}</span>
+                      {option.lat != null && option.lon != null && (
+                        <button
+                          type="button"
+                          aria-label="Save as favorite"
+                          disabled={isSavingFavorite}
+                          onClick={(e) => handleSaveFavorite(e, option)}
+                          className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        >
+                          <Star className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
             </CommandList>
           </Command>
         </PopoverContent>

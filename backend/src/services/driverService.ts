@@ -122,8 +122,8 @@ export const getConflictingBids = async (driverId: string, targetLoadId: string)
     loadId: string
     originAddress: string
     destinationAddress: string
-    pickupTime: string
-    dropoffTime: string
+    pickupTime: Date
+    dropoffTime: Date
     bidAmount: number
     conflictType: 'accepted_job' | 'pending_bid'
   }[] = []

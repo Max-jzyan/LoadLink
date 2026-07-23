@@ -23,16 +23,6 @@ interface ClaimLoadDialogProps {
   isAuctionLive: boolean
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString('en-CA', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
-}
 
 export default function ClaimLoadDialog({
   loadId,
