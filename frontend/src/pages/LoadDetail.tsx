@@ -101,15 +101,19 @@ export default function LoadDetail() {
 
   // Rate confirmation (company / admin view)
   const showRc = (user?.role === 'company' || user?.role === 'admin') && isBooked
-  const { data: acceptedBid } = useGetAcceptedBidQuery(loadId ?? '', {
-    skip: !loadId || !showRc,
-  })
+  const { data: acceptedBid, isLoading: acceptedBidLoading } = useGetAcceptedBidQuery(
+    loadId ?? '',
+    {
+      skip: !loadId || !showRc,
+    }
+  )
 
   // Bill of Lading (both driver and company see it once booked)
-  const { data: bolData, isLoading: bolLoading, refetch: refetchBol } = useGetBolQuery(
-    loadId ?? '',
-    { skip: !showDocuments }
-  )
+  const {
+    data: bolData,
+    isLoading: bolLoading,
+    refetch: refetchBol,
+  } = useGetBolQuery(loadId ?? '', { skip: !showDocuments })
 
   // Signed BOL submission (driver only)
   const [submitSignedBol, { isLoading: submittingSignedBol }] = useSubmitSignedBolMutation()
@@ -124,7 +128,13 @@ export default function LoadDetail() {
       const idToken = await auth.currentUser?.getIdToken()
       const firebaseUid = user?.uid
       if (!idToken || !firebaseUid) throw new Error('Not authenticated')
-      const [uploaded] = await uploadDocuments(idToken, firebaseUid, 'loadDocuments', [file], loadId)
+      const [uploaded] = await uploadDocuments(
+        idToken,
+        firebaseUid,
+        'loadDocuments',
+        [file],
+        loadId
+      )
       await submitSignedBol({ loadId, s3Key: uploaded.key }).unwrap()
       refetchBol()
     } catch {
@@ -343,7 +353,11 @@ export default function LoadDetail() {
                         <>
                           <CheckCircle2 className="h-4 w-4 text-green-500" />
                           <Button size="sm" variant="outline" asChild>
-                            <a href={bolData.signedBolUrl} target="_blank" rel="noopener noreferrer">
+                            <a
+                              href={bolData.signedBolUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
                               <Download className="h-3.5 w-3.5" />
                               {user?.role === 'company' || user?.role === 'admin'
                                 ? 'Review'
@@ -472,7 +486,7 @@ export default function LoadDetail() {
               </div>
             )}
           </DynamicCard>
-          {showRcButton && (
+          {showRc && (
             <DynamicCard
               className="mt-4"
               title="Accepted Bid"
@@ -497,18 +511,6 @@ export default function LoadDetail() {
                     <Button size="sm" variant="outline" asChild>
                       <Link to={`/driver/${acceptedBid.driverId}`}>View Driver</Link>
                     </Button>
-                    {acceptedBid.rateConfirmationUrl && (
-                      <Button size="sm" variant="outline" asChild>
-                        <a
-                          href={acceptedBid.rateConfirmationUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Download className="h-4 w-4" />
-                          Rate Confirmation
-                        </a>
-                      </Button>
-                    )}
                   </div>
                 </div>
               ) : (

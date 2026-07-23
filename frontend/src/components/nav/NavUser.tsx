@@ -120,7 +120,7 @@ export function NavUser() {
                   type="button"
                   title="Account menu"
                   data-tour="nav-user"
-                  className="flex cursor-pointer items-center gap-2 rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors pr-1"
+                  className="flex flex-1 cursor-pointer items-center gap-2 rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors pr-1"
                 >
                   {avatarTrigger}
                   <div className="grid min-w-0 text-left text-sm leading-tight">
@@ -129,7 +129,7 @@ export function NavUser() {
                       {roleLabel}
                     </span>
                   </div>
-                  <ChevronRightIcon className="size-4 shrink-0 text-sidebar-foreground/60" />
+                  <ChevronRightIcon className="ml-auto size-4 shrink-0 text-sidebar-foreground/60" />
                 </button>
               </DropdownMenuTrigger>
             )}

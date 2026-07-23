@@ -13,7 +13,7 @@ import type { LoadWithDetails } from '@/services/companyApi/companyTypes'
 import type { DriverSummary } from '@/services/loadApi/loadEnum'
 import { RoutePath } from '@/config/routes'
 import { LOAD_STATUSES } from '@/types/enums'
-import { Settings2, Eye, Pencil, User, MapPinned } from 'lucide-react'
+import { Settings2, Eye, Pencil, User, MapPinned, Gavel } from 'lucide-react'
 
 const NON_EDITABLE_STATUSES = [
   LOAD_STATUSES.InTransit,
@@ -36,8 +36,8 @@ function assignedDriver(load: LoadWithDetails): DriverSummary | null {
 
 /**
  * The company's single action surface for a load: view/edit the posting,
- * jump to the assigned driver's profile, or track it on the map. The row's
- * "see more" drawer is reserved for read-only load info.
+ * jump to the assigned driver's profile, view the live auction, or track it
+ * on the map. The row's "see more" drawer is reserved for read-only load info.
  */
 export function CompanyManageDialog({ load }: { load: LoadWithDetails }) {
   const [open, setOpen] = useState(false)
@@ -103,6 +103,20 @@ export function CompanyManageDialog({ load }: { load: LoadWithDetails }) {
                   <Link to={`/driver/${driver._id}`} onClick={() => setOpen(false)}>
                     <User className="h-4 w-4" />
                     {driver.name || `#${driver._id.slice(-6).toUpperCase()}`}
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {load.status === LOAD_STATUSES.AuctionLive && (
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-6">Auction</p>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                  <Link to={`${RoutePath.AuctionLive}/${load._id}`} onClick={() => setOpen(false)}>
+                    <Gavel className="h-4 w-4" />
+                    View Live Auction
                   </Link>
                 </Button>
               </div>

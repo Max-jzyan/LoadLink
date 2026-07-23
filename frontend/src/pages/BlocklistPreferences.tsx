@@ -9,7 +9,7 @@ import {
   ComboboxContent,
   ComboboxInput,
   ComboboxItem,
-  ComboboxList
+  ComboboxList,
 } from '@/components/ui/combobox'
 import {
   Dialog,
@@ -32,7 +32,11 @@ import { RoutePath } from '@/config/routes'
 import { useRequiredMongoId } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { selectRole } from '@/services/authSlice'
-import type { BlockedTargetType, BlocklistEntry, KnownUser } from '@/services/blocklistApi/blocklistEnum'
+import type {
+  BlockedTargetType,
+  BlocklistEntry,
+  KnownUser,
+} from '@/services/blocklistApi/blocklistEnum'
 import {
   useBlockUserMutation,
   useGetBlocklistQuery,
@@ -46,7 +50,6 @@ import {
   Building2,
   ChevronRight,
   ClipboardList,
-  EyeOff,
   ShieldAlert,
   User,
 } from 'lucide-react'
@@ -194,15 +197,6 @@ export default function BlocklistPreferences() {
     u.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const tabs = isCompany
-    ? [{ key: 'drivers' as const, label: 'Blocked Drivers', count: blocked.length }]
-    : [
-        { key: 'companies' as const, label: 'Blocked Companies', count: blocked.length },
-        { key: 'hidden' as const, label: 'Hidden Loads', count: 0 },
-      ]
-
-  const [activeTab, setActiveTab] = useState(tabs[0].key)
-
   const togglePref = (key: FeedPref['key'], value: boolean) => {
     updateFeedPreferences({ userId, body: { [key]: value } })
   }
@@ -227,7 +221,6 @@ export default function BlocklistPreferences() {
       setSearchQuery('')
       setBlockReason('')
       setKnownUsersOpen(false)
-      setActiveTab(tabs[0].key)
     }
   }, [isBlockSuccess])
 
@@ -262,24 +255,6 @@ export default function BlocklistPreferences() {
     <PageShell
       title="Blocklist & Preferences"
       subtitle="Manage your blocklist and control which loads appear in your feed."
-      stickyBar={
-        <div className="flex rounded-lg border border-border overflow-hidden w-fit">
-          {tabs.map((tab) => (
-            <Button
-              key={tab.key}
-              variant="ghost"
-              size="sm"
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'rounded-none border-0',
-                activeTab === tab.key ? 'filter-btn-active' : 'filter-btn-inactive'
-              )}
-            >
-              {tab.label} ({tab.count})
-            </Button>
-          ))}
-        </div>
-      }
       actions={
         <Button
           variant="destructive"
@@ -293,31 +268,16 @@ export default function BlocklistPreferences() {
       }
     >
       <div className="space-y-4">
-        {/* Blocked list / hidden loads */}
-        <DynamicCard
-          title={
-            activeTab === 'hidden'
-              ? 'Hidden Loads'
-              : `Blocked ${isCompany ? 'Drivers' : 'Companies'}`
-          }
-        >
-          {activeTab === 'hidden' && (
-            <div className="flex flex-col items-center gap-2 py-10 text-center">
-              <EyeOff className="h-8 w-8 text-muted-foreground/50" />
-              <p className="text-sm text-muted-foreground">No hidden loads.</p>
-              <p className="text-xs text-muted-foreground max-w-sm">
-                Loads you hide from your feed will show up here so you can restore them later.
-              </p>
-            </div>
-          )}
-          {activeTab !== 'hidden' && isLoading && (
+        {/* Blocked list */}
+        <DynamicCard title={`Blocked ${isCompany ? 'Drivers' : 'Companies'}`}>
+          {isLoading && (
             <div className="space-y-2">
               {[0, 1, 2].map((i) => (
                 <Skeleton key={i} className="h-20 rounded-lg" />
               ))}
             </div>
           )}
-          {activeTab !== 'hidden' && !isLoading && blocked.length === 0 && (
+          {!isLoading && blocked.length === 0 && (
             <div className="flex flex-col items-center gap-2 py-10 text-center">
               <ShieldAlert className="h-8 w-8 text-muted-foreground/50" />
               <p className="text-sm text-muted-foreground">
@@ -332,8 +292,7 @@ export default function BlocklistPreferences() {
               </p>
             </div>
           )}
-          {activeTab !== 'hidden' &&
-            !isLoading &&
+          {!isLoading &&
             blocked.length > 0 &&
             blocked.map((entry) => (
               <BlockedItemRow

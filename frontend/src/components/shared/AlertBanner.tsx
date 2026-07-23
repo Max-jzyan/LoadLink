@@ -63,13 +63,14 @@ export function AlertBanner({ variant, title, message, action, className }: Aler
   return (
     <div
       className={cn(
-        'flex items-start gap-3 rounded-lg border px-4 py-3',
+        'flex gap-3 rounded-lg border px-4 py-3',
+        message ? 'items-start' : 'items-center',
         'animate-in slide-in-from-top-2 duration-300',
         s.wrapper,
         className
       )}
     >
-      <div className="shrink-0 mt-0.5">{s.icon}</div>
+      <div className={cn('shrink-0', message && 'mt-0.5')}>{s.icon}</div>
 
       <div className="flex-1 min-w-0">
         <p className={cn('text-sm font-medium', s.title)}>{title}</p>
