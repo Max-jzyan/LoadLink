@@ -69,6 +69,7 @@ export const TimelineIconType = {
   Rest: 'rest',
   Sleep: 'sleep',
   Fuel: 'fuel',
+  Checkpoint: 'checkpoint',
   Delivery: 'delivery',
 } as const
 export type TimelineIconType = (typeof TimelineIconType)[keyof typeof TimelineIconType]

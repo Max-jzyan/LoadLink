@@ -1,8 +1,10 @@
 import type { Load } from '@/services/loadApi/loadEnum'
-import { MapPin, Coffee, Moon, Droplets, Package2 } from 'lucide-react'
+import { MapPin, Coffee, Moon, Droplets, Package2, Flag, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 import { TimelineEventAction, TimelineIconType } from '@/types/enums'
+import type { Checkpoint } from '@/lib/checkpoints'
+import { CheckpointLabel } from '@/components/shared/CheckpointLabel'
 import {
   Table,
   TableHeader,
@@ -90,6 +92,7 @@ const ICON_CONFIG: Record<TimelineIconType, { Icon: LucideIcon; bg: string; dot:
   [TimelineIconType.Rest]: { Icon: Coffee, bg: 'bg-amber-500', dot: 'bg-amber-500' },
   [TimelineIconType.Sleep]: { Icon: Moon, bg: 'bg-slate-500', dot: 'bg-slate-500' },
   [TimelineIconType.Fuel]: { Icon: Droplets, bg: 'bg-amber-500', dot: 'bg-amber-500' },
+  [TimelineIconType.Checkpoint]: { Icon: Flag, bg: 'bg-gray-400', dot: 'bg-gray-400' },
   [TimelineIconType.Delivery]: { Icon: Package2, bg: 'bg-green-500', dot: 'bg-green-500' },
 }
 
@@ -103,9 +106,28 @@ const ACTION_CLS: Record<TimelineEventAction, string> = {
 
 interface DeliveryTimelineProps {
   load: Load
+  aiAvailable: boolean
+  // fallback for ai insights
+  checkpoints: Checkpoint[]
+  isCheckpointsPending: boolean
 }
 
-export default function DeliveryTimeline({ load }: DeliveryTimelineProps) {
+export default function DeliveryTimeline({
+  load,
+  aiAvailable,
+  checkpoints,
+  isCheckpointsPending,
+}: DeliveryTimelineProps) {
+  if (!aiAvailable) {
+    return (
+      <CheckpointTimeline
+        load={load}
+        checkpoints={checkpoints}
+        isCheckpointsPending={isCheckpointsPending}
+      />
+    )
+  }
+
   const events = buildTimeline(load)
 
   return (
@@ -174,6 +196,127 @@ export default function DeliveryTimeline({ load }: DeliveryTimelineProps) {
                   >
                     {ev.action}
                   </span>
+                </TableCell>
+              </TableRow>
+            )
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  )
+}
+
+interface CheckpointStage {
+  stage: string
+  time: Date
+  iconType: TimelineIconType
+  location: string
+  checkpoint?: Checkpoint
+}
+
+function CheckpointTimeline({
+  load,
+  checkpoints,
+  isCheckpointsPending,
+}: {
+  load: Load
+  checkpoints: Checkpoint[]
+  isCheckpointsPending: boolean
+}) {
+  if (isCheckpointsPending) {
+    return (
+      <div className="flex items-center justify-center gap-2 h-28 text-muted-foreground text-sm">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Calculating route checkpoints…
+      </div>
+    )
+  }
+
+  const pickup = new Date(load.pickupTime)
+  const dropoff = new Date(load.dropoffTime)
+  const totalMs = dropoff.getTime() - pickup.getTime()
+  const n = checkpoints.length
+
+  const stages: CheckpointStage[] = [
+    {
+      stage: 'Pickup',
+      time: pickup,
+      iconType: TimelineIconType.Pickup,
+      location: load.originAddress,
+    },
+    ...checkpoints.map((checkpoint, i) => ({
+      stage: `C${i + 1}`,
+      time: new Date(pickup.getTime() + ((i + 1) / (n + 1)) * totalMs),
+      iconType: TimelineIconType.Checkpoint,
+      location: checkpoint.label,
+      checkpoint,
+    })),
+    {
+      stage: 'Delivery',
+      time: dropoff,
+      iconType: TimelineIconType.Delivery,
+      location: load.destinationAddress,
+    },
+  ]
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* horizontal visual step timeline */}
+      <div className="flex items-start overflow-x-auto pb-1">
+        {stages.map((ev, i) => {
+          const { Icon, bg } = ICON_CONFIG[ev.iconType]
+          return (
+            <div key={i} className="flex items-center flex-1 min-w-0">
+              <div className="flex flex-col items-center min-w-[64px]">
+                <div
+                  className={cn(
+                    'w-9 h-9 rounded-full flex items-center justify-center text-white',
+                    bg
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+                <p className="text-[10px] font-medium text-center mt-1 leading-tight">{ev.stage}</p>
+                <p className="text-[9px] text-muted-foreground text-center leading-tight">
+                  {formatEventTime(ev.time)}
+                </p>
+              </div>
+              {i < stages.length - 1 && (
+                <div className="flex-1 border-t-2 border-dashed border-muted-foreground/30 mb-7 mx-1 min-w-[8px]" />
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="py-1.5 text-xs">Stage</TableHead>
+            <TableHead className="py-1.5 text-xs">Time</TableHead>
+            <TableHead className="py-1.5 text-xs">Location</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {stages.map((ev, i) => {
+            const { dot } = ICON_CONFIG[ev.iconType]
+            return (
+              <TableRow key={i} className="border-b border-border/50">
+                <TableCell className="py-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className={cn('w-2 h-2 rounded-full shrink-0', dot)} />
+                    {ev.stage}
+                  </div>
+                </TableCell>
+                <TableCell className="py-2 text-xs text-muted-foreground">
+                  {formatEventTime(ev.time)}
+                </TableCell>
+                <TableCell className="py-2 text-xs text-muted-foreground truncate max-w-[180px]">
+                  {ev.checkpoint ? (
+                    <CheckpointLabel checkpoint={ev.checkpoint} />
+                  ) : (
+                    ev.location
+                  )}
                 </TableCell>
               </TableRow>
             )

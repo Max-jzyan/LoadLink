@@ -3,6 +3,7 @@ import DeliveryTimeline from '@/components/driverLoads/DeliveryTimeline'
 import { DriverMap } from '@/components/driverLoads/Map'
 import { DetailedEligibilityPanel } from '@/components/driverLoads/DetailedEligibilityPanel'
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import type { DateRange } from 'react-day-picker'
 import { AlertTriangle, LocateFixed, Loader2 } from 'lucide-react'
@@ -35,6 +36,11 @@ import {
 } from '@/components/driverLoads/AiInsightsPanel'
 import { showError, showSuccess } from '@/lib/toast'
 import { RoutePath } from '@/config/routes'
+import { fetchRoadPositions } from '@/lib/routing'
+import { resolveRoutePath } from '@/lib/routePath'
+import { generateCheckpoints } from '@/lib/checkpoints'
+import { selectAiTriggered, setAiTriggered } from '@/services/aiSlice'
+import type { AppDispatch } from '@/services/store'
 
 import './DriverAuctions.less';
 
@@ -92,8 +98,14 @@ export default function DriverAuctions() {
     refetchScored()
   }, [loadPostedEvent, refetchAvailable, refetchScored])
 
+  const dispatch = useDispatch<AppDispatch>()
+  const aiTriggered = useSelector(selectAiTriggered)
+  // Whether the Delivery Timeline should show AI-flavored content: requires both server config
+  // AND the user having AI toggled on — toggling AI off falls back to checkpoints either way.
+  const aiTimelineActive = aiAvailable && aiTriggered
+
   const [selectedLoad, setSelectedLoad] = useState<EnrichedLoad | null>(null)
-  const [aiTriggered, setAiTriggered] = useState(false)
+  const [insightDismissed, setInsightDismissed] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [activeLayer, setActiveLayer] = useState<MapLayer>('route')
   const [sortKey, setSortKey] = useState<SortKey>('recommended')
@@ -211,7 +223,7 @@ export default function DriverAuctions() {
     return arr
   }, [eligibilityFiltered, sortKey])
 
-  // Build map routes from all available loads (always show all routes on map)
+  // Build map routes from all available loads; DriverMap is filtered to the selected load's route below
   const mapRoutes = useMemo(() => {
     return availableLoads.slice(0, 20).map((l) => ({
       id: l._id,
@@ -220,8 +232,52 @@ export default function DriverAuctions() {
       destination: [l.destinationCoords.lat, l.destinationCoords.lng] as [number, number],
       destinationName: l.destinationAddress,
       status: l.status,
+      polyline: l.route?.polyline,
     }))
   }, [availableLoads])
+
+  // Road [lat, lng][] positions fetched from Geoapify when the selected load has no stored polyline
+  const [selectedRoadPositions, setSelectedRoadPositions] = useState<[number, number][] | null>(
+    null
+  )
+  const [roadFetchSettled, setRoadFetchSettled] = useState(false)
+  const roadFetchIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    const id = selectedLoad?._id ?? null
+    if (!selectedLoad || selectedLoad.route?.polyline) {
+      setSelectedRoadPositions(null)
+      setRoadFetchSettled(!!selectedLoad)
+      roadFetchIdRef.current = null
+      return
+    }
+    if (roadFetchIdRef.current === id) return
+    roadFetchIdRef.current = id
+    setSelectedRoadPositions(null)
+    setRoadFetchSettled(false)
+    fetchRoadPositions(selectedLoad.originCoords, selectedLoad.destinationCoords)
+      .then((positions) => {
+        if (roadFetchIdRef.current === id) setSelectedRoadPositions(positions)
+      })
+      .finally(() => {
+        if (roadFetchIdRef.current === id) setRoadFetchSettled(true)
+      })
+  }, [selectedLoad])
+
+  // Checkpoint fallback
+  const isCheckpointsPending =
+    !aiTimelineActive && !!selectedLoad && !selectedLoad.route?.polyline && !roadFetchSettled
+
+  const checkpoints = useMemo(() => {
+    if (aiTimelineActive || !selectedLoad || isCheckpointsPending) return []
+    const path = resolveRoutePath({
+      origin: [selectedLoad.originCoords.lat, selectedLoad.originCoords.lng],
+      destination: [selectedLoad.destinationCoords.lat, selectedLoad.destinationCoords.lng],
+      polyline: selectedLoad.route?.polyline,
+      positions: selectedRoadPositions ?? undefined,
+    })
+    return generateCheckpoints(path)
+  }, [aiTimelineActive, selectedLoad, selectedRoadPositions, isCheckpointsPending])
 
   const mapDescription = selectedLoad
     ? [
@@ -329,7 +385,7 @@ export default function DriverAuctions() {
         {...(expandable ? { expand: true } : {})}
         action={
           <div className="flex gap-1">
-            {aiTriggered && (['route', 'fuel', 'rest'] as MapLayer[]).map((layer) => (
+            {aiTriggered && selectedLoad?._id && (['route', 'fuel', 'rest'] as MapLayer[]).map((layer) => (
               <Button
                 key={layer}
                 size="sm"
@@ -345,8 +401,17 @@ export default function DriverAuctions() {
         rounded="sm"
       >
         <DriverMap
-          routes={mapRoutes}
+          routes={
+            selectedLoad?._id
+              ? mapRoutes
+                  .filter((r) => r.id === selectedLoad._id)
+                  .map((r) =>
+                    selectedRoadPositions ? { ...r, positions: selectedRoadPositions } : r
+                  )
+              : mapRoutes
+          }
           selectedRouteId={selectedLoad?._id ?? null}
+          checkpoints={checkpoints}
           height={expandable ? '100%' : '300px'}
           onRouteClick={handleMapRouteClick}
           checkIn={location ? { position: [location.lat, location.lng], checkedInAt: new Date().toISOString() } : null}
@@ -355,7 +420,18 @@ export default function DriverAuctions() {
         />
       </DynamicCard>
     ),
-    [mapDescription, aiTriggered, mapRoutes, selectedLoad?._id, handleMapRouteClick, location, driverDeadheadRadiusMeters, activeLayer]
+    [
+      mapDescription,
+      aiTriggered,
+      mapRoutes,
+      selectedLoad?._id,
+      selectedRoadPositions,
+      checkpoints,
+      handleMapRouteClick,
+      location,
+      driverDeadheadRadiusMeters,
+      activeLayer,
+    ]
   )
 
   const getEligibilityDescription = (scored: NonNullable<EnrichedLoad['_scored']>) => {
@@ -397,7 +473,12 @@ export default function DriverAuctions() {
           }
         >
           {load ? (
-            <DeliveryTimeline load={load} />
+            <DeliveryTimeline
+              load={load}
+              aiAvailable={aiTimelineActive}
+              checkpoints={checkpoints}
+              isCheckpointsPending={isCheckpointsPending}
+            />
           ) : (
             <div className="flex items-center justify-center h-28 text-muted-foreground text-sm">
               Select a load to view the delivery timeline
@@ -406,7 +487,7 @@ export default function DriverAuctions() {
         </DynamicCard>
       </div>
     ),
-    []
+    [aiTimelineActive, checkpoints, isCheckpointsPending]
   )
 
   return (
@@ -434,7 +515,15 @@ export default function DriverAuctions() {
               minor: visibleCounts.minor,
             }}
             onReset={handleResetFilters}
-            onAiClick={aiAvailable ? () => setAiTriggered(true) : undefined}
+            onAiClick={
+              aiAvailable
+                ? () => {
+                    const next = !aiTriggered
+                    dispatch(setAiTriggered(next))
+                    if (next) setInsightDismissed(false)
+                  }
+                : undefined
+            }
             aiActive={aiTriggered}
           />
           <div
@@ -480,8 +569,8 @@ export default function DriverAuctions() {
         <div ref={loadFeedRef}
           className="flex-[5] min-w-0 lg:min-w-[400px] overflow-y-auto h-full space-y-2 pl-1 pr-1 pt-2 pb-2">
           {/* AI insight banner — mounts only when user clicks the sparkles button */}
-          {aiTriggered && (
-            <AiInsightsPanel driverId={driverId} onDismiss={() => setAiTriggered(false)} />
+          {aiTriggered && !insightDismissed && (
+            <AiInsightsPanel driverId={driverId} onDismiss={() => setInsightDismissed(true)} />
           )}
           {isLoading && (
             <div className="space-y-2">
@@ -564,28 +653,27 @@ export default function DriverAuctions() {
                   Select a load to see AI-suggested rest stops
                 </div>
               )}
-
-              {/* Delivery timeline */}
-              <DynamicCard
-                title="Delivery timeline"
-                rounded="sm"
-                action={
-                  selectedLoad && (
-                    <Button size="sm" asChild>
-                      <Link to={`/driverAuctions/${selectedLoad._id}`}>View Auction</Link>
-                    </Button>
-                  )
-                }
-              >
-                {selectedLoad ? (
-                  <DeliveryTimeline load={selectedLoad} />
-                ) : (
-                  <div className="flex items-center justify-center h-28 text-muted-foreground text-sm">
-                    Select a load to view the delivery timeline
-                  </div>
-                )}
-              </DynamicCard>
             </>
+          )}
+
+          {/* Delivery timeline — only shown once a load is selected, independent of AI state */}
+          {selectedLoad && (
+            <DynamicCard
+              title="Delivery timeline"
+              rounded="sm"
+              action={
+                <Button size="sm" asChild>
+                  <Link to={`/driverAuctions/${selectedLoad._id}`}>View Auction</Link>
+                </Button>
+              }
+            >
+              <DeliveryTimeline
+                load={selectedLoad}
+                aiAvailable={aiTimelineActive}
+                checkpoints={checkpoints}
+                isCheckpointsPending={isCheckpointsPending}
+              />
+            </DynamicCard>
           )}
 
           {/* Detailed Eligibility Panel */}
@@ -613,7 +701,7 @@ export default function DriverAuctions() {
               if (!open) setSelectedLoad(null)
             }}
           >
-            <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+            <SheetContent side="bottom" className="data-[side=bottom]:h-[85vh]">
               <SheetHeader>
                 <SheetTitle>
                   {selectedLoad
@@ -621,7 +709,7 @@ export default function DriverAuctions() {
                     : 'Load Details'}
                 </SheetTitle>
               </SheetHeader>
-              <div className="space-y-2 mt-2">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-2 mt-2">
                 {renderMapCard(false)}
                 {renderSheetDetails(selectedLoad)}
               </div>

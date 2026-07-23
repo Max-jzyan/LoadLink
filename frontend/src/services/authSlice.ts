@@ -8,6 +8,7 @@ import {
 import { auth } from '@/lib/firebase'
 import type { AppDispatch, RootState } from './store'
 import { api } from './api'
+import { setAiTriggered } from './aiSlice'
 import { type UserRole } from '@/types/enums'
 import { showSuccess, showError, getHttpErrorMessage, getErrorStatus } from '@/lib/toast'
 import { uploadDocuments, type UploadedDocument } from '@/lib/uploadDocuments'
@@ -127,6 +128,8 @@ export function subscribeToAuthChanges(dispatch: AppDispatch) {
       // Reset all RTK Query cached data so stale data from the previous
       // session is never shown when the next user logs in.
       dispatch(api.util.resetApiState())
+      // Reset AI-toggle state (and its localStorage mirror, via store.subscribe) on logout.
+      dispatch(setAiTriggered(false))
 
       if (_isManualLogout) {
         _isManualLogout = false

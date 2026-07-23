@@ -6,6 +6,8 @@ import { Circle, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from
 import { LOAD_STATUSES } from '@/types/enums'
 import { MAX_FUZZ_RADIUS_METERS } from '@/lib/geoFuzz'
 import { resolveRoutePath } from '@/lib/routePath'
+import type { Checkpoint } from '@/lib/checkpoints'
+import { CheckpointLabel } from '@/components/shared/CheckpointLabel'
 
 // Fix default Leaflet icon issue with bundlers
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
@@ -60,6 +62,7 @@ function createColoredIcon(color: string) {
 const originIcon = createColoredIcon('#22c55e') // green
 const destinationIcon = createColoredIcon('#ef4444') // red
 const checkInIcon = createColoredIcon('var(--primary)')
+const checkpointIcon = createColoredIcon('#9ca3af') // gray
 
 /** Formats an ISO timestamp as a short relative "Xm ago" / "Xh ago" string. */
 function relativeTimeFromNow(iso: string): string {
@@ -99,6 +102,8 @@ type DriverMapProps = {
   driverLocation?: { lat: number; lng: number } | null
   /** Max deadhead radius in meters to display around the driver location */
   driverDeadheadRadiusMeters?: number | null
+  /** Checkpoint waypoints for the selected route (no-AI fallback) — see lib/checkpoints.ts */
+  checkpoints?: Checkpoint[]
 }
 
 export function DriverMap({
@@ -109,6 +114,7 @@ export function DriverMap({
   checkIn,
   driverLocation,
   driverDeadheadRadiusMeters,
+  checkpoints,
 }: DriverMapProps) {
   const isDark = useDarkMode()
   const tile = isDark ? TILES.dark : TILES.light
@@ -137,6 +143,16 @@ export function DriverMap({
 
         {routes.map((route) => (
           <RouteLine key={route.id} route={route} onRouteClick={onRouteClick} />
+        ))}
+
+        {checkpoints?.map((cp, i) => (
+          <Marker key={i} position={[cp.lat, cp.lng]} icon={checkpointIcon}>
+            <Popup>
+              <strong>Checkpoint {i + 1}</strong>
+              <br />
+              <CheckpointLabel checkpoint={cp} />
+            </Popup>
+          </Marker>
         ))}
 
         {checkIn && <CheckInMarker checkIn={checkIn} />}
