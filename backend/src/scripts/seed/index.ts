@@ -129,6 +129,7 @@ async function main() {
         testUser3: drivers.testUser3._id,
         testUser4: drivers.testUser4._id,
         testUser5: drivers.testUser5._id,
+        annoyingUser: drivers.annoyingUser._id,
       },
     })
 

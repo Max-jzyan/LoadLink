@@ -15,8 +15,15 @@ const TEST_USER2_ID = new Types.ObjectId('000000000000000000000012')
 const TEST_USER3_ID = new Types.ObjectId('000000000000000000000013')
 const TEST_USER4_ID = new Types.ObjectId('000000000000000000000014')
 const TEST_USER5_ID = new Types.ObjectId('000000000000000000000015')
+const TEST_USER6_ID = new Types.ObjectId('000000000000000000000016')
 
-export type SeedDriverKey = 'testUser1' | 'testUser2' | 'testUser3' | 'testUser4' | 'testUser5'
+export type SeedDriverKey =
+  | 'testUser1'
+  | 'testUser2'
+  | 'testUser3'
+  | 'testUser4'
+  | 'testUser5'
+  | 'annoyingUser'
 
 export type SeedCompanyKey = 'testCompany1' | 'testCompany2'
 
@@ -144,6 +151,14 @@ export async function seedUsers() {
     }
   )
 
+  const annoyingUser = await driverSeed(
+    TEST_USER6_ID,
+    't3u6hn7UuNWjm39UbfxVGSEHJbO2',
+    'annoyingUser',
+    'annoyingUser@delete.me',
+    { minimumRatePerMile: 2.25, minimumLoadValue: 400, preferredMaxDeadheadMiles: 75 }
+  )
+
   const admin = await AdminModel.create({
     _id: TEST_ADMIN_ID,
     firebaseUid: ADMIN_FIREBASE_UID,
@@ -155,7 +170,7 @@ export async function seedUsers() {
 
   return {
     companies: { testCompany1, testCompany2 },
-    drivers: { testUser1, testUser2, testUser3, testUser4, testUser5 },
+    drivers: { testUser1, testUser2, testUser3, testUser4, testUser5, annoyingUser },
     admin,
   }
 }
