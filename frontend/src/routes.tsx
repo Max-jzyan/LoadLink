@@ -28,6 +28,7 @@ import AdminRateConfirmations from '@/pages/admin/AdminRateConfirmations'
 import AdminBillOfLading from '@/pages/admin/AdminBillOfLading'
 import AdminReports from '@/pages/admin/AdminReports'
 import AdminUsers from '@/pages/admin/AdminUsers'
+import Privacy from '@/pages/Privacy'
 import { selectRole } from '@/services/authSlice'
 import { useSelector } from 'react-redux'
 import { Navigate, Route, Routes } from 'react-router-dom'
@@ -222,6 +223,7 @@ export default function AppRoutes() {
       <Route path={RoutePath.ReportInaccurate} element={<ReportInaccurate />} />
       <Route path={RoutePath.Map} element={<MapPage />} />
       <Route path={RoutePath.Test} element={<Test />} />
+      <Route path={RoutePath.Privacy} element={<Privacy />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   )

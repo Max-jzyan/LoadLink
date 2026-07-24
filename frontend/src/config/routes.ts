@@ -43,6 +43,7 @@ export const RoutePath = {
   Help: '/help',
   Logout: '/logout',
   Notifications: '/notifications',
+  Privacy: '/privacy',
   // Admin paths
   AdminDashboard: '/admin/dashboard',
   AdminDocuments: '/admin/documents',
@@ -181,6 +182,7 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     icon: Bell,
     navGroup: null,
   },
+  [RoutePath.Privacy]: { label: 'Privacy', icon: ShieldCheck, navGroup: null },
   // Admin nav items
   [RoutePath.AdminDashboard]: {
     label: 'Admin Dashboard',

@@ -101,6 +101,17 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
 
       {/* Global toast notifications */}
       <ToastManager />
+
+      {/* Footer */}
+      <footer className="shrink-0 border-t bg-background px-4 py-2">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span>&copy; {new Date().getFullYear()} LoadLink</span>
+          <Link to={RoutePath.Privacy} className="hover:text-primary hover:underline">
+            Privacy
+          </Link>
+          <span>A Fantastic Five project.</span>
+        </div>
+      </footer>
     </div>
   )
 }
