@@ -180,6 +180,32 @@ export const notifyReportStatusUpdated = (
     data: { reportId: opts.reportId, status: opts.status },
   })
 
+/**
+ * Notify a user that an admin has suspended their account.
+ */
+export const notifyAccountBanned = (userId: string, opts: { reason?: string }) =>
+  createNotification({
+    userId,
+    type: NOTIFICATION_TYPES.ACCOUNT_BANNED,
+    title: 'Your account has been suspended',
+    message: opts.reason
+      ? `Your account was suspended by an administrator. Reason: ${opts.reason}`
+      : 'Your account was suspended by an administrator. Contact support for details.',
+    data: { reason: opts.reason ?? null },
+  })
+
+/**
+ * Notify a user that a previous account suspension has been lifted.
+ */
+export const notifyAccountUnbanned = (userId: string) =>
+  createNotification({
+    userId,
+    type: NOTIFICATION_TYPES.ACCOUNT_UNBANNED,
+    title: 'Your account has been reinstated',
+    message: 'Your account suspension has been lifted. You now have full access again.',
+    data: {},
+  })
+
 export const notifyDocumentUploaded = (
   adminUserIds: string[],
   opts: { uploaderName: string; docType: string; ownerId: string }

@@ -6,6 +6,14 @@ import { getFirebaseAuth } from '../lib/firebaseAdmin'
 import type { UserRole } from '../models/enums'
 import '../types/auth'
 
+/**
+ * Minimum gap between writes to `lastActiveAt`. Every authenticated request
+ * would otherwise trigger a write; throttling keeps the "last active" value
+ * meaningfully real (updated on genuine logins/usage) without hammering the
+ * database on rapid-fire requests within the same session.
+ */
+const LAST_ACTIVE_THROTTLE_MS = 5 * 60 * 1000
+
 // verify firebase only. used for registration
 export async function requireFirebaseToken(
   req: Request,
@@ -49,16 +57,40 @@ async function authenticate(req: Request, token: string): Promise<ApiError | nul
 
   req.firebaseUid = firebaseUid
 
-  const user = await UserModel.findOne({ firebaseUid }).select('_id role firebaseUid email')
+  const user = await UserModel.findOne({ firebaseUid }).select(
+    '_id role firebaseUid email isBanned bannedReason lastActiveAt'
+  )
   if (!user) {
     return new ApiError(StatusCodes.FORBIDDEN, 'User not registered')
   }
+
+  if (user.isBanned) {
+    return new ApiError(
+      StatusCodes.FORBIDDEN,
+      user.bannedReason
+        ? `Your account has been suspended: ${user.bannedReason}`
+        : 'Your account has been suspended. Please contact support.',
+      'ACCOUNT_BANNED'
+    )
+  }
+
   req.user = {
     _id: user._id.toString(),
     role: user.get('role') as UserRole,
     firebaseUid: user.firebaseUid,
     email: user.email,
   }
+
+  // Fire-and-forget, throttled write of the real "last active"/"last logged in"
+  // timestamp. Not awaited so it never adds latency to the request itself.
+  const lastActiveAt = user.lastActiveAt
+  const now = Date.now()
+  if (!lastActiveAt || now - new Date(lastActiveAt).getTime() > LAST_ACTIVE_THROTTLE_MS) {
+    UserModel.updateOne({ _id: user._id }, { $set: { lastActiveAt: new Date() } }).catch((err) => {
+      console.error('[requireAuth] Failed to update lastActiveAt:', err)
+    })
+  }
+
   return null
 }
 

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { StatusCodes } from 'http-status-codes'
+import { isValidObjectId } from 'mongoose'
 import { UserModel } from '../models/users/User'
 import { DriverModel } from '../models/users/Driver'
 import { LoadModel } from '../models/loads/Load'
@@ -9,8 +10,14 @@ import { AuctionModel } from '../models/loads/Auction'
 import { USER_ROLES } from '../models/enums'
 import { ApiError } from '../utils/ApiError'
 import { generateRateConfirmationPdf } from '../services/pdfService'
+import { getFirebaseAuth } from '../lib/firebaseAdmin'
 import * as uploadService from '../services/uploadService'
-import { notifyDocumentApproved, notifyDocumentRejected } from '../services/notificationService'
+import {
+  notifyDocumentApproved,
+  notifyDocumentRejected,
+  notifyAccountBanned,
+  notifyAccountUnbanned,
+} from '../services/notificationService'
 
 /**
  * GET /api/admin/documents/download?key=<s3key>
@@ -35,14 +42,20 @@ export const getDocumentDownloadUrl = async (req: Request, res: Response, next: 
  */
 export const getPlatformStats = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const [totalDrivers, totalCompanies, totalLoads, totalBids, driversWithDocs] =
+    const [totalDrivers, totalCompanies, totalLoads, totalBids, driversWithDocs, revenueAgg] =
       await Promise.all([
         UserModel.countDocuments({ role: USER_ROLES.DRIVER }),
         UserModel.countDocuments({ role: USER_ROLES.COMPANY }),
         LoadModel.countDocuments({}),
         BidModel.countDocuments({}),
         DriverModel.countDocuments({ 'insuranceCertificates.0': { $exists: true } }),
+        BidModel.aggregate([
+          { $match: { status: 'accepted' } },
+          { $group: { _id: null, total: { $sum: '$amount' } } },
+        ]),
       ])
+
+    const totalRevenue = revenueAgg[0]?.total ?? 0
 
     res.status(StatusCodes.OK).json({
       totalDrivers,
@@ -50,6 +63,230 @@ export const getPlatformStats = async (req: Request, res: Response, next: NextFu
       totalLoads,
       totalBids,
       driversWithDocs,
+      totalRevenue,
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ── Analytics time series ─────────────────────────────────────────────────────
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/** Builds an array of 'YYYY-MM-DD' UTC date strings for the last `days` days (inclusive of today). */
+function buildDailyBuckets(days: number): string[] {
+  const buckets: string[] = []
+  const now = new Date()
+  now.setUTCHours(0, 0, 0, 0)
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * DAY_MS)
+    buckets.push(d.toISOString().slice(0, 10))
+  }
+  return buckets
+}
+
+/** Fills in zero-value entries for any bucket day missing from the aggregation results. */
+function fillSeries(buckets: string[], data: Map<string, number>) {
+  return buckets.map((date) => ({ date, value: data.get(date) ?? 0 }))
+}
+
+const toBucketMap = (agg: { _id: string; total: number }[]) =>
+  new Map(agg.map((a) => [a._id, a.total]))
+
+const DATE_GROUP = (field: string) => ({
+  $dateToString: { format: '%Y-%m-%d', date: `$${field}`, timezone: 'UTC' },
+})
+
+/**
+ * GET /api/admin/analytics?days=30
+ * Returns daily time series for the key platform metrics so the dashboard can
+ * render day-by-day / week-by-week / month-by-month charts (aggregation of
+ * the daily buckets into weeks/months is done client-side).
+ */
+export const getAdminAnalytics = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const requestedDays = parseInt(req.query.days as string, 10)
+    const days = Math.min(Math.max(Number.isFinite(requestedDays) ? requestedDays : 30, 7), 365)
+
+    const startDate = new Date(Date.now() - (days - 1) * DAY_MS)
+    startDate.setUTCHours(0, 0, 0, 0)
+
+    const [revenueAgg, loadsAgg, bidsAgg, driversAgg, companiesAgg] = await Promise.all([
+      BidModel.aggregate([
+        { $match: { status: 'accepted', acceptedAt: { $gte: startDate } } },
+        { $group: { _id: DATE_GROUP('acceptedAt'), total: { $sum: '$amount' } } },
+      ]),
+      LoadModel.aggregate([
+        { $match: { createdAt: { $gte: startDate } } },
+        { $group: { _id: DATE_GROUP('createdAt'), total: { $sum: 1 } } },
+      ]),
+      BidModel.aggregate([
+        { $match: { createdAt: { $gte: startDate } } },
+        { $group: { _id: DATE_GROUP('createdAt'), total: { $sum: 1 } } },
+      ]),
+      UserModel.aggregate([
+        { $match: { role: USER_ROLES.DRIVER, createdAt: { $gte: startDate } } },
+        { $group: { _id: DATE_GROUP('createdAt'), total: { $sum: 1 } } },
+      ]),
+      UserModel.aggregate([
+        { $match: { role: USER_ROLES.COMPANY, createdAt: { $gte: startDate } } },
+        { $group: { _id: DATE_GROUP('createdAt'), total: { $sum: 1 } } },
+      ]),
+    ])
+
+    const buckets = buildDailyBuckets(days)
+
+    res.status(StatusCodes.OK).json({
+      days,
+      series: {
+        revenue: fillSeries(buckets, toBucketMap(revenueAgg)),
+        loads: fillSeries(buckets, toBucketMap(loadsAgg)),
+        bids: fillSeries(buckets, toBucketMap(bidsAgg)),
+        newDrivers: fillSeries(buckets, toBucketMap(driversAgg)),
+        newCompanies: fillSeries(buckets, toBucketMap(companiesAgg)),
+      },
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * GET /api/admin/insights
+ * "Real-life analytics" for the dashboard: top companies/drivers by volume,
+ * most common lanes, and platform activity (active-user counts + a 14-day
+ * distribution of when users were last seen).
+ */
+export const getAdminInsights = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const now = Date.now()
+
+    const [topCompaniesAgg, topDriversAgg, topLanesAgg, activeLast24h, activeLast7d, activeLast30d, totalUsers, lastActiveAgg] =
+      await Promise.all([
+        BidModel.aggregate([
+          { $match: { status: 'accepted' } },
+          {
+            $lookup: {
+              from: 'loads',
+              localField: 'loadId',
+              foreignField: '_id',
+              as: 'load',
+            },
+          },
+          { $unwind: '$load' },
+          {
+            $group: {
+              _id: '$load.companyId',
+              totalRevenue: { $sum: '$amount' },
+              loadCount: { $sum: 1 },
+            },
+          },
+          { $sort: { totalRevenue: -1 } },
+          { $limit: 5 },
+          {
+            $lookup: {
+              from: 'users',
+              localField: '_id',
+              foreignField: '_id',
+              as: 'company',
+            },
+          },
+          { $unwind: '$company' },
+          {
+            $project: {
+              _id: 1,
+              totalRevenue: 1,
+              loadCount: 1,
+              name: '$company.companyName',
+            },
+          },
+        ]),
+        BidModel.aggregate([
+          { $match: { status: 'accepted' } },
+          {
+            $group: {
+              _id: '$driverId',
+              totalRevenue: { $sum: '$amount' },
+              bidCount: { $sum: 1 },
+            },
+          },
+          { $sort: { totalRevenue: -1 } },
+          { $limit: 5 },
+          {
+            $lookup: {
+              from: 'users',
+              localField: '_id',
+              foreignField: '_id',
+              as: 'driver',
+            },
+          },
+          { $unwind: '$driver' },
+          {
+            $project: {
+              _id: 1,
+              totalRevenue: 1,
+              bidCount: 1,
+              name: '$driver.name',
+            },
+          },
+        ]),
+        LoadModel.aggregate([
+          {
+            $group: {
+              _id: {
+                origin: {
+                  $trim: { input: { $arrayElemAt: [{ $split: ['$originAddress', ','] }, 0] } },
+                },
+                destination: {
+                  $trim: {
+                    input: { $arrayElemAt: [{ $split: ['$destinationAddress', ','] }, 0] },
+                  },
+                },
+              },
+              count: { $sum: 1 },
+            },
+          },
+          { $sort: { count: -1 } },
+          { $limit: 5 },
+        ]),
+        UserModel.countDocuments({ lastActiveAt: { $gte: new Date(now - DAY_MS) } }),
+        UserModel.countDocuments({ lastActiveAt: { $gte: new Date(now - 7 * DAY_MS) } }),
+        UserModel.countDocuments({ lastActiveAt: { $gte: new Date(now - 30 * DAY_MS) } }),
+        UserModel.countDocuments({}),
+        UserModel.aggregate([
+          { $match: { lastActiveAt: { $gte: new Date(now - 13 * DAY_MS) } } },
+          { $group: { _id: DATE_GROUP('lastActiveAt'), total: { $sum: 1 } } },
+        ]),
+      ])
+
+    const activityBuckets = buildDailyBuckets(14)
+
+    res.status(StatusCodes.OK).json({
+      topCompanies: topCompaniesAgg.map((c) => ({
+        _id: c._id,
+        name: c.name,
+        totalRevenue: c.totalRevenue,
+        loadCount: c.loadCount,
+      })),
+      topDrivers: topDriversAgg.map((d) => ({
+        _id: d._id,
+        name: d.name,
+        totalRevenue: d.totalRevenue,
+        bidCount: d.bidCount,
+      })),
+      topLanes: topLanesAgg.map((l) => ({
+        origin: l._id.origin,
+        destination: l._id.destination,
+        count: l.count,
+      })),
+      activity: {
+        totalUsers,
+        activeLast24h,
+        activeLast7d,
+        activeLast30d,
+        lastActiveDistribution: fillSeries(activityBuckets, toBucketMap(lastActiveAgg)),
+      },
     })
   } catch (err) {
     next(err)
@@ -66,10 +303,138 @@ export const listUsers = async (req: Request, res: Response, next: NextFunction)
     const { role } = req.query
     const filter = role ? { role } : {}
     const users = await UserModel.find(filter)
-      .select('_id name email role createdAt lastActiveAt profilePictureUrl')
+      .select(
+        '_id name email phone role createdAt lastActiveAt profilePictureUrl isBanned bannedAt bannedReason bannedBy'
+      )
       .sort({ createdAt: -1 })
       .lean()
     res.status(StatusCodes.OK).json(users)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * PATCH /api/admin/users/:userId/ban
+ * Body: { reason?: string }
+ * Suspends a user's account so they can no longer authenticate.
+ * Admins cannot be banned, and an admin cannot ban themselves.
+ */
+export const banUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.params.userId as string
+    const { reason } = req.body as { reason?: string }
+    const adminId = req.user!._id
+
+    if (!isValidObjectId(userId)) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+    if (userId === adminId) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'You cannot ban your own account')
+    }
+
+    const target = await UserModel.findById(userId)
+    if (!target) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    if (target.get('role') === USER_ROLES.ADMIN) {
+      throw new ApiError(StatusCodes.FORBIDDEN, 'Admin accounts cannot be banned')
+    }
+    if (target.isBanned) {
+      return res.status(StatusCodes.OK).json({ message: 'User is already banned' })
+    }
+
+    const bannedReason = reason?.trim() || 'No reason provided'
+    target.set({
+      isBanned: true,
+      bannedAt: new Date(),
+      bannedReason,
+      bannedBy: adminId,
+    })
+    await target.save()
+
+    await notifyAccountBanned(userId, { reason: bannedReason })
+
+    res.status(StatusCodes.OK).json({ message: 'User banned' })
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * PATCH /api/admin/users/:userId/unban
+ * Lifts a previously issued ban.
+ */
+export const unbanUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.params.userId as string
+    if (!isValidObjectId(userId)) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    const target = await UserModel.findById(userId)
+    if (!target) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    if (!target.isBanned) {
+      return res.status(StatusCodes.OK).json({ message: 'User is not banned' })
+    }
+
+    target.set({
+      isBanned: false,
+      bannedAt: null,
+      bannedReason: '',
+      bannedBy: null,
+    })
+    await target.save()
+
+    await notifyAccountUnbanned(userId)
+
+    res.status(StatusCodes.OK).json({ message: 'User unbanned' })
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * DELETE /api/admin/users/:userId
+ * Permanently deletes a user account — both the MongoDB profile AND the
+ * underlying Firebase Auth identity, so the person can't just keep using
+ * the same Firebase session (or sign back in with the same credentials)
+ * after being "deleted". Admins cannot be deleted here, and an admin cannot
+ * delete their own account.
+ */
+export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.params.userId as string
+    const adminId = req.user!._id
+
+    if (!isValidObjectId(userId)) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+    if (userId === adminId) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'You cannot delete your own account')
+    }
+
+    const target = await UserModel.findById(userId).select('role firebaseUid')
+    if (!target) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    if (target.get('role') === USER_ROLES.ADMIN) {
+      throw new ApiError(StatusCodes.FORBIDDEN, 'Admin accounts cannot be deleted')
+    }
+
+    await UserModel.deleteOne({ _id: userId })
+
+    // Best-effort: also remove the Firebase Auth identity so the deleted
+    // account can't keep authenticating (it would otherwise still hold a
+    // valid Firebase session/token, just with no matching Mongo profile).
+    // Not fatal if this fails — the Mongo profile is already gone, which is
+    // what actually gates access via requireAuth.
+    const firebaseAuth = getFirebaseAuth()
+    if (firebaseAuth && target.firebaseUid) {
+      try {
+        await firebaseAuth.deleteUser(target.firebaseUid)
+      } catch (firebaseErr) {
+        console.error('[adminController] Failed to delete Firebase user:', firebaseErr)
+      }
+    }
+
+    res.status(StatusCodes.NO_CONTENT).send()
   } catch (err) {
     next(err)
   }
@@ -239,6 +604,26 @@ export const rejectCertDoc = async (req: Request, res: Response, next: NextFunct
 export const listRateConfirmations = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const bids = await BidModel.find({ rateConfirmationUrl: { $ne: null } })
+      .populate(
+        'loadId',
+        'originAddress destinationAddress pickupTime dropoffTime commodity companyId'
+      )
+      .populate('driverId', 'name email')
+      .sort({ acceptedAt: -1 })
+      .lean()
+    res.status(StatusCodes.OK).json(bids)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * GET /api/admin/bill-of-ladings
+ * List all bids that have a generated Bill of Lading PDF.
+ */
+export const listBillsOfLading = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const bids = await BidModel.find({ bolUrl: { $ne: null } })
       .populate(
         'loadId',
         'originAddress destinationAddress pickupTime dropoffTime commodity companyId'

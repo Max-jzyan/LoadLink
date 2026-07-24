@@ -139,8 +139,10 @@ export default function SessionExpiredDialog() {
     await doRedirect()
   }, [navigate])
 
-  // Show nothing when no session state is active
-  if (!sessionState || sessionState === 'expired') return null
+  // Show nothing when no session state is active. 'banned' is handled by
+  // AccountBannedDialog instead — without this guard, sessionState==='banned'
+  // would fall through and render this dialog on top of that one too.
+  if (!sessionState || sessionState === 'expired' || sessionState === 'banned') return null
 
   // ---- Single unified dialog for the "expiring" phase ----
   const display = remainingMs !== null ? formatCountdown(remainingMs) : '—'

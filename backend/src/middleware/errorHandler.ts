@@ -9,7 +9,7 @@ import { ApiError } from '../utils/ApiError'
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof ApiError) {
     console.error(`[ApiError ${err.statusCode}]`, err.message)
-    res.status(err.statusCode).json({ message: err.message })
+    res.status(err.statusCode).json({ message: err.message, ...(err.code ? { code: err.code } : {}) })
     return
   }
 

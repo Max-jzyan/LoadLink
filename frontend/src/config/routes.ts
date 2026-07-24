@@ -48,6 +48,7 @@ export const RoutePath = {
   AdminDocuments: '/admin/documents',
   AdminUsers: '/admin/users',
   AdminRateConfirmations: '/admin/rate-confirmations',
+  AdminBillOfLading: '/admin/bill-of-lading',
   AdminReports: '/admin/reports',
 } as const
 
@@ -202,6 +203,12 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
   [RoutePath.AdminRateConfirmations]: {
     label: 'Rate Confirmations',
     icon: ShieldCheck,
+    navGroup: 'main',
+    roles: ['admin'],
+  },
+  [RoutePath.AdminBillOfLading]: {
+    label: 'Bills of Lading',
+    icon: FileText,
     navGroup: 'main',
     roles: ['admin'],
   },

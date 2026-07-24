@@ -25,6 +25,7 @@ import Test from '@/pages/Test'
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminDocuments from '@/pages/admin/AdminDocuments'
 import AdminRateConfirmations from '@/pages/admin/AdminRateConfirmations'
+import AdminBillOfLading from '@/pages/admin/AdminBillOfLading'
 import AdminReports from '@/pages/admin/AdminReports'
 import AdminUsers from '@/pages/admin/AdminUsers'
 import { selectRole } from '@/services/authSlice'
@@ -164,6 +165,14 @@ export default function AppRoutes() {
         element={
           <RoleRoute path={RoutePath.AdminRateConfirmations}>
             <AdminRateConfirmations />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path={RoutePath.AdminBillOfLading}
+        element={
+          <RoleRoute path={RoutePath.AdminBillOfLading}>
+            <AdminBillOfLading />
           </RoleRoute>
         }
       />

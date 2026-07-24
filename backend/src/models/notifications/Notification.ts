@@ -19,6 +19,8 @@ export const NOTIFICATION_TYPES = {
   MESSAGE_RECEIVED: 'message_received',
   DRIVER_CHECKED_IN: 'driver_checked_in',
   REPORT_STATUS_UPDATED: 'report_status_updated',
+  ACCOUNT_BANNED: 'account_banned',
+  ACCOUNT_UNBANNED: 'account_unbanned',
 } as const
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES]

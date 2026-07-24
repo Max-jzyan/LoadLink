@@ -1,4 +1,4 @@
-import { Schema, model, InferSchemaType } from 'mongoose'
+import { Schema, model, InferSchemaType, Types } from 'mongoose'
 
 const NotificationPreferencesSchema = new Schema({
   email: { type: Boolean, default: true },
@@ -33,8 +33,17 @@ const UserSchema = new Schema(
     // Universal fields shared by both Driver and Company discriminators
     profilePictureUrl: { type: String, default: '' },
     notificationPreferences: { type: NotificationPreferencesSchema, default: () => ({}) },
+    /** Updated (throttled) on every authenticated request — the real "last seen" timestamp. */
     lastActiveAt: { type: Date, default: null },
     feedPreferences: { type: FeedPreferencesSchema, default: () => ({}) },
+
+    // ── Admin moderation ────────────────────────────────────────────────────
+    /** Banned users are blocked from authenticating (see requireAuth). */
+    isBanned: { type: Boolean, default: false, index: true },
+    bannedAt: { type: Date, default: null },
+    bannedReason: { type: String, default: '' },
+    /** Admin user who issued the ban, for audit purposes. */
+    bannedBy: { type: Types.ObjectId, ref: 'User', default: null },
   },
   {
     timestamps: true,

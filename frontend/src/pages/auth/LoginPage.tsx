@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { signInWithPopup } from 'firebase/auth'
 import { useDispatch } from 'react-redux'
 import { auth, googleProvider } from '@/lib/firebase'
-import { loginAndFetchUser, setUser, fetchDbUser } from '@/services/authSlice'
+import { loginAndFetchUser, setUser, fetchDbUser, BannedError } from '@/services/authSlice'
 import { type UserRole } from '@/types/enums'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -49,7 +49,11 @@ export default function LoginPage() {
       afterLogin(authUser.role)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
-      if (msg.includes('Account not found') || msg.includes('registered as a')) {
+      if (
+        msg.includes('Account not found') ||
+        msg.includes('registered as a') ||
+        msg.toLowerCase().includes('suspend')
+      ) {
         setError(msg)
       } else {
         setError('Invalid email or password.')
@@ -69,8 +73,16 @@ export default function LoginPage() {
       let dbUser: { _id: string; role: UserRole } | null
       try {
         dbUser = await fetchDbUser()
-      } catch {
-        throw new Error('Account not found. Please sign up first.')
+      } catch (err) {
+        if (err instanceof BannedError) {
+          await auth.signOut()
+          // Generic message only — the specific ban reason is reserved for
+          // AccountBannedDialog inside the app, not the public login form.
+          throw new Error('Your account has been suspended. Please contact support.', {
+            cause: err,
+          })
+        }
+        throw new Error('Account not found. Please sign up first.', { cause: err })
       }
 
       if (!dbUser) {

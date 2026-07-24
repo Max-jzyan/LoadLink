@@ -1,7 +1,12 @@
 import { Router } from 'express'
 import {
   getPlatformStats,
+  getAdminAnalytics,
+  getAdminInsights,
   listUsers,
+  banUser,
+  unbanUser,
+  deleteUser,
   listDrivers,
   getDriverDocuments,
   approveInsuranceCert,
@@ -9,6 +14,7 @@ import {
   approveCertDoc,
   rejectCertDoc,
   listRateConfirmations,
+  listBillsOfLading,
   generateRateConfirmation,
   getAdminProfile,
   getDocumentDownloadUrl,
@@ -23,8 +29,13 @@ const adminOnly = [requireAuth, requireRole(USER_ROLES.ADMIN)]
 
 router.get('/admin/me', adminOnly, getAdminProfile)
 router.get('/admin/stats', adminOnly, getPlatformStats)
+router.get('/admin/analytics', adminOnly, getAdminAnalytics)
+router.get('/admin/insights', adminOnly, getAdminInsights)
 
 router.get('/admin/users', adminOnly, listUsers)
+router.patch('/admin/users/:userId/ban', adminOnly, banUser)
+router.patch('/admin/users/:userId/unban', adminOnly, unbanUser)
+router.delete('/admin/users/:userId', adminOnly, deleteUser)
 
 router.get('/admin/drivers', adminOnly, listDrivers)
 router.get('/admin/drivers/:driverId', adminOnly, getDriverDocuments)
@@ -35,6 +46,7 @@ router.patch('/admin/drivers/:driverId/certdoc/:idx/reject', adminOnly, rejectCe
 
 router.get('/admin/documents/download', adminOnly, getDocumentDownloadUrl)
 router.get('/admin/rate-confirmations', adminOnly, listRateConfirmations)
+router.get('/admin/bill-of-ladings', adminOnly, listBillsOfLading)
 router.post(
   '/admin/loads/:loadId/bids/:bidId/rate-confirmation',
   adminOnly,

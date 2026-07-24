@@ -9,6 +9,7 @@ import { api } from '@/services/api'
 import PublicRoute from './components/auth/PublicRoute'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import SessionExpiredDialog from './components/auth/SessionExpiredDialog'
+import AccountBannedDialog from './components/auth/AccountBannedDialog'
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
 import AdminLoginPage from './pages/auth/AdminLoginPage'
@@ -16,7 +17,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
 import PageLayout from '@/components/PageLayout'
 import AppRoutes from '@/routes'
-import { selectRole, selectAuthLoading, setManualLogout } from '@/services/authSlice'
+import { selectRole, selectAuthLoading, selectSessionState, setManualLogout } from '@/services/authSlice'
 import Spinner from '@/components/shared/Spinner'
 import { TourProvider } from '@/contexts/TourContext'
 
@@ -24,20 +25,26 @@ import { TourProvider } from '@/contexts/TourContext'
 // single source of truth). If we finish loading and still have no role
 // (unregistered account, cleared session), sign out and send the user back
 // through the login flow.
+//
+// Exception: a banned account also resolves to role=null (see
+// subscribeToAuthChanges), but we deliberately skip the auto sign-out here
+// so AccountBannedDialog gets a chance to show the suspension reason first —
+// it owns the actual sign-out via its "Return to Login" button.
 
 function RoleLayout() {
   const role = useSelector(selectRole)
   const loading = useSelector(selectAuthLoading)
+  const sessionState = useSelector(selectSessionState)
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
   useEffect(() => {
-    if (!loading && !role) {
+    if (!loading && !role && sessionState !== 'banned') {
       setManualLogout()
       dispatch(api.util.resetApiState())
       signOut(auth).then(() => navigate('/login', { replace: true }))
     }
-  }, [loading, role, navigate, dispatch])
+  }, [loading, role, sessionState, navigate, dispatch])
 
   // prevents flashbang
   if (loading || !role) {
@@ -72,6 +79,7 @@ function App() {
   return (
     <Router>
       <SessionExpiredDialog />
+      <AccountBannedDialog />
       <Routes>
         <Route
           path="/login"

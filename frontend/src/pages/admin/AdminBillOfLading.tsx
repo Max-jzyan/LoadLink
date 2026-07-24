@@ -1,41 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import PageShell from '@/components/layout/PageShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
-  useListRateConfirmationsQuery,
-  useGenerateRateConfirmationMutation,
-  type RateConfirmationBid,
+  useListBillsOfLadingQuery,
+  type BillOfLadingBid,
 } from '@/services/adminApi/adminSlice'
-import { Search, Download, RefreshCw, FileText, Loader2 } from 'lucide-react'
+import { Search, Download, RefreshCw, FileText, Stamp, ShieldCheck } from 'lucide-react'
 import { format } from 'date-fns'
-import { showSuccess, showError } from '@/lib/toast'
 import { Skeleton } from '@/components/ui/skeleton'
 
-function RcRow({ bid }: { bid: RateConfirmationBid }) {
-  const [generate, { isLoading, isSuccess, data, isError, error }] =
-    useGenerateRateConfirmationMutation()
+function BolRow({ bid }: { bid: BillOfLadingBid }) {
   const load = typeof bid.loadId === 'object' ? bid.loadId : null
   const driver = typeof bid.driverId === 'object' ? bid.driverId : null
-
-  useEffect(() => {
-    if (isSuccess && data?.url) {
-      window.open(data.url, '_blank')
-      showSuccess('Rate confirmation regenerated')
-    }
-  }, [isSuccess, data])
-
-  useEffect(() => {
-    if (isError) {
-      showError('Failed to regenerate rate confirmation')
-    }
-  }, [isError, error])
-
-  function handleRegenerate() {
-    const loadId = load?._id ?? String(bid.loadId)
-    generate({ loadId, bidId: bid._id })
-  }
 
   return (
     <div className="rounded-xl border p-4 space-y-2 hover:bg-muted/20 transition-colors">
@@ -62,28 +40,22 @@ function RcRow({ bid }: { bid: RateConfirmationBid }) {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {bid.rateConfirmationUrl && (
-            <a href={bid.rateConfirmationUrl} target="_blank" rel="noopener noreferrer">
+          {bid.signedBolUrl && (
+            <a href={bid.signedBolUrl} target="_blank" rel="noopener noreferrer">
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1">
+                <Stamp className="h-3.5 w-3.5" />
+                Signed Copy
+              </Button>
+            </a>
+          )}
+          {bid.bolUrl && (
+            <a href={bid.bolUrl} target="_blank" rel="noopener noreferrer">
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1">
                 <Download className="h-3.5 w-3.5" />
                 Download
               </Button>
             </a>
           )}
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-8 text-xs gap-1"
-            onClick={handleRegenerate}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3.5 w-3.5" />
-            )}
-            Regen
-          </Button>
         </div>
       </div>
 
@@ -92,17 +64,32 @@ function RcRow({ bid }: { bid: RateConfirmationBid }) {
           Accepted {format(new Date(bid.acceptedAt), 'MMM d, yyyy HH:mm')}
         </p>
       )}
-      {!bid.rateConfirmationUrl && (
-        <Badge variant="destructive" className="text-xs">
-          PDF not generated
-        </Badge>
-      )}
+
+      <div className="flex items-center gap-2">
+        {!bid.bolUrl && (
+          <Badge variant="destructive" className="text-xs">
+            PDF not generated
+          </Badge>
+        )}
+        {bid.signedBolUrl ? (
+          <Badge variant="outline" className="gap-1 text-xs">
+            <ShieldCheck className="h-3 w-3" />
+            Shipper-signed copy on file
+          </Badge>
+        ) : (
+          bid.bolUrl && (
+            <Badge variant="secondary" className="text-xs">
+              Awaiting signed copy
+            </Badge>
+          )
+        )}
+      </div>
     </div>
   )
 }
 
-export default function AdminRateConfirmations() {
-  const { data: bids = [], isLoading, refetch, isFetching } = useListRateConfirmationsQuery()
+export default function AdminBillOfLading() {
+  const { data: bids = [], isLoading, refetch, isFetching } = useListBillsOfLadingQuery()
   const [search, setSearch] = useState('')
 
   const filtered = bids.filter((b) => {
@@ -121,7 +108,7 @@ export default function AdminRateConfirmations() {
 
   return (
     <PageShell
-      title="Rate Confirmations"
+      title="Bills of Lading"
       subtitle={`${filtered.length} PDFs`}
       actions={
         <Button variant="outline" size="sm" onClick={refetch} disabled={isFetching}>
@@ -152,13 +139,13 @@ export default function AdminRateConfirmations() {
       {!isLoading && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <FileText className="h-10 w-10 mb-3 opacity-20" />
-          <p className="text-sm">{search ? 'No matches.' : 'No rate confirmations yet.'}</p>
+          <p className="text-sm">{search ? 'No matches.' : 'No bills of lading yet.'}</p>
         </div>
       )}
       {!isLoading && filtered.length > 0 && (
         <div className="space-y-2">
           {filtered.map((bid) => (
-            <RcRow key={bid._id} bid={bid} />
+            <BolRow key={bid._id} bid={bid} />
           ))}
         </div>
       )}

@@ -43,7 +43,11 @@ export default function AdminLoginPage() {
       navigate(ROLE_HOME['admin'])
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
-      if (msg.includes('Account not found') || msg.includes('admin privileges')) {
+      if (
+        msg.includes('Account not found') ||
+        msg.includes('admin privileges') ||
+        msg.toLowerCase().includes('suspend')
+      ) {
         setError(msg)
       } else {
         setError('Invalid email or password.')

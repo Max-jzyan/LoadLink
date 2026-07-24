@@ -1,6 +1,14 @@
 import { api } from '../api'
 import { LoadTag } from '../apiTypes'
-import type { PlatformStats, AdminUser, AdminDriver, RateConfirmationBid } from './adminEnum'
+import type {
+  PlatformStats,
+  AdminUser,
+  AdminDriver,
+  RateConfirmationBid,
+  BillOfLadingBid,
+  AnalyticsResponse,
+  AdminInsights,
+} from './adminEnum'
 
 export type {
   PlatformStats,
@@ -9,6 +17,15 @@ export type {
   CertDoc,
   AdminDriver,
   RateConfirmationBid,
+  BillOfLadingBid,
+  AnalyticsResponse,
+  AnalyticsPoint,
+  AnalyticsMetricKey,
+  AdminInsights,
+  TopCompany,
+  TopDriver,
+  TopLane,
+  ActivityStats,
 } from './adminEnum'
 
 export const adminApi = api.injectEndpoints({
@@ -18,9 +35,44 @@ export const adminApi = api.injectEndpoints({
       providesTags: [{ type: LoadTag.Admin, id: 'STATS' }],
     }),
 
+    getAdminAnalytics: build.query<AnalyticsResponse, { days?: number } | void>({
+      query: (arg) => `admin/analytics${arg?.days ? `?days=${arg.days}` : ''}`,
+      providesTags: [{ type: LoadTag.Admin, id: 'ANALYTICS' }],
+    }),
+
+    getAdminInsights: build.query<AdminInsights, void>({
+      query: () => 'admin/insights',
+      providesTags: [{ type: LoadTag.Admin, id: 'INSIGHTS' }],
+    }),
+
     listAdminUsers: build.query<AdminUser[], { role?: string }>({
       query: ({ role } = {}) => `admin/users${role ? `?role=${role}` : ''}`,
       providesTags: [{ type: LoadTag.Admin, id: 'USERS' }],
+    }),
+
+    banUser: build.mutation<{ message: string }, { userId: string; reason?: string }>({
+      query: ({ userId, reason }) => ({
+        url: `admin/users/${userId}/ban`,
+        method: 'PATCH',
+        body: { reason },
+      }),
+      invalidatesTags: [{ type: LoadTag.Admin, id: 'USERS' }],
+    }),
+
+    unbanUser: build.mutation<{ message: string }, { userId: string }>({
+      query: ({ userId }) => ({
+        url: `admin/users/${userId}/unban`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: [{ type: LoadTag.Admin, id: 'USERS' }],
+    }),
+
+    deleteAdminUser: build.mutation<void, { userId: string }>({
+      query: ({ userId }) => ({
+        url: `admin/users/${userId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [{ type: LoadTag.Admin, id: 'USERS' }],
     }),
 
     listAdminDrivers: build.query<AdminDriver[], void>({
@@ -94,6 +146,11 @@ export const adminApi = api.injectEndpoints({
       providesTags: [{ type: LoadTag.Admin, id: 'RC-LIST' }],
     }),
 
+    listBillsOfLading: build.query<BillOfLadingBid[], void>({
+      query: () => 'admin/bill-of-ladings',
+      providesTags: [{ type: LoadTag.Admin, id: 'BOL-LIST' }],
+    }),
+
     generateRateConfirmation: build.mutation<
       { url: string; key: string },
       { loadId: string; bidId: string }
@@ -109,7 +166,12 @@ export const adminApi = api.injectEndpoints({
 
 export const {
   useGetPlatformStatsQuery,
+  useGetAdminAnalyticsQuery,
+  useGetAdminInsightsQuery,
   useListAdminUsersQuery,
+  useBanUserMutation,
+  useUnbanUserMutation,
+  useDeleteAdminUserMutation,
   useListAdminDriversQuery,
   useGetDriverDocumentsQuery,
   useApproveInsuranceCertMutation,
@@ -118,5 +180,6 @@ export const {
   useRejectCertDocMutation,
   useLazyGetDocumentDownloadUrlQuery,
   useListRateConfirmationsQuery,
+  useListBillsOfLadingQuery,
   useGenerateRateConfirmationMutation,
 } = adminApi
