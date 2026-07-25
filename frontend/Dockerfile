@@ -9,8 +9,6 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run format:check
-
 RUN npm run build
 
 # Serve with nginx
