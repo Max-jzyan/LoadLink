@@ -14,17 +14,13 @@ const assertValidId = (id: string, label: string) => {
 
 interface ThreadContext {
   loadId: string
-  /** The other participant in the thread (recipient when userId sends). */
   counterpartyId: string
-  /** Role of the counterparty — used to build role-aware notification links. */
   counterpartyRole: string
+  companyId: string
+  driverId: string
 }
 
-/**
- * Validate that a message thread exists for this load and that userId is a
- * participant. A thread exists once a driver has been assigned (load awarded);
- * the two participants are the posting company and the assigned driver.
- */
+/** A thread exists once a driver is assigned; validates userId is a participant. */
 export const getThreadContext = async (loadId: string, userId: string): Promise<ThreadContext> => {
   assertValidId(loadId, 'loadId')
   assertValidId(userId, 'userId')
@@ -42,23 +38,41 @@ export const getThreadContext = async (loadId: string, userId: string): Promise<
   const driverId = load.assignedDriverId.toString()
 
   if (userId === companyId) {
-    return { loadId, counterpartyId: driverId, counterpartyRole: USER_ROLES.DRIVER }
+    return {
+      loadId,
+      counterpartyId: driverId,
+      counterpartyRole: USER_ROLES.DRIVER,
+      companyId,
+      driverId,
+    }
   }
   if (userId === driverId) {
-    return { loadId, counterpartyId: companyId, counterpartyRole: USER_ROLES.COMPANY }
+    return {
+      loadId,
+      counterpartyId: companyId,
+      counterpartyRole: USER_ROLES.COMPANY,
+      companyId,
+      driverId,
+    }
   }
   throw new ApiError(StatusCodes.FORBIDDEN, 'Forbidden: not a participant of this thread')
 }
 
-/**
- * Full thread for a load: messages in chronological order plus counterparty
- * info for the chat header. Participant check included.
- */
+// Scoped to the load's current company/driver pair, not just loadId, so a
+// reassigned load doesn't leak a previous driver's messages.
 export const getThread = async (loadId: string, userId: string) => {
   const ctx = await getThreadContext(loadId, userId)
+  const companyObjId = new Types.ObjectId(ctx.companyId)
+  const driverObjId = new Types.ObjectId(ctx.driverId)
 
   const [messages, counterparty] = await Promise.all([
-    MessageModel.find({ loadId: new Types.ObjectId(loadId) })
+    MessageModel.find({
+      loadId: new Types.ObjectId(loadId),
+      $or: [
+        { senderId: companyObjId, recipientId: driverObjId },
+        { senderId: driverObjId, recipientId: companyObjId },
+      ],
+    })
       .sort({ createdAt: 1 })
       .lean(),
     UserModel.findById(ctx.counterpartyId).select('name role profilePictureUrl').lean(),
@@ -83,10 +97,6 @@ export const getThread = async (loadId: string, userId: string) => {
   }
 }
 
-/**
- * Send a message on a load thread. Persists the message, pushes it to any open
- * SSE thread streams, and raises a bell notification for the recipient.
- */
 export const sendMessage = async (loadId: string, senderUserId: string, body: unknown) => {
   const trimmed = typeof body === 'string' ? body.trim() : ''
   if (!trimmed) throw new ApiError(StatusCodes.BAD_REQUEST, 'Message body is required')
@@ -106,10 +116,9 @@ export const sendMessage = async (loadId: string, senderUserId: string, body: un
     body: trimmed,
   })
 
-  // Realtime push to both participants' open thread views
   emitThreadMessage(loadId, message.toObject())
 
-  // Bell notification for the recipient (non-throwing, fire-and-forget)
+  // Fire-and-forget: notification failure shouldn't fail the send
   const sender = await UserModel.findById(senderUserId).select('name').lean()
   void notifyMessageReceived(ctx.counterpartyId, {
     loadId,
@@ -121,7 +130,6 @@ export const sendMessage = async (loadId: string, senderUserId: string, body: un
   return message
 }
 
-/** Mark every message addressed to userId in this thread as read. */
 export const markThreadRead = async (loadId: string, userId: string) => {
   await getThreadContext(loadId, userId)
 
@@ -146,12 +154,7 @@ interface ThreadAggregateRow {
   unreadCount: number
 }
 
-/**
- * Conversation archive: one summary per load the user has exchanged messages
- * on, newest activity first. Each entry carries the load route/status, the
- * counterparty, the latest message preview, and the unread count — everything
- * the Messages page needs to render a conversation list.
- */
+// One summary per load the user has exchanged messages on, newest first.
 export const listThreads = async (userId: string) => {
   assertValidId(userId, 'userId')
   const uid = new Types.ObjectId(userId)
@@ -180,7 +183,6 @@ export const listThreads = async (userId: string) => {
     .lean()
   const loadMap = new Map(loads.map((l) => [l._id.toString(), l]))
 
-  // Resolve every counterparty (the thread participant who isn't userId) in one query
   const counterpartyIds = new Set<string>()
   for (const load of loads) {
     const other = load.companyId.toString() === userId ? load.assignedDriverId : load.companyId
@@ -222,10 +224,6 @@ export const listThreads = async (userId: string) => {
   })
 }
 
-/**
- * Unread message counts for the badge UI: total across all threads plus a
- * per-load breakdown.
- */
 export const getUnreadCounts = async (userId: string) => {
   assertValidId(userId, 'userId')
 

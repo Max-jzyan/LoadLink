@@ -16,13 +16,13 @@ import { formatDistanceToNow } from 'date-fns'
 import { ArrowRight, Loader2, MessageSquare, RefreshCw, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-type ThreadFilter = 'active' | 'completed' | 'cancelled' | 'all'
+type ThreadFilter = 'all' | 'active' | 'completed' | 'cancelled'
 
 const FILTER_OPTIONS: { value: ThreadFilter; label: string }[] = [
+  { value: 'all', label: 'All' },
   { value: 'active', label: 'Active' },
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
-  { value: 'all', label: 'All' },
 ]
 
 function matchesFilter(thread: MessageThreadSummary, filter: ThreadFilter): boolean {
@@ -32,6 +32,7 @@ function matchesFilter(thread: MessageThreadSummary, filter: ThreadFilter): bool
     case 'cancelled':
       return thread.loadStatus === LOAD_STATUSES.Cancelled
     case 'active':
+      // Status-only, so a thread never seems to jump tabs as it's read
       return (
         thread.loadStatus !== LOAD_STATUSES.Completed &&
         thread.loadStatus !== LOAD_STATUSES.Cancelled
@@ -57,9 +58,7 @@ function ThreadRow({
   return (
     <div
       onClick={(e) => {
-        // Blur before opening the drawer: the drawer marks the rest of the
-        // page aria-hidden while open, and a still-focused row underneath it
-        // would trip "aria-hidden on a focused element" a11y warnings.
+        // Blur first to avoid an aria-hidden-on-focused-element warning
         e.currentTarget.blur()
         onOpen(thread.loadId)
       }}
@@ -119,22 +118,14 @@ function ThreadRow({
   )
 }
 
-/**
- * Message archive: every load conversation the user has ever had, newest
- * activity first. Defaults to threads on active loads, with filters for
- * completed and cancelled ones. Clicking a conversation opens the same
- * per-load chat drawer used elsewhere in the app.
- */
 export default function Messages() {
   const myId = useRequiredMongoId()
-  const [filter, setFilter] = useState<ThreadFilter>('active')
+  const [filter, setFilter] = useState<ThreadFilter>('all')
   const [search, setSearch] = useState('')
   const [openLoadId, setOpenLoadId] = useState<string | null>(null)
 
-  // refetchOnMountOrArgChange: polling pauses while this page isn't mounted
-  // (e.g. the user navigated away), so a fresh visit — like clicking a
-  // "new message" notification — would otherwise serve a stale cached list
-  // instead of picking up messages sent while the page was closed.
+  // refetchOnMountOrArgChange: polling pauses while unmounted, so a fresh
+  // visit could otherwise show a stale cached list
   const {
     data: threads = [],
     isLoading,
@@ -169,6 +160,38 @@ export default function Messages() {
           ? `${totalUnread} unread message${totalUnread !== 1 ? 's' : ''}`
           : 'Conversations with your loads’ counterparties'
       }
+      stickyBar={
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex w-fit overflow-hidden rounded-lg border border-border">
+            {FILTER_OPTIONS.map((opt) => (
+              <Button
+                key={opt.value}
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'rounded-none border-0',
+                  filter === opt.value ? 'filter-btn-active' : 'filter-btn-inactive'
+                )}
+                onClick={() => setFilter(opt.value)}
+              >
+                {opt.label}
+              </Button>
+            ))}
+          </div>
+          <div className="relative flex-1 max-w-sm min-w-48">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Search by name or route…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Badge variant="secondary">
+            {filtered.length} conversation{filtered.length !== 1 ? 's' : ''}
+          </Badge>
+        </div>
+      }
       actions={
         <Button variant="outline" size="sm" onClick={refetch} disabled={isFetching}>
           <RefreshCw className={`h-4 w-4 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
@@ -176,34 +199,6 @@ export default function Messages() {
         </Button>
       }
     >
-      {/* Search + status filter */}
-      <div className="flex items-center gap-2 mb-4 flex-wrap">
-        <div className="relative flex-1 max-w-sm min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Search by name or route…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center gap-1">
-          {FILTER_OPTIONS.map((opt) => (
-            <Button
-              key={opt.value}
-              variant={filter === opt.value ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter(opt.value)}
-            >
-              {opt.label}
-            </Button>
-          ))}
-        </div>
-        <Badge variant="secondary">
-          {filtered.length} conversation{filtered.length !== 1 ? 's' : ''}
-        </Badge>
-      </div>
-
       {isLoading && (
         <div className="flex justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -214,12 +209,12 @@ export default function Messages() {
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <MessageSquare className="h-10 w-10 mb-3 opacity-30" />
           <p className="text-sm font-medium">
-            {search || filter !== 'active'
+            {search || filter !== 'all'
               ? 'No conversations match your filters.'
               : 'No conversations yet.'}
           </p>
           <p className="text-xs mt-1 opacity-70 text-center max-w-sm">
-            {search || filter !== 'active'
+            {search || filter !== 'all'
               ? 'Try a different search or status filter.'
               : 'Once a load is awarded, you can message the other party from the load page. Conversations will show up here.'}
           </p>

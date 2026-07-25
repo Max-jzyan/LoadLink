@@ -135,6 +135,37 @@ describe('getThread', () => {
       role: 'driver',
     })
   })
+
+  it('scopes the message query to the current company/driver pair, not just loadId', async () => {
+    // Regression test: a load can be cancelled, reopened, and re-awarded to a
+    // different driver. Messages from a previous driver's tenure must not
+    // leak to whoever is assigned now — the query has to filter on the
+    // current participant pair, not merely match every message on the load.
+    mockLoad(bookedLoad())
+    const sortMock = jest.fn().mockReturnValue({ lean: () => Promise.resolve([]) })
+    findMessagesMock.mockReturnValue({ sort: sortMock } as never)
+    mockUser({ _id: new Types.ObjectId(COMPANY_ID), name: 'Acme Freight', profilePictureUrl: '' })
+
+    await getThread(LOAD_ID, DRIVER_ID)
+
+    const filter = findMessagesMock.mock.calls[0][0] as unknown as Record<string, unknown>
+    expect(filter.loadId?.toString()).toBe(LOAD_ID)
+    expect(filter.$or).toEqual([
+      {
+        senderId: expect.objectContaining({ toString: expect.any(Function) }),
+        recipientId: expect.objectContaining({ toString: expect.any(Function) }),
+      },
+      {
+        senderId: expect.objectContaining({ toString: expect.any(Function) }),
+        recipientId: expect.objectContaining({ toString: expect.any(Function) }),
+      },
+    ])
+    const pairs = (filter.$or as { senderId: Types.ObjectId; recipientId: Types.ObjectId }[]).map(
+      (p) => [p.senderId.toString(), p.recipientId.toString()]
+    )
+    expect(pairs).toContainEqual([COMPANY_ID, DRIVER_ID])
+    expect(pairs).toContainEqual([DRIVER_ID, COMPANY_ID])
+  })
 })
 
 describe('sendMessage', () => {
