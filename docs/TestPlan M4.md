@@ -179,6 +179,34 @@
 
 ---
 
+## Onboarding Walkthrough (Guided Tour)
+
+### Test Case 1: Company walkthrough
+
+**Test:**
+
+1. Sign up a new company account (or log in as `testCompany1` and click the profile picture in the side nav bar and click "Walkthrough" ).
+2. Step through the tour with **Next ->**.
+
+**Expected:** The tour opens on `/company/dashboard` with a welcome step, then highlights the sidebar, Dashboard, and Auctions nav items (navigating to `/company/auctions`), then Messages, Blocklist, Notifications, and finally Profile & Appearance, ending with a **Done** button. No driver-only steps (Revenue Center, My Loads) appear.
+
+### Test Case 2: Driver walkthrough
+
+**Test:**
+
+1. Sign up a new driver account (or log in as `testUser1` and open the profile menu in the side nav bar -> **Walkthrough** to restart it manually).
+2. Step through the tour with **Next ->**.
+
+**Expected:** The tour opens on `/dashboard` with a welcome step, then highlights the sidebar, Revenue Center, My Loads (`/driverLoads`), and Auctions (`/driverAuctions`), then Messages, Blocklist, Notifications, and finally Profile & Appearance, ending with a **Done** button. No company-only steps (Dashboard, company Auctions) appear.
+
+### Test Case 3: Tour can be skipped/backtracked
+
+**Test:** Restart the tour via the profile dropdown, click **<- Back** on a middle step, then click **Skip tour** on the welcome step.
+
+**Expected:** **Back** returns to the previous step without navigating away; **Skip tour** immediately closes the tour (`tour.complete()`).
+
+---
+
 ## Enhancements to Existing Features
 
 ### Test Case 1: "Use my location" auction sort
