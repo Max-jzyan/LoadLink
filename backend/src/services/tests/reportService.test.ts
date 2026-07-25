@@ -22,6 +22,7 @@ jest.mock('../../models/reports/Report')
 jest.mock('../../models/users/User')
 jest.mock('../../models/loads/Bid')
 jest.mock('../../models/loads/Load')
+jest.mock('../notificationService')
 
 const createReportMock = jest.mocked(ReportModel.create)
 const findReportMock = jest.mocked(ReportModel.find)
@@ -451,7 +452,12 @@ describe('updateReportStatus', () => {
   })
 
   it('sets resolvedByAdminId when a valid adminId is given', async () => {
-    findReportByIdAndUpdateMock.mockResolvedValue({ _id: REPORT_ID } as never)
+    findReportByIdAndUpdateMock.mockResolvedValue({
+      _id: REPORT_ID,
+      reporterId: REPORTER_ID,
+      targetName: 'Acme Logistics',
+      status: REPORT_STATUSES.Resolved,
+    } as never)
 
     await updateReportStatus(REPORT_ID, REPORT_STATUSES.Resolved, ADMIN_ID)
 
@@ -463,7 +469,12 @@ describe('updateReportStatus', () => {
   })
 
   it('leaves resolvedByAdminId null when adminId is omitted or invalid', async () => {
-    findReportByIdAndUpdateMock.mockResolvedValue({ _id: REPORT_ID } as never)
+    findReportByIdAndUpdateMock.mockResolvedValue({
+      _id: REPORT_ID,
+      reporterId: REPORTER_ID,
+      targetName: 'Acme Logistics',
+      status: REPORT_STATUSES.Dismissed,
+    } as never)
 
     await updateReportStatus(REPORT_ID, REPORT_STATUSES.Dismissed)
 

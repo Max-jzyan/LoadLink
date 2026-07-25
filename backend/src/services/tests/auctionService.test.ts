@@ -87,6 +87,13 @@ function fakeBid(overrides: Record<string, unknown> = {}) {
 
 const MS_PER_HOUR = 3_600_000
 
+/** Chainable `.populate().populate()....lean()` mock, however many populates the call site uses. */
+function makePopulateChain(finalResult: unknown) {
+  const node: any = { lean: jest.fn().mockResolvedValue(finalResult) }
+  node.populate = jest.fn().mockReturnValue(node)
+  return node
+}
+
 /** Makes emitBidsAndPrice (called at the end of most mutations) a no-op by
  * having its internal AuctionModel.findOne lookup resolve to null. */
 function stubEmit() {
@@ -99,9 +106,8 @@ beforeEach(() => {
   jest.resetAllMocks()
   stubEmit()
   findLoadByIdMock.mockReturnValue({
-    populate: jest.fn().mockReturnValue({
-      populate: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(undefined) }),
-    }),
+    lean: jest.fn().mockResolvedValue(undefined),
+    populate: jest.fn().mockReturnValue(makePopulateChain(undefined)),
   } as never)
 })
 
@@ -349,23 +355,23 @@ describe('acceptBid', () => {
     const bid = fakeBid({ amount: 640 })
     findBidByIdMock.mockResolvedValue(bid as never)
 
-    // Mock load lookup for PDF generation
+    // Mock load lookup: direct .lean() for the conflicting-bids check (no conflicts),
+    // and .populate()...lean() for PDF generation.
     findLoadByIdMock.mockReturnValue({
-      populate: jest.fn().mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          lean: jest.fn().mockResolvedValue({
-            companyId: { companyName: 'Test Co', businessAddress: '123 St' },
-            assignedDriverId: { name: 'Test Driver', email: 'driver@test.com' },
-            originAddress: 'Origin',
-            destinationAddress: 'Dest',
-            pickupTime: new Date(),
-            dropoffTime: new Date(),
-            commodity: 'Goods',
-            weightLbs: 1000,
-            truckType: 'Flatbed',
-          }),
-        }),
-      }),
+      lean: jest.fn().mockResolvedValue(undefined),
+      populate: jest.fn().mockReturnValue(
+        makePopulateChain({
+          companyId: { companyName: 'Test Co', businessAddress: '123 St' },
+          assignedDriverId: { name: 'Test Driver', email: 'driver@test.com' },
+          originAddress: 'Origin',
+          destinationAddress: 'Dest',
+          pickupTime: new Date(),
+          dropoffTime: new Date(),
+          commodity: 'Goods',
+          weightLbs: 1000,
+          truckType: 'Flatbed',
+        })
+      ),
     } as never)
 
     // Mock PDF generation to return URL containing BID_ID

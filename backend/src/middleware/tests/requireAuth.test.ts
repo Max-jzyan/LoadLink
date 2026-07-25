@@ -12,6 +12,7 @@ jest.mock('../../models/users/User')
 
 const getFirebaseAuthMock = jest.mocked(getFirebaseAuth)
 const findOneMock = jest.mocked(UserModel.findOne)
+const updateOneMock = jest.mocked(UserModel.updateOne)
 
 const FIREBASE_UID = 'firebase-uid-1'
 const USER_ID = '000000000000000000000011'
@@ -32,6 +33,7 @@ function mockAuth(): Auth {
 
 beforeEach(() => {
   jest.resetAllMocks()
+  updateOneMock.mockReturnValue({ catch: jest.fn() } as never)
 })
 
 describe('requireFirebaseToken', () => {
