@@ -109,6 +109,7 @@ export const auctionApi = api.injectEndpoints({
      */
     streamBids: build.query<BidsStreamPayload | null, string>({
       queryFn: () => ({ data: null }),
+      keepUnusedDataFor: 0,
       async onCacheEntryAdded(loadId, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) {
         await cacheDataLoaded
 
@@ -144,6 +145,7 @@ export const auctionApi = api.injectEndpoints({
      */
     streamAuctionPrice: build.query<PriceStreamPayload | null, string>({
       queryFn: () => ({ data: null }),
+      keepUnusedDataFor: 0,
       async onCacheEntryAdded(loadId, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) {
         await cacheDataLoaded
 

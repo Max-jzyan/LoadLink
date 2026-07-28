@@ -74,6 +74,7 @@ export const notificationApi = api.injectEndpoints({
      */
     streamNotifications: build.query<NotificationStreamPayload | UnreadCountResponse | null, void>({
       queryFn: () => ({ data: null }),
+      keepUnusedDataFor: 0,
       async onCacheEntryAdded(_, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) {
         await cacheDataLoaded
 

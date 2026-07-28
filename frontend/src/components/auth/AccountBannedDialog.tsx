@@ -20,15 +20,8 @@ import {
   setBanReason,
   setManualLogout,
 } from '@/services/authSlice'
-import { useEventSource } from '@/components/auction/useEventSource'
 import { NOTIFICATION_TYPES } from '@/services/notificationApi/notificationEnum'
-
-interface StreamedNotification {
-  _id: string
-  type: string
-  title: string
-  message: string
-}
+import { useStreamNotificationsQuery } from '@/services/notificationApi/notificationSlice'
 
 /**
  * Big, unmissable RED blocking popup shown the moment the current account is
@@ -36,12 +29,14 @@ interface StreamedNotification {
  * — that takes over the screen and won't dismiss until the user clicks
  * through, so they can't miss why they were suspended.
  *
- * Uses the exact same `useEventSource` hook (with its retry/backoff logic)
- * that auction bids/prices and message threads already rely on — pointed at
- * the same `/api/notifications/stream` channel NotificationBell subscribes
- * to. An admin's ban action pushes an `account_banned` notification through
- * that channel instantly, so this reacts the moment it happens rather than
- * waiting for a poll or the next unrelated API call.
+ * Subscribes via `useStreamNotificationsQuery` — the same RTK Query hook
+ * NotificationBell uses, so both share one cache entry and one EventSource
+ * rather than opening a second connection to `/api/notifications/stream`
+ * (browsers cap an origin at 6 concurrent HTTP/1.1 connections, and a wasted
+ * slot starves ordinary requests). An admin's ban action pushes an
+ * `account_banned` notification through that channel instantly, so this
+ * reacts the moment it happens rather than waiting for a poll or the next
+ * unrelated API call.
  *
  * Also triggered from two other places for full coverage:
  *  - login/token-restore (subscribeToAuthChanges)
@@ -57,15 +52,14 @@ export default function AccountBannedDialog() {
   const banReason = useSelector(selectBanReason)
   const user = useSelector(selectCurrentUser)
 
-  const { data: streamData } = useEventSource<StreamedNotification>(
-    user ? '/api/notifications/stream' : null
-  )
+  const { data: streamData } = useStreamNotificationsQuery(undefined, { skip: !user })
 
   useEffect(() => {
-    if (streamData?.type === NOTIFICATION_TYPES.ACCOUNT_BANNED) {
-      dispatch(setBanReason(streamData.message || streamData.title))
-      dispatch(setSessionState('banned'))
-    }
+    if (!streamData) return
+    if (!('_id' in streamData) || !('type' in streamData)) return
+    if (streamData.type !== NOTIFICATION_TYPES.ACCOUNT_BANNED) return
+    dispatch(setBanReason(streamData.message || streamData.title))
+    dispatch(setSessionState('banned'))
   }, [streamData, dispatch])
 
   const handleReturnToLogin = useCallback(async () => {
