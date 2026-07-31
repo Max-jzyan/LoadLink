@@ -211,8 +211,7 @@ export default function DriverAuction() {
                   {load.destinationAddress}
                 </div>
                 <div className="flex items-center justify-center rounded-lg border bg-blue-100/70 dark:bg-blue-950/30 border-blue-300/50 dark:border-blue-700/50 px-4 text-sm font-medium">
-                  {distanceKm}{' '}
-                  km
+                  {distanceKm} km
                 </div>
               </div>
 

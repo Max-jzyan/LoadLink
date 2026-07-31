@@ -167,7 +167,10 @@ export function TopLanesCard({ lanes, isLoading }: { lanes: TopLane[]; isLoading
       ) : (
         <div className="space-y-1">
           {lanes.map((l, i) => (
-            <div key={`${l.origin}-${l.destination}-${i}`} className="flex items-center gap-3 rounded-lg px-1 py-2">
+            <div
+              key={`${l.origin}-${l.destination}-${i}`}
+              className="flex items-center gap-3 rounded-lg px-1 py-2"
+            >
               <RankBadge rank={i} />
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
                 <Route className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
@@ -235,9 +238,7 @@ export function ActivityCard({
                 <Activity className="h-3.5 w-3.5" />
                 <p className="text-xs">Last 24h</p>
               </div>
-              <p className="text-lg font-bold tabular-nums mt-1">
-                {activity?.activeLast24h ?? 0}
-              </p>
+              <p className="text-lg font-bold tabular-nums mt-1">{activity?.activeLast24h ?? 0}</p>
             </div>
             <div className="rounded-xl bg-muted/50 p-3">
               <p className="text-xs text-muted-foreground">Last 7d</p>

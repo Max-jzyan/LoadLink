@@ -355,7 +355,10 @@ export const driverApi = api.injectEndpoints({
     }),
 
     // multipart presign + S3 PUT, then invalidates profile caches
-    uploadDriverDocuments: build.mutation<UploadedDocument[], { driverId: string; docType: 'driverDocuments'; files: File[] }>({
+    uploadDriverDocuments: build.mutation<
+      UploadedDocument[],
+      { driverId: string; docType: 'driverDocuments'; files: File[] }
+    >({
       queryFn: async ({ driverId: _driverId, docType, files }) => {
         // auth token is supplied by prepareHeaders in api baseQuery,
         // but we also need a Firebase ID token for the presign endpoint.

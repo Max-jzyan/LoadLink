@@ -17,7 +17,12 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
 import PageLayout from '@/components/PageLayout'
 import AppRoutes from '@/routes'
-import { selectRole, selectAuthLoading, selectSessionState, setManualLogout } from '@/services/authSlice'
+import {
+  selectRole,
+  selectAuthLoading,
+  selectSessionState,
+  setManualLogout,
+} from '@/services/authSlice'
 import Spinner from '@/components/shared/Spinner'
 import { TourProvider } from '@/contexts/TourContext'
 
@@ -56,18 +61,17 @@ function RoleLayout() {
   }
 
   return (
-  <TourProvider>
-    <SidebarProvider defaultOpen={false} className="h-svh">
-      <AppSidebar role={role} />
-      <SidebarInset>
-        <PageLayout>
-          <AppRoutes />
-        </PageLayout>
-      </SidebarInset>
-    </SidebarProvider>
-  </TourProvider>
-)
-
+    <TourProvider>
+      <SidebarProvider defaultOpen={false} className="h-svh">
+        <AppSidebar role={role} />
+        <SidebarInset>
+          <PageLayout>
+            <AppRoutes />
+          </PageLayout>
+        </SidebarInset>
+      </SidebarProvider>
+    </TourProvider>
+  )
 }
 
 function App() {

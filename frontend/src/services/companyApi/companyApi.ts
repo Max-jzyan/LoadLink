@@ -44,7 +44,10 @@ export const companyApi = api.injectEndpoints({
     }),
 
     // multipart presign + S3 PUT for company documents, invalidates profile caches
-    uploadCompanyDocuments: build.mutation<UploadedDocument[], { companyId: string; docType: 'companyDocuments'; files: File[] }>({
+    uploadCompanyDocuments: build.mutation<
+      UploadedDocument[],
+      { companyId: string; docType: 'companyDocuments'; files: File[] }
+    >({
       queryFn: async ({ companyId: _companyId, docType, files }) => {
         const { auth } = await import('@/lib/firebase')
         const user = auth.currentUser

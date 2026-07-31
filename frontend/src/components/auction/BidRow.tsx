@@ -57,7 +57,9 @@ export default function BidRow({ bid, isBest, withinAutoAccept, onClick }: BidRo
           </p>
           <p className="text-xs text-muted-foreground">
             {isWithdrawn ? (
-              <span className="text-red-700 dark:text-red-400">Withdrawn — scheduling conflict</span>
+              <span className="text-red-700 dark:text-red-400">
+                Withdrawn — scheduling conflict
+              </span>
             ) : (
               <>Driver{typeof rating === 'number' ? ` · ${rating.toFixed(1)} ★` : ''}</>
             )}
@@ -66,12 +68,16 @@ export default function BidRow({ bid, isBest, withinAutoAccept, onClick }: BidRo
       </div>
 
       <div className="flex flex-col items-end gap-1">
-        <span className={`text-lg font-semibold ${isWithdrawn ? 'text-red-700 dark:text-red-400 line-through' : ''}`}>
+        <span
+          className={`text-lg font-semibold ${isWithdrawn ? 'text-red-700 dark:text-red-400 line-through' : ''}`}
+        >
           {formatMoney(bid.amount)}
         </span>
         <div className="flex items-center gap-1">
           {isBest && !isWithdrawn && <Badge variant="default">Best</Badge>}
-          {withinAutoAccept && !isWithdrawn && <Badge variant="secondary">Within auto-accept</Badge>}
+          {withinAutoAccept && !isWithdrawn && (
+            <Badge variant="secondary">Within auto-accept</Badge>
+          )}
           <BidStatusBadge status={bid.status} />
         </div>
         <span className="text-xs text-muted-foreground">{timeAgo(bid.createdAt)}</span>

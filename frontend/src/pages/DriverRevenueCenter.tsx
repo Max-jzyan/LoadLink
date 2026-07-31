@@ -26,6 +26,7 @@ import {
 } from '@/services/driverApi/driverSlice'
 import { RefreshCw, Settings2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useNavigate } from 'react-router-dom'
 
 export default function DriverRevenueCenter() {
@@ -52,18 +53,20 @@ export default function DriverRevenueCenter() {
     maxDistance: null,
   })
 
-  const [debouncedFilters, setDebouncedFilters] = useState<RevenueFilters>(filters)
-
-  // Debounce filter changes by 400ms to avoid excessive network calls
-  useEffect(() => {
-    const id = setTimeout(() => setDebouncedFilters(filters), 400)
-    return () => clearTimeout(id)
-  }, [filters])
-
-  // Clear debounced filters on view mode switch
-  useEffect(() => {
-    setDebouncedFilters(filters)
-  }, [filters, viewMode])
+  // Debounce only text/number inputs; date/truck/view-mode stay instant.
+  // Pass viewMode as a dependency so changing tabs flushes the debounce immediately.
+  const debouncedTextFields = useDebouncedValue(
+    {
+      origin: filters.origin,
+      destination: filters.destination,
+      minPayout: filters.minPayout,
+      maxPayout: filters.maxPayout,
+      minDistance: filters.minDistance,
+      maxDistance: filters.maxDistance,
+    },
+    400,
+    [viewMode]
+  )
 
   const {
     data: revenue = null,
@@ -73,21 +76,21 @@ export default function DriverRevenueCenter() {
   } = useGetDriverRevenueQuery({
     driverId,
     filters: {
-      ...debouncedFilters,
+      ...debouncedTextFields,
       status: viewMode === 'potential' ? 'booked,in_transit' : 'completed',
       dateRange: {
-        from: debouncedFilters.dateRange?.from
-          ? debouncedFilters.dateRange.from.toISOString()
-          : undefined,
-        to: debouncedFilters.dateRange?.to
-          ? debouncedFilters.dateRange.to.toISOString()
-          : undefined,
+        from: filters.dateRange?.from ? filters.dateRange.from.toISOString() : undefined,
+        to: filters.dateRange?.to ? filters.dateRange.to.toISOString() : undefined,
       },
+      truckType: filters.truckType,
+      selectedTruck: filters.selectedTruck,
     } as RevenueFiltersQuery,
   })
 
-  const [updateExpenses, { isLoading: isUpdating, isSuccess: isGlobalExpensesSuccess }] = useUpdateDriverExpensesMutation()
-  const [updateTruckExpenses, { isLoading: isUpdatingTruck, isSuccess: isTruckExpensesSuccess }] = useUpdateTruckExpensesMutation()
+  const [updateExpenses, { isLoading: isUpdating, isSuccess: isGlobalExpensesSuccess }] =
+    useUpdateDriverExpensesMutation()
+  const [updateTruckExpenses, { isLoading: isUpdatingTruck, isSuccess: isTruckExpensesSuccess }] =
+    useUpdateTruckExpensesMutation()
   const { data: trucks = [] } = useListDriverTrucksQuery(driverId)
 
   const [localExpenses, setLocalExpenses] = useState<ExpensePreferences | null>(null)

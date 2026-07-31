@@ -23,7 +23,6 @@ interface ClaimLoadDialogProps {
   isAuctionLive: boolean
 }
 
-
 export default function ClaimLoadDialog({
   loadId,
   driverId,

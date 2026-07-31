@@ -42,7 +42,6 @@ export default function CompanyProfile() {
 
   // Close drawer when update succeeds
   useEffect(() => {
-     
     if (infoSaved) setInfoDrawerOpen(false)
   }, [infoSaved])
 

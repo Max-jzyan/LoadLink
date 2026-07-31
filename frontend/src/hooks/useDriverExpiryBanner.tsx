@@ -38,9 +38,7 @@ export function useDriverExpiryBanner({ driverId, onUpdateClick }: Options): Rea
     .map((d) => ({ name: d.name, expiresAt: new Date(d.expiresAt as string) }))
 
   const expiredDocs = expiryDocs.filter((d) => d.expiresAt < now)
-  const expiringSoonDocs = expiryDocs.filter(
-    (d) => d.expiresAt >= now && d.expiresAt <= warnCutoff
-  )
+  const expiringSoonDocs = expiryDocs.filter((d) => d.expiresAt >= now && d.expiresAt <= warnCutoff)
 
   if (expiredDocs.length === 0 && expiringSoonDocs.length === 0) return undefined
 

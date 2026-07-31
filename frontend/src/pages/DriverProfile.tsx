@@ -44,14 +44,9 @@ export default function DriverProfile() {
   const driverId = useRequiredMongoId()
   const [activeTab, setActiveTab] = useState<ProfileTab>('profile')
 
-  const {
-    data: driver,
-    isSuccess: profileSuccess,
-  } = useGetDriverProfileQuery(driverId)
+  const { data: driver, isSuccess: profileSuccess } = useGetDriverProfileQuery(driverId)
 
-  const {
-    data: trailers = [],
-  } = useListDriverTrailersQuery(driverId, { skip: !driverId })
+  const { data: trailers = [] } = useListDriverTrailersQuery(driverId, { skip: !driverId })
 
   const {
     data: reviewsPayload,
@@ -95,14 +90,12 @@ export default function DriverProfile() {
 
   // Close driver info drawer when profile update succeeds
   useEffect(() => {
-     
     if (infoSaved) setDriverInfoDrawerOpen(false)
   }, [infoSaved])
 
   // Close trailer drawer when create or update succeeds
   useEffect(() => {
     if (trailerCreated || trailerUpdated) {
-       
       setTrailerDrawerOpen(false)
       setEditTrailer(null)
     }
@@ -362,13 +355,13 @@ export default function DriverProfile() {
       />
 
       {/* Trailer Add/Edit Drawer */}
-        <TrailerDrawer
-          open={trailerDrawerOpen}
-          onOpenChange={handleTrailerDrawerOpenChange}
-          editTrailer={editTrailer}
-          isLoading={isCreatingTrailer || isUpdatingTrailer}
-          onSubmit={handleTrailerSubmit}
-        />
+      <TrailerDrawer
+        open={trailerDrawerOpen}
+        onOpenChange={handleTrailerDrawerOpenChange}
+        editTrailer={editTrailer}
+        isLoading={isCreatingTrailer || isUpdatingTrailer}
+        onSubmit={handleTrailerSubmit}
+      />
 
       {/* Driver Info Edit Drawer */}
       <DriverInfoDrawer

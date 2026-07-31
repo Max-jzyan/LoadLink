@@ -70,11 +70,17 @@ function StatChip({
   const animated = useAnimatedNumber(value ?? 0)
   const animatedCurrency = useAnimatedCurrency(value)
   const display =
-    value === undefined ? '—' : isCurrency ? animatedCurrency : Math.round(animated).toLocaleString()
+    value === undefined
+      ? '—'
+      : isCurrency
+        ? animatedCurrency
+        : Math.round(animated).toLocaleString()
 
   return (
     <div className="flex items-center gap-3 rounded-xl ring-1 ring-foreground/10 bg-card px-4 py-3 flex-1 min-w-[150px]">
-      <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', colors.bg)}>
+      <div
+        className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', colors.bg)}
+      >
         <Icon className={cn('h-4 w-4', colors.icon)} />
       </div>
       <div className="min-w-0">
@@ -164,12 +170,23 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <div className="flex flex-wrap gap-3">
-          <StatChip label="Total Revenue" value={stats?.totalRevenue} icon={DollarSign} accent="primary" isCurrency />
+          <StatChip
+            label="Total Revenue"
+            value={stats?.totalRevenue}
+            icon={DollarSign}
+            accent="primary"
+            isCurrency
+          />
           <StatChip label="Drivers" value={stats?.totalDrivers} icon={Truck} accent="sky" />
           <StatChip label="Companies" value={stats?.totalCompanies} icon={Users} accent="emerald" />
           <StatChip label="Loads" value={stats?.totalLoads} icon={Package} accent="amber" />
           <StatChip label="Bids" value={stats?.totalBids} icon={ClipboardList} accent="violet" />
-          <StatChip label="Docs to Review" value={stats?.driversWithDocs} icon={FileText} accent="rose" />
+          <StatChip
+            label="Docs to Review"
+            value={stats?.driversWithDocs}
+            icon={FileText}
+            accent="rose"
+          />
         </div>
       )}
 

@@ -1,4 +1,6 @@
-import ResponsiveFilterBar, { type ResponsiveFilterControl } from '@/components/shared/ResponsiveFilterBar'
+import ResponsiveFilterBar, {
+  type ResponsiveFilterControl,
+} from '@/components/shared/ResponsiveFilterBar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'

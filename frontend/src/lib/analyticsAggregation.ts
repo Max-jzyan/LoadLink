@@ -33,7 +33,8 @@ export function aggregateAnalyticsPoints(
   const buckets = new Map<string, number>()
   points.forEach((p) => {
     const d = parseISO(p.date)
-    const bucketDate = granularity === 'week' ? startOfWeek(d, { weekStartsOn: 1 }) : startOfMonth(d)
+    const bucketDate =
+      granularity === 'week' ? startOfWeek(d, { weekStartsOn: 1 }) : startOfMonth(d)
     const key = format(bucketDate, 'yyyy-MM-dd')
     buckets.set(key, (buckets.get(key) ?? 0) + p.value)
   })

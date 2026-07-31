@@ -87,7 +87,9 @@ export const blocklistApi = api.injectEndpoints({
     // GET /api/blocklist/:userId/known-users
     getKnownUsers: build.query<KnownUser[], string>({
       query: (userId) => `blocklist/${userId}/known-users`,
-      providesTags: (_result, _error, userId) => [{ type: LoadTag.Blocklist, id: `known-${userId}` }],
+      providesTags: (_result, _error, userId) => [
+        { type: LoadTag.Blocklist, id: `known-${userId}` },
+      ],
     }),
 
     // PATCH /api/users/:userId/feed-preferences — optimistic so switches feel instant

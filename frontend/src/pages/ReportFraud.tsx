@@ -48,7 +48,8 @@ export default function ReportFraud() {
   const [emailError, setEmailError] = useState<string | null>(null)
   const [fraudType, setFraudType] = useState('')
   const [description, setDescription] = useState('')
-  const [createReport, { isLoading: isSubmitting, isSuccess, isError, error }] = useCreateReportMutation()
+  const [createReport, { isLoading: isSubmitting, isSuccess, isError, error }] =
+    useCreateReportMutation()
 
   // Suggestions are the users the reporter actually worked with — the same
   // list the backend validates fraud-report targets against

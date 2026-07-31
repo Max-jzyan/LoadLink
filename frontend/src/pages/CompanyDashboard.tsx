@@ -19,6 +19,7 @@ import { useGetCompanyDashboardQuery } from '@/services/companyApi/companyApi'
 import { ACTIVE_STATUSES, HISTORICAL_STATUSES } from '@/types/enums'
 import { Hammer, Package2, Plus, RefreshCw, TrendingUp, Truck } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { Link } from 'react-router-dom'
 import { relativeTime } from '@/lib/utils'
 
@@ -60,6 +61,14 @@ export default function CompanyDashboard() {
   const handleResetView = useCallback(() => setSelectedLoadId(null), [])
   const [filters, setFilters] = useState<CompanyLoadFilters>(DEFAULT_FILTERS)
 
+  const debouncedTextFields = useDebouncedValue(
+    {
+      origin: filters.origin,
+      destination: filters.destination,
+    },
+    400
+  )
+
   // Apply filters client-side
   const filteredLoads = useMemo(() => {
     let result = loads
@@ -83,17 +92,17 @@ export default function CompanyDashboard() {
     }
 
     // Origin / destination substring filters (case-insensitive)
-    const origin = filters.origin.trim().toLowerCase()
+    const origin = debouncedTextFields.origin.trim().toLowerCase()
     if (origin) {
       result = result.filter((l) => l.originAddress.toLowerCase().includes(origin))
     }
-    const destination = filters.destination.trim().toLowerCase()
+    const destination = debouncedTextFields.destination.trim().toLowerCase()
     if (destination) {
       result = result.filter((l) => l.destinationAddress.toLowerCase().includes(destination))
     }
 
     return result
-  }, [loads, filters])
+  }, [loads, filters, debouncedTextFields])
 
   // Map all loads to the shape DriverMap expects; the map component handles focusing
   const transitRoutes = useMemo(() => {

@@ -49,8 +49,8 @@ export default function DeleteUserDialog({ user, onOpenChange, onDeleted }: Dele
         <DialogHeader>
           <DialogTitle>Permanently delete {user?.name}?</DialogTitle>
           <DialogDescription>
-            This deletes the account and cannot be undone. Consider banning the account instead
-            if you may need to reinstate it later.
+            This deletes the account and cannot be undone. Consider banning the account instead if
+            you may need to reinstate it later.
           </DialogDescription>
         </DialogHeader>
 

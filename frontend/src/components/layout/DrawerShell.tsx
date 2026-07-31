@@ -93,7 +93,7 @@ export default function DrawerShell({
   showCloseButton = true,
   direction = 'right',
 }: DrawerShellProps) {
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile()
 
   const resolvedFooter = drawerSubmit ? (
     drawerSubmit.cancelLabel === '' && drawerSubmit.submitLabel === 'Close' ? (

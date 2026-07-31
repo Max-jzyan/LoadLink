@@ -3,6 +3,7 @@ import DeliveryTimeline from '@/components/driverLoads/DeliveryTimeline'
 import { DriverMap } from '@/components/driverLoads/Map'
 import { DetailedEligibilityPanel } from '@/components/driverLoads/DetailedEligibilityPanel'
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import type { DateRange } from 'react-day-picker'
@@ -42,7 +43,7 @@ import { generateCheckpoints } from '@/lib/checkpoints'
 import { selectAiTriggered, setAiTriggered } from '@/services/aiSlice'
 import type { AppDispatch } from '@/services/store'
 
-import './DriverAuctions.less';
+import './DriverAuctions.less'
 
 type MapLayer = 'route' | 'fuel' | 'rest'
 
@@ -50,7 +51,6 @@ type MapLayer = 'route' | 'fuel' | 'rest'
 export interface EnrichedLoad extends Load {
   _scored?: ScoredLoad
 }
-
 
 import type { SortKey, EligibilityFilter } from '@/components/driverLoads/DriverLoadFilters.types'
 
@@ -107,6 +107,7 @@ export default function DriverAuctions() {
   const [selectedLoad, setSelectedLoad] = useState<EnrichedLoad | null>(null)
   const [insightDismissed, setInsightDismissed] = useState(false)
   const [searchText, setSearchText] = useState('')
+  const debouncedSearchText = useDebouncedValue(searchText, 400)
   const [activeLayer, setActiveLayer] = useState<MapLayer>('route')
   const [sortKey, setSortKey] = useState<SortKey>('recommended')
   const [eligibilityFilter, setEligibilityFilter] = useState<EligibilityFilter>('all')
@@ -131,15 +132,15 @@ export default function DriverAuctions() {
 
   // Client-side text search on origin, destination, and commodity
   const textFiltered = useMemo(() => {
-    if (!searchText.trim()) return enrichedLoads
-    const q = searchText.toLowerCase()
+    if (!debouncedSearchText.trim()) return enrichedLoads
+    const q = debouncedSearchText.toLowerCase()
     return enrichedLoads.filter(
       (l) =>
         l.originAddress.toLowerCase().includes(q) ||
         l.destinationAddress.toLowerCase().includes(q) ||
         l.commodity.toLowerCase().includes(q)
     )
-  }, [enrichedLoads, searchText])
+  }, [enrichedLoads, debouncedSearchText])
 
   // Apply date filter (filter by pickupTime within date range)
   const dateFiltered = useMemo(() => {
@@ -340,7 +341,6 @@ export default function DriverAuctions() {
       )
     })
 
-
   const visibleCounts = useMemo(() => {
     let eligible = 0,
       issues = 0,
@@ -385,17 +385,19 @@ export default function DriverAuctions() {
         {...(expandable ? { expand: true } : {})}
         action={
           <div className="flex gap-1">
-            {aiTriggered && selectedLoad?._id && (['route', 'fuel', 'rest'] as MapLayer[]).map((layer) => (
-              <Button
-                key={layer}
-                size="sm"
-                variant={activeLayer === layer ? 'default' : 'outline'}
-                className="h-7 px-2.5 text-xs"
-                onClick={() => setActiveLayer(layer)}
-              >
-                {layerLabel(layer)}
-              </Button>
-            ))}
+            {aiTriggered &&
+              selectedLoad?._id &&
+              (['route', 'fuel', 'rest'] as MapLayer[]).map((layer) => (
+                <Button
+                  key={layer}
+                  size="sm"
+                  variant={activeLayer === layer ? 'default' : 'outline'}
+                  className="h-7 px-2.5 text-xs"
+                  onClick={() => setActiveLayer(layer)}
+                >
+                  {layerLabel(layer)}
+                </Button>
+              ))}
           </div>
         }
         rounded="sm"
@@ -414,7 +416,11 @@ export default function DriverAuctions() {
           checkpoints={checkpoints}
           height={expandable ? '100%' : '300px'}
           onRouteClick={handleMapRouteClick}
-          checkIn={location ? { position: [location.lat, location.lng], checkedInAt: new Date().toISOString() } : null}
+          checkIn={
+            location
+              ? { position: [location.lat, location.lng], checkedInAt: new Date().toISOString() }
+              : null
+          }
           driverLocation={location}
           driverDeadheadRadiusMeters={location ? driverDeadheadRadiusMeters : undefined}
         />
@@ -566,8 +572,10 @@ export default function DriverAuctions() {
     >
       <div className="flex gap-2 flex-1 min-h-0 h-full">
         {/* left panel: scrollable load feed */}
-        <div ref={loadFeedRef}
-          className="flex-[5] min-w-0 lg:min-w-[400px] overflow-y-auto h-full space-y-2 pl-1 pr-1 pt-2 pb-2">
+        <div
+          ref={loadFeedRef}
+          className="flex-[5] min-w-0 lg:min-w-[400px] overflow-y-auto h-full space-y-2 pl-1 pr-1 pt-2 pb-2"
+        >
           {/* AI insight banner — mounts only when user clicks the sparkles button */}
           {aiTriggered && !insightDismissed && (
             <AiInsightsPanel driverId={driverId} onDismiss={() => setInsightDismissed(true)} />

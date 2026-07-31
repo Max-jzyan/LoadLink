@@ -295,7 +295,9 @@ export function DataTable<TData, TValue>({
                 <TableRow key={rowIndex}>
                   {allColumns.map((col, colIndex) => {
                     const meta = col.meta as DataTableColumnMeta | undefined
-                    const responsiveClass = meta?.responsive ? RESPONSIVE_CLASSES[meta.responsive] : ''
+                    const responsiveClass = meta?.responsive
+                      ? RESPONSIVE_CLASSES[meta.responsive]
+                      : ''
                     return (
                       <TableCell key={colIndex} className={cn(responsiveClass)}>
                         <Skeleton className="h-4 w-full" />

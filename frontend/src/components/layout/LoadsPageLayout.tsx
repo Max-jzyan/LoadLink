@@ -70,7 +70,10 @@ export default function LoadsPageLayout({
       {/* ── Map Row ── */}
       <DynamicCard title="Map" action={mapAction}>
         {isLoading ? (
-          <div className="flex items-center justify-center bg-muted/30 rounded-md" style={{ height: mapHeight }}>
+          <div
+            className="flex items-center justify-center bg-muted/30 rounded-md"
+            style={{ height: mapHeight }}
+          >
             <div className="text-xs text-muted-foreground">Loading map…</div>
           </div>
         ) : (

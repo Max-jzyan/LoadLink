@@ -370,10 +370,7 @@ function DriverRow({ driver }: { driver: AdminDriver }) {
               </Badge>
             )}
             {expiringSoon > 0 && expired === 0 && (
-              <Badge
-                variant="outline"
-                className="text-xs gap-1 border-amber-500/60 text-amber-600"
-              >
+              <Badge variant="outline" className="text-xs gap-1 border-amber-500/60 text-amber-600">
                 <Clock className="h-3 w-3" />
                 {expiringSoon} expiring
               </Badge>
@@ -450,9 +447,7 @@ export default function AdminDocuments() {
   })
 
   const expiredCount = drivers.filter((d) => driverExpiryStats(d).expired > 0).length
-  const expiringCount = drivers.filter(
-    (d) => driverExpiryStats(d).expiringSoon > 0
-  ).length
+  const expiringCount = drivers.filter((d) => driverExpiryStats(d).expiringSoon > 0).length
 
   const filterTabs: { key: ExpiryFilter; label: string; count?: number }[] = [
     { key: 'all', label: 'All' },

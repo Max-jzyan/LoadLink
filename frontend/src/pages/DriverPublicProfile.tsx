@@ -69,7 +69,8 @@ export default function DriverPublicProfile() {
     { skip: !currentMongoId || !driverId }
   )
 
-  const [createReview, { isLoading: isSubmittingReview, isSuccess, isError }] = useCreateReviewMutation()
+  const [createReview, { isLoading: isSubmittingReview, isSuccess, isError }] =
+    useCreateReviewMutation()
 
   // Push the resolved driver name into the breadcrumb store so PageLayout can
   // render a friendly label without re-fetching the entity by id from the URL.
@@ -150,7 +151,9 @@ export default function DriverPublicProfile() {
     )
   } else if (isReviewsError) {
     reviewsBody = (
-      <div className="text-sm text-destructive">Could not load reviews. Please try again later.</div>
+      <div className="text-sm text-destructive">
+        Could not load reviews. Please try again later.
+      </div>
     )
   } else if ((reviewsPayload?.data ?? []).length === 0) {
     reviewsBody = (

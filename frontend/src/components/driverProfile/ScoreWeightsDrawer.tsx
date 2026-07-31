@@ -34,15 +34,25 @@ const weightLabels: Record<keyof ScoreWeights, string> = {
 
 const weightDescriptions: Record<keyof ScoreWeights, string> = {
   rate: 'How much the effective rate ($/mile) exceeds your minimum. Higher values prioritize loads paying above your threshold.',
-  value: 'The total payout relative to your minimum load value. Higher values prioritize high-value loads.',
-  deadhead: 'Penalty for miles traveled to reach a load without a trailer. Lower values favor loads closer to your current location.',
-  geographicProximity: 'Distance-based score from your home location to the pickup. Higher values prioritize nearby loads.',
-  temporalAdjacency: 'Bonus when a load drops off near where another load picks up. Higher values favor scheduling efficiency.',
-  truckTypeMatch: 'Whether the load matches your truck type. Higher values strongly penalize mismatched types.',
+  value:
+    'The total payout relative to your minimum load value. Higher values prioritize high-value loads.',
+  deadhead:
+    'Penalty for miles traveled to reach a load without a trailer. Lower values favor loads closer to your current location.',
+  geographicProximity:
+    'Distance-based score from your home location to the pickup. Higher values prioritize nearby loads.',
+  temporalAdjacency:
+    'Bonus when a load drops off near where another load picks up. Higher values favor scheduling efficiency.',
+  truckTypeMatch:
+    'Whether the load matches your truck type. Higher values strongly penalize mismatched types.',
   competition: 'Fewer existing bids = higher score. Higher values favor less competitive loads.',
 }
 
-export default function ScoreWeightsDrawer({ open, onOpenChange, weights, onSave }: ScoreWeightsDrawerProps) {
+export default function ScoreWeightsDrawer({
+  open,
+  onOpenChange,
+  weights,
+  onSave,
+}: ScoreWeightsDrawerProps) {
   const [localWeights, setLocalWeights] = useState<ScoreWeights>(weights ?? DEFAULT_WEIGHTS)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -59,27 +69,24 @@ export default function ScoreWeightsDrawer({ open, onOpenChange, weights, onSave
   )
 
   // Handle slider change with constraint enforcement
-  const handleSliderChange = useCallback(
-    (key: keyof ScoreWeights, newValue: number[]) => {
-      const newWeight = Math.round(newValue[0] * 100) / 100 // Round to 2 decimal places
+  const handleSliderChange = useCallback((key: keyof ScoreWeights, newValue: number[]) => {
+    const newWeight = Math.round(newValue[0] * 100) / 100 // Round to 2 decimal places
 
-      setLocalWeights((prev) => {
-        const currentTotal = Object.values(prev).reduce((sum, val) => sum + val, 0)
+    setLocalWeights((prev) => {
+      const currentTotal = Object.values(prev).reduce((sum, val) => sum + val, 0)
 
-        // Calculate remaining budget after this change
-        const remainingBudget = 1.0 - (currentTotal - prev[key])
+      // Calculate remaining budget after this change
+      const remainingBudget = 1.0 - (currentTotal - prev[key])
 
-        if (remainingBudget < 0) {
-          // Total would exceed 1.0 - clamp to max allowed value
-          const clampedValue = Math.min(1, prev[key] + remainingBudget)
-          return { ...prev, [key]: clampedValue }
-        }
+      if (remainingBudget < 0) {
+        // Total would exceed 1.0 - clamp to max allowed value
+        const clampedValue = Math.min(1, prev[key] + remainingBudget)
+        return { ...prev, [key]: clampedValue }
+      }
 
-        return { ...prev, [key]: newWeight }
-      })
-    },
-    []
-  )
+      return { ...prev, [key]: newWeight }
+    })
+  }, [])
 
   // Handle input change with constraint enforcement
   const handleInputChange = useCallback((key: keyof ScoreWeights, valueStr: string) => {
@@ -90,7 +97,8 @@ export default function ScoreWeightsDrawer({ open, onOpenChange, weights, onSave
 
       // Clamp value to allowable maximum
       const clampedValue = Math.min(1, Math.max(0, Math.round(value * 100) / 100))
-      const finalValue = remainingBudget >= 0 ? clampedValue : Math.min(clampedValue, prev[key] + remainingBudget)
+      const finalValue =
+        remainingBudget >= 0 ? clampedValue : Math.min(clampedValue, prev[key] + remainingBudget)
 
       return { ...prev, [key]: finalValue }
     })
@@ -145,9 +153,7 @@ export default function ScoreWeightsDrawer({ open, onOpenChange, weights, onSave
       }}
     >
       {error && (
-        <p className="text-xs text-destructive bg-destructive/10 rounded px-2 py-1 mb-3">
-          {error}
-        </p>
+        <p className="text-xs text-destructive bg-destructive/10 rounded px-2 py-1 mb-3">{error}</p>
       )}
 
       <div className="space-y-4">
@@ -164,7 +170,11 @@ export default function ScoreWeightsDrawer({ open, onOpenChange, weights, onSave
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   <label className="text-sm font-medium">{label}</label>
-                  <InfoIconPopover title={label} description={description} iconClassName="w-3.5 h-3.5 cursor-help" />
+                  <InfoIconPopover
+                    title={label}
+                    description={description}
+                    iconClassName="w-3.5 h-3.5 cursor-help"
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <Input
@@ -177,7 +187,9 @@ export default function ScoreWeightsDrawer({ open, onOpenChange, weights, onSave
                     step={0.01}
                     className="w-20 h-8 text-right text-sm"
                   />
-                  <span className="text-sm text-muted-foreground">{(currentValue * 100).toFixed(1)}%</span>
+                  <span className="text-sm text-muted-foreground">
+                    {(currentValue * 100).toFixed(1)}%
+                  </span>
                 </div>
               </div>
               <Slider

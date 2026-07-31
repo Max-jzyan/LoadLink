@@ -20,10 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  DRIVER_INACCURACY_TYPES,
-  LOAD_INACCURACY_TYPES,
-} from '@/types/fraudTypes'
+import { DRIVER_INACCURACY_TYPES, LOAD_INACCURACY_TYPES } from '@/types/fraudTypes'
 import { RoutePath } from '@/config/routes'
 import { selectMongoId, selectRole } from '@/services/authSlice'
 import {
@@ -52,12 +49,12 @@ export default function ReportInaccurate() {
 
   const [inaccuracyType, setInaccuracyType] = useState('')
   const [description, setDescription] = useState('')
-  const [createReport, { isLoading: isSubmitting, isSuccess, isError, error }] = useCreateReportMutation()
+  const [createReport, { isLoading: isSubmitting, isSuccess, isError, error }] =
+    useCreateReportMutation()
 
   // Company reports a driver — picked from drivers they've actually
   // collaborated with, the same list (and combobox) the fraud report page uses
-  const prefilledEmail =
-    (location.state as { entityEmail?: string } | null)?.entityEmail ?? ''
+  const prefilledEmail = (location.state as { entityEmail?: string } | null)?.entityEmail ?? ''
   const [driverEmail, setDriverEmail] = useState(prefilledEmail)
   const [driverEmailOpen, setDriverEmailOpen] = useState(false)
   const [driverEmailError, setDriverEmailError] = useState<string | null>(null)
@@ -87,7 +84,9 @@ export default function ReportInaccurate() {
     selectedLoad && loadQuery === loadLabel(selectedLoad)
       ? reportableLoads
       : reportableLoads.filter((load) =>
-          `${loadLabel(load)} ${load.commodity}`.toLowerCase().includes(loadQuery.trim().toLowerCase())
+          `${loadLabel(load)} ${load.commodity}`
+            .toLowerCase()
+            .includes(loadQuery.trim().toLowerCase())
         )
 
   const isFormComplete = isCompany
@@ -105,7 +104,9 @@ export default function ReportInaccurate() {
       const err = error as { status?: number; data?: { message?: string } }
       if (err.status === 404 || err.status === 403) {
         if (isCompany) {
-          setDriverEmailError(err.data?.message ?? 'No driver you have worked with matches that email')
+          setDriverEmailError(
+            err.data?.message ?? 'No driver you have worked with matches that email'
+          )
         } else {
           setLoadError(err.data?.message ?? 'That load could not be found')
         }

@@ -21,13 +21,13 @@ export function RevenueTable({
   const columns = createColumns(onPerLoadSaved, viewMode)
 
   const drawerTitle = useCallback((load: LoadRevenue) => {
-      return (
-        <CompanyNameLink
-          name={load.companyName?.toUpperCase() ?? ''}
-          companyId={load.companyId}
-          className="font-semibold"
-        />
-      )
+    return (
+      <CompanyNameLink
+        name={load.companyName?.toUpperCase() ?? ''}
+        companyId={load.companyId}
+        className="font-semibold"
+      />
+    )
   }, [])
 
   const drawerFields: DrawerField<LoadRevenue>[] = [

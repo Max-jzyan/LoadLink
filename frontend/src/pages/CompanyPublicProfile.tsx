@@ -65,7 +65,8 @@ export default function CompanyPublicProfile() {
     { skip: !currentMongoId || !companyId }
   )
 
-  const [createReview, { isLoading: isSubmittingReview, isSuccess, isError, error }] = useCreateReviewMutation()
+  const [createReview, { isLoading: isSubmittingReview, isSuccess, isError, error }] =
+    useCreateReviewMutation()
 
   // Push the resolved company name into the breadcrumb store so PageLayout can
   // render a friendly label without re-fetching the entity by id from the URL.
@@ -81,8 +82,6 @@ export default function CompanyPublicProfile() {
     }
   }, [companyId, company, dispatch])
 
-
-
   useEffect(() => {
     if (isSuccess) {
       setShowReviewForm(false)
@@ -91,7 +90,7 @@ export default function CompanyPublicProfile() {
 
   useEffect(() => {
     if (isError) {
-  // Error handling managed by mutation - toast/error UI could be added here if needed
+      // Error handling managed by mutation - toast/error UI could be added here if needed
     }
   }, [isError, error])
 
@@ -156,7 +155,9 @@ export default function CompanyPublicProfile() {
     )
   } else if (isReviewsError) {
     reviewsBody = (
-      <div className="text-sm text-destructive">Could not load reviews. Please try again later.</div>
+      <div className="text-sm text-destructive">
+        Could not load reviews. Please try again later.
+      </div>
     )
   } else if ((reviewsPayload?.data ?? []).length === 0) {
     reviewsBody = (

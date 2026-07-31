@@ -312,11 +312,7 @@ function CheckpointTimeline({
                   {formatEventTime(ev.time)}
                 </TableCell>
                 <TableCell className="py-2 text-xs text-muted-foreground truncate max-w-[180px]">
-                  {ev.checkpoint ? (
-                    <CheckpointLabel checkpoint={ev.checkpoint} />
-                  ) : (
-                    ev.location
-                  )}
+                  {ev.checkpoint ? <CheckpointLabel checkpoint={ev.checkpoint} /> : ev.location}
                 </TableCell>
               </TableRow>
             )

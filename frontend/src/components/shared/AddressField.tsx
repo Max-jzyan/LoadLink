@@ -16,7 +16,8 @@ import {
   useDeleteFavoriteAddressMutation,
 } from '@/services/favoriteAddressApi/favoriteAddressSlice'
 import { Check, ChevronsUpDown, Loader2, Star, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { FieldDescription, FieldLabel } from '@/components/ui/field'
@@ -60,17 +61,12 @@ export function AddressField({
   const [address, setAddress] = useState<string>(initialValue ?? '')
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const debouncedQuery = useDebouncedValue(query, 400)
 
   const companyId = useRequiredMongoId()
   const { data: favorites = [] } = useGetFavoriteAddressesQuery(companyId, { skip: !companyId })
   const [addFavoriteAddress, { isLoading: isSavingFavorite }] = useAddFavoriteAddressMutation()
   const [deleteFavoriteAddress] = useDeleteFavoriteAddressMutation()
-
-  useEffect(() => {
-    const id = setTimeout(() => setDebouncedQuery(query), 400)
-    return () => clearTimeout(id)
-  }, [query])
 
   const { data: geocodeResults = [], isFetching } = useAutocompleteAddressQuery(debouncedQuery, {
     skip: debouncedQuery.length < 6,

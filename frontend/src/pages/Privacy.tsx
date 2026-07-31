@@ -8,9 +8,9 @@ export default function Privacy() {
           <h2 className="text-lg font-semibold">Location Data</h2>
           <p>
             LoadLink uses location data on an <span className="font-medium">opt-in basis</span>.
-            When you choose to share your location, it is used solely to tailor load
-            recommendations and improve matching accuracy. Your location is processed on an
-            as-needed basis and is not stored beyond initial processing.
+            When you choose to share your location, it is used solely to tailor load recommendations
+            and improve matching accuracy. Your location is processed on an as-needed basis and is
+            not stored beyond initial processing.
           </p>
         </div>
 
@@ -27,32 +27,31 @@ export default function Privacy() {
         <div className="space-y-2">
           <h2 className="text-lg font-semibold">How We Use Data</h2>
           <p>
-            We use your information to operate the marketplace, match loads, process bids,
-            generate contracts, and provide customer support. We do not sell personal data
-            to third parties.
+            We use your information to operate the marketplace, match loads, process bids, generate
+            contracts, and provide customer support. We do not sell personal data to third parties.
           </p>
         </div>
 
         <div className="space-y-2">
           <h2 className="text-lg font-semibold">Security</h2>
           <p>
-            Access is protected via Firebase Authentication and role-based authorization.
-            Sensitive operations require authenticated sessions. Data retention follows
-            operational necessity and applicable regulations.
+            Access is protected via Firebase Authentication and role-based authorization. Sensitive
+            operations require authenticated sessions. Data retention follows operational necessity
+            and applicable regulations.
           </p>
         </div>
 
         <div className="space-y-2">
           <h2 className="text-lg font-semibold">Your Choices</h2>
           <p>
-            You may update profile details, disable location sharing at any time, request
-            account deletion, or contact support with privacy concerns via the Report page.
+            You may update profile details, disable location sharing at any time, request account
+            deletion, or contact support with privacy concerns via the Report page.
           </p>
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Last updated: {new Date().getFullYear()} LoadLink. This policy may be updated as
-          the platform evolves.
+          Last updated: {new Date().getFullYear()} LoadLink. This policy may be updated as the
+          platform evolves.
         </p>
       </div>
     </PageShell>

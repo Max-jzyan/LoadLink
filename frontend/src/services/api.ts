@@ -61,21 +61,24 @@ const rawBaseQuery = fetchBaseQuery({
  * other's exports inside function bodies invoked at runtime, never during
  * module evaluation.
  */
-const baseQueryWithBanHandling: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =
-  async (args, apiInternal, extraOptions) => {
-    const result = await rawBaseQuery(args, apiInternal, extraOptions)
+const baseQueryWithBanHandling: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, apiInternal, extraOptions) => {
+  const result = await rawBaseQuery(args, apiInternal, extraOptions)
 
-    if (result.error?.status === 403) {
-      const data = result.error.data as { code?: string; message?: string } | undefined
-      if (data?.code === 'ACCOUNT_BANNED') {
-        const { setBanReason, setSessionState } = await import('./authSlice')
-        apiInternal.dispatch(setBanReason(data.message ?? 'Your account has been suspended.'))
-        apiInternal.dispatch(setSessionState('banned'))
-      }
+  if (result.error?.status === 403) {
+    const data = result.error.data as { code?: string; message?: string } | undefined
+    if (data?.code === 'ACCOUNT_BANNED') {
+      const { setBanReason, setSessionState } = await import('./authSlice')
+      apiInternal.dispatch(setBanReason(data.message ?? 'Your account has been suspended.'))
+      apiInternal.dispatch(setSessionState('banned'))
     }
-
-    return result
   }
+
+  return result
+}
 
 export const api = createApi({
   reducerPath: 'api',

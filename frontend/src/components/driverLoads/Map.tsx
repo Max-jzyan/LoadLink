@@ -137,7 +137,10 @@ export function DriverMap({
         <FitBoundsToRoutes routes={routes} selectedRouteId={selectedRouteId} />
         <FlyToRoute routes={routes} selectedRouteId={selectedRouteId} />
         {driverLocation && (
-          <FlyToLocation location={driverLocation} radiusMeters={driverDeadheadRadiusMeters ?? undefined} />
+          <FlyToLocation
+            location={driverLocation}
+            radiusMeters={driverDeadheadRadiusMeters ?? undefined}
+          />
         )}
         <ResetMapOnLocationClear routes={routes} driverLocation={driverLocation} />
 

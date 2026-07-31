@@ -143,7 +143,7 @@ export default function MapPage() {
 
       <div className="relative h-[calc(100vh-280px)] rounded-xl border overflow-hidden">
         <DriverMap routes={routes} height="100%" checkIn={checkIn} />
-      {isRoutePending && (
+        {isRoutePending && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm text-sm text-muted-foreground">
             <div className="flex flex-col items-center gap-2">
               <Skeleton className="h-6 w-6 rounded-full animate-pulse" />

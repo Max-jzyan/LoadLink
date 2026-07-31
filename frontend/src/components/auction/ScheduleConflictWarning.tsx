@@ -43,9 +43,10 @@ export default function ScheduleConflictWarning({
     { skip: !isOpen || !driverId || !isAuctionLive }
   )
 
-  const uniqueConflicts: Conflict[] = conflictingBids?.filter(
-    (conflict, index, self) => index === self.findIndex((c) => c.loadId === conflict.loadId)
-  ) ?? []
+  const uniqueConflicts: Conflict[] =
+    conflictingBids?.filter(
+      (conflict, index, self) => index === self.findIndex((c) => c.loadId === conflict.loadId)
+    ) ?? []
 
   const hasConflicts = uniqueConflicts.length > 0
   const hasAcceptedJobConflict = uniqueConflicts.some((c) => c.conflictType === 'accepted_job')
@@ -85,7 +86,7 @@ export default function ScheduleConflictWarning({
           >
             {hasAcceptedJobConflict
               ? 'You already have an accepted job that overlaps with this load. Proceeding is at your own risk and may result in penalties or cancellation.'
-              : 'You already have a pending bid that overlaps with this load\'s schedule. Proceeding is at your own risk and may result in scheduling conflicts.'}
+              : "You already have a pending bid that overlaps with this load's schedule. Proceeding is at your own risk and may result in scheduling conflicts."}
           </p>
         </div>
       </div>
@@ -103,9 +104,7 @@ export default function ScheduleConflictWarning({
               }`}
             >
               <div className="flex items-center gap-1 font-medium text-foreground">
-                {isAcceptedJob && (
-                  <CircleAlert className="h-3.5 w-3.5 shrink-0 text-red-600" />
-                )}
+                {isAcceptedJob && <CircleAlert className="h-3.5 w-3.5 shrink-0 text-red-600" />}
                 <Link
                   to={`/driverAuctions/${conflict.loadId}`}
                   target="_blank"

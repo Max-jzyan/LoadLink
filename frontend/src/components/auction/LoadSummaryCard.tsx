@@ -22,7 +22,9 @@ export default function LoadSummaryCard({
 
   const nameContent = (() => {
     if (companyName && companyId) {
-      return <CompanyNameLink name={companyName} companyId={companyId} className="text-xl font-bold" />
+      return (
+        <CompanyNameLink name={companyName} companyId={companyId} className="text-xl font-bold" />
+      )
     }
     if (companyName) {
       return <>{`${companyName} `}</>
@@ -56,9 +58,19 @@ export default function LoadSummaryCard({
 
       <p className="flex items-center gap-2 text-sm">
         <CalendarDays className="h-4 w-4 text-muted-foreground" />
-        {new Date(load.pickupTime).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
+        {new Date(load.pickupTime).toLocaleString('en-CA', {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+        })}
         {' → '}
-        {new Date(load.dropoffTime).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
+        {new Date(load.dropoffTime).toLocaleString('en-CA', {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+        })}
       </p>
 
       <p className="flex items-center gap-2 text-sm font-medium">

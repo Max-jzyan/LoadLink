@@ -167,7 +167,10 @@ export default function SignupPage() {
     if (isLoading) {
       return
     }
-    const mutationError = error as { status?: number; data?: { code?: string; message?: string } } | null
+    const mutationError = error as {
+      status?: number
+      data?: { code?: string; message?: string }
+    } | null
     if (mutationError?.data?.code) {
       const code = mutationError.data.code
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {

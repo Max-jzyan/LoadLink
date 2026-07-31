@@ -3,10 +3,7 @@ import PageShell from '@/components/layout/PageShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  useListBillsOfLadingQuery,
-  type BillOfLadingBid,
-} from '@/services/adminApi/adminSlice'
+import { useListBillsOfLadingQuery, type BillOfLadingBid } from '@/services/adminApi/adminSlice'
 import { Search, Download, RefreshCw, FileText, Stamp, ShieldCheck } from 'lucide-react'
 import { format } from 'date-fns'
 import { Skeleton } from '@/components/ui/skeleton'

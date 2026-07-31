@@ -19,6 +19,7 @@ import { LOAD_STATUSES, ACTIVE_STATUSES, HISTORICAL_STATUSES } from '@/types/enu
 import { Hammer, Package2, TrendingUp, Truck, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useDispatch, useSelector } from 'react-redux'
 import { relativeTime } from '@/lib/utils'
 
@@ -71,6 +72,19 @@ export default function DriverDashboard() {
 
   // Filter state
   const [filters, setFilters] = useState<DriverLoadFilters>(DEFAULT_FILTERS)
+
+  // Debounce only text/number inputs; status/date/truckType/selectedTruck stay instant.
+  const debouncedTextFields = useDebouncedValue(
+    {
+      origin: filters.origin,
+      destination: filters.destination,
+      minWeight: filters.minWeight,
+      maxWeight: filters.maxWeight,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+    },
+    400
+  )
 
   // Apply filters client-side
   const filteredLoads = useMemo(() => {
@@ -128,17 +142,38 @@ export default function DriverDashboard() {
     }
 
     // Origin / Destination substring filters
-    if (filters.origin) {
-      const q = filters.origin.toLowerCase()
+    if (debouncedTextFields.origin) {
+      const q = debouncedTextFields.origin.toLowerCase()
       result = result.filter((load) => load.originAddress.toLowerCase().includes(q))
     }
-    if (filters.destination) {
-      const q = filters.destination.toLowerCase()
+    if (debouncedTextFields.destination) {
+      const q = debouncedTextFields.destination.toLowerCase()
       result = result.filter((load) => load.destinationAddress.toLowerCase().includes(q))
     }
 
+    // Weight range filter
+    if (debouncedTextFields.minWeight !== undefined) {
+      result = result.filter((load) => load.weightLbs >= debouncedTextFields.minWeight!)
+    }
+    if (debouncedTextFields.maxWeight !== undefined) {
+      result = result.filter((load) => load.weightLbs <= debouncedTextFields.maxWeight!)
+    }
+
+    // Price range filter
+    if (debouncedTextFields.minPrice !== undefined || debouncedTextFields.maxPrice !== undefined) {
+      result = result.filter((load) => {
+        if (typeof load.auctionId !== 'object' || !load.auctionId) return false
+        const price = load.auctionId.currentPrice
+        if (debouncedTextFields.minPrice !== undefined && price < debouncedTextFields.minPrice)
+          return false
+        if (debouncedTextFields.maxPrice !== undefined && price > debouncedTextFields.maxPrice)
+          return false
+        return true
+      })
+    }
+
     return result
-  }, [availableLoads, filters])
+  }, [availableLoads, filters, debouncedTextFields])
 
   const loadsInTransit = availableLoads.filter((load) => load.status === LOAD_STATUSES.InTransit)
   const completedLoads = availableLoads.filter((load) => load.status === LOAD_STATUSES.Completed)

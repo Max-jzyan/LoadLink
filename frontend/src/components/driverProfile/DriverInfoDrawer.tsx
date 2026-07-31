@@ -76,8 +76,7 @@ export default function DriverInfoDrawer({
   const [uploading, setUploading] = useState(false)
   const [docToDelete, setDocToDelete] = useState<CertificationDocument | null>(null)
   const [removeCertDoc, { isLoading: isRemoving }] = useRemoveCertificationDocumentMutation()
-  const [uploadDriverDocs, { isLoading: isUploadingDocs }] =
-    useUploadDriverDocumentsMutation()
+  const [uploadDriverDocs, { isLoading: isUploadingDocs }] = useUploadDriverDocumentsMutation()
 
   const {
     register,
@@ -360,13 +359,13 @@ export default function DriverInfoDrawer({
               files={certificationFiles}
               onChange={(files) => {
                 setCertificationFiles(files)
-    setCertExpiries((prev) => {
-      const next: Record<number, DateRange> = {}
-      files.forEach((_, i) => {
-        if (prev[i]) next[i] = prev[i]
-      })
-      return next
-    })
+                setCertExpiries((prev) => {
+                  const next: Record<number, DateRange> = {}
+                  files.forEach((_, i) => {
+                    if (prev[i]) next[i] = prev[i]
+                  })
+                  return next
+                })
               }}
               onError={setCertError}
               multiple

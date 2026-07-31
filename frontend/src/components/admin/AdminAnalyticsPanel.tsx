@@ -98,7 +98,9 @@ export function AdminAnalyticsPanel() {
   const best = aggregated.reduce((max, p) => Math.max(max, p.value), 0)
 
   const formatValue = (v: number) =>
-    metric.isCurrency ? `$${Math.round(v).toLocaleString('en-CA')}` : Math.round(v).toLocaleString('en-CA')
+    metric.isCurrency
+      ? `$${Math.round(v).toLocaleString('en-CA')}`
+      : Math.round(v).toLocaleString('en-CA')
 
   const chartConfig = {
     value: { label: metric.label, color: metric.color },
@@ -118,7 +120,11 @@ export function AdminAnalyticsPanel() {
           </div>
           <div className="flex items-center gap-2">
             <PillGroup options={RANGE_OPTIONS} value={days} onChange={setDays} />
-            <PillGroup options={GRANULARITY_OPTIONS} value={granularity} onChange={setGranularity} />
+            <PillGroup
+              options={GRANULARITY_OPTIONS}
+              value={granularity}
+              onChange={setGranularity}
+            />
           </div>
         </div>
 

@@ -87,7 +87,9 @@ export default function AcceptBidDialog({
             </p>
           </div>
           <div className="text-right shrink-0">
-            <p className={`text-2xl font-bold ${isWithdrawn ? 'text-red-700 line-through' : 'text-primary'}`}>
+            <p
+              className={`text-2xl font-bold ${isWithdrawn ? 'text-red-700 line-through' : 'text-primary'}`}
+            >
               {formatMoney(bid.amount)}
             </p>
             {isBest && !isWithdrawn && (
@@ -125,7 +127,11 @@ export default function AcceptBidDialog({
             Cancel
           </Button>
           <Button onClick={onAccept} disabled={!isLive || accepting || isWithdrawn}>
-            {accepting ? 'Accepting…' : isWithdrawn ? 'Bid withdrawn' : `Accept — ${formatMoney(bid.amount)}`}
+            {accepting
+              ? 'Accepting…'
+              : isWithdrawn
+                ? 'Bid withdrawn'
+                : `Accept — ${formatMoney(bid.amount)}`}
           </Button>
         </DialogFooter>
       </DialogContent>
