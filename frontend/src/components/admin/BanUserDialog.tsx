@@ -33,17 +33,17 @@ export default function BanUserDialog({ user, onOpenChange }: BanUserDialogProps
   const [reason, setReason] = useState('')
 
   const handleOpenChange = (next: boolean) => {
-    onOpenChange(next)
-    if (next) {
+    if (!next) {
       reset()
       setReason('')
     }
+    onOpenChange(next)
   }
 
   const handleBan = async () => {
     if (!user) return
     const result = await banUser({ userId: user._id, reason: reason.trim() || undefined })
-    if (!('error' in result)) onOpenChange(false)
+    if (!('error' in result)) handleOpenChange(false)
   }
 
   return (
