@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import mongoose, { Types } from 'mongoose'
 import { BidModel } from '../../models/loads/Bid'
+import { BID_STATUSES } from '../../models/enums'
 import { MessageModel } from '../../models/messages/Message'
 import { NotificationModel } from '../../models/notifications/Notification'
 import { BlocklistModel } from '../../models/blocklist/Blocklist'
@@ -19,7 +20,13 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://mongo:27017/loadlink'
 
 const BID_SPECS_BY_LOAD: Record<
   string,
-  Array<{ id: string; driverKey: SeedDriverKey; amount: number }>
+  Array<{
+    id: string
+    driverKey: SeedDriverKey
+    amount: number
+    status?: (typeof BID_STATUSES)[keyof typeof BID_STATUSES]
+    acceptedAt?: Date
+  }>
 > = {
   '000000000000000000000101': [
     { id: '000000000000000000000301', driverKey: 'testUser1', amount: 930 },
@@ -105,6 +112,78 @@ const BID_SPECS_BY_LOAD: Record<
     { id: '000000000000000000000340', driverKey: 'testUser1', amount: 960 },
     { id: '000000000000000000000341', driverKey: 'testUser3', amount: 990 },
   ],
+  '000000000000000000000119': [
+    {
+      id: '000000000000000000000368',
+      driverKey: 'testUser1',
+      amount: 2850,
+      status: BID_STATUSES.Accepted,
+      acceptedAt: new Date(Date.now() - 32 * 24 * 60 * 60 * 1000),
+    },
+  ],
+  '000000000000000000000120': [
+    {
+      id: '000000000000000000000369',
+      driverKey: 'testUser3',
+      amount: 1750,
+      status: BID_STATUSES.Accepted,
+      acceptedAt: new Date(Date.now() - 26 * 24 * 60 * 60 * 1000),
+    },
+  ],
+  '000000000000000000000121': [
+    {
+      id: '000000000000000000000370',
+      driverKey: 'testUser4',
+      amount: 2100,
+      status: BID_STATUSES.Accepted,
+      acceptedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
+    },
+  ],
+  '000000000000000000000122': [
+    {
+      id: '000000000000000000000371',
+      driverKey: 'testUser2',
+      amount: 4200,
+      status: BID_STATUSES.Accepted,
+      acceptedAt: new Date(Date.now() - 16 * 24 * 60 * 60 * 1000),
+    },
+  ],
+  '000000000000000000000123': [
+    {
+      id: '000000000000000000000372',
+      driverKey: 'testUser5',
+      amount: 3100,
+      status: BID_STATUSES.Accepted,
+      acceptedAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000),
+    },
+  ],
+  '000000000000000000000124': [
+    {
+      id: '000000000000000000000373',
+      driverKey: 'testUser5',
+      amount: 1900,
+      status: BID_STATUSES.Accepted,
+      acceptedAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000),
+    },
+  ],
+  '000000000000000000000125': [
+    {
+      id: '000000000000000000000374',
+      driverKey: 'testUser3',
+      amount: 2600,
+      status: BID_STATUSES.Accepted,
+      acceptedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    },
+  ],
+  '000000000000000000000126': [
+    {
+      id: '000000000000000000000375',
+      driverKey: 'testUser2',
+      amount: 1550,
+      status: BID_STATUSES.Accepted,
+      acceptedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    },
+  ],
 }
 
 async function main() {
@@ -147,11 +226,15 @@ async function main() {
           _id: new Types.ObjectId(bid.id),
           driverId: drivers[bid.driverKey]._id,
           amount: bid.amount,
+          status: bid.status,
+          acceptedAt: bid.acceptedAt,
         })),
       })
 
       if (bids.length > 0) {
         auction.bestBidAmount = Math.min(...bids.map((bid) => bid.amount))
+        const acceptedBid = bids.find((bid) => bid.status === BID_STATUSES.Accepted)
+        if (acceptedBid) auction.autoAcceptedBidId = acceptedBid._id
         await auction.save()
       }
 
@@ -189,7 +272,7 @@ async function main() {
 
     const userCount = Object.keys(companies).length + Object.keys(drivers).length
     console.log(
-      `SEEDED ${userCount} users, ${activeLoads.length + completedLoads.length} loads, ${auctions.length + completedLoads.length} auctions, ${bidCount} bids, ${trucks.length} trucks, ${trailers.length} trailers, ${reviews.length} reviews, ${favoriteAddresses.length} favorite addresses`
+      `SEEDED ${userCount} users, ${activeLoads.length + completedLoads.length} loads, ${auctions.length} auctions, ${bidCount} bids, ${trucks.length} trucks, ${trailers.length} trailers, ${reviews.length} reviews, ${favoriteAddresses.length} favorite addresses`
     )
     process.exit(0)
   } catch (err) {

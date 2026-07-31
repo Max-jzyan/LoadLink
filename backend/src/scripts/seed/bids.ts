@@ -9,16 +9,26 @@ export async function seedBids({
 }: {
   loadId: Types.ObjectId
   auctionId: Types.ObjectId
-  bids: Array<{ _id: Types.ObjectId; driverId: Types.ObjectId; amount: number }>
+  bids: Array<{
+    _id: Types.ObjectId
+    driverId: Types.ObjectId
+    amount: number
+    status?: (typeof BID_STATUSES)[keyof typeof BID_STATUSES]
+    acceptedAt?: Date
+  }>
 }) {
   return BidModel.create(
-    bids.map((bid) => ({
-      _id: bid._id,
-      loadId,
-      auctionId,
-      driverId: bid.driverId,
-      amount: bid.amount,
-      status: BID_STATUSES.Submitted,
-    }))
+    bids.map((bid) => {
+      const status = bid.status ?? BID_STATUSES.Submitted
+      return {
+        _id: bid._id,
+        loadId,
+        auctionId,
+        driverId: bid.driverId,
+        amount: bid.amount,
+        status,
+        acceptedAt: status === BID_STATUSES.Accepted ? (bid.acceptedAt ?? new Date()) : null,
+      }
+    })
   )
 }

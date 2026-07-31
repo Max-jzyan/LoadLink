@@ -17,7 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useCheckInMutation, useUpdateLoadStatusMutation } from '@/services/loadApi/loadSlice'
+import {
+  useCheckInMutation,
+  useSubmitSignedBolMutation,
+  useUpdateLoadStatusMutation,
+} from '@/services/loadApi/loadSlice'
 import { useSelectTruckForLoadMutation } from '@/services/driverApi/driverSlice'
 import { LOAD_STATUSES, type LoadStatus } from '@/types/enums'
 import type { Load, CompanySummary } from '@/services/loadApi/loadEnum'
@@ -29,6 +33,8 @@ import type { AppDispatch } from '@/services/store'
 import { useCurrentLocation } from '@/hooks/useCurrentLocation'
 import { fuzzLocation } from '@/lib/geoFuzz'
 import { showError, showSuccess } from '@/lib/toast'
+import { auth } from '@/lib/firebase'
+import { uploadDocuments } from '@/lib/uploadDocuments'
 import MessageButton from '@/components/messages/MessageButton'
 import {
   Settings2,
@@ -38,6 +44,7 @@ import {
   XCircle,
   Bell,
   Loader2,
+  Upload,
 } from 'lucide-react'
 import CompanyNameLink from '@/components/shared/CompanyNameLink'
 
@@ -135,6 +142,10 @@ export function LoadManageDialog({ load, trucks = [] }: { load: Load; trucks?: T
   const [checkIn, { isLoading: isCheckingIn }] = useCheckInMutation()
   const pingSubmittedRef = useRef(false)
 
+  const isCompleted = load.status === LOAD_STATUSES.Completed
+  const [submitSignedBol, { isLoading: submittingSignedBol }] = useSubmitSignedBolMutation()
+  const signedBolInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     if (locationStatus !== 'success' || !location || pingSubmittedRef.current) return
     pingSubmittedRef.current = true
@@ -174,8 +185,39 @@ export function LoadManageDialog({ load, trucks = [] }: { load: Load; trucks?: T
     [load._id, dispatch, selectTruck]
   )
 
+  const handleSignedBolUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      try {
+        const currentUser = auth.currentUser
+        const idToken = await currentUser?.getIdToken()
+        if (!idToken || !currentUser) throw new Error('Not authenticated')
+        const [uploaded] = await uploadDocuments(
+          idToken,
+          currentUser.uid,
+          'loadDocuments',
+          [file],
+          load._id
+        )
+        await submitSignedBol({ loadId: load._id, s3Key: uploaded.key }).unwrap()
+        showSuccess('Signed BOL uploaded.')
+      } catch {
+        showError('Could not upload the signed BOL. Please try again.')
+      } finally {
+        // Reset so the same file can be picked again — either to retry after a
+        // failure, or to re-upload over an existing signed copy.
+        if (signedBolInputRef.current) signedBolInputRef.current.value = ''
+      }
+    },
+    [load._id, submitSignedBol]
+  )
+
   const actions = possibleActions(load)
   const company = populatedCompany(load)
+
+  const canUploadSignedBol = isCompleted
+  const hasUploadableDocuments = canUploadSignedBol
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -202,7 +244,7 @@ export function LoadManageDialog({ load, trucks = [] }: { load: Load; trucks?: T
             <span>· {load.commodity}</span>
           </DialogTitle>
           <DialogDescription>
-            Assign a truck, update the load's status, or notify the company.
+            Assign a truck, update the load's status, upload documents, or notify the company.
           </DialogDescription>
         </DialogHeader>
 
@@ -256,6 +298,39 @@ export function LoadManageDialog({ load, trucks = [] }: { load: Load; trucks?: T
                     {action.label}
                   </Button>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {hasUploadableDocuments && (
+            <div className="flex flex-col gap-2.5">
+              <p className="text-xs font-medium text-muted-foreground">Upload Document</p>
+              <div className="flex flex-wrap gap-2">
+                {canUploadSignedBol && (
+                  <>
+                    <input
+                      ref={signedBolInputRef}
+                      type="file"
+                      accept=".pdf,image/*"
+                      className="hidden"
+                      onChange={handleSignedBolUpload}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      disabled={submittingSignedBol}
+                      onClick={() => signedBolInputRef.current?.click()}
+                    >
+                      {submittingSignedBol ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      {submittingSignedBol ? 'Uploading…' : 'Upload Signed BOL'}
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           )}

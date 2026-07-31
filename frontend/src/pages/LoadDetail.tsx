@@ -17,13 +17,10 @@ import {
   useGetLoadQuery,
   useGetAcceptedBidQuery,
   useGetBolQuery,
-  useSubmitSignedBolMutation,
 } from '@/services/loadApi/loadSlice'
 import { useStreamNotificationsQuery } from '@/services/notificationApi/notificationSlice'
 import { NOTIFICATION_TYPES } from '@/services/notificationApi/notificationEnum'
 import { LOAD_STATUSES } from '@/types/enums'
-import { uploadDocuments } from '@/lib/uploadDocuments'
-import { auth } from '@/lib/firebase'
 import {
   Calendar,
   CheckCircle2,
@@ -35,7 +32,6 @@ import {
   Package2,
   Pencil,
   Truck,
-  Upload,
   Weight,
 } from 'lucide-react'
 import { useMemo, useEffect, useRef, useState } from 'react'
@@ -95,7 +91,6 @@ export default function LoadDetail() {
     load?.status === LOAD_STATUSES.Booked ||
     load?.status === LOAD_STATUSES.InTransit ||
     load?.status === LOAD_STATUSES.Completed
-  const isCompleted = load?.status === LOAD_STATUSES.Completed
   const showDocuments = isBooked && !!loadId
 
   // Rate confirmation (company / admin view)
@@ -108,41 +103,10 @@ export default function LoadDetail() {
   )
 
   // Bill of Lading (both driver and company see it once booked)
-  const {
-    data: bolData,
-    isLoading: bolLoading,
-    refetch: refetchBol,
-  } = useGetBolQuery(loadId ?? '', { skip: !showDocuments })
+  const { data: bolData, isLoading: bolLoading } = useGetBolQuery(loadId ?? '', {
+    skip: !showDocuments,
+  })
 
-  // Signed BOL submission (driver only)
-  const [submitSignedBol, { isLoading: submittingSignedBol }] = useSubmitSignedBolMutation()
-  const signedBolInputRef = useRef<HTMLInputElement>(null)
-  const [signedBolError, setSignedBolError] = useState<string | null>(null)
-
-  const handleSignedBolUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !loadId) return
-    setSignedBolError(null)
-    try {
-      const idToken = await auth.currentUser?.getIdToken()
-      const firebaseUid = user?.uid
-      if (!idToken || !firebaseUid) throw new Error('Not authenticated')
-      const [uploaded] = await uploadDocuments(
-        idToken,
-        firebaseUid,
-        'loadDocuments',
-        [file],
-        loadId
-      )
-      await submitSignedBol({ loadId, s3Key: uploaded.key }).unwrap()
-      refetchBol()
-    } catch {
-      setSignedBolError('Upload failed. Please try again.')
-    } finally {
-      // Reset input so the same file can be re-selected after an error
-      if (signedBolInputRef.current) signedBolInputRef.current.value = ''
-    }
-  }
   const dispatch = useDispatch()
 
   // Push a friendly origin → destination label into the breadcrumb store for
@@ -328,7 +292,7 @@ export default function LoadDetail() {
                     )}
                   </div>
 
-                  {/* Signed BOL — driver submits after delivery; company reviews */}
+                  {/* Signed BOL — driver submits after delivery (from the driverLoads side panel); company reviews here */}
                   <div className="flex items-center justify-between py-3 gap-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -336,14 +300,8 @@ export default function LoadDetail() {
                         <p className="text-sm font-medium">Signed Bill of Lading</p>
                         <p className="text-xs text-muted-foreground">
                           {bolData?.signedBolUrl
-                            ? user?.role === 'company' || user?.role === 'admin'
-                              ? 'Driver submitted the signed copy — please review and retain'
-                              : 'Submitted — awaiting company review'
-                            : user?.role === 'driver'
-                              ? isCompleted
-                                ? 'Upload the signed copy you received at delivery'
-                                : 'Available after completing delivery'
-                              : 'Awaiting driver submission after delivery'}
+                            ? 'Driver submitted the signed copy — please review and retain'
+                            : 'Awaiting driver submission after delivery'}
                         </p>
                       </div>
                     </div>
@@ -358,37 +316,9 @@ export default function LoadDetail() {
                               rel="noopener noreferrer"
                             >
                               <Download className="h-3.5 w-3.5" />
-                              {user?.role === 'company' || user?.role === 'admin'
-                                ? 'Review'
-                                : 'View'}
+                              Review
                             </a>
                           </Button>
-                        </>
-                      ) : user?.role === 'driver' && isCompleted ? (
-                        <>
-                          <input
-                            ref={signedBolInputRef}
-                            type="file"
-                            accept=".pdf,image/*"
-                            className="hidden"
-                            onChange={handleSignedBolUpload}
-                          />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={submittingSignedBol}
-                            onClick={() => signedBolInputRef.current?.click()}
-                          >
-                            {submittingSignedBol ? (
-                              <Spinner className="h-3.5 w-3.5" />
-                            ) : (
-                              <Upload className="h-3.5 w-3.5" />
-                            )}
-                            {submittingSignedBol ? 'Uploading…' : 'Submit Signed BOL'}
-                          </Button>
-                          {signedBolError && (
-                            <p className="text-xs text-destructive">{signedBolError}</p>
-                          )}
                         </>
                       ) : (
                         <Badge variant="outline" className="gap-1 text-muted-foreground">

@@ -4,42 +4,44 @@ import { TARGET_TYPES } from '../../models/ratings/Review'
 import { recalculateRatingSummary } from '../../services/reviewService'
 import { MS_PER_HOUR } from '../../constants/auction'
 import type { SeedDriverKey } from './users'
+import { COMPLETED_LOAD_IDS } from './loads'
 
 // Fixed ObjectIds for seeded reviews (range: ...0501 – ...0517)
+// Every review below is keyed to one of the 8 real completed loads (119-126),
+// matching that load's actual assignedDriverId/companyId in loads.ts — a
+// review can only exist for a driver/company pair that really hauled together.
 const REVIEW_IDS = {
-  // Driver → Company reviews (7)
-  driver1OnCompany1: new Types.ObjectId('000000000000000000000501'),
-  driver2OnCompany2: new Types.ObjectId('000000000000000000000502'),
-  driver3OnCompany1: new Types.ObjectId('000000000000000000000505'),
-  driver4OnCompany2: new Types.ObjectId('000000000000000000000507'),
-  driver5OnCompany1: new Types.ObjectId('000000000000000000000509'),
-  driver1OnCompany2: new Types.ObjectId('000000000000000000000511'),
-  driver2OnCompany1: new Types.ObjectId('000000000000000000000513'),
+  // Driver → Company reviews (7 of the 8 possible completed-load slots)
+  driver1OnCompany1_load119: new Types.ObjectId('000000000000000000000501'),
+  driver2OnCompany2_load122: new Types.ObjectId('000000000000000000000502'),
+  driver3OnCompany1_load125: new Types.ObjectId('000000000000000000000505'),
+  driver4OnCompany1_load121: new Types.ObjectId('000000000000000000000507'),
+  driver5OnCompany1_load123: new Types.ObjectId('000000000000000000000509'),
+  driver3OnCompany2_load120: new Types.ObjectId('000000000000000000000511'),
+  driver2OnCompany2_load126: new Types.ObjectId('000000000000000000000513'),
 
-  // Company → Driver reviews (5) — all targeting testUser1
-  company1OnDriver1_load101: new Types.ObjectId('000000000000000000000503'),
-  company1OnDriver1_load102: new Types.ObjectId('000000000000000000000506'),
-  company1OnDriver1_load105: new Types.ObjectId('000000000000000000000510'),
-  company2OnDriver1_load103: new Types.ObjectId('000000000000000000000504'),
-  company2OnDriver1_load104: new Types.ObjectId('000000000000000000000508'),
-  // Extra company → driver reviews (spread to other drivers)
-  company1OnDriver5_load119: new Types.ObjectId('000000000000000000000514'),
+  // Company → Driver reviews (all 8 completed-load slots)
+  company1OnDriver1_load119: new Types.ObjectId('000000000000000000000503'),
+  company1OnDriver4_load121: new Types.ObjectId('000000000000000000000506'),
+  company1OnDriver3_load125: new Types.ObjectId('000000000000000000000510'),
+  company2OnDriver3_load120: new Types.ObjectId('000000000000000000000504'),
+  company2OnDriver2_load126: new Types.ObjectId('000000000000000000000508'),
+  company2OnDriver5_load124: new Types.ObjectId('000000000000000000000514'),
   company2OnDriver2_load122: new Types.ObjectId('000000000000000000000515'),
   company1OnDriver5_load123: new Types.ObjectId('000000000000000000000516'),
 }
 
+// Sourced from loads.ts's COMPLETED_LOAD_IDS (single source of truth for these
+// ObjectIds) rather than re-hardcoding the same strings in this file too.
 const HISTORICAL_LOAD_IDS = {
-  load119: new Types.ObjectId('000000000000000000000119'),
-  load122: new Types.ObjectId('000000000000000000000122'),
-  load123: new Types.ObjectId('000000000000000000000123'),
-}
-
-const LOAD_IDS = {
-  company1_load1: new Types.ObjectId('000000000000000000000101'),
-  company1_load2: new Types.ObjectId('000000000000000000000102'),
-  company2_load1: new Types.ObjectId('000000000000000000000103'),
-  company2_load2: new Types.ObjectId('000000000000000000000104'),
-  company1_load3: new Types.ObjectId('000000000000000000000105'),
+  load119: COMPLETED_LOAD_IDS['000000000000000000000119'],
+  load120: COMPLETED_LOAD_IDS['000000000000000000000120'],
+  load121: COMPLETED_LOAD_IDS['000000000000000000000121'],
+  load122: COMPLETED_LOAD_IDS['000000000000000000000122'],
+  load123: COMPLETED_LOAD_IDS['000000000000000000000123'],
+  load124: COMPLETED_LOAD_IDS['000000000000000000000124'],
+  load125: COMPLETED_LOAD_IDS['000000000000000000000125'],
+  load126: COMPLETED_LOAD_IDS['000000000000000000000126'],
 }
 
 type DriverDoc = Awaited<ReturnType<typeof import('./users').seedUsers>>['drivers'][SeedDriverKey]
@@ -61,11 +63,11 @@ export async function seedReviews(
   const reviewDocs = [
     // ── Driver → Company reviews (7) ──────────────────────────────────
     {
-      _id: REVIEW_IDS.driver1OnCompany1,
+      _id: REVIEW_IDS.driver1OnCompany1_load119,
       reviewerId: drivers.testUser1._id,
       targetId: companies.testCompany1._id,
       targetType: TARGET_TYPES.COMPANY,
-      loadId: LOAD_IDS.company1_load1,
+      loadId: HISTORICAL_LOAD_IDS.load119,
       ratingCategories: {
         timeliness: 5,
         communication: 4,
@@ -77,11 +79,11 @@ export async function seedReviews(
       createdAt: new Date(Date.now() - 7 * 24 * MS_PER_HOUR),
     },
     {
-      _id: REVIEW_IDS.driver2OnCompany2,
+      _id: REVIEW_IDS.driver2OnCompany2_load122,
       reviewerId: drivers.testUser2._id,
       targetId: companies.testCompany2._id,
       targetType: TARGET_TYPES.COMPANY,
-      loadId: LOAD_IDS.company2_load1,
+      loadId: HISTORICAL_LOAD_IDS.load122,
       ratingCategories: {
         timeliness: 4,
         communication: 3,
@@ -93,11 +95,11 @@ export async function seedReviews(
       createdAt: new Date(Date.now() - 3 * 24 * MS_PER_HOUR),
     },
     {
-      _id: REVIEW_IDS.driver3OnCompany1,
+      _id: REVIEW_IDS.driver3OnCompany1_load125,
       reviewerId: drivers.testUser3._id,
       targetId: companies.testCompany1._id,
       targetType: TARGET_TYPES.COMPANY,
-      loadId: LOAD_IDS.company1_load1,
+      loadId: HISTORICAL_LOAD_IDS.load125,
       ratingCategories: {
         timeliness: 4,
         communication: 4,
@@ -109,11 +111,11 @@ export async function seedReviews(
       createdAt: new Date(Date.now() - 1 * 24 * MS_PER_HOUR),
     },
     {
-      _id: REVIEW_IDS.driver4OnCompany2,
+      _id: REVIEW_IDS.driver4OnCompany1_load121,
       reviewerId: drivers.testUser4._id,
-      targetId: companies.testCompany2._id,
+      targetId: companies.testCompany1._id,
       targetType: TARGET_TYPES.COMPANY,
-      loadId: LOAD_IDS.company2_load2,
+      loadId: HISTORICAL_LOAD_IDS.load121,
       ratingCategories: {
         timeliness: 5,
         communication: 5,
@@ -125,11 +127,11 @@ export async function seedReviews(
       createdAt: new Date(Date.now() - 4 * 24 * MS_PER_HOUR),
     },
     {
-      _id: REVIEW_IDS.driver5OnCompany1,
+      _id: REVIEW_IDS.driver5OnCompany1_load123,
       reviewerId: drivers.testUser5._id,
       targetId: companies.testCompany1._id,
       targetType: TARGET_TYPES.COMPANY,
-      loadId: LOAD_IDS.company1_load3,
+      loadId: HISTORICAL_LOAD_IDS.load123,
       ratingCategories: {
         timeliness: 3,
         communication: 4,
@@ -141,11 +143,11 @@ export async function seedReviews(
       createdAt: new Date(Date.now() - 2 * 24 * MS_PER_HOUR),
     },
     {
-      _id: REVIEW_IDS.driver1OnCompany2,
-      reviewerId: drivers.testUser1._id,
+      _id: REVIEW_IDS.driver3OnCompany2_load120,
+      reviewerId: drivers.testUser3._id,
       targetId: companies.testCompany2._id,
       targetType: TARGET_TYPES.COMPANY,
-      loadId: LOAD_IDS.company2_load1,
+      loadId: HISTORICAL_LOAD_IDS.load120,
       ratingCategories: {
         timeliness: 4,
         communication: 5,
@@ -157,11 +159,11 @@ export async function seedReviews(
       createdAt: new Date(Date.now() - 6 * 24 * MS_PER_HOUR),
     },
     {
-      _id: REVIEW_IDS.driver2OnCompany1,
+      _id: REVIEW_IDS.driver2OnCompany2_load126,
       reviewerId: drivers.testUser2._id,
-      targetId: companies.testCompany1._id,
+      targetId: companies.testCompany2._id,
       targetType: TARGET_TYPES.COMPANY,
-      loadId: LOAD_IDS.company1_load2,
+      loadId: HISTORICAL_LOAD_IDS.load126,
       ratingCategories: {
         timeliness: 5,
         communication: 4,
@@ -173,15 +175,13 @@ export async function seedReviews(
       createdAt: new Date(Date.now() - 5 * 24 * MS_PER_HOUR),
     },
 
-    // ── Company → Driver reviews (5) — all for testUser1 ──────────────
-    // Company1 (001) owns loads 101, 102, 105 → 3 reviews
-    // Company2 (002) owns loads 103, 104      → 2 reviews
+    // ── Company → Driver reviews (8) — one per completed load ──────────
     {
-      _id: REVIEW_IDS.company1OnDriver1_load101,
+      _id: REVIEW_IDS.company1OnDriver1_load119,
       reviewerId: companies.testCompany1._id,
       targetId: drivers.testUser1._id,
       targetType: TARGET_TYPES.DRIVER,
-      loadId: LOAD_IDS.company1_load1,
+      loadId: HISTORICAL_LOAD_IDS.load119,
       ratingCategories: {
         timeliness: 5,
         communication: 5,
@@ -193,11 +193,11 @@ export async function seedReviews(
       createdAt: new Date(Date.now() - 5 * 24 * MS_PER_HOUR),
     },
     {
-      _id: REVIEW_IDS.company1OnDriver1_load102,
+      _id: REVIEW_IDS.company1OnDriver4_load121,
       reviewerId: companies.testCompany1._id,
-      targetId: drivers.testUser1._id,
+      targetId: drivers.testUser4._id,
       targetType: TARGET_TYPES.DRIVER,
-      loadId: LOAD_IDS.company1_load2,
+      loadId: HISTORICAL_LOAD_IDS.load121,
       ratingCategories: {
         timeliness: 4,
         communication: 3,
@@ -209,11 +209,11 @@ export async function seedReviews(
       createdAt: new Date(Date.now() - 12 * MS_PER_HOUR),
     },
     {
-      _id: REVIEW_IDS.company1OnDriver1_load105,
+      _id: REVIEW_IDS.company1OnDriver3_load125,
       reviewerId: companies.testCompany1._id,
-      targetId: drivers.testUser1._id,
+      targetId: drivers.testUser3._id,
       targetType: TARGET_TYPES.DRIVER,
-      loadId: LOAD_IDS.company1_load3,
+      loadId: HISTORICAL_LOAD_IDS.load125,
       ratingCategories: {
         timeliness: 4,
         communication: 5,
@@ -225,11 +225,11 @@ export async function seedReviews(
       createdAt: new Date(Date.now() - 3 * 24 * MS_PER_HOUR),
     },
     {
-      _id: REVIEW_IDS.company2OnDriver1_load103,
+      _id: REVIEW_IDS.company2OnDriver3_load120,
       reviewerId: companies.testCompany2._id,
-      targetId: drivers.testUser1._id,
+      targetId: drivers.testUser3._id,
       targetType: TARGET_TYPES.DRIVER,
-      loadId: LOAD_IDS.company2_load1,
+      loadId: HISTORICAL_LOAD_IDS.load120,
       ratingCategories: {
         timeliness: 3,
         communication: 4,
@@ -241,11 +241,11 @@ export async function seedReviews(
       createdAt: new Date(Date.now() - 2 * 24 * MS_PER_HOUR),
     },
     {
-      _id: REVIEW_IDS.company2OnDriver1_load104,
+      _id: REVIEW_IDS.company2OnDriver2_load126,
       reviewerId: companies.testCompany2._id,
-      targetId: drivers.testUser1._id,
+      targetId: drivers.testUser2._id,
       targetType: TARGET_TYPES.DRIVER,
-      loadId: LOAD_IDS.company2_load2,
+      loadId: HISTORICAL_LOAD_IDS.load126,
       ratingCategories: {
         timeliness: 5,
         communication: 4,
@@ -257,11 +257,11 @@ export async function seedReviews(
       createdAt: new Date(Date.now() - 8 * 24 * MS_PER_HOUR),
     },
     {
-      _id: REVIEW_IDS.company1OnDriver5_load119,
-      reviewerId: companies.testCompany1._id,
+      _id: REVIEW_IDS.company2OnDriver5_load124,
+      reviewerId: companies.testCompany2._id,
       targetId: drivers.testUser5._id,
       targetType: TARGET_TYPES.DRIVER,
-      loadId: HISTORICAL_LOAD_IDS.load119,
+      loadId: HISTORICAL_LOAD_IDS.load124,
       ratingCategories: {
         timeliness: 5,
         communication: 4,

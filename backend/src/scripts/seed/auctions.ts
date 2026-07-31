@@ -144,11 +144,11 @@ export async function seedAuctions({
   )
 
   // Closed auctions for completed (historical) loads (expired in the past)
-  await Promise.all(
+  const closedAuctions = await Promise.all(
     completedLoads.map((load) =>
       createAuction(load, AUCTION_STATUSES.Closed, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
     )
   )
 
-  return auctions
+  return [...auctions, ...closedAuctions]
 }
