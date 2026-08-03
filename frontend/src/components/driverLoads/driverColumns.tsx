@@ -24,11 +24,13 @@ export const columns = (trucks: Truck[] = []): ColumnDef<Load>[] => [
       const companyId = typeof company === 'object' ? company._id : company
       const companyName = typeof company === 'object' ? (company.companyName ?? company.name) : null
       return companyId ? (
-        <CompanyNameLink
-          name={companyName || undefined}
-          companyId={companyId}
-          className="font-semibold text-sm"
-        />
+        <span className="block max-w-[220px] truncate" title={companyName ?? undefined}>
+          <CompanyNameLink
+            name={companyName || undefined}
+            companyId={companyId}
+            className="font-semibold text-sm"
+          />
+        </span>
       ) : (
         <span className="text-sm text-muted-foreground">Unassigned</span>
       )
