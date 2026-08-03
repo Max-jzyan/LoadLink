@@ -26,3 +26,4 @@ dist-ssr
 .github
 .*
 !.env.example
+!.dockerignore
