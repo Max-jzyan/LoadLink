@@ -76,16 +76,11 @@ const { useGetCompanyAuctionsQuery } = companyAuctionsApi
 export default function CompanyAuctions() {
   const companyId = useRequiredMongoId()
   const [filters, setFilters] = useState<CompanyAuctionFilters>({ ...DEFAULT_FILTERS })
-  const debouncedTextFields = useDebouncedValue(
-    {
-      search: filters.search,
-      origin: filters.origin,
-      destination: filters.destination,
-      minPrice: filters.minPrice,
-      maxPrice: filters.maxPrice,
-    },
-    400
-  )
+  const debouncedSearch = useDebouncedValue(filters.search, 400)
+  const debouncedOrigin = useDebouncedValue(filters.origin, 400)
+  const debouncedDestination = useDebouncedValue(filters.destination, 400)
+  const debouncedMinPrice = useDebouncedValue(filters.minPrice, 400)
+  const debouncedMaxPrice = useDebouncedValue(filters.maxPrice, 400)
 
   const {
     data: auctions = [],
@@ -93,9 +88,6 @@ export default function CompanyAuctions() {
     isFetching,
     refetch,
   } = useGetCompanyAuctionsQuery(companyId, { skip: !companyId })
-
-  // Text fields debounced; non-text (status) stays instant.
-  const effectiveFilters = { ...filters, ...debouncedTextFields }
 
   const filtered = useMemo(() => {
     let result = auctions
@@ -114,8 +106,8 @@ export default function CompanyAuctions() {
     }
 
     // Search filter (origin, destination, commodity)
-    if (effectiveFilters.search) {
-      const q = effectiveFilters.search.toLowerCase()
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase()
       result = result.filter((a) => {
         const load = typeof a.loadId === 'object' ? a.loadId : null
         if (!load) return false
@@ -129,8 +121,8 @@ export default function CompanyAuctions() {
     }
 
     // Origin filter
-    if (effectiveFilters.origin) {
-      const q = effectiveFilters.origin.toLowerCase()
+    if (debouncedOrigin) {
+      const q = debouncedOrigin.toLowerCase()
       result = result.filter((a) => {
         const load = typeof a.loadId === 'object' ? a.loadId : null
         return load?.originAddress.toLowerCase().includes(q) ?? false
@@ -138,8 +130,8 @@ export default function CompanyAuctions() {
     }
 
     // Destination filter
-    if (effectiveFilters.destination) {
-      const q = effectiveFilters.destination.toLowerCase()
+    if (debouncedDestination) {
+      const q = debouncedDestination.toLowerCase()
       result = result.filter((a) => {
         const load = typeof a.loadId === 'object' ? a.loadId : null
         return load?.destinationAddress.toLowerCase().includes(q) ?? false
@@ -147,15 +139,15 @@ export default function CompanyAuctions() {
     }
 
     // Price range filter
-    if (effectiveFilters.minPrice !== null) {
-      result = result.filter((a) => a.currentPrice >= effectiveFilters.minPrice!)
+    if (debouncedMinPrice !== null) {
+      result = result.filter((a) => a.currentPrice >= debouncedMinPrice!)
     }
-    if (effectiveFilters.maxPrice !== null) {
-      result = result.filter((a) => a.currentPrice <= effectiveFilters.maxPrice!)
+    if (debouncedMaxPrice !== null) {
+      result = result.filter((a) => a.currentPrice <= debouncedMaxPrice!)
     }
 
     return result
-  }, [auctions, filters, debouncedTextFields])
+  }, [auctions, filters, debouncedSearch, debouncedOrigin, debouncedDestination, debouncedMinPrice, debouncedMaxPrice])
 
   const live = filtered.filter((a) => a.status === AUCTION_STATUSES.Active).length
   const closed = filtered.filter((a) => a.status === AUCTION_STATUSES.Closed).length

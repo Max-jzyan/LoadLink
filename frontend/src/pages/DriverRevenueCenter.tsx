@@ -55,18 +55,12 @@ export default function DriverRevenueCenter() {
 
   // Debounce only text/number inputs; date/truck/view-mode stay instant.
   // Pass viewMode as a dependency so changing tabs flushes the debounce immediately.
-  const debouncedTextFields = useDebouncedValue(
-    {
-      origin: filters.origin,
-      destination: filters.destination,
-      minPayout: filters.minPayout,
-      maxPayout: filters.maxPayout,
-      minDistance: filters.minDistance,
-      maxDistance: filters.maxDistance,
-    },
-    400,
-    [viewMode]
-  )
+  const debouncedOrigin = useDebouncedValue(filters.origin, 400, [viewMode])
+  const debouncedDestination = useDebouncedValue(filters.destination, 400, [viewMode])
+  const debouncedMinPayout = useDebouncedValue(filters.minPayout, 400, [viewMode])
+  const debouncedMaxPayout = useDebouncedValue(filters.maxPayout, 400, [viewMode])
+  const debouncedMinDistance = useDebouncedValue(filters.minDistance, 400, [viewMode])
+  const debouncedMaxDistance = useDebouncedValue(filters.maxDistance, 400, [viewMode])
 
   const {
     data: revenue = null,
@@ -75,16 +69,21 @@ export default function DriverRevenueCenter() {
     fulfilledTimeStamp,
   } = useGetDriverRevenueQuery({
     driverId,
-    filters: {
-      ...debouncedTextFields,
-      status: viewMode === 'potential' ? 'booked,in_transit' : 'completed',
-      dateRange: {
-        from: filters.dateRange?.from ? filters.dateRange.from.toISOString() : undefined,
-        to: filters.dateRange?.to ? filters.dateRange.to.toISOString() : undefined,
-      },
-      truckType: filters.truckType,
-      selectedTruck: filters.selectedTruck,
-    } as RevenueFiltersQuery,
+      filters: {
+        origin: debouncedOrigin,
+        destination: debouncedDestination,
+        minPayout: debouncedMinPayout,
+        maxPayout: debouncedMaxPayout,
+        minDistance: debouncedMinDistance,
+        maxDistance: debouncedMaxDistance,
+        status: viewMode === 'potential' ? 'booked,in_transit' : 'completed',
+        dateRange: {
+          from: filters.dateRange?.from ? filters.dateRange.from.toISOString() : undefined,
+          to: filters.dateRange?.to ? filters.dateRange.to.toISOString() : undefined,
+        },
+        truckType: filters.truckType,
+        selectedTruck: filters.selectedTruck,
+      } as RevenueFiltersQuery,
   })
 
   const [updateExpenses, { isLoading: isUpdating, isSuccess: isGlobalExpensesSuccess }] =

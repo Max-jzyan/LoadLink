@@ -60,14 +60,9 @@ export default function CompanyDashboard() {
   const [selectedLoadId, setSelectedLoadId] = useState<string | null>(null)
   const handleResetView = useCallback(() => setSelectedLoadId(null), [])
   const [filters, setFilters] = useState<CompanyLoadFilters>(DEFAULT_FILTERS)
+  const debouncedOrigin = useDebouncedValue(filters.origin, 400)
+  const debouncedDestination = useDebouncedValue(filters.destination, 400)
 
-  const debouncedTextFields = useDebouncedValue(
-    {
-      origin: filters.origin,
-      destination: filters.destination,
-    },
-    400
-  )
 
   // Apply filters client-side
   const filteredLoads = useMemo(() => {
@@ -92,17 +87,23 @@ export default function CompanyDashboard() {
     }
 
     // Origin / destination substring filters (case-insensitive)
-    const origin = debouncedTextFields.origin.trim().toLowerCase()
+    const origin = debouncedOrigin.trim().toLowerCase()
     if (origin) {
       result = result.filter((l) => l.originAddress.toLowerCase().includes(origin))
     }
-    const destination = debouncedTextFields.destination.trim().toLowerCase()
+    const destination = debouncedDestination.trim().toLowerCase()
     if (destination) {
       result = result.filter((l) => l.destinationAddress.toLowerCase().includes(destination))
     }
 
     return result
-  }, [loads, filters, debouncedTextFields])
+  }, [
+    loads,
+    filters.loadStatus,
+    filters.dateRange,
+    debouncedOrigin,
+    debouncedDestination,
+  ])
 
   // Map all loads to the shape DriverMap expects; the map component handles focusing
   const transitRoutes = useMemo(() => {

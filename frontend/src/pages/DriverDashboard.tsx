@@ -40,7 +40,6 @@ export default function DriverDashboard() {
   const driverId = useRequiredMongoId()
   const dispatch = useDispatch<AppDispatch>()
 
-  // Fetch all loads currently on the auction board
   const {
     data: rawLoads = [],
     isLoading,
@@ -49,10 +48,8 @@ export default function DriverDashboard() {
     fulfilledTimeStamp,
   } = useListDriverLoadsQuery({ driverId })
 
-  // Fetch the driver's trucks to allow per-load truck assignment
   const { data: trucks = [] } = useListDriverTrucksQuery(driverId)
 
-  // Sync RTK Query data into local slice on initial fetch and refresh
   const prevRawLoadsRef = useRef(rawLoads)
   useEffect(() => {
     if (rawLoads.length > 0 && rawLoads !== prevRawLoadsRef.current) {
@@ -61,30 +58,22 @@ export default function DriverDashboard() {
     }
   }, [rawLoads, dispatch])
 
-  // Read from the slice so LoadManageDialog's optimistic updates are reflected
   const availableLoads = useSelector(selectDriverLoads)
 
-  // Refresh timestamp tracking
   const { lastManualRefresh, handleRefresh, captureInitialLoad } = useRefreshTimestamp()
   useEffect(() => {
     captureInitialLoad(fulfilledTimeStamp)
   }, [fulfilledTimeStamp, captureInitialLoad])
 
-  // Filter state
   const [filters, setFilters] = useState<DriverLoadFilters>(DEFAULT_FILTERS)
 
-  // Debounce only text/number inputs; status/date/truckType/selectedTruck stay instant.
-  const debouncedTextFields = useDebouncedValue(
-    {
-      origin: filters.origin,
-      destination: filters.destination,
-      minWeight: filters.minWeight,
-      maxWeight: filters.maxWeight,
-      minPrice: filters.minPrice,
-      maxPrice: filters.maxPrice,
-    },
-    400
-  )
+  // Debounce text and number inputs; select/date controls stay instant.
+  const debouncedOrigin = useDebouncedValue(filters.origin, 400)
+  const debouncedDestination = useDebouncedValue(filters.destination, 400)
+  const debouncedMinWeight = useDebouncedValue(filters.minWeight, 400)
+  const debouncedMaxWeight = useDebouncedValue(filters.maxWeight, 400)
+  const debouncedMinPrice = useDebouncedValue(filters.minPrice, 400)
+  const debouncedMaxPrice = useDebouncedValue(filters.maxPrice, 400)
 
   // Apply filters client-side
   const filteredLoads = useMemo(() => {
@@ -114,20 +103,20 @@ export default function DriverDashboard() {
     }
 
     // Weight range filter
-    if (filters.minWeight !== undefined) {
-      result = result.filter((load) => load.weightLbs >= filters.minWeight!)
+    if (debouncedMinWeight !== undefined) {
+      result = result.filter((load) => load.weightLbs >= debouncedMinWeight!)
     }
-    if (filters.maxWeight !== undefined) {
-      result = result.filter((load) => load.weightLbs <= filters.maxWeight!)
+    if (debouncedMaxWeight !== undefined) {
+      result = result.filter((load) => load.weightLbs <= debouncedMaxWeight!)
     }
 
     // Price range filter (using auction currentPrice if available)
-    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+    if (debouncedMinPrice !== undefined || debouncedMaxPrice !== undefined) {
       result = result.filter((load) => {
         if (typeof load.auctionId !== 'object' || !load.auctionId) return false
         const price = load.auctionId.currentPrice
-        if (filters.minPrice !== undefined && price < filters.minPrice) return false
-        if (filters.maxPrice !== undefined && price > filters.maxPrice) return false
+        if (debouncedMinPrice !== undefined && price < debouncedMinPrice) return false
+        if (debouncedMaxPrice !== undefined && price > debouncedMaxPrice) return false
         return true
       })
     }
@@ -142,45 +131,35 @@ export default function DriverDashboard() {
     }
 
     // Origin / Destination substring filters
-    if (debouncedTextFields.origin) {
-      const q = debouncedTextFields.origin.toLowerCase()
+    if (debouncedOrigin) {
+      const q = debouncedOrigin.toLowerCase()
       result = result.filter((load) => load.originAddress.toLowerCase().includes(q))
     }
-    if (debouncedTextFields.destination) {
-      const q = debouncedTextFields.destination.toLowerCase()
+    if (debouncedDestination) {
+      const q = debouncedDestination.toLowerCase()
       result = result.filter((load) => load.destinationAddress.toLowerCase().includes(q))
     }
 
-    // Weight range filter
-    if (debouncedTextFields.minWeight !== undefined) {
-      result = result.filter((load) => load.weightLbs >= debouncedTextFields.minWeight!)
-    }
-    if (debouncedTextFields.maxWeight !== undefined) {
-      result = result.filter((load) => load.weightLbs <= debouncedTextFields.maxWeight!)
-    }
-
-    // Price range filter
-    if (debouncedTextFields.minPrice !== undefined || debouncedTextFields.maxPrice !== undefined) {
-      result = result.filter((load) => {
-        if (typeof load.auctionId !== 'object' || !load.auctionId) return false
-        const price = load.auctionId.currentPrice
-        if (debouncedTextFields.minPrice !== undefined && price < debouncedTextFields.minPrice)
-          return false
-        if (debouncedTextFields.maxPrice !== undefined && price > debouncedTextFields.maxPrice)
-          return false
-        return true
-      })
-    }
-
     return result
-  }, [availableLoads, filters, debouncedTextFields])
+  }, [
+    availableLoads,
+    filters.loadStatus,
+    filters.dateRange,
+    filters.truckType,
+    filters.selectedTruck,
+    debouncedOrigin,
+    debouncedDestination,
+    debouncedMinWeight,
+    debouncedMaxWeight,
+    debouncedMinPrice,
+    debouncedMaxPrice,
+  ])
 
   const loadsInTransit = availableLoads.filter((load) => load.status === LOAD_STATUSES.InTransit)
   const completedLoads = availableLoads.filter((load) => load.status === LOAD_STATUSES.Completed)
 
   const { data: activeBids = [] } = useListDriverBidsQuery({ driverId })
 
-  // Only count bids whose auction is still open (status === auction_live)
   const openAuctionLoadIds = useMemo(() => {
     return new Set(
       availableLoads
@@ -212,7 +191,6 @@ export default function DriverDashboard() {
     setSelectedRouteId(load._id)
   }
 
-  // ── Stats cards (bare DynamicCards — no Col wrappers) ──
   const statsCards = (
     <>
       <DynamicCard title="My Loads" action={<Package2 className="text-primary" />}>

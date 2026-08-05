@@ -8,6 +8,10 @@
 services:
     frontend:
         image: node:22-alpine
+        deploy:
+            resources:
+                limits:
+                    memory: 4G  # Caps this specific container at 4GB
         working_dir: /app
         volumes:
             - ./frontend:/app
@@ -23,6 +27,10 @@ services:
 
     backend:
         image: node:22-alpine
+        deploy:
+            resources:
+                limits:
+                    memory: 4G  # Caps this specific container at 4GB
         working_dir: /app
         volumes:
             - ./backend:/app
@@ -40,6 +48,10 @@ services:
 
     mongo:
         image: mongo:7
+        deploy:
+            resources:
+                limits:
+                    memory: 4G  # Caps this specific container at 4GB
         ports:
             - '27018:27017'
         volumes:

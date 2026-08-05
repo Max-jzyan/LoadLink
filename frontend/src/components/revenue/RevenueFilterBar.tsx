@@ -14,6 +14,7 @@ import { TRUCK_TYPES } from '@/types/enums'
 import { format } from 'date-fns'
 import { X } from 'lucide-react'
 import React from 'react'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 interface RevenueFilterBarProps {
   filters: RevenueFilters
@@ -182,6 +183,26 @@ export default function RevenueFilterBar({
     return filters.dateRange
   }, [filters.dateRange])
 
+  // Debounce text/number values so ActiveFiltersNotice and downstream data
+  // fetches wait 400ms after typing stops. Date/truck/select controls remain
+  // instant because they don't cause noticeable re-render latency.
+  const debouncedOrigin = useDebouncedValue(filters.origin, 400)
+  const debouncedDestination = useDebouncedValue(filters.destination, 400)
+  const debouncedMinPayout = useDebouncedValue(filters.minPayout, 400)
+  const debouncedMaxPayout = useDebouncedValue(filters.maxPayout, 400)
+  const debouncedMinDistance = useDebouncedValue(filters.minDistance, 400)
+  const debouncedMaxDistance = useDebouncedValue(filters.maxDistance, 400)
+
+  const debouncedFilters: RevenueFilters = {
+    ...filters,
+    origin: debouncedOrigin,
+    destination: debouncedDestination,
+    minPayout: debouncedMinPayout,
+    maxPayout: debouncedMaxPayout,
+    minDistance: debouncedMinDistance,
+    maxDistance: debouncedMaxDistance,
+  }
+
   const controls = [
     {
       id: 'dateRange',
@@ -338,7 +359,7 @@ export default function RevenueFilterBar({
       />
 
       <ActiveFiltersNotice
-        filters={filters}
+        filters={debouncedFilters}
         onRemoveFilter={handleRemoveFilter}
         onReset={handleReset}
         trucks={trucks}
