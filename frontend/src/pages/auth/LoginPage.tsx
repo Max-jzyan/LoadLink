@@ -109,11 +109,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="grid h-svh lg:grid-cols-2">
-      <div className="flex h-full items-center justify-center px-8">
+    <div className="grid h-svh lg:grid-cols-2 lg:overflow-hidden">
+      {/* Login card — slides left/right */}
+      <div
+        className={cn(
+          'flex h-full items-center justify-center px-8 bg-background',
+          'lg:absolute lg:inset-y-0 lg:left-0 lg:w-1/2',
+          'lg:transition-transform lg:duration-700 lg:ease-in-out',
+          role === 'company' ? 'lg:translate-x-full' : 'lg:translate-x-0'
+        )}
+      >
         <div className="mx-auto grid w-full max-w-sm gap-6">
           <div className="grid gap-2 text-center">
-            <h1 className="text-3xl font-bold">Welcome back!</h1>
+            <h1 className="text-3xl font-bold">
+              {role === 'driver' ? 'Driver sign in' : 'Company sign in'}
+            </h1>
           </div>
 
           {/* Role toggle */}
@@ -198,17 +208,43 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <div className="hidden lg:flex bg-slate-900 flex-col justify-between p-12 text-white">
-        <div className="flex items-center gap-2 justify-end">
-          <Logo size={24} />
-          <span className="font-semibold text-lg">LoadLink</span>
+      {/* Branding panel — slides left/right */}
+      <div
+        className={cn(
+          'hidden lg:flex flex-col justify-between p-12 text-white bg-slate-900',
+          'lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2',
+          'lg:transition-transform lg:duration-700 lg:ease-in-out',
+          role === 'company' ? '-translate-x-full' : 'translate-x-0'
+        )}
+      >
+        <div className="flex h-full w-full flex-col justify-between">
+          <div className="flex items-center gap-2">
+            <div
+              className="transition-all duration-700 ease-in-out"
+              style={{ flexGrow: role === 'company' ? 0 : 1 }}
+            />
+            <Logo size={24} />
+            <span className="font-semibold text-lg">LoadLink</span>
+          </div>
+          <div className="space-y-2">
+            <div className="flex">
+              <div
+                className="transition-all duration-700 ease-in-out"
+                style={{ flexGrow: role === 'company' ? 0 : 1 }}
+              />
+              <p className="text-lg leading-relaxed text-slate-300">
+                Streamline the logistics of cargo transport
+              </p>
+            </div>
+            <div className="flex">
+              <div
+                className="transition-all duration-700 ease-in-out"
+                style={{ flexGrow: role === 'company' ? 0 : 1 }}
+              />
+              <footer className="text-sm text-slate-500">CPSC 455 Team 5</footer>
+            </div>
+          </div>
         </div>
-        <blockquote className="space-y-2 text-right">
-          <p className="text-lg leading-relaxed text-slate-300">
-            Streamline the logistics of cargo transport
-          </p>
-          <footer className="text-sm text-slate-500">CPSC 455 Team 5</footer>
-        </blockquote>
       </div>
     </div>
   )
