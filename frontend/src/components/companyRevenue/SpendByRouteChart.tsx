@@ -1,3 +1,4 @@
+import { ARROW, RouteAxisTick } from '@/components/shared/RouteAxisTick'
 import {
   ChartContainer,
   ChartTooltip,
@@ -5,6 +6,7 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart'
 import type { SpendLoad } from '@/lib/companySpend'
+import { formatMoney } from '@/lib/format'
 import { useMemo } from 'react'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 
@@ -25,7 +27,7 @@ export function SpendByRouteChart({
     const routeMap = new Map<string, { spend: number; count: number }>()
 
     spendLoads.forEach((load) => {
-      const routeKey = `${load.originAddress.split(',')[0].trim()} → ${load.destinationAddress.split(',')[0].trim()}`
+      const routeKey = `${load.originAddress.split(',')[0].trim()}${ARROW}${load.destinationAddress.split(',')[0].trim()}`
       const existing = routeMap.get(routeKey) ?? { spend: 0, count: 0 }
       routeMap.set(routeKey, {
         spend: existing.spend + load.price,
@@ -35,8 +37,7 @@ export function SpendByRouteChart({
 
     return Array.from(routeMap.entries())
       .map(([route, data]) => ({
-        route: route.length > 24 ? route.substring(0, 24) + '...' : route,
-        fullRoute: route,
+        route,
         spend: data.spend,
         count: data.count,
       }))
@@ -69,9 +70,8 @@ export function SpendByRouteChart({
           axisLine={false}
           tickMargin={8}
           className="text-xs"
-          angle={-45}
-          textAnchor="end"
-          height={70}
+          tick={<RouteAxisTick />}
+          height={45}
           interval={0}
         />
         <YAxis
@@ -81,7 +81,25 @@ export function SpendByRouteChart({
           className="text-xs"
           tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
         />
-        <ChartTooltip content={<ChartTooltipContent />} />
+        <ChartTooltip
+          content={
+            <ChartTooltipContent
+              formatter={(value, _name, props) => {
+                const count = props.payload?.count ?? 0
+                return (
+                  <div className="flex flex-1 items-center justify-between gap-3 leading-none">
+                    <span className="text-muted-foreground">
+                      {count} load{count === 1 ? '' : 's'}
+                    </span>
+                    <span className="font-mono font-medium text-foreground tabular-nums">
+                      {formatMoney(Number(value))}
+                    </span>
+                  </div>
+                )
+              }}
+            />
+          }
+        />
         <Bar dataKey="spend" fill="var(--color-spend)" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ChartContainer>

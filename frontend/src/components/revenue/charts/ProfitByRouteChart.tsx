@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { ARROW, RouteAxisTick } from '@/components/shared/RouteAxisTick'
 import {
   ChartContainer,
   ChartTooltip,
@@ -25,25 +26,27 @@ export function ProfitByRouteChart({
   const chartData = useMemo(() => {
     if (!loadBreakdown.length) return []
 
-    // Group by route and calculate total profit
-    const routeMap = new Map<string, { profit: number; count: number; avgProfit: number }>()
+    // Group by city-to-city route; the full addresses stay for the tooltip
+    const routeMap = new Map<string, { profit: number; count: number; fullRoute: string }>()
 
     loadBreakdown.forEach((load) => {
-      const routeKey = `${load.originAddress} → ${load.destinationAddress}`
-      const existing = routeMap.get(routeKey) || { profit: 0, count: 0, avgProfit: 0 }
+      const origin = load.originAddress.split(',')[0].trim()
+      const destination = load.destinationAddress.split(',')[0].trim()
+      const routeKey = `${origin}${ARROW}${destination}`
+      const existing = routeMap.get(routeKey)
 
       routeMap.set(routeKey, {
-        profit: existing.profit + load.netProfit,
-        count: existing.count + 1,
-        avgProfit: (existing.profit + load.netProfit) / (existing.count + 1),
+        profit: (existing?.profit ?? 0) + load.netProfit,
+        count: (existing?.count ?? 0) + 1,
+        fullRoute: existing?.fullRoute ?? `${load.originAddress}${ARROW}${load.destinationAddress}`,
       })
     })
 
     // Convert to array, sort by profit, and take top N
     return Array.from(routeMap.entries())
       .map(([route, data]) => ({
-        route: route.length > 20 ? route.substring(0, 20) + '...' : route,
-        fullRoute: route,
+        route,
+        fullRoute: data.fullRoute,
         profit: data.profit,
         count: data.count,
       }))
@@ -76,9 +79,9 @@ export function ProfitByRouteChart({
           axisLine={false}
           tickMargin={8}
           className="text-xs"
-          angle={-45}
-          textAnchor="end"
-          height={80}
+          tick={<RouteAxisTick />}
+          height={45}
+          interval={0}
         />
         <YAxis
           tickLine={false}
