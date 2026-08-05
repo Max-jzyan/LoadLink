@@ -1,17 +1,13 @@
-import { useState } from 'react'
-import { Search, X, ArrowUpDown, Sparkles } from 'lucide-react'
+import { DatePickerWithRange } from '@/components/shared/DatePickerWithRange'
+import ResponsiveFilterBar from '@/components/shared/ResponsiveFilterBar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-import { DatePickerWithRange } from '@/components/shared/DatePickerWithRange'
+import { ArrowUpDown, Search, Sparkles, X } from 'lucide-react'
+import { useState } from 'react'
 import type { DateRange } from 'react-day-picker'
-import {
-  type SortKey,
-  type EligibilityFilter,
-  SORT_OPTIONS,
-  FILTER_OPTIONS,
-} from './DriverLoadFilters.types'
+import type { EligibilityFilter, SortKey } from './DriverLoadFilters.types'
+import { FILTER_OPTIONS, SORT_OPTIONS } from './DriverLoadFilters.types'
 
 interface DriverLoadFiltersProps {
   searchText: string
@@ -53,21 +49,23 @@ export function DriverLoadFilters({
 }: DriverLoadFiltersProps) {
   const [showSortDropdown, setShowSortDropdown] = useState(false)
 
-  return (
-    <div className="flex flex-col gap-2">
-      {/* Row 1: date picker + search + sort + (eligibility filters when no AI) */}
-      <div className="flex flex-wrap items-center gap-2">
+  const controls = [
+    {
+      id: 'dateRange',
+      label: 'Pickup Date',
+      content: (
         <DatePickerWithRange
           label="Pickup Date"
           date={dateRange}
           onRangeChange={onDateRangeChange}
         />
-
-        <Separator orientation="vertical" className="hidden md:block h-6" />
-        <Separator className="md:hidden w-full" />
-
-        {/* Search input */}
-        <div className="relative flex-1 max-w-md">
+      ),
+    },
+    {
+      id: 'search',
+      label: 'Search',
+      content: (
+        <div className="relative w-64">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           <Input
             className="pl-8 h-8 text-sm"
@@ -85,11 +83,13 @@ export function DriverLoadFilters({
             </button>
           )}
         </div>
-
-        <Separator orientation="vertical" className="hidden md:block h-6" />
-        <Separator className="md:hidden w-full" />
-
-        {/* Sort dropdown */}
+      ),
+    },
+    {
+      id: 'sort',
+      label: 'Sort',
+      alwaysVisible: true,
+      content: (
         <div className="relative">
           <Button
             variant="outline"
@@ -123,100 +123,73 @@ export function DriverLoadFilters({
             </>
           )}
         </div>
-
-        {/* Eligibility filters — only on Row 1 when AI button is absent */}
-        {!onAiClick && (
-          <>
-            <Separator orientation="vertical" className="hidden md:block h-6" />
-            <Separator className="md:hidden w-full" />
-            <div className="flex items-center gap-0.5">
-              {FILTER_OPTIONS.map((opt) => {
-                const count = {
-                  all: counts.all,
-                  eligible: counts.eligible,
-                  'high-score': counts.highScore,
-                  'issues-critical': counts.critical,
-                  'issues-minor': counts.minor,
-                }[opt.value]
-                return (
-                  <Button
-                    key={opt.value}
-                    variant={eligibilityFilter === opt.value ? 'default' : 'outline'}
-                    size="sm"
-                    className="h-7 px-2 text-xs"
-                    onClick={() => onEligibilityChange(opt.value)}
-                  >
-                    {opt.label}
-                    <span className="ml-1 text-[10px] opacity-70">({count})</span>
-                  </Button>
-                )
-              })}
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-              onClick={onReset}
-              title="Reset all filters"
-            >
-              Reset
-            </Button>
-          </>
-        )}
-      </div>
-
-      {/* Row 2: eligibility filter buttons + AI button — only renders when caller provides onAiClick */}
-      {onAiClick && (
-        <div className="flex items-center gap-1.5">
-          <div className="flex items-center gap-0.5">
-            {FILTER_OPTIONS.map((opt) => {
-              const count = {
-                all: counts.all,
-                eligible: counts.eligible,
-                'high-score': counts.highScore,
-                'issues-critical': counts.critical,
-                'issues-minor': counts.minor,
-              }[opt.value]
-              return (
-                <Button
-                  key={opt.value}
-                  variant={eligibilityFilter === opt.value ? 'default' : 'outline'}
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => onEligibilityChange(opt.value)}
-                >
-                  {opt.label}
-                  <span className="ml-1 text-[10px] opacity-70">({count})</span>
-                </Button>
-              )
-            })}
-          </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-            onClick={onReset}
-            title="Reset all filters"
-          >
-            Reset
-          </Button>
-
-          {/* AI insight trigger — far right */}
-          <Button
-            variant={aiActive ? 'default' : 'outline'}
-            size="icon"
-            className={cn(
-              'h-8 w-8 shrink-0 ml-auto',
-              aiActive && 'bg-violet-600 hover:bg-violet-700 border-violet-600'
-            )}
-            onClick={onAiClick}
-            title="Generate AI load insight"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-          </Button>
+      ),
+    },
+    {
+      id: 'eligibility',
+      label: 'Eligibility',
+      content: (
+        <div className="flex flex-wrap items-center gap-0.5">
+          {FILTER_OPTIONS.map((opt) => {
+            const count = {
+              all: counts.all,
+              eligible: counts.eligible,
+              'high-score': counts.highScore,
+              'issues-critical': counts.critical,
+              'issues-minor': counts.minor,
+            }[opt.value]
+            return (
+              <Button
+                key={opt.value}
+                variant={eligibilityFilter === opt.value ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 px-2 text-xs flex flex-wrap"
+                onClick={() => onEligibilityChange(opt.value)}
+              >
+                {opt.label}
+                <span className="ml-1 text-[10px] opacity-70">({count})</span>
+              </Button>
+            )
+          })}
         </div>
+      ),
+    },
+  ]
+
+  const actions = (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+        onClick={onReset}
+        title="Reset all filters"
+      >
+        Reset
+      </Button>
+
+      {onAiClick && (
+        <Button
+          variant={aiActive ? 'default' : 'outline'}
+          size="icon"
+          className={cn(
+            'h-8 w-8 shrink-0',
+            aiActive && 'bg-violet-600 hover:bg-violet-700 border-violet-600'
+          )}
+          onClick={onAiClick}
+          title="Generate AI load insight"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+        </Button>
       )}
-    </div>
+    </>
+  )
+
+  return (
+    <ResponsiveFilterBar
+      controls={controls}
+      className="w-full"
+      actions={actions}
+    />
   )
 }

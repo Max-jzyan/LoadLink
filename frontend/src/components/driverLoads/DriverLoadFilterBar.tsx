@@ -59,7 +59,7 @@ export default function DriverLoadFilterBar({
       id: 'status',
       label: 'Status',
       content: (
-        <div className="flex w-fit overflow-hidden rounded-lg border border-border">
+        <div className="flex flex-wrap w-fit overflow-hidden rounded-lg border border-border">
           {statusOptions.map((option) => (
             <Button
               key={option.value}

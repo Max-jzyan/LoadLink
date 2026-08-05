@@ -11,6 +11,8 @@ export interface ResponsiveFilterControl {
   id: string
   label: string
   content: ReactNode
+  /** When true, this control is always rendered and never hidden in the overflow dropdown. */
+  alwaysVisible?: boolean
 }
 
 interface ResponsiveFilterBarProps {
@@ -149,8 +151,14 @@ export default function ResponsiveFilterBar({
     }
   }, [actions, controls])
 
-  const visibleControls = controls.filter((control) => visibleIds.includes(control.id))
-  const overflowControls = controls.filter((control) => !visibleIds.includes(control.id))
+  const visibleControls = controls.filter((control) => {
+    if (control.alwaysVisible) return true
+    return visibleIds.includes(control.id)
+  })
+  const overflowControls = controls.filter((control) => {
+    if (control.alwaysVisible) return false
+    return !visibleIds.includes(control.id)
+  })
   const overflowCount = overflowControls.length
   const overflowLabel = overflowCount > 0 ? `${moreLabel} (${overflowCount})` : moreLabel
 
@@ -177,10 +185,14 @@ export default function ResponsiveFilterBar({
                 </Button>
               </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 p-3">
+            <DropdownMenuContent
+              align="end"
+              className="p-3"
+              style={{ width: '100%', maxWidth: '100vw', minWidth: 0 }}
+            >
               <div className="flex max-h-[70vh] flex-col gap-3 overflow-y-auto">
                 {overflowControls.map((control) => (
-                  <div key={control.id} className="w-full">
+                  <div key={control.id}>
                     <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       {control.label}
                     </div>

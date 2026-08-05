@@ -1,4 +1,5 @@
 import LoadMessagesDrawer from '@/components/messages/LoadMessagesDrawer'
+import ResponsiveFilterBar from '@/components/shared/ResponsiveFilterBar'
 import PageShell from '@/components/layout/PageShell'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -161,36 +162,57 @@ export default function Messages() {
           : 'Conversations with your loads’ counterparties'
       }
       stickyBar={
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex w-fit overflow-hidden rounded-lg border border-border">
-            {FILTER_OPTIONS.map((opt) => (
-              <Button
-                key={opt.value}
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  'rounded-none border-0',
-                  filter === opt.value ? 'filter-btn-active' : 'filter-btn-inactive'
-                )}
-                onClick={() => setFilter(opt.value)}
-              >
-                {opt.label}
-              </Button>
-            ))}
-          </div>
-          <div className="relative flex-1 max-w-sm min-w-48">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="pl-9"
-              placeholder="Search by name or route…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <Badge variant="secondary">
-            {filtered.length} conversation{filtered.length !== 1 ? 's' : ''}
-          </Badge>
-        </div>
+        <ResponsiveFilterBar
+          controls={[
+            {
+              id: 'status',
+              label: 'Status',
+              content: (
+                <div className="flex w-fit overflow-hidden rounded-lg border border-border">
+                  {FILTER_OPTIONS.map((opt) => (
+                    <Button
+                      key={opt.value}
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        'rounded-none border-0',
+                        filter === opt.value ? 'filter-btn-active' : 'filter-btn-inactive'
+                      )}
+                      onClick={() => setFilter(opt.value)}
+                    >
+                      {opt.label}
+                    </Button>
+                  ))}
+                </div>
+              ),
+            },
+            {
+              id: 'search',
+              label: 'Search',
+              content: (
+                <div className="relative flex-1 max-w-sm min-w-48">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    className="pl-9"
+                    placeholder="Search by name or route…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+              ),
+            },
+            {
+              id: 'count',
+              label: 'Count',
+              content: (
+                <Badge variant="secondary">
+                  {filtered.length} conversation{filtered.length !== 1 ? 's' : ''}
+                </Badge>
+              ),
+            },
+          ]}
+          className="w-full"
+        />
       }
       actions={
         <Button variant="outline" size="sm" onClick={refetch} disabled={isFetching}>
