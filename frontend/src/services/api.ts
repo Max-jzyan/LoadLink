@@ -9,6 +9,11 @@ import { auth } from '@/lib/firebase'
 // avoiding race conditions where auth.currentUser is not yet hydrated.
 let cachedToken: string | null = null
 
+/** Test-only: override the cached token so prepareHeaders injects a known value. */
+export function __setCachedTokenForTests(token: string | null) {
+  cachedToken = token
+}
+
 /** Unix timestamp (ms) when the current Firebase ID token expires. */
 let _tokenExpiresAt: number | null = null
 
