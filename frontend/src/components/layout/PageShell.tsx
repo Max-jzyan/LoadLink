@@ -109,20 +109,24 @@ export default function PageShell({
     <div className="flex flex-col flex-1 min-h-0">
       <div className={cn('flex-1', noScroll ? 'flex flex-col min-h-0' : 'overflow-y-auto')}>
         {/* ── Title area (scrolls away) ── */}
-        <div className="px-4 pt-4 pb-2">
+        <div className="px-4 pt-4 pb-2" data-tour="page-title">
           <h1 className="text-2xl font-bold text-foreground">{title}</h1>
           {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
         </div>
 
         {/* ── Banner area (static, pushed by title) ── */}
-        {banner && <div className="px-4 pb-2">{banner}</div>}
+        {banner && (
+          <div className="px-4 pb-2" data-tour="page-banner">
+            {banner}
+          </div>
+        )}
 
         {/* ── Sticky bar ── */}
         {(tabs || stickyBar || actions) && (
           <div className="sticky top-0 z-[9999] w-full border-b bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80 mb-3">
             {/* Tab bar (optional) */}
             {tabs && (
-              <div className="px-4 pt-1 pb-0">
+              <div className="px-4 pt-1 pb-0" data-tour="page-tabs">
                 <div className="flex w-fit -mb-px">
                   {tabs.options.map((option) => (
                     <Button
@@ -146,16 +150,28 @@ export default function PageShell({
             )}
             {/* Sticky bar row */}
             {(stickyBar || actions) && (
-              <div className="page-shell-sticky-row flex w-full min-w-0 items-center justify-between gap-2 px-4 py-2">
-                <div className="min-w-0 flex-1">{stickyBar}</div>
-                {actions && <div className="ml-3 flex shrink-0 items-center gap-2">{actions}</div>}
+              <div
+                className="flex w-full min-w-0 items-center justify-between gap-2 px-4 py-2"
+                style={{ width: 'calc(100vw - 50px)' }}
+              >
+                <div className="min-w-0 flex-1" data-tour="page-filters">
+                  {stickyBar}
+                </div>
+                {actions && (
+                  <div className="ml-3 flex shrink-0 items-center gap-2" data-tour="page-actions">
+                    {actions}
+                  </div>
+                )}
               </div>
             )}
           </div>
         )}
 
         {/* ── Page content ── */}
-        <div className={cn('px-4 pb-4', noScroll && 'flex-1 flex flex-col min-h-0')}>
+        <div
+          className={cn('px-4 pb-4', noScroll && 'flex-1 flex flex-col min-h-0')}
+          data-tour="page-content"
+        >
           {children}
         </div>
       </div>

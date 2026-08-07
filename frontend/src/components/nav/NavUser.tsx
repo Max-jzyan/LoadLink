@@ -39,6 +39,20 @@ const THEME_ICONS: Record<Theme, React.ReactNode> = {
   system: <MonitorIcon className="h-4 w-4" />,
 }
 
+/** Where the account header button navigates, per role (admins have no profile page). */
+const ACCOUNT_PATHS: Record<string, string> = {
+  driver: '/driver',
+  company: '/company',
+  admin: '/admin/dashboard',
+}
+
+/** Menu label for the role-specific walkthrough. */
+const WALKTHROUGH_LABELS: Record<string, string> = {
+  driver: 'Driver walkthrough',
+  company: 'Company walkthrough',
+  admin: 'Admin walkthrough',
+}
+
 export function NavUser() {
   const { isMobile, state } = useSidebar()
   const isCollapsed = state === 'collapsed'
@@ -47,7 +61,7 @@ export function NavUser() {
 
   const role = useSelector(selectRole)
   const { data: profile } = useGetMyProfileQuery()
-  const { startTour } = useTourContext()
+  const { startTour, hasTour } = useTourContext()
 
   async function handleLogout() {
     setManualLogout()
@@ -65,9 +79,18 @@ export function NavUser() {
     profile?.name ??
     (typeof profile?.email === 'string' && profile.email ? profile.email.split('@')[0] : 'User')
 
+  const effectiveRole = profile?.role ?? role
+
   let roleLabel = ''
-  if (profile?.role === 'driver' || role === 'driver') roleLabel = 'Driver'
-  if (profile?.role === 'company' || role === 'company') roleLabel = 'Company'
+  if (effectiveRole === 'driver') roleLabel = 'Driver'
+  if (effectiveRole === 'company') roleLabel = 'Company'
+  if (effectiveRole === 'admin') roleLabel = 'Admin'
+
+  // Admins have no profile page — send them to their dashboard instead.
+  const accountPath = ACCOUNT_PATHS[effectiveRole ?? 'company']
+
+  /** Role-specific walkthrough label so it's obvious the tour is tailored. */
+  const walkthroughLabel = WALKTHROUGH_LABELS[effectiveRole ?? 'driver']
 
   const initials = displayName.slice(0, 2).toUpperCase()
   const profilePictureUrl = profile?.profilePictureUrl ?? ''
@@ -141,47 +164,34 @@ export function NavUser() {
               sideOffset={4}
             >
               <DropdownMenuLabel className="p-0 font-normal">
-                {profile?.role === 'driver' || role === 'driver' ? (
-                  <button
-                    type="button"
-                    className="flex w-full cursor-pointer items-center gap-2 px-1 py-1.5 text-left text-sm hover:bg-accent rounded-sm"
-                    onClick={() => navigate('/driver')}
-                  >
-                    <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage src={profilePictureUrl} alt={displayName} />
-                      <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
-                    </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">{displayName}</span>
-                      <span className="truncate text-xs capitalize">{roleLabel}</span>
-                    </div>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="flex w-full cursor-pointer items-center gap-2 px-1 py-1.5 text-left text-sm hover:bg-accent rounded-sm"
-                    onClick={() => navigate('/company')}
-                  >
-                    <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage src={profilePictureUrl} alt={displayName} />
-                      <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
-                    </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">{displayName}</span>
-                      <span className="truncate text-xs capitalize">{roleLabel}</span>
-                    </div>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="flex w-full cursor-pointer items-center gap-2 px-1 py-1.5 text-left text-sm hover:bg-accent rounded-sm"
+                  onClick={() => navigate(accountPath)}
+                >
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarImage src={profilePictureUrl} alt={displayName} />
+                    <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">{displayName}</span>
+                    <span className="truncate text-xs capitalize">{roleLabel}</span>
+                  </div>
+                </button>
               </DropdownMenuLabel>
 
-              <DropdownMenuSeparator />
+              {hasTour && (
+                <>
+                  <DropdownMenuSeparator />
 
-              <DropdownMenuGroup>
-                <DropdownMenuItem onClick={startTour}>
-                  <PlayCircleIcon />
-                  Walkthrough
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={startTour}>
+                      <PlayCircleIcon />
+                      {walkthroughLabel}
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </>
+              )}
 
               <DropdownMenuSeparator />
 

@@ -1,5 +1,7 @@
 import Shepherd, { type Tour } from 'shepherd.js'
 import type { UserRole } from '@/types/enums'
+import { ROLE_HOME } from '@/config/routes'
+import { TOUR_STEPS, type TourStepDef } from '@/hooks/tourSteps'
 
 const TOUR_PENDING_KEY = 'loadlink_tour_pending'
 
@@ -25,18 +27,64 @@ function makeButton(text: string, action: () => void, secondary = false) {
   }
 }
 
-/** Navigate to path then wait for React Router + first render to settle. */
-function navStep(navigate: (path: string) => void, path: string): () => Promise<void> {
-  return () =>
-    new Promise<void>((resolve) => {
-      navigate(path)
-      setTimeout(resolve, 350)
-    })
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
+/** Strip a trailing slash so '/driver/' and '/driver' compare equal. */
+const normalizePath = (path: string) => (path.length > 1 ? path.replace(/\/+$/, '') : path)
+
+/**
+ * Resolve once the selector exists in the DOM (or the timeout elapses).
+ * Keeps steps attached correctly after a route change, and lets a step whose
+ * target genuinely isn't rendered fall back to a centred card instead of
+ * pointing at nothing.
+ */
+function waitForElement(selector: string, timeout = 2500): Promise<void> {
+  return new Promise((resolve) => {
+    if (document.querySelector(selector)) {
+      resolve()
+      return
+    }
+    const start = Date.now()
+    const tick = () => {
+      if (document.querySelector(selector) || Date.now() - start > timeout) {
+        resolve()
+        return
+      }
+      requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  })
 }
 
+/** Navigate (if needed) and wait for the step's anchor before showing it. */
+function prepareStep(
+  navigate: (path: string) => void,
+  step: TourStepDef,
+  selector: string | null
+): () => Promise<void> {
+  return async () => {
+    if (step.path && normalizePath(window.location.pathname) !== normalizePath(step.path)) {
+      navigate(step.path)
+      // Let React Router swap the route and the page mount its first frame.
+      await delay(250)
+    }
+    if (selector) await waitForElement(selector)
+    await delay(60)
+  }
+}
+
+/**
+ * Build the walkthrough for a role.
+ *
+ * Steps are declared in `tourSteps.ts` — one tailored script per role
+ * (driver, company, admin) — and turned into Shepherd steps here, with
+ * navigation, anchor-waiting, progress counters and consistent buttons.
+ */
 export function createTour(role: UserRole, navigate: (path: string) => void): Tour {
   const tour = new Shepherd.Tour({
     useModalOverlay: true,
+    exitOnEsc: true,
+    keyboardNavigation: true,
     defaultStepOptions: {
       cancelIcon: { enabled: true },
       classes: 'loadlink-tour-step',
@@ -46,121 +94,40 @@ export function createTour(role: UserRole, navigate: (path: string) => void): To
     },
   })
 
-  const next = () => tour.next()
-  const back = () => tour.back()
-  const done = () => tour.complete()
+  const nextBtn = makeButton('Next', () => tour.next())
+  const backBtn = makeButton('Back', () => tour.back(), true)
+  const doneBtn = makeButton('Done', () => tour.complete())
+  const skipBtn = makeButton('Skip tour', () => tour.complete(), true)
 
-  const nextBtn = makeButton('Next →', next)
-  const backBtn = makeButton('← Back', back, true)
-  const doneBtn = makeButton('Done ✓', done)
-  const skipBtn = makeButton('Skip tour', done, true)
+  const steps = TOUR_STEPS[role] ?? []
+  const total = steps.length
 
-  const roleHome = role === 'driver' ? '/dashboard' : '/company/dashboard'
+  steps.forEach((step, index) => {
+    const selector = step.target ? `[data-tour="${step.target}"]` : null
+    const isFirst = index === 0
+    const isLast = index === total - 1
 
-  // ── Step 1: Welcome ──────────────────────────────────────────────────────────
-  tour.addStep({
-    id: 'welcome',
-    title: 'Welcome to LoadLink!',
-    text: `<p>Let's take a quick tour so you know your way around. This will only take a minute.</p>`,
-    beforeShowPromise: navStep(navigate, roleHome),
-    buttons: [skipBtn, nextBtn],
+    let buttons = [backBtn, nextBtn]
+    if (isFirst) buttons = [skipBtn, nextBtn]
+    else if (isLast) buttons = [backBtn, doneBtn]
+
+    tour.addStep({
+      id: step.id,
+      title: step.title,
+      text: `${step.text}<p class="shepherd-progress">Step ${index + 1} of ${total}</p>`,
+      ...(selector ? { attachTo: { element: selector, on: step.on ?? 'bottom' } } : {}),
+      beforeShowPromise: prepareStep(navigate, step, selector),
+      buttons,
+    })
   })
 
-  // ── Step 2: Sidebar ──────────────────────────────────────────────────────────
-  tour.addStep({
-    id: 'sidebar',
-    title: 'Navigation Sidebar',
-    text: '<p>This sidebar is your main navigation hub. Click the toggle icon at the top to collapse or expand it.</p>',
-    attachTo: { element: '[data-tour="sidebar"]', on: 'right' },
-    buttons: [backBtn, nextBtn],
-  })
-
-  // ── Role-specific nav steps ──────────────────────────────────────────────────
-  if (role === 'driver') {
-    tour.addStep({
-      id: 'nav-revenue',
-      title: 'Revenue Center',
-      text: '<p>Track your earnings, view profit/loss breakdowns, and manage your financial performance here.</p>',
-      attachTo: { element: '[data-tour="nav-/dashboard"]', on: 'right' },
-      beforeShowPromise: navStep(navigate, '/dashboard'),
-      buttons: [backBtn, nextBtn],
-    })
-
-    tour.addStep({
-      id: 'nav-loads',
-      title: 'My Loads',
-      text: '<p>Browse and manage loads assigned to you. Filter by eligibility, distance, weight, and more. Open the live map from any load row.</p>',
-      attachTo: { element: '[data-tour="nav-/driverLoads"]', on: 'right' },
-      beforeShowPromise: navStep(navigate, '/driverLoads'),
-      buttons: [backBtn, nextBtn],
-    })
-
-    tour.addStep({
-      id: 'nav-auctions',
-      title: 'Auctions',
-      text: '<p>Place bids on loads posted by companies. Live auctions update in real-time.</p>',
-      attachTo: { element: '[data-tour="nav-/driverAuctions"]', on: 'right' },
-      beforeShowPromise: navStep(navigate, '/driverAuctions'),
-      buttons: [backBtn, nextBtn],
-    })
-  } else {
-    // company role
-    tour.addStep({
-      id: 'nav-dashboard',
-      title: 'Dashboard',
-      text: '<p>Your company overview: active loads, spend metrics, and performance at a glance.</p>',
-      attachTo: { element: '[data-tour="nav-/company/dashboard"]', on: 'right' },
-      beforeShowPromise: navStep(navigate, '/company/dashboard'),
-      buttons: [backBtn, nextBtn],
-    })
-
-    tour.addStep({
-      id: 'nav-auctions',
-      title: 'Auctions',
-      text: '<p>Manage your live auctions and view all posted loads. Accept bids, set cap prices, and extend deadlines in real-time.</p>',
-      attachTo: { element: '[data-tour="nav-/company/auctions"]', on: 'right' },
-      beforeShowPromise: navStep(navigate, '/company/auctions'),
-      buttons: [backBtn, nextBtn],
-    })
+  // Return the user to their home screen when the tour ends mid-flow, so they
+  // never finish stranded on a page they were only shown as an example.
+  const goHome = () => {
+    const home = ROLE_HOME[role]
+    if (home && normalizePath(window.location.pathname) !== normalizePath(home)) navigate(home)
   }
-
-  // ── Messages (both roles) ────────────────────────────────────────────────────
-  tour.addStep({
-    id: 'nav-messages',
-    title: 'Messages',
-    text: '<p>Chat directly with drivers or companies about load details, check-ins, and coordination — all in one place.</p>',
-    attachTo: { element: '[data-tour="nav-/messages"]', on: 'right' },
-    beforeShowPromise: navStep(navigate, '/messages'),
-    buttons: [backBtn, nextBtn],
-  })
-
-  // ── Blocklist (both roles) ───────────────────────────────────────────────────
-  tour.addStep({
-    id: 'nav-blocklist',
-    title: 'Blocklist',
-    text: '<p>Manage your blocklist preferences to control which drivers or companies you work with.</p>',
-    attachTo: { element: '[data-tour="nav-/blocklist"]', on: 'right' },
-    beforeShowPromise: navStep(navigate, '/blocklist'),
-    buttons: [backBtn, nextBtn],
-  })
-
-  // ── Notifications ────────────────────────────────────────────────────────────
-  tour.addStep({
-    id: 'notifications',
-    title: 'Notifications',
-    text: '<p>Stay updated on bid activity, load assignments, and important alerts right here.</p>',
-    attachTo: { element: '[data-tour="notification-bell"]', on: 'right' },
-    buttons: [backBtn, nextBtn],
-  })
-
-  // ── Profile & Appearance ─────────────────────────────────────────────────────
-  tour.addStep({
-    id: 'nav-user',
-    title: 'Profile & Appearance',
-    text: '<p>Click your profile picture to access settings, switch between <strong>Light / Dark / System</strong> themes, and log out. You can also restart this tour from that menu anytime.</p>',
-    attachTo: { element: '[data-tour="nav-user"]', on: 'right' },
-    buttons: [backBtn, doneBtn],
-  })
+  tour.on('cancel', goHome)
 
   return tour
 }

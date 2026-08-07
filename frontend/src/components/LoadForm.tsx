@@ -66,7 +66,7 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
       <div className="min-w-0 p-2">
         <div className="flex flex-col gap-6 p-4">
           {/* Truck & Load Details */}
-          <Card>
+          <Card data-tour="load-form-details">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base font-semibold">
                 <Truck size={16} className="text-primary" />
@@ -227,7 +227,7 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
           </Card>
 
           {/* Route */}
-          <Card>
+          <Card data-tour="load-form-route">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base font-semibold">
                 <MapPin size={16} className="text-primary" />
@@ -342,7 +342,7 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
           </Card>
 
           {/* Pricing & Auction Settings */}
-          <Card>
+          <Card data-tour="load-form-pricing">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base font-semibold">
                 <TrendingUp size={16} className="text-primary" />
@@ -498,7 +498,7 @@ export function LoadForm({ initialValues, onSubmit, isSubmitting }: LoadFormProp
       {/* Load Summary sidebar */}
       <div className="min-w-0 p-2">
         <div className="p-4">
-          <Card className="lg:sticky lg:top-4">
+          <Card className="lg:sticky lg:top-4" data-tour="load-form-summary">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-semibold">Load Summary</CardTitle>
             </CardHeader>

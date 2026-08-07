@@ -136,7 +136,9 @@ export default function CompanyProfile() {
           <Col size={4}>
             <Row>
               <Col size={16}>
-                <CompanyInfoCard company={company} onEdit={() => setInfoDrawerOpen(true)} />
+                <div data-tour="profile-info">
+                  <CompanyInfoCard company={company} onEdit={() => setInfoDrawerOpen(true)} />
+                </div>
               </Col>
             </Row>
             <Row>
@@ -150,10 +152,12 @@ export default function CompanyProfile() {
           <Col size={12}>
             <Row>
               <Col size={16}>
-                <BusinessDocumentsCard
-                  documents={company.businessDocuments ?? []}
-                  onEdit={() => setInfoDrawerOpen(true)}
-                />
+                <div data-tour="profile-documents">
+                  <BusinessDocumentsCard
+                    documents={company.businessDocuments ?? []}
+                    onEdit={() => setInfoDrawerOpen(true)}
+                  />
+                </div>
               </Col>
             </Row>
           </Col>

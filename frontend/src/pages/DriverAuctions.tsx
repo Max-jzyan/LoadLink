@@ -533,6 +533,7 @@ export default function DriverAuctions() {
             aiActive={aiTriggered}
           />
           <div
+            data-tour="use-location"
             className={cn(
               'flex items-center gap-2 mt-2 rounded-md border px-3 py-2 transition-colors',
               location ? 'location-container-active' : 'border-transparent'
@@ -574,6 +575,7 @@ export default function DriverAuctions() {
         {/* left panel: scrollable load feed */}
         <div
           ref={loadFeedRef}
+          data-tour="load-feed"
           className="flex-[5] min-w-0 lg:min-w-[400px] overflow-y-auto h-full space-y-2 pl-1 pr-1 pt-2 pb-2"
         >
           {/* AI insight banner — mounts only when user clicks the sparkles button */}
@@ -638,7 +640,10 @@ export default function DriverAuctions() {
         </div>
 
         {/* right panel: map + AI panels + details (desktop) */}
-        <div className="hidden lg:flex flex-[11] min-w-0 flex-col space-y-2 pt-2 pb-2">
+        <div
+          data-tour="auction-map-panel"
+          className="hidden lg:flex flex-[11] min-w-0 flex-col space-y-2 pt-2 pb-2"
+        >
           {renderMapCard(true)}
           {aiTriggered && (
             <>

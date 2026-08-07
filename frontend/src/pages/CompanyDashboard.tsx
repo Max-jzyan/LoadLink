@@ -170,7 +170,7 @@ export default function CompanyDashboard() {
             <RefreshCw className={isFetching ? 'animate-spin' : ''} />
           </Button>
           <Button asChild>
-            <Link to={RoutePath.PostLoad}>
+            <Link to={RoutePath.PostLoad} data-tour="post-load-btn">
               <Plus />
               Post New Load
             </Link>

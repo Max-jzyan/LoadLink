@@ -47,7 +47,9 @@ export default function LoadsPageLayout({
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{statsCards}</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" data-tour="stats-cards">
+          {statsCards}
+        </div>
       )}
 
       {/* ── Table Row ── */}
@@ -64,22 +66,26 @@ export default function LoadsPageLayout({
           </div>
         </div>
       ) : (
-        <div className="min-h-[300px] min-w-0">{table}</div>
+        <div className="min-h-[300px] min-w-0" data-tour="loads-table">
+          {table}
+        </div>
       )}
 
       {/* ── Map Row ── */}
-      <DynamicCard title="Map" action={mapAction}>
-        {isLoading ? (
-          <div
-            className="flex items-center justify-center bg-muted/30 rounded-md"
-            style={{ height: mapHeight }}
-          >
-            <div className="text-xs text-muted-foreground">Loading map…</div>
-          </div>
-        ) : (
-          <div style={{ height: mapHeight }}>{map}</div>
-        )}
-      </DynamicCard>
+      <div data-tour="loads-map">
+        <DynamicCard title="Map" action={mapAction}>
+          {isLoading ? (
+            <div
+              className="flex items-center justify-center bg-muted/30 rounded-md"
+              style={{ height: mapHeight }}
+            >
+              <div className="text-xs text-muted-foreground">Loading map…</div>
+            </div>
+          ) : (
+            <div style={{ height: mapHeight }}>{map}</div>
+          )}
+        </DynamicCard>
+      </div>
     </div>
   )
 }

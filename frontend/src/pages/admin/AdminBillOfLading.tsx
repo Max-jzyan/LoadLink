@@ -114,7 +114,7 @@ export default function AdminBillOfLading() {
         </Button>
       }
     >
-      <div className="mb-4">
+      <div className="mb-4" data-tour="admin-doc-search">
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input

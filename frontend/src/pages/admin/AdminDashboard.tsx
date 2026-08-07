@@ -163,13 +163,13 @@ export default function AdminDashboard() {
     <PageShell title="Admin Dashboard" subtitle="Platform overview and quick actions">
       {/* KPI strip */}
       {statsLoading ? (
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3" data-tour="admin-kpis">
           {Array.from({ length: 6 }).map((_, i) => (
             <StatChipSkeleton key={i} />
           ))}
         </div>
       ) : (
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3" data-tour="admin-kpis">
           <StatChip
             label="Total Revenue"
             value={stats?.totalRevenue}
@@ -191,12 +191,12 @@ export default function AdminDashboard() {
       )}
 
       {/* Trends chart */}
-      <div className="mt-6">
+      <div className="mt-6" data-tour="admin-analytics">
         <AdminAnalyticsPanel />
       </div>
 
       {/* Platform insights */}
-      <div className="mt-8">
+      <div className="mt-8" data-tour="admin-insights">
         <SectionLabel>Platform Insights</SectionLabel>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <TopCompaniesCard companies={insights?.topCompanies ?? []} isLoading={insightsLoading} />
@@ -206,13 +206,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* Activity + quick actions */}
-      <div className="mt-8">
+      <div className="mt-8" data-tour="admin-activity">
         <SectionLabel>Activity & Quick Actions</SectionLabel>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
             <ActivityCard activity={insights?.activity} isLoading={insightsLoading} />
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4" data-tour="admin-quick-actions">
             <DynamicCard className="rounded-2xl ring-1 ring-foreground/10" noBorder>
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10 shrink-0">
@@ -257,7 +257,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Documents */}
-      <div className="mt-8">
+      <div className="mt-8" data-tour="admin-docs-preview">
         <SectionLabel>Documents</SectionLabel>
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <DynamicCard

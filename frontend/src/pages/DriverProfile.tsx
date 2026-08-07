@@ -284,7 +284,9 @@ export default function DriverProfile() {
           <Col size={4}>
             <Row>
               <Col size={16}>
-                <DriverInfoCard driver={driver} onEdit={() => setDriverInfoDrawerOpen(true)} />
+                <div data-tour="profile-info">
+                  <DriverInfoCard driver={driver} onEdit={() => setDriverInfoDrawerOpen(true)} />
+                </div>
               </Col>
             </Row>
             <Row>
@@ -303,11 +305,13 @@ export default function DriverProfile() {
           <Col size={12}>
             <Row>
               <Col size={16}>
-                <TruckInfoCard
-                  driver={driver}
-                  onAddTruck={handleAddTruck}
-                  onEditTruck={handleEditTruck}
-                />
+                <div data-tour="profile-trucks">
+                  <TruckInfoCard
+                    driver={driver}
+                    onAddTruck={handleAddTruck}
+                    onEditTruck={handleEditTruck}
+                  />
+                </div>
               </Col>
             </Row>
             <Row>
@@ -321,12 +325,19 @@ export default function DriverProfile() {
             </Row>
             <Row>
               <Col size={16}>
-                <PricingPreferencesCard driver={driver} onSave={handlePricingSave} />
+                <div data-tour="profile-pricing">
+                  <PricingPreferencesCard driver={driver} onSave={handlePricingSave} />
+                </div>
               </Col>
             </Row>
             <Row>
               <Col size={16}>
-                <ScoreWeightsCard driver={driver} onEdit={() => setScoreWeightsDrawerOpen(true)} />
+                <div data-tour="profile-score-weights">
+                  <ScoreWeightsCard
+                    driver={driver}
+                    onEdit={() => setScoreWeightsDrawerOpen(true)}
+                  />
+                </div>
               </Col>
             </Row>
           </Col>

@@ -160,7 +160,7 @@ export default function AdminUsers() {
   return (
     <PageShell title="Users" subtitle={`${filtered.length} users`}>
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4" data-tour="admin-user-filters">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -198,7 +198,7 @@ export default function AdminUsers() {
       </div>
 
       {isLoading ? (
-        <div className="rounded-xl border">
+        <div className="rounded-xl border" data-tour="admin-users-table">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 px-4 py-3 border-b last:border-b-0">
               <Skeleton className="h-8 w-8 rounded-full shrink-0" />
@@ -213,73 +213,75 @@ export default function AdminUsers() {
           ))}
         </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={filtered}
-          getId={(user) => user._id}
-          drawerTitle={(user) => user.name}
-          drawerFields={[
-            { label: 'Email', renderValue: (u) => u.email },
-            { label: 'Phone', renderValue: (u) => u.phone || '—' },
-            { label: 'Role', renderValue: (u) => ROLE_BADGES[u.role] ?? u.role },
-            { label: 'Status', renderValue: (u) => <StatusBadge isBanned={u.isBanned} /> },
-            { label: 'Joined', renderValue: (u) => formatDateTime(u.createdAt) },
-            {
-              label: 'Last Active',
-              renderValue: (u) => (u.lastActiveAt ? formatDateTime(u.lastActiveAt) : 'Never'),
-            },
-            {
-              label: 'Banned At',
-              renderValue: (u) => (u.isBanned && u.bannedAt ? formatDateTime(u.bannedAt) : '—'),
-            },
-            {
-              label: 'Ban Reason',
-              renderValue: (u) => (u.isBanned ? u.bannedReason || '—' : '—'),
-            },
-          ]}
-          drawerFooter={(user, { onClose }) => {
-            const isSelf = user._id === adminId
-            const isAdmin = user.role === 'admin'
-            return (
-              <div className="flex w-full flex-wrap items-center justify-end gap-2">
-                {!isAdmin && !isSelf && (
-                  <>
-                    {user.isBanned ? (
+        <div data-tour="admin-users-table">
+          <DataTable
+            columns={columns}
+            data={filtered}
+            getId={(user) => user._id}
+            drawerTitle={(user) => user.name}
+            drawerFields={[
+              { label: 'Email', renderValue: (u) => u.email },
+              { label: 'Phone', renderValue: (u) => u.phone || '—' },
+              { label: 'Role', renderValue: (u) => ROLE_BADGES[u.role] ?? u.role },
+              { label: 'Status', renderValue: (u) => <StatusBadge isBanned={u.isBanned} /> },
+              { label: 'Joined', renderValue: (u) => formatDateTime(u.createdAt) },
+              {
+                label: 'Last Active',
+                renderValue: (u) => (u.lastActiveAt ? formatDateTime(u.lastActiveAt) : 'Never'),
+              },
+              {
+                label: 'Banned At',
+                renderValue: (u) => (u.isBanned && u.bannedAt ? formatDateTime(u.bannedAt) : '—'),
+              },
+              {
+                label: 'Ban Reason',
+                renderValue: (u) => (u.isBanned ? u.bannedReason || '—' : '—'),
+              },
+            ]}
+            drawerFooter={(user, { onClose }) => {
+              const isSelf = user._id === adminId
+              const isAdmin = user.role === 'admin'
+              return (
+                <div className="flex w-full flex-wrap items-center justify-end gap-2">
+                  {!isAdmin && !isSelf && (
+                    <>
+                      {user.isBanned ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={isUnbanning}
+                          onClick={() => unbanUser({ userId: user._id })}
+                        >
+                          <ShieldOff className="h-4 w-4" />
+                          Unban User
+                        </Button>
+                      ) : (
+                        <Button variant="destructive" size="sm" onClick={() => setBanTarget(user)}>
+                          <Ban className="h-4 w-4" />
+                          Ban User
+                        </Button>
+                      )}
                       <Button
-                        variant="outline"
+                        variant="destructive"
                         size="sm"
-                        disabled={isUnbanning}
-                        onClick={() => unbanUser({ userId: user._id })}
+                        onClick={() => {
+                          setDeleteTarget(user)
+                          onClose()
+                        }}
                       >
-                        <ShieldOff className="h-4 w-4" />
-                        Unban User
+                        <Trash2 className="h-4 w-4" />
+                        Delete User
                       </Button>
-                    ) : (
-                      <Button variant="destructive" size="sm" onClick={() => setBanTarget(user)}>
-                        <Ban className="h-4 w-4" />
-                        Ban User
-                      </Button>
-                    )}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        setDeleteTarget(user)
-                        onClose()
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete User
-                    </Button>
-                  </>
-                )}
-                <Button variant="ghost" size="sm" onClick={onClose}>
-                  Close
-                </Button>
-              </div>
-            )
-          }}
-        />
+                    </>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={onClose}>
+                    Close
+                  </Button>
+                </div>
+              )
+            }}
+          />
+        </div>
       )}
 
       <BanUserDialog user={banTarget} onOpenChange={(open) => !open && setBanTarget(null)} />

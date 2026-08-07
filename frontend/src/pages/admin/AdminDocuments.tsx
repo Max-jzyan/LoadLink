@@ -465,7 +465,7 @@ export default function AdminDocuments() {
       subtitle="Review driver insurance certificates and certification documents"
     >
       {/* Search + filter bar */}
-      <div className="mb-4 space-y-3">
+      <div className="mb-4 space-y-3" data-tour="admin-doc-filters">
         <div className="flex items-center gap-2">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -480,7 +480,7 @@ export default function AdminDocuments() {
         </div>
 
         {/* Expiry filter tabs */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" data-tour="admin-doc-expiry-tabs">
           {filterTabs.map((tab) => (
             <button
               key={tab.key}
@@ -517,13 +517,13 @@ export default function AdminDocuments() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2">
+        <div className="space-y-2" data-tour="admin-doc-list">
           {Array.from({ length: 4 }).map((_, i) => (
             <DriverRowSkeleton key={i} />
           ))}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2" data-tour="admin-doc-list">
           {filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground italic text-center py-8">
               No drivers found.

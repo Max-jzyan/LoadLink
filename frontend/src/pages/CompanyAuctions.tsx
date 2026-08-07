@@ -168,7 +168,7 @@ export default function CompanyAuctions() {
             <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
           </Button>
           <Button size="sm" asChild>
-            <Link to={RoutePath.PostLoad}>
+            <Link to={RoutePath.PostLoad} data-tour="post-load-btn">
               <Plus className="h-4 w-4 mr-1" />
               Post New Load
             </Link>
@@ -203,7 +203,7 @@ export default function CompanyAuctions() {
         </div>
       )}
       {!isLoading && filtered.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-2" data-tour="auction-list">
           {filtered.map((auction) => {
             const load = typeof auction.loadId === 'object' ? auction.loadId : null
             const loadId = load?._id ?? String(auction.loadId)

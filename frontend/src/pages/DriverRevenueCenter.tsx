@@ -176,6 +176,7 @@ export default function DriverRevenueCenter() {
             size="icon"
             onClick={() => setGlobalDrawerOpen(true)}
             title="Expense Settings"
+            data-tour="expense-settings"
           >
             <Settings2 />
           </Button>
@@ -195,17 +196,25 @@ export default function DriverRevenueCenter() {
       />
 
       <div className="space-y-6">
-        <RevenueSummaryCards revenue={revenue} viewMode={viewMode} />
+        <div data-tour="revenue-summary">
+          <RevenueSummaryCards revenue={revenue} viewMode={viewMode} />
+        </div>
 
-        <RevenueStatsRow revenue={revenue} viewMode={viewMode} />
+        <div data-tour="revenue-stats">
+          <RevenueStatsRow revenue={revenue} viewMode={viewMode} />
+        </div>
 
-        <RevenueChartGrid loadBreakdown={revenue.loadBreakdown ?? []} viewMode={viewMode} />
+        <div data-tour="revenue-charts">
+          <RevenueChartGrid loadBreakdown={revenue.loadBreakdown ?? []} viewMode={viewMode} />
+        </div>
 
-        <RevenueTable
-          loadBreakdown={revenue.loadBreakdown ?? []}
-          onPerLoadSaved={handlePerLoadSaved}
-          viewMode={viewMode}
-        />
+        <div data-tour="revenue-table">
+          <RevenueTable
+            loadBreakdown={revenue.loadBreakdown ?? []}
+            onPerLoadSaved={handlePerLoadSaved}
+            viewMode={viewMode}
+          />
+        </div>
       </div>
     </PageShell>
   )
