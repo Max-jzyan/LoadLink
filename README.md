@@ -33,7 +33,7 @@ The [M1 design document](docs/M1_Document.pdf) scoped three **non-trivial featur
 - The rating/preferences idea became a full public profile + review system for both drivers and companies, plus a blocklist and fraud/inaccuracy reporting hub.
 - The map system became real Leaflet/OpenStreetMap route visualization with delivery timelines and a GPS checkpoint-based Driver Check-In flow.
 
-**Exceeded scope** with several features that were never in the original M1 plan: a custom multi-factor load recommendation & eligibility scoring engine for drivers, an admin portal (document verification, user bans, rate-confirmation and BOL review), in-app messaging between companies and drivers, schedule-conflict detection on bids, auto-generated PDF rate confirmations with AWS S3 storage, and AI-assisted route insights (fuel stops / rest areas) via OpenRouter.
+**Exceeded scope** with several features that were never in the original M1 plan: a custom multi-factor load recommendation & eligibility scoring engine for drivers, an admin portal (document verification, user bans, rate-confirmation and BOL review), in-app messaging between companies and drivers, schedule-conflict detection on bids, auto-generated PDF rate confirmations with AWS S3 storage.
 
 **Deviated from plan** in two ways:
 
@@ -44,7 +44,7 @@ The Canada-only, single-currency scope from M1 was kept as planned.
 
 ## Key Features
 
-Screenshots below are from the seeded demo data. Core, most non-trivial features first.
+Screenshots below are from the seeded demo data. 
 
 ### 1. Time-Decay Reverse Auction System
 
@@ -100,7 +100,6 @@ Drivers get the same treatment on the earnings side: total revenue, expenses, ne
 | In-App Messaging                         | **Completed** _(added scope)_                          | Per-load message threads between the assigned driver and company                                                        |
 | Schedule Conflict Detection              | **Completed** _(added scope)_                          | Warns a driver of overlapping assignments when bidding/claiming                                                         |
 | Bill of Lading / Proof of Delivery       | **Completed**                                          | PDF generation plus driver upload and admin review flow finished in Milestone 5 (was in progress at M4)                 |
-| AI-Assisted Route Insights               | **Completed** _(originally a stretch goal)_            | OpenRouter-powered fuel stop / rest area suggestions, with a static checkpoint fallback when the AI call is unavailable |
 | Live Driver GPS Location Tracking        | **Dropped**                                            | Descoped in the M1 peer-feedback session over privacy/scope concerns; replaced by the Driver Check-In checkpoint flow   |
 | AI Price Suggestion                      | **Dropped**                                            | Stretch goal to recommend bid/asking prices via a custom ML model; decided against automated price suggestions          |
 
@@ -319,13 +318,17 @@ Milestone 5 was a stabilization and polish pass rather than a new-feature milest
 - **Responsive fix** — long company names no longer break layout on auction/load cards.
 - **Docker cleanup** — added `.dockerignore` files for both frontend and backend to keep build contexts and images smaller.
 - **Backend test suite grew** from 22 to 26 Jest test files (message controller/service, additional coverage across existing suites).
-- A Docker-based CI test step was attempted (`c9a09df`) but reverted (`3909220`) after it proved unreliable; CI continues to run tests outside Docker.
+- **Frontend test suite** - our new frontend test suite tests our API endpoints.
 
 No features were dropped in Milestone 5.
 
 ### Test Plan
 
-Milestone 5 reused the [Milestone 4 Test Plan](docs/TestPlan%20M4.md) — its scope covers the current feature set with no functional changes in M5.
+[Milestone 5 Test Plan](docs/TestPlan%20M5.md) covers what changed in M5 specifically. This is additive to the M2–M4 plans, which remain the regression baseline for everything else.
+
+For a single pass that exercises the whole product end to end (rather than stepping through each milestone's plan in sequence), use the consolidated [End-to-End Test Plan](docs/TestPlan%20E2E.md). 
+
+
 
 ---
 
@@ -432,7 +435,7 @@ npm run format:check # check formatting
 
 ### Note: You can create your own accounts and everything, however, we have pre seeded some to be able to follow our test plan.
 
-1. Clone `Milestone3` branch
+1. Clone `FinalRelease` branch
 2. Put `.env` into project root AND `./backend/.env`
 3. `docker compose up --build`
 4. Open `http://localhost:3000` (healthcheck is on `http://localhost:5001/api/health`)
