@@ -24,6 +24,13 @@ const ACTIVE_LOAD_IDS = [
   new Types.ObjectId('000000000000000000000116'),
   new Types.ObjectId('000000000000000000000117'),
   new Types.ObjectId('000000000000000000000118'),
+  // Demo load: hand-tuned to score very high (~83/100) for testUser1 in the
+  // driver recommendation engine — origin matches testUser1's current known
+  // location (Vancouver, destination of completed load 119) for zero deadhead,
+  // Reefer truck type + ReeferHACCP cert matches testUser1's second truck,
+  // and price is set well above testUser1's rate/value minimums. No bids
+  // seeded so it stays fresh for a live "place a bid" demo moment.
+  new Types.ObjectId('000000000000000000000127'),
 ]
 
 // Historical completed load ObjectIds — these simulate prior hauls.
@@ -359,6 +366,26 @@ export async function seedLoads({
       certifications: [],
       driverAssist: false,
     },
+    // Load 127: Vancouver -> Abbotsford (company1, demo load — very high match for testUser1)
+    // createdAt is bumped a couple minutes into the future (relative to seed
+    // run time) so it deterministically sorts first in the createdAt-desc
+    // company load table, regardless of Promise.all creation-order jitter.
+    {
+      companyId: companies.testCompany1._id,
+      createdAt: new Date(Date.now() + 2 * 60 * 1000),
+      originAddress: 'Vancouver, BC',
+      destinationAddress: 'Abbotsford, BC',
+      originCoords: { lat: 49.2827, lng: -123.1207 },
+      destinationCoords: { lat: 49.0504, lng: -122.3045 },
+      pickupTime: addDays(0, 18, 0),
+      dropoffTime: addDays(0, 22, 0),
+      weightLbs: 16000,
+      commodity: 'Apples',
+      truckType: TRUCK_TYPES.Reefer,
+      trailerLengthFt: 48,
+      certifications: [CERTIFICATIONS.ReeferHACCP],
+      driverAssist: false,
+    },
   ]
 
   const completedLoads = [
@@ -527,6 +554,7 @@ export async function seedLoads({
         certifications: load.certifications,
         driverAssist: load.driverAssist,
         status: LOAD_STATUSES.AuctionLive,
+        ...('createdAt' in load ? { createdAt: (load as { createdAt: Date }).createdAt } : {}),
       })
     )
   )

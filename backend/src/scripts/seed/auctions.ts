@@ -22,6 +22,7 @@ const AUCTION_ID_BY_LOAD: Record<string, string> = {
   '000000000000000000000116': '000000000000000000000216',
   '000000000000000000000117': '000000000000000000000217',
   '000000000000000000000118': '000000000000000000000218',
+  '000000000000000000000127': '000000000000000000000227',
   // Completed loads (historical hauls)
   '000000000000000000000119': '000000000000000000000219',
   '000000000000000000000120': '000000000000000000000220',
@@ -55,6 +56,9 @@ const AUCTION_PRICING_BY_LOAD: Record<
   '000000000000000000000116': { startPrice: 640, capPrice: 980, currentPrice: 700 },
   '000000000000000000000117': { startPrice: 1450, capPrice: 2050, currentPrice: 1540 },
   '000000000000000000000118': { startPrice: 880, capPrice: 1320, currentPrice: 950 },
+  // Demo load 127: priced well above testUser1's rate/value minimums to
+  // push rateScore and valueScore near their caps.
+  '000000000000000000000127': { startPrice: 3200, capPrice: 4200, currentPrice: 3200 },
   // Completed loads (historical hauls) — currentPrice reflects the final settled price
   '000000000000000000000119': { startPrice: 2700, capPrice: 3000, currentPrice: 2850 },
   '000000000000000000000120': { startPrice: 1600, capPrice: 1900, currentPrice: 1750 },
