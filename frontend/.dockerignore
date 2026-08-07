@@ -6,3 +6,12 @@ dist
 !.env.example
 *.log
 README.md
+
+# tests
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/__tests__/
+src/test/
+vitest.config.ts

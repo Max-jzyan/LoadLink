@@ -6,3 +6,9 @@ dist
 !.env.template
 *.log
 coverage
+
+# tests
+**/*.test.ts
+**/__tests__/
+**/tests/
+jest.config.ts
