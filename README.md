@@ -17,6 +17,93 @@ Eojin Lee (25508730)
 
 Truck driving management system designed to streamline the logistics of cargo transport through auction-based marketplace. Our platform allows companies to post freight requirements that drivers can accept through a bidding system.
 
+## Goals
+
+### Original Goals (M0/M1)
+
+LoadLink set out to be a truck driving management system that streamlines cargo transport logistics through an auction-based marketplace. Companies post freight, drivers compete for it through a reverse auction (price starts low and creeps up over time until a driver accepts or the deadline hits), inspired by Uber Courier's direct marketplace model, eBay's competitive bidding, and uShip's trust-building reviews.
+
+The [M1 design document](docs/M1_Document.pdf) scoped three **non-trivial features** including a time-decay reverse auction system, a map/routing system, and a rating/preferences system. While **standard features** included role-based auth, load posting CRUD, search/filter/pagination, profile & fleet management, a bidding interface, a notification system, and separate dashboards for drivers and companies. The MVP was deliberately scoped to Canada-only travel, and the M1 peer-feedback session pushed us to scale back live GPS tracking of drivers in favor of a lighter-weight and privacy-conscious approach.
+
+### How the Final Application Compares
+
+**Met or exceeded every original goal.** All non-trivial and standard features from M1 shipped:
+
+- The reverse auction system grew from a simple price-creep concept into a full heartbeat-driven pricing engine with SSE live updates, auto-accept, and company-side auction controls (extend deadline, edit cap, cancel/reopen).
+- The rating/preferences idea became a full public profile + review system for both drivers and companies, plus a blocklist and fraud/inaccuracy reporting hub.
+- The map system became real Leaflet/OpenStreetMap route visualization with delivery timelines and a GPS checkpoint-based Driver Check-In flow.
+
+**Exceeded scope** with several features that were never in the original M1 plan: a custom multi-factor load recommendation & eligibility scoring engine for drivers, an admin portal (document verification, user bans, rate-confirmation and BOL review), in-app messaging between companies and drivers, schedule-conflict detection on bids, auto-generated PDF rate confirmations with AWS S3 storage, and AI-assisted route insights (fuel stops / rest areas) via OpenRouter.
+
+**Deviated from plan** in two ways:
+
+- **Live GPS driver tracking was dropped**, exactly as flagged in the M1 peer-feedback session, it was judged out of scope for the core product and a privacy risk. It was replaced by the Driver Check-In system: drivers confirm their position at generated route checkpoints instead of being tracked continuously.
+- **AI Price Suggestion** (a custom ML model to recommend bid/asking prices) was scoped as a stretch goal but ultimately closed as we decided against automating price recommendations.
+
+The Canada-only, single-currency scope from M1 was kept as planned.
+
+## Key Features
+
+Screenshots below are from the seeded demo data. Core, most non-trivial features first.
+
+### 1. Time-Decay Reverse Auction System
+
+The heart of LoadLink: a company posts a load at a starting price that automatically creeps upward every hour (or on whatever cadence the company sets) until a driver accepts it, places a winning bid, or the deadline passes and the best bid auto-accepts. Everything updates live over Server-Sent Events with no polling or refresh needed.
+
+**Company view**: live bids ranked best-first, one-click accept, and controls to extend the deadline, raise the price cap, or cancel/reopen the auction:
+
+![Company auction control panel showing live bids and auction controls](docs/screenshots/reverse-auction-company.png)
+
+**Driver view**: the same auction from the bidding side: current price, price-creep rate, route preview, and the option to accept the current price instantly or place a lower bid:
+
+![Driver auction detail page showing the live price and bid form](docs/screenshots/reverse-auction-driver.png)
+
+### 2. Load Recommendation & Eligibility Engine
+
+Drivers see every open load and each one is scored 0–100 against the driver's truck, certifications, schedule, and rate preferences, with critical/minor eligibility flags surfaced directly on the card. Recommended loads are ranked best-first, and the routes for everything on the page are plotted on the map alongside the list.
+
+![Driver auctions browser showing eligibility scores, live auction badges, and a route map](docs/screenshots/eligibility-recommendations.png)
+
+### 3. Company Spend Analytics
+
+Beyond the basic loads table, companies get a full analytics view of what they've spent and committed to spend, broken down over time and by route, so they can see cost trends at a glance.
+
+![Company dashboard spending analytics with spend-over-time and spend-by-route charts](docs/screenshots/company-spend-analytics.png)
+
+### 4. Driver Revenue Center
+
+Drivers get the same treatment on the earnings side: total revenue, expenses, net profit, and profit margin, with charts breaking profit down by route and by distance so a driver can tell which lanes are worth taking.
+
+![Driver revenue center showing revenue, expenses, profit margin, and profit-by-route chart](docs/screenshots/driver-revenue-center.png)
+
+### Other notable features (no screenshot)
+
+- **In-app messaging** between a company and the driver assigned to its load, once a load is booked
+- **Driver Check-In** - GPS checkpoint confirmation along a route, the privacy-conscious replacement for live tracking
+- **Schedule conflict detection** - warns a driver if a bid or claim overlaps an existing assignment
+- **Admin portal** - document verification, rate-confirmation and Bill of Lading review, user bans, and report review
+- **Blocklist & report system** - block a company/driver from your feed, or report fraud/inaccurate listings
+- **Public driver & company profiles** with star ratings and written reviews
+- **Auto-generated PDF rate confirmations**, uploaded to AWS S3 with a presigned download link
+
+## Non-Trivial Features — Final Status
+
+| Feature                                  | Status                                                 | Notes                                                                                                                   |
+| ---------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| Time Decay Reverse Auction System        | **Completed**                                          | Heartbeat pricing engine, SSE live bid/price streaming, auto-accept, full company auction controls                      |
+| Map / Route Visualization                | **Completed**                                          | Leaflet + OpenStreetMap route rendering, delivery timelines; pivoted from a live-tracking design (see below)            |
+| Rating & Review System                   | **Completed**                                          | Public driver/company profiles with star ratings and written reviews                                                    |
+| Load Recommendation & Eligibility Engine | **Completed** _(added scope, not in original M1 plan)_ | Multi-factor 0–100 scoring, critical/minor eligibility flags, detailed breakdown panel                                  |
+| Blocklist & Report System                | **Completed** _(added scope)_                          | Block companies/drivers from feeds; report fraud or inaccurate listings, reviewed by admins                             |
+| Admin Portal                             | **Completed** _(added scope)_                          | Document verification, user ban/delete, rate-confirmation and Bill of Lading review, report review                      |
+| PDF Rate Confirmation + AWS S3 Storage   | **Completed** _(originally a stretch goal)_            | Auto-generated on auction close, uploaded to S3, presigned download URL                                                 |
+| In-App Messaging                         | **Completed** _(added scope)_                          | Per-load message threads between the assigned driver and company                                                        |
+| Schedule Conflict Detection              | **Completed** _(added scope)_                          | Warns a driver of overlapping assignments when bidding/claiming                                                         |
+| Bill of Lading / Proof of Delivery       | **Completed**                                          | PDF generation plus driver upload and admin review flow finished in Milestone 5 (was in progress at M4)                 |
+| AI-Assisted Route Insights               | **Completed** _(originally a stretch goal)_            | OpenRouter-powered fuel stop / rest area suggestions, with a static checkpoint fallback when the AI call is unavailable |
+| Live Driver GPS Location Tracking        | **Dropped**                                            | Descoped in the M1 peer-feedback session over privacy/scope concerns; replaced by the Driver Check-In checkpoint flow   |
+| AI Price Suggestion                      | **Dropped**                                            | Stretch goal to recommend bid/asking prices via a custom ML model; decided against automated price suggestions          |
+
 ## Milestone 1
 
 [Milestone 1 PDF Document](docs/M1_Document.pdf)
@@ -219,6 +306,26 @@ Frontend automated tests are not yet implemented.
 ### Test Plan
 
 [Milestone 4 Test Plan](docs/TestPlan%20M4.md)
+
+---
+
+## Milestone 5
+
+Milestone 5 was a stabilization and polish pass rather than a new-feature milestone, no non-trivial or standard features were added or removed. Highlights:
+
+- **Bill of Lading upload finished** — the driver-facing BOL upload button (in progress at M4) was completed and fixed, closing out the Bill of Lading / Proof of Delivery workflow end to end.
+- **SSE connection leak fixed** — the auction price/bid event stream is now properly killed when a subscribing component unmounts, instead of continuing to run in the background.
+- **Dialog state bugs fixed** — dialogs across the app now reliably reset their internal state on close (`d3a4ea9`), and a debounce change on the auctions filter bar that had broken dialog behavior was reverted/fixed (`85898fa`, `22b0679`).
+- **Responsive fix** — long company names no longer break layout on auction/load cards.
+- **Docker cleanup** — added `.dockerignore` files for both frontend and backend to keep build contexts and images smaller.
+- **Backend test suite grew** from 22 to 26 Jest test files (message controller/service, additional coverage across existing suites).
+- A Docker-based CI test step was attempted (`c9a09df`) but reverted (`3909220`) after it proved unreliable; CI continues to run tests outside Docker.
+
+No features were dropped in Milestone 5.
+
+### Test Plan
+
+Milestone 5 reused the [Milestone 4 Test Plan](docs/TestPlan%20M4.md) — its scope covers the current feature set with no functional changes in M5.
 
 ---
 
