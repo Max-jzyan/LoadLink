@@ -130,6 +130,8 @@ export const ROUTE_CONFIG: Record<RoutePath, RouteMeta> = {
     icon: PlusCircle,
     navGroup: null,
     roles: ['company'],
+    hideBreadcrumb: true,
+    headerBackFallback: RoutePath.CompanyAuctions,
   },
   [RoutePath.LoadDetail]: {
     label: 'Load Detail',
