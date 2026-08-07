@@ -7,11 +7,8 @@ import {
   getFetchCalls,
   resetFetchCalls,
 } from './helpers'
-import { api } from '../api'
 import { favoriteAddressApi } from '../favoriteAddressApi/favoriteAddressSlice'
 import { __setCachedTokenForTests } from '../api'
-
-void favoriteAddressApi
 
 function lastCall() {
   const calls = getFetchCalls()
@@ -45,7 +42,7 @@ describe('favoriteAddressApi endpoints', () => {
     it('[URL] GET favorite-addresses/:companyId', async () => {
       mockFetchResponse({ status: 200, body: [favoriteAddress()] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getFavoriteAddresses.initiate('company-1'))
+      await store.dispatch(favoriteAddressApi.endpoints.getFavoriteAddresses.initiate('company-1'))
       expect(lastCall().url).toContain('/api/favorite-addresses/company-1')
       expect(lastCall().method).toBe('GET')
     })
@@ -54,15 +51,15 @@ describe('favoriteAddressApi endpoints', () => {
       await seedToken('fav-token')
       mockFetchResponse({ status: 200, body: [] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getFavoriteAddresses.initiate('company-1'))
+      await store.dispatch(favoriteAddressApi.endpoints.getFavoriteAddresses.initiate('company-1'))
       expect(lastCall().headers['authorization']).toBe('Bearer fav-token')
     })
 
     it('[Success] data lands in cache', async () => {
       mockFetchResponse({ status: 200, body: [favoriteAddress()] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getFavoriteAddresses.initiate('company-1'))
-      const state = api.endpoints.getFavoriteAddresses.select('company-1')(store.getState())
+      await store.dispatch(favoriteAddressApi.endpoints.getFavoriteAddresses.initiate('company-1'))
+      const state = favoriteAddressApi.endpoints.getFavoriteAddresses.select('company-1')(store.getState())
       expect(state.data).toHaveLength(1)
       expect(state.data?.[0]?._id).toBe('addr-1')
     })
@@ -70,8 +67,8 @@ describe('favoriteAddressApi endpoints', () => {
     it('[Error] 500 sets error state', async () => {
       mockFetchResponse({ status: 500, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getFavoriteAddresses.initiate('company-1'))
-      const state = api.endpoints.getFavoriteAddresses.select('company-1')(store.getState())
+      await store.dispatch(favoriteAddressApi.endpoints.getFavoriteAddresses.initiate('company-1'))
+      const state = favoriteAddressApi.endpoints.getFavoriteAddresses.select('company-1')(store.getState())
       expect(state.isError).toBe(true)
     })
   })
@@ -84,7 +81,7 @@ describe('favoriteAddressApi endpoints', () => {
         companyId: 'company-1',
         body: { address: '456 Oak Ave, Vancouver, BC', lat: 49.2827, lng: -123.1207 },
       }
-      await store.dispatch(api.endpoints.addFavoriteAddress.initiate(payload))
+      await store.dispatch(favoriteAddressApi.endpoints.addFavoriteAddress.initiate(payload))
       expect(lastCall().url).toContain('/api/favorite-addresses/company-1')
       expect(lastCall().method).toBe('POST')
       expect(lastCall().body).toEqual(payload.body)
@@ -94,7 +91,7 @@ describe('favoriteAddressApi endpoints', () => {
       mockFetchResponse({ status: 201, body: favoriteAddress() })
       const store = createTestStore()
       const result = await store.dispatch(
-        api.endpoints.addFavoriteAddress.initiate({
+        favoriteAddressApi.endpoints.addFavoriteAddress.initiate({
           companyId: 'company-1',
           body: { address: '456 Oak Ave, Vancouver, BC', lat: 49.2827, lng: -123.1207 },
         })
@@ -106,7 +103,7 @@ describe('favoriteAddressApi endpoints', () => {
       mockFetchResponse({ status: 400, body: { message: 'Invalid address' } })
       const store = createTestStore()
       const result = await store.dispatch(
-        api.endpoints.addFavoriteAddress.initiate({
+        favoriteAddressApi.endpoints.addFavoriteAddress.initiate({
           companyId: 'company-1',
           body: { address: '456 Oak Ave, Vancouver, BC', lat: 49.2827, lng: -123.1207 },
         })
@@ -119,7 +116,7 @@ describe('favoriteAddressApi endpoints', () => {
     it('[URL/Method] DELETE favorite-addresses/:companyId/:addressId', async () => {
       mockFetchResponse({ status: 200, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.deleteFavoriteAddress.initiate({ companyId: 'company-1', addressId: 'addr-1' }))
+      await store.dispatch(favoriteAddressApi.endpoints.deleteFavoriteAddress.initiate({ companyId: 'company-1', addressId: 'addr-1' }))
       expect(lastCall().url).toContain('/api/favorite-addresses/company-1/addr-1')
       expect(lastCall().method).toBe('DELETE')
     })
@@ -128,7 +125,7 @@ describe('favoriteAddressApi endpoints', () => {
       mockFetchResponse({ status: 200, body: {} })
       const store = createTestStore()
       const result = await store.dispatch(
-        api.endpoints.deleteFavoriteAddress.initiate({ companyId: 'company-1', addressId: 'addr-1' })
+        favoriteAddressApi.endpoints.deleteFavoriteAddress.initiate({ companyId: 'company-1', addressId: 'addr-1' })
       )
       expect(result.error).toBeUndefined()
     })
@@ -137,7 +134,7 @@ describe('favoriteAddressApi endpoints', () => {
       mockFetchResponse({ status: 404, body: {} })
       const store = createTestStore()
       const result = await store.dispatch(
-        api.endpoints.deleteFavoriteAddress.initiate({ companyId: 'company-1', addressId: 'addr-1' })
+        favoriteAddressApi.endpoints.deleteFavoriteAddress.initiate({ companyId: 'company-1', addressId: 'addr-1' })
       )
       expect(result.error).toBeDefined()
     })

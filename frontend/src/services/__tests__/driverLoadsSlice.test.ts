@@ -54,20 +54,20 @@ describe('driverLoadsSlice', () => {
 
   describe('updateLoadInList', () => {
     it('merges partial changes into an existing load', () => {
-      const store = createStore([makeLoad({ title: 'Original', price: 1000 })])
+      const store = createStore([makeLoad({ title: 'Original', weightLbs: 1000 })])
       store.dispatch(
-        updateLoadInList({ loadId: 'load-1', changes: { price: 1200 } })
+        updateLoadInList({ loadId: 'load-1', changes: { weightLbs: 1200 } })
       )
       const state = store.getState() as { driverLoads: { items: unknown[] } }
-      const updated = state.driverLoads.items[0] as { title: string; price: number }
+      const updated = state.driverLoads.items[0] as { title: string; weightLbs: number }
       expect(updated.title).toBe('Original')
-      expect(updated.price).toBe(1200)
+      expect(updated.weightLbs).toBe(1200)
     })
 
     it('does nothing when the loadId is not found', () => {
       const store = createStore([makeLoad({ title: 'Keep' })])
       store.dispatch(
-        updateLoadInList({ loadId: 'nonexistent', changes: { price: 9999 } })
+        updateLoadInList({ loadId: 'nonexistent', changes: { weightLbs: 9999 } })
       )
       const state = store.getState() as { driverLoads: { items: unknown[] } }
       expect(state.driverLoads.items).toHaveLength(1)

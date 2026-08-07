@@ -7,11 +7,8 @@ import {
   getFetchCalls,
   resetFetchCalls,
 } from './helpers'
-import { api } from '../api'
 import { messageApi } from '../messageApi/messageSlice'
 import { __setCachedTokenForTests } from '../api'
-
-void messageApi
 
 function lastCall() {
   const calls = getFetchCalls()
@@ -55,7 +52,7 @@ describe('messageApi endpoints', () => {
     it('[URL] GET loads/:loadId/messages', async () => {
       mockFetchResponse({ status: 200, body: thread() })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getLoadThread.initiate('load-1'))
+      await store.dispatch(messageApi.endpoints.getLoadThread.initiate('load-1'))
       expect(lastCall().url).toContain('/api/loads/load-1/messages')
       expect(lastCall().method).toBe('GET')
     })
@@ -64,15 +61,15 @@ describe('messageApi endpoints', () => {
       await seedToken('msg-token')
       mockFetchResponse({ status: 200, body: thread() })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getLoadThread.initiate('load-1'))
+      await store.dispatch(messageApi.endpoints.getLoadThread.initiate('load-1'))
       expect(lastCall().headers['authorization']).toBe('Bearer msg-token')
     })
 
     it('[Success] data lands in cache', async () => {
       mockFetchResponse({ status: 200, body: thread({ messages: [msg()] }) })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getLoadThread.initiate('load-1'))
-      const state = api.endpoints.getLoadThread.select('load-1')(store.getState())
+      await store.dispatch(messageApi.endpoints.getLoadThread.initiate('load-1'))
+      const state = messageApi.endpoints.getLoadThread.select('load-1')(store.getState())
       expect(state.data?.loadId).toBe('load-1')
       expect(state.data?.messages).toHaveLength(1)
     })
@@ -80,8 +77,8 @@ describe('messageApi endpoints', () => {
     it('[Error] 404 sets error state', async () => {
       mockFetchResponse({ status: 404, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getLoadThread.initiate('load-1'))
-      const state = api.endpoints.getLoadThread.select('load-1')(store.getState())
+      await store.dispatch(messageApi.endpoints.getLoadThread.initiate('load-1'))
+      const state = messageApi.endpoints.getLoadThread.select('load-1')(store.getState())
       expect(state.isError).toBe(true)
     })
   })
@@ -90,7 +87,7 @@ describe('messageApi endpoints', () => {
     it('[URL/Body] POST loads/:loadId/messages with body', async () => {
       mockFetchResponse({ status: 201, body: msg() })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.sendMessage.initiate({ loadId: 'load-1', body: 'Hello driver' }))
+      await store.dispatch(messageApi.endpoints.sendMessage.initiate({ loadId: 'load-1', body: 'Hello driver' }))
       expect(lastCall().url).toContain('/api/loads/load-1/messages')
       expect(lastCall().method).toBe('POST')
       expect(lastCall().body).toEqual({ body: 'Hello driver' })
@@ -99,14 +96,14 @@ describe('messageApi endpoints', () => {
     it('[Success] data in result', async () => {
       mockFetchResponse({ status: 201, body: msg() })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.sendMessage.initiate({ loadId: 'load-1', body: 'Hello' }))
+      const result = await store.dispatch(messageApi.endpoints.sendMessage.initiate({ loadId: 'load-1', body: 'Hello' }))
       expect(result.data?._id).toBe('msg-1')
     })
 
     it('[Error] 500 sets error', async () => {
       mockFetchResponse({ status: 500, body: {} })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.sendMessage.initiate({ loadId: 'load-1', body: 'Hello' }))
+      const result = await store.dispatch(messageApi.endpoints.sendMessage.initiate({ loadId: 'load-1', body: 'Hello' }))
       expect(result.error).toBeDefined()
     })
 
@@ -124,10 +121,10 @@ describe('messageApi endpoints', () => {
 
       const store = createTestStore()
       // First load the thread into cache so sendMessage has something to patch.
-      await store.dispatch(api.endpoints.getLoadThread.initiate('load-1'))
+      await store.dispatch(messageApi.endpoints.getLoadThread.initiate('load-1'))
       // Then send a message — the onQueryStarted patches the cached thread with the new message.
-      await store.dispatch(api.endpoints.sendMessage.initiate({ loadId: 'load-1', body: 'New message' }))
-      const state = api.endpoints.getLoadThread.select('load-1')(store.getState())
+      await store.dispatch(messageApi.endpoints.sendMessage.initiate({ loadId: 'load-1', body: 'New message' }))
+      const state = messageApi.endpoints.getLoadThread.select('load-1')(store.getState())
       expect(state.data?.messages.map((m) => m._id)).toEqual(['msg-1', 'msg-2'])
     })
   })
@@ -136,7 +133,7 @@ describe('messageApi endpoints', () => {
     it('[URL/Method] PATCH loads/:loadId/messages/read', async () => {
       mockFetchResponse({ status: 200, body: { modifiedCount: 3 } })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.markThreadRead.initiate('load-1'))
+      await store.dispatch(messageApi.endpoints.markThreadRead.initiate('load-1'))
       expect(lastCall().url).toContain('/api/loads/load-1/messages/read')
       expect(lastCall().method).toBe('PATCH')
     })
@@ -144,14 +141,14 @@ describe('messageApi endpoints', () => {
     it('[Success] data in result', async () => {
       mockFetchResponse({ status: 200, body: { modifiedCount: 3 } })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.markThreadRead.initiate('load-1'))
+      const result = await store.dispatch(messageApi.endpoints.markThreadRead.initiate('load-1'))
       expect(result.data?.modifiedCount).toBe(3)
     })
 
     it('[Error] 404 sets error', async () => {
       mockFetchResponse({ status: 404, body: {} })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.markThreadRead.initiate('load-1'))
+      const result = await store.dispatch(messageApi.endpoints.markThreadRead.initiate('load-1'))
       expect(result.error).toBeDefined()
     })
   })
@@ -160,7 +157,7 @@ describe('messageApi endpoints', () => {
     it('[URL] GET messages/unread-counts', async () => {
       mockFetchResponse({ status: 200, body: { total: 5, byLoad: { 'load-1': 3, 'load-2': 2 } } })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getMessageUnreadCounts.initiate())
+      await store.dispatch(messageApi.endpoints.getMessageUnreadCounts.initiate())
       expect(lastCall().url).toContain('/api/messages/unread-counts')
       expect(lastCall().method).toBe('GET')
     })
@@ -168,16 +165,16 @@ describe('messageApi endpoints', () => {
     it('[Success] data lands in cache', async () => {
       mockFetchResponse({ status: 200, body: { total: 5, byLoad: { 'load-1': 3 } } })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getMessageUnreadCounts.initiate())
-      const state = api.endpoints.getMessageUnreadCounts.select()(store.getState())
+      await store.dispatch(messageApi.endpoints.getMessageUnreadCounts.initiate())
+      const state = messageApi.endpoints.getMessageUnreadCounts.select()(store.getState())
       expect(state.data?.total).toBe(5)
     })
 
     it('[Error] 500 sets error state', async () => {
       mockFetchResponse({ status: 500, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getMessageUnreadCounts.initiate())
-      const state = api.endpoints.getMessageUnreadCounts.select()(store.getState())
+      await store.dispatch(messageApi.endpoints.getMessageUnreadCounts.initiate())
+      const state = messageApi.endpoints.getMessageUnreadCounts.select()(store.getState())
       expect(state.isError).toBe(true)
     })
   })
@@ -199,7 +196,7 @@ describe('messageApi endpoints', () => {
         ],
       })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.listMessageThreads.initiate())
+      await store.dispatch(messageApi.endpoints.listMessageThreads.initiate())
       expect(lastCall().url).toContain('/api/messages/threads')
       expect(lastCall().method).toBe('GET')
     })
@@ -220,8 +217,8 @@ describe('messageApi endpoints', () => {
         ],
       })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.listMessageThreads.initiate())
-      const state = api.endpoints.listMessageThreads.select()(store.getState())
+      await store.dispatch(messageApi.endpoints.listMessageThreads.initiate())
+      const state = messageApi.endpoints.listMessageThreads.select()(store.getState())
       expect(state.data).toHaveLength(1)
       expect(state.data?.[0]?.loadId).toBe('load-1')
     })
@@ -229,8 +226,8 @@ describe('messageApi endpoints', () => {
     it('[Error] 500 sets error state', async () => {
       mockFetchResponse({ status: 500, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.listMessageThreads.initiate())
-      const state = api.endpoints.listMessageThreads.select()(store.getState())
+      await store.dispatch(messageApi.endpoints.listMessageThreads.initiate())
+      const state = messageApi.endpoints.listMessageThreads.select()(store.getState())
       expect(state.isError).toBe(true)
     })
   })

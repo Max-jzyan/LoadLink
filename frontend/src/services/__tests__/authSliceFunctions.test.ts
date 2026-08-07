@@ -15,7 +15,7 @@ import authReducer, {
   type AuthUser,
   type SessionState,
 } from '../authSlice'
-import { api, __setCachedTokenForTests } from '../api'
+import { __setCachedTokenForTests } from '../api'
 import type { AppDispatch } from '../store'
 
 // ── Mock firebase/auth (same pattern as authSlice.test.ts) ───────────────────
@@ -76,7 +76,7 @@ describe('authSlice — reducers & selectors', () => {
     it('sets user to null', () => {
       const store = configureStore({
         reducer: { auth: authReducer },
-        preloadedState: { auth: { user: { uid: 'u1', email: null, mongoId: 'm1', role: 'driver' }, loading: false, sessionState: null, banReason: null } },
+        preloadedState: { auth: { user: { uid: 'u1', email: null, mongoId: 'm1', role: 'driver' as const }, loading: false, sessionState: null, banReason: null } },
       })
       store.dispatch(setUser(null))
       const state = store.getState() as { auth: { user: AuthUser | null } }
@@ -123,7 +123,7 @@ describe('authSlice — reducers & selectors', () => {
     it('does NOT downgrade from banned to expired', () => {
       const store = configureStore({
         reducer: { auth: authReducer },
-        preloadedState: { auth: { user: null, loading: false, sessionState: 'banned', banReason: 'bad' } },
+        preloadedState: { auth: { user: null, loading: false, sessionState: 'banned' as const, banReason: 'bad' } },
       })
       store.dispatch(setSessionExpired())
       expect((store.getState() as { auth: { sessionState: string } }).auth.sessionState).toBe('banned')
@@ -165,7 +165,7 @@ describe('authSlice — subscribeToAuthChanges', () => {
   it('returns the unsubscribe function from onAuthStateChanged', () => {
     const unsub = vi.fn()
     ;(onAuthStateChanged as Mock).mockReturnValue(unsub)
-    ;(onAuthStateChanged as Mock).mockImplementation((_auth, cb) => {
+    ;(onAuthStateChanged as Mock).mockImplementation((_auth, _cb) => {
       unsub  // keep ref
       return unsub
     })
@@ -382,7 +382,7 @@ describe('authSlice — registerAndFetchUser with documents', () => {
     const result = await registerAndFetchUser('pp@test.com', 'pass123', 'Driver PP', 'driver', [certFile], profileFile)
 
     expect(result.mongoId).toBe('user-88')
-    expect(result.profilePictureUrl).toBeUndefined() // profilePictureUrl is internal, not returned
+    expect((result as unknown as { profilePictureUrl?: string }).profilePictureUrl).toBeUndefined() // profilePictureUrl is internal, not returned
     expect(lastCall().body).toEqual({
       name: 'Driver PP',
       email: 'pp@test.com',

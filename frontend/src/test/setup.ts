@@ -40,6 +40,7 @@ const mockEventSources: Array<{
   onmessage: ((event: MessageEvent) => void) | null
   onerror: ((event: Event) => void) | null
   close: () => void
+  emit: (data: unknown) => void
 }> = []
 
 const originalEventSource = globalThis.EventSource
@@ -49,7 +50,7 @@ const originalEventSource = globalThis.EventSource
   static OPEN = 1
   static CLOSED = 2
   url: string
-  readyState = EventSource.OPEN
+  readyState: number = EventSource.OPEN
   onopen: ((event: Event) => void) | null = null
   onmessage: ((event: MessageEvent) => void) | null = null
   onerror: ((event: Event) => void) | null = null

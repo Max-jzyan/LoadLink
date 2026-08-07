@@ -7,11 +7,8 @@ import {
   resetFetchCalls,
 } from './helpers'
 import { getMockEventSources, resetMockEventSources, restoreEventSource } from '../../test/setup'
-import { api } from '../api'
 import { auctionApi } from '../auctionApi/auctionSlice'
 import { __setCachedTokenForTests } from '../api'
-
-void auctionApi
 
 function lastCall() {
   const calls = getFetchCalls()
@@ -38,7 +35,7 @@ describe('auctionApi endpoints', () => {
     it('[URL/Method] PATCH auctions/:loadId/bids/:bidId', async () => {
       mockFetchResponse({ status: 200, body: { loadId: 'load-1', driverId: 'driver-1', bidId: 'bid-1' } })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.acceptBid.initiate({ loadId: 'load-1', bidId: 'bid-1' }))
+      await store.dispatch(auctionApi.endpoints.acceptBid.initiate({ loadId: 'load-1', bidId: 'bid-1' }))
       expect(lastCall().url).toContain('/api/auctions/load-1/bids/bid-1')
       expect(lastCall().method).toBe('PATCH')
     })
@@ -46,14 +43,14 @@ describe('auctionApi endpoints', () => {
     it('[Success] data in result', async () => {
       mockFetchResponse({ status: 200, body: { loadId: 'load-1', driverId: 'driver-1' } })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.acceptBid.initiate({ loadId: 'load-1', bidId: 'bid-1' }))
+      const result = await store.dispatch(auctionApi.endpoints.acceptBid.initiate({ loadId: 'load-1', bidId: 'bid-1' }))
       expect(result.data?.loadId).toBe('load-1')
     })
 
     it('[Error] 404 sets error', async () => {
       mockFetchResponse({ status: 404, body: {} })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.acceptBid.initiate({ loadId: 'load-1', bidId: 'bid-1' }))
+      const result = await store.dispatch(auctionApi.endpoints.acceptBid.initiate({ loadId: 'load-1', bidId: 'bid-1' }))
       expect(result.error).toBeDefined()
     })
   })
@@ -62,8 +59,8 @@ describe('auctionApi endpoints', () => {
     it('[URL/Body] PATCH auctions/:loadId with body', async () => {
       mockFetchResponse({ status: 200, body: { loadId: 'load-1' } })
       const store = createTestStore()
-      const payload = { maxPriceCap: 2500 }
-      await store.dispatch(api.endpoints.editAuction.initiate({ loadId: 'load-1', body: payload }))
+      const payload = { newPriceCeiling: 2500 }
+      await store.dispatch(auctionApi.endpoints.editAuction.initiate({ loadId: 'load-1', body: payload }))
       expect(lastCall().url).toContain('/api/auctions/load-1')
       expect(lastCall().method).toBe('PATCH')
       expect(lastCall().body).toEqual(payload)
@@ -72,14 +69,14 @@ describe('auctionApi endpoints', () => {
     it('[Success] data in result', async () => {
       mockFetchResponse({ status: 200, body: { loadId: 'load-1' } })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.editAuction.initiate({ loadId: 'load-1', body: {} }))
+      const result = await store.dispatch(auctionApi.endpoints.editAuction.initiate({ loadId: 'load-1', body: {} }))
       expect(result.data?.loadId).toBe('load-1')
     })
 
     it('[Error] 400 sets error', async () => {
       mockFetchResponse({ status: 400, body: {} })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.editAuction.initiate({ loadId: 'load-1', body: {} }))
+      const result = await store.dispatch(auctionApi.endpoints.editAuction.initiate({ loadId: 'load-1', body: {} }))
       expect(result.error).toBeDefined()
     })
   })
@@ -88,7 +85,7 @@ describe('auctionApi endpoints', () => {
     it('[URL/Method] DELETE auctions/:loadId', async () => {
       mockFetchResponse({ status: 200, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.cancelAuction.initiate('load-1'))
+      await store.dispatch(auctionApi.endpoints.cancelAuction.initiate('load-1'))
       expect(lastCall().url).toContain('/api/auctions/load-1')
       expect(lastCall().method).toBe('DELETE')
     })
@@ -96,14 +93,14 @@ describe('auctionApi endpoints', () => {
     it('[Success] no error', async () => {
       mockFetchResponse({ status: 200, body: {} })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.cancelAuction.initiate('load-1'))
+      const result = await store.dispatch(auctionApi.endpoints.cancelAuction.initiate('load-1'))
       expect(result.error).toBeUndefined()
     })
 
     it('[Error] 404 sets error', async () => {
       mockFetchResponse({ status: 404, body: {} })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.cancelAuction.initiate('load-1'))
+      const result = await store.dispatch(auctionApi.endpoints.cancelAuction.initiate('load-1'))
       expect(result.error).toBeDefined()
     })
   })
@@ -112,8 +109,8 @@ describe('auctionApi endpoints', () => {
     it('[URL/Body] POST auctions/:loadId/reopen with body', async () => {
       mockFetchResponse({ status: 200, body: { loadId: 'load-1' } })
       const store = createTestStore()
-      const payload = { maxPriceCap: 3000 }
-      await store.dispatch(api.endpoints.reopenAuction.initiate({ loadId: 'load-1', body: payload }))
+      const payload = { extendByHours: 6 }
+      await store.dispatch(auctionApi.endpoints.reopenAuction.initiate({ loadId: 'load-1', body: payload }))
       expect(lastCall().url).toContain('/api/auctions/load-1/reopen')
       expect(lastCall().method).toBe('POST')
       expect(lastCall().body).toEqual(payload)
@@ -122,14 +119,14 @@ describe('auctionApi endpoints', () => {
     it('[Success] data in result', async () => {
       mockFetchResponse({ status: 200, body: { loadId: 'load-1' } })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.reopenAuction.initiate({ loadId: 'load-1', body: {} }))
+      const result = await store.dispatch(auctionApi.endpoints.reopenAuction.initiate({ loadId: 'load-1', body: {} }))
       expect(result.data?.loadId).toBe('load-1')
     })
 
     it('[Error] 400 sets error', async () => {
       mockFetchResponse({ status: 400, body: {} })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.reopenAuction.initiate({ loadId: 'load-1', body: {} }))
+      const result = await store.dispatch(auctionApi.endpoints.reopenAuction.initiate({ loadId: 'load-1', body: {} }))
       expect(result.error).toBeDefined()
     })
   })
@@ -137,7 +134,7 @@ describe('auctionApi endpoints', () => {
   describe('streamBids (SSE)', () => {
     it('[SSE] opens EventSource at /api/auctions/:loadId/bids with access_token', async () => {
       const store = createTestStore()
-      const promise = store.dispatch(api.endpoints.streamBids.initiate('load-1'))
+      const promise = store.dispatch(auctionApi.endpoints.streamBids.initiate('load-1'))
       await new Promise((r) => setTimeout(r, 10))
       const ess = getMockEventSources()
       expect(ess.length).toBeGreaterThanOrEqual(1)
@@ -150,14 +147,14 @@ describe('auctionApi endpoints', () => {
 
     it('[SSE] onmessage payload flows into cache via updateCachedData', async () => {
       const store = createTestStore()
-      const promise = store.dispatch(api.endpoints.streamBids.initiate('load-1'))
+      const promise = store.dispatch(auctionApi.endpoints.streamBids.initiate('load-1'))
       await new Promise((r) => setTimeout(r, 10))
       const ess = getMockEventSources()
       const es = ess[ess.length - 1]
       const bidPayload = { bids: [{ _id: 'bid-1', amount: 1200 }], loadId: 'load-1' }
       es.emit(bidPayload)
       await new Promise((r) => setTimeout(r, 5))
-      const state = api.endpoints.streamBids.select('load-1')(store.getState())
+      const state = auctionApi.endpoints.streamBids.select('load-1')(store.getState())
       expect(state.data).toEqual(bidPayload)
       promise.unsubscribe()
       await new Promise((r) => setTimeout(r, 10))
@@ -165,7 +162,7 @@ describe('auctionApi endpoints', () => {
 
     it('[SSE] close() called on cacheEntryRemoved', async () => {
       const store = createTestStore()
-      const promise = store.dispatch(api.endpoints.streamBids.initiate('load-1'))
+      const promise = store.dispatch(auctionApi.endpoints.streamBids.initiate('load-1'))
       await new Promise((r) => setTimeout(r, 10))
       const ess = getMockEventSources()
       const es = ess[ess.length - 1]
@@ -178,7 +175,7 @@ describe('auctionApi endpoints', () => {
   describe('streamAuctionPrice (SSE)', () => {
     it('[SSE] opens EventSource at /api/auctions/:loadId/price with access_token', async () => {
       const store = createTestStore()
-      const promise = store.dispatch(api.endpoints.streamAuctionPrice.initiate('load-1'))
+      const promise = store.dispatch(auctionApi.endpoints.streamAuctionPrice.initiate('load-1'))
       await new Promise((r) => setTimeout(r, 10))
       const ess = getMockEventSources()
       expect(ess.length).toBeGreaterThanOrEqual(1)
@@ -191,14 +188,14 @@ describe('auctionApi endpoints', () => {
 
     it('[SSE] onmessage payload flows into cache via updateCachedData', async () => {
       const store = createTestStore()
-      const promise = store.dispatch(api.endpoints.streamAuctionPrice.initiate('load-1'))
+      const promise = store.dispatch(auctionApi.endpoints.streamAuctionPrice.initiate('load-1'))
       await new Promise((r) => setTimeout(r, 10))
       const ess = getMockEventSources()
       const es = ess[ess.length - 1]
       const pricePayload = { loadId: 'load-1', currentPrice: 1300 }
       es.emit(pricePayload)
       await new Promise((r) => setTimeout(r, 5))
-      const state = api.endpoints.streamAuctionPrice.select('load-1')(store.getState())
+      const state = auctionApi.endpoints.streamAuctionPrice.select('load-1')(store.getState())
       expect(state.data).toEqual(pricePayload)
       promise.unsubscribe()
       await new Promise((r) => setTimeout(r, 10))
@@ -206,7 +203,7 @@ describe('auctionApi endpoints', () => {
 
     it('[SSE] close() called on cacheEntryRemoved', async () => {
       const store = createTestStore()
-      const promise = store.dispatch(api.endpoints.streamAuctionPrice.initiate('load-1'))
+      const promise = store.dispatch(auctionApi.endpoints.streamAuctionPrice.initiate('load-1'))
       await new Promise((r) => setTimeout(r, 10))
       const ess = getMockEventSources()
       const es = ess[ess.length - 1]

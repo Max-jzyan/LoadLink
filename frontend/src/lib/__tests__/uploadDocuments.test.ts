@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { uploadDocuments } from '../uploadDocuments'
-import { resetFetchCalls, getFetchCalls, mockFetchResponse, restoreFetch } from '@/services/__tests__/helpers'
 
 // We need to mock fetch — reuse the helpers infrastructure but manage it ourselves
 // since helpers exports a fetch mock.

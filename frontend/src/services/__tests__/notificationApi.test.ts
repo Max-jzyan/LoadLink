@@ -8,11 +8,8 @@ import {
   resetFetchCalls,
 } from './helpers'
 import { getMockEventSources, resetMockEventSources, restoreEventSource } from '../../test/setup'
-import { api } from '../api'
 import { notificationApi } from '../notificationApi/notificationSlice'
 import { __setCachedTokenForTests } from '../api'
-
-void notificationApi
 
 function lastCall() {
   const calls = getFetchCalls()
@@ -54,7 +51,7 @@ describe('notificationApi endpoints', () => {
     it('[URL/Query] GET notifications with page/limit/unreadOnly params', async () => {
       mockFetchResponse({ status: 200, body: { notifications: [], totalCount: 0, unreadCount: 0, page: 2, limit: 10 } })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.listNotifications.initiate({ page: 2, limit: 10, unreadOnly: true }))
+      await store.dispatch(notificationApi.endpoints.listNotifications.initiate({ page: 2, limit: 10, unreadOnly: true }))
       expect(lastCall().url).toContain('/api/notifications')
       expect(lastCall().url).toContain('page=2')
       expect(lastCall().url).toContain('limit=10')
@@ -65,7 +62,7 @@ describe('notificationApi endpoints', () => {
     it('[URL] GET notifications with unreadOnly=false by default', async () => {
       mockFetchResponse({ status: 200, body: { notifications: [], totalCount: 0, unreadCount: 0, page: 1, limit: 20 } })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.listNotifications.initiate({}))
+      await store.dispatch(notificationApi.endpoints.listNotifications.initiate({}))
       expect(lastCall().url).toContain('unreadOnly=false')
     })
 
@@ -76,8 +73,8 @@ describe('notificationApi endpoints', () => {
       })
       const store = createTestStore()
       const args = { page: 1, limit: 20, unreadOnly: false }
-      await store.dispatch(api.endpoints.listNotifications.initiate(args))
-      const state = api.endpoints.listNotifications.select(args)(store.getState())
+      await store.dispatch(notificationApi.endpoints.listNotifications.initiate(args))
+      const state = notificationApi.endpoints.listNotifications.select(args)(store.getState())
       expect(state.data?.notifications).toHaveLength(1)
     })
 
@@ -85,8 +82,8 @@ describe('notificationApi endpoints', () => {
       mockFetchResponse({ status: 500, body: {} })
       const store = createTestStore()
       const args = { page: 1, limit: 20, unreadOnly: false }
-      await store.dispatch(api.endpoints.listNotifications.initiate(args))
-      const state = api.endpoints.listNotifications.select(args)(store.getState())
+      await store.dispatch(notificationApi.endpoints.listNotifications.initiate(args))
+      const state = notificationApi.endpoints.listNotifications.select(args)(store.getState())
       expect(state.isError).toBe(true)
     })
   })
@@ -95,7 +92,7 @@ describe('notificationApi endpoints', () => {
     it('[URL] GET notifications/unread-count', async () => {
       mockFetchResponse({ status: 200, body: { unreadCount: 3 } })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getUnreadCount.initiate())
+      await store.dispatch(notificationApi.endpoints.getUnreadCount.initiate())
       expect(lastCall().url).toContain('/api/notifications/unread-count')
       expect(lastCall().method).toBe('GET')
     })
@@ -103,16 +100,16 @@ describe('notificationApi endpoints', () => {
     it('[Success] data lands in cache', async () => {
       mockFetchResponse({ status: 200, body: { unreadCount: 3 } })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getUnreadCount.initiate())
-      const state = api.endpoints.getUnreadCount.select()(store.getState())
+      await store.dispatch(notificationApi.endpoints.getUnreadCount.initiate())
+      const state = notificationApi.endpoints.getUnreadCount.select()(store.getState())
       expect(state.data?.unreadCount).toBe(3)
     })
 
     it('[Error] 500 sets error state', async () => {
       mockFetchResponse({ status: 500, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getUnreadCount.initiate())
-      const state = api.endpoints.getUnreadCount.select()(store.getState())
+      await store.dispatch(notificationApi.endpoints.getUnreadCount.initiate())
+      const state = notificationApi.endpoints.getUnreadCount.select()(store.getState())
       expect(state.isError).toBe(true)
     })
   })
@@ -121,7 +118,7 @@ describe('notificationApi endpoints', () => {
     it('[URL/Method] PATCH notifications/:notificationId/read', async () => {
       mockFetchResponse({ status: 200, body: notif({ isRead: true }) })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.markAsRead.initiate('notif-1'))
+      await store.dispatch(notificationApi.endpoints.markAsRead.initiate('notif-1'))
       expect(lastCall().url).toContain('/api/notifications/notif-1/read')
       expect(lastCall().method).toBe('PATCH')
     })
@@ -130,21 +127,21 @@ describe('notificationApi endpoints', () => {
       await seedToken('notif-token')
       mockFetchResponse({ status: 200, body: notif({ isRead: true }) })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.markAsRead.initiate('notif-1'))
+      await store.dispatch(notificationApi.endpoints.markAsRead.initiate('notif-1'))
       expect(lastCall().headers['authorization']).toBe('Bearer notif-token')
     })
 
     it('[Success] data in result', async () => {
       mockFetchResponse({ status: 200, body: notif({ isRead: true }) })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.markAsRead.initiate('notif-1'))
+      const result = await store.dispatch(notificationApi.endpoints.markAsRead.initiate('notif-1'))
       expect(result.data?.isRead).toBe(true)
     })
 
     it('[Error] 404 sets error', async () => {
       mockFetchResponse({ status: 404, body: {} })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.markAsRead.initiate('notif-1'))
+      const result = await store.dispatch(notificationApi.endpoints.markAsRead.initiate('notif-1'))
       expect(result.error).toBeDefined()
     })
   })
@@ -153,7 +150,7 @@ describe('notificationApi endpoints', () => {
     it('[URL/Method] PATCH notifications/read-all', async () => {
       mockFetchResponse({ status: 200, body: { modifiedCount: 5 } })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.markAllAsRead.initiate())
+      await store.dispatch(notificationApi.endpoints.markAllAsRead.initiate())
       expect(lastCall().url).toContain('/api/notifications/read-all')
       expect(lastCall().method).toBe('PATCH')
     })
@@ -161,14 +158,14 @@ describe('notificationApi endpoints', () => {
     it('[Success] data in result', async () => {
       mockFetchResponse({ status: 200, body: { modifiedCount: 5 } })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.markAllAsRead.initiate())
+      const result = await store.dispatch(notificationApi.endpoints.markAllAsRead.initiate())
       expect(result.data?.modifiedCount).toBe(5)
     })
 
     it('[Error] 500 sets error', async () => {
       mockFetchResponse({ status: 500, body: {} })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.markAllAsRead.initiate())
+      const result = await store.dispatch(notificationApi.endpoints.markAllAsRead.initiate())
       expect(result.error).toBeDefined()
     })
   })
@@ -177,7 +174,7 @@ describe('notificationApi endpoints', () => {
     it('[URL/Method] DELETE notifications/:notificationId', async () => {
       mockFetchResponse({ status: 200, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.deleteNotification.initiate('notif-1'))
+      await store.dispatch(notificationApi.endpoints.deleteNotification.initiate('notif-1'))
       expect(lastCall().url).toContain('/api/notifications/notif-1')
       expect(lastCall().method).toBe('DELETE')
     })
@@ -185,14 +182,14 @@ describe('notificationApi endpoints', () => {
     it('[Success] no error', async () => {
       mockFetchResponse({ status: 200, body: {} })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.deleteNotification.initiate('notif-1'))
+      const result = await store.dispatch(notificationApi.endpoints.deleteNotification.initiate('notif-1'))
       expect(result.error).toBeUndefined()
     })
 
     it('[Error] 404 sets error', async () => {
       mockFetchResponse({ status: 404, body: {} })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.deleteNotification.initiate('notif-1'))
+      const result = await store.dispatch(notificationApi.endpoints.deleteNotification.initiate('notif-1'))
       expect(result.error).toBeDefined()
     })
   })
@@ -200,7 +197,7 @@ describe('notificationApi endpoints', () => {
   describe('streamNotifications (SSE)', () => {
     it('[SSE] opens EventSource at /api/notifications/stream with access_token', async () => {
       const store = createTestStore()
-      const promise = store.dispatch(api.endpoints.streamNotifications.initiate())
+      const promise = store.dispatch(notificationApi.endpoints.streamNotifications.initiate())
       await new Promise((r) => setTimeout(r, 10))
       const ess = getMockEventSources()
       expect(ess.length).toBeGreaterThanOrEqual(1)
@@ -213,14 +210,14 @@ describe('notificationApi endpoints', () => {
 
     it('[SSE] notification payload flows into cache via updateCachedData', async () => {
       const store = createTestStore()
-      const promise = store.dispatch(api.endpoints.streamNotifications.initiate())
+      const promise = store.dispatch(notificationApi.endpoints.streamNotifications.initiate())
       await new Promise((r) => setTimeout(r, 10))
       const ess = getMockEventSources()
       const es = ess[ess.length - 1]
       const notifPayload = notif({ _id: 'notif-live', message: 'New bid received' })
       es.emit(notifPayload)
       await new Promise((r) => setTimeout(r, 5))
-      const state = api.endpoints.streamNotifications.select()(store.getState())
+      const state = notificationApi.endpoints.streamNotifications.select()(store.getState())
       expect(state.data).toEqual(notifPayload)
       promise.unsubscribe()
       await new Promise((r) => setTimeout(r, 10))
@@ -228,14 +225,14 @@ describe('notificationApi endpoints', () => {
 
     it('[SSE] unread count payload flows into cache', async () => {
       const store = createTestStore()
-      const promise = store.dispatch(api.endpoints.streamNotifications.initiate())
+      const promise = store.dispatch(notificationApi.endpoints.streamNotifications.initiate())
       await new Promise((r) => setTimeout(r, 10))
       const ess = getMockEventSources()
       const es = ess[ess.length - 1]
       const payload = { unreadCount: 7 }
       es.emit(payload)
       await new Promise((r) => setTimeout(r, 5))
-      const state = api.endpoints.streamNotifications.select()(store.getState())
+      const state = notificationApi.endpoints.streamNotifications.select()(store.getState())
       expect(state.data).toEqual(payload)
       promise.unsubscribe()
       await new Promise((r) => setTimeout(r, 10))
@@ -243,7 +240,7 @@ describe('notificationApi endpoints', () => {
 
     it('[SSE] close() called on cacheEntryRemoved', async () => {
       const store = createTestStore()
-      const promise = store.dispatch(api.endpoints.streamNotifications.initiate())
+      const promise = store.dispatch(notificationApi.endpoints.streamNotifications.initiate())
       await new Promise((r) => setTimeout(r, 10))
       const ess = getMockEventSources()
       const es = ess[ess.length - 1]

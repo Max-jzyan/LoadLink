@@ -8,11 +8,8 @@ import {
   restoreFetch,
   fixtures,
 } from './helpers'
-import { api } from '../api'
 import { companyApi } from '../companyApi/companyApi'
 import { __setCachedTokenForTests } from '../api'
-
-void companyApi
 
 function lastCall() {
   const calls = getFetchCalls()
@@ -33,7 +30,7 @@ describe('companyApi endpoints', () => {
     it('[URL] GET companies', async () => {
       mockFetchResponse({ status: 200, body: [] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.listCompanies.initiate())
+      await store.dispatch(companyApi.endpoints.listCompanies.initiate())
       expect(lastCall().url).toContain('/api/companies')
       expect(lastCall().method).toBe('GET')
     })
@@ -41,16 +38,16 @@ describe('companyApi endpoints', () => {
     it('[Success] data lands in cache', async () => {
       mockFetchResponse({ status: 200, body: [fixtures.companyProfile()] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.listCompanies.initiate())
-      const state = api.endpoints.listCompanies.select()(store.getState())
+      await store.dispatch(companyApi.endpoints.listCompanies.initiate())
+      const state = companyApi.endpoints.listCompanies.select()(store.getState())
       expect(state.data).toHaveLength(1)
     })
 
     it('[Error] 500 sets error state', async () => {
       mockFetchResponse({ status: 500, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.listCompanies.initiate())
-      const state = api.endpoints.listCompanies.select()(store.getState())
+      await store.dispatch(companyApi.endpoints.listCompanies.initiate())
+      const state = companyApi.endpoints.listCompanies.select()(store.getState())
       expect(state.isError).toBe(true)
     })
   })
@@ -59,7 +56,7 @@ describe('companyApi endpoints', () => {
     it('[URL] GET company/:companyId/dashboard', async () => {
       mockFetchResponse({ status: 200, body: { loads: [], summary: {} } })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getCompanyDashboard.initiate('company-1'))
+      await store.dispatch(companyApi.endpoints.getCompanyDashboard.initiate('company-1'))
       expect(lastCall().url).toContain('/api/company/company-1/dashboard')
       expect(lastCall().method).toBe('GET')
     })
@@ -73,16 +70,16 @@ describe('companyApi endpoints', () => {
         },
       })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getCompanyDashboard.initiate('company-1'))
-      const state = api.endpoints.getCompanyDashboard.select('company-1')(store.getState())
+      await store.dispatch(companyApi.endpoints.getCompanyDashboard.initiate('company-1'))
+      const state = companyApi.endpoints.getCompanyDashboard.select('company-1')(store.getState())
       expect(state.data?.loads).toHaveLength(1)
     })
 
     it('[Error] 500 sets error state', async () => {
       mockFetchResponse({ status: 500, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getCompanyDashboard.initiate('company-1'))
-      const state = api.endpoints.getCompanyDashboard.select('company-1')(store.getState())
+      await store.dispatch(companyApi.endpoints.getCompanyDashboard.initiate('company-1'))
+      const state = companyApi.endpoints.getCompanyDashboard.select('company-1')(store.getState())
       expect(state.isError).toBe(true)
     })
   })
@@ -91,7 +88,7 @@ describe('companyApi endpoints', () => {
     it('[URL] GET company/:companyId/profile', async () => {
       mockFetchResponse({ status: 200, body: fixtures.companyProfile() })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getCompanyProfile.initiate('company-1'))
+      await store.dispatch(companyApi.endpoints.getCompanyProfile.initiate('company-1'))
       expect(lastCall().url).toContain('/api/company/company-1/profile')
       expect(lastCall().method).toBe('GET')
     })
@@ -99,16 +96,16 @@ describe('companyApi endpoints', () => {
     it('[Success] data lands in cache', async () => {
       mockFetchResponse({ status: 200, body: fixtures.companyProfile() })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getCompanyProfile.initiate('company-1'))
-      const state = api.endpoints.getCompanyProfile.select('company-1')(store.getState())
+      await store.dispatch(companyApi.endpoints.getCompanyProfile.initiate('company-1'))
+      const state = companyApi.endpoints.getCompanyProfile.select('company-1')(store.getState())
       expect(state.data?._id).toBe('company-1')
     })
 
     it('[Error] 404 sets error state', async () => {
       mockFetchResponse({ status: 404, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getCompanyProfile.initiate('company-1'))
-      const state = api.endpoints.getCompanyProfile.select('company-1')(store.getState())
+      await store.dispatch(companyApi.endpoints.getCompanyProfile.initiate('company-1'))
+      const state = companyApi.endpoints.getCompanyProfile.select('company-1')(store.getState())
       expect(state.isError).toBe(true)
     })
   })
@@ -118,7 +115,7 @@ describe('companyApi endpoints', () => {
       mockFetchResponse({ status: 200, body: fixtures.companyProfile() })
       const store = createTestStore()
       const payload = { companyName: 'New Co' }
-      await store.dispatch(api.endpoints.updateCompanyProfile.initiate({ companyId: 'company-1', body: payload }))
+      await store.dispatch(companyApi.endpoints.updateCompanyProfile.initiate({ companyId: 'company-1', body: payload }))
       expect(lastCall().url).toContain('/api/company/company-1/profile')
       expect(lastCall().method).toBe('PATCH')
       expect(lastCall().body).toEqual(payload)
@@ -128,21 +125,21 @@ describe('companyApi endpoints', () => {
       await seedToken('cp-token')
       mockFetchResponse({ status: 200, body: fixtures.companyProfile() })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.updateCompanyProfile.initiate({ companyId: 'company-1', body: {} }))
+      await store.dispatch(companyApi.endpoints.updateCompanyProfile.initiate({ companyId: 'company-1', body: {} }))
       expect(lastCall().headers['authorization']).toBe('Bearer cp-token')
     })
 
     it('[Success] data in result', async () => {
       mockFetchResponse({ status: 200, body: fixtures.companyProfile() })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.updateCompanyProfile.initiate({ companyId: 'company-1', body: {} }))
+      const result = await store.dispatch(companyApi.endpoints.updateCompanyProfile.initiate({ companyId: 'company-1', body: {} }))
       expect(result.data?._id).toBe('company-1')
     })
 
     it('[Error] 400 sets error', async () => {
       mockFetchResponse({ status: 400, body: {} })
       const store = createTestStore()
-      const result = await store.dispatch(api.endpoints.updateCompanyProfile.initiate({ companyId: 'company-1', body: {} }))
+      const result = await store.dispatch(companyApi.endpoints.updateCompanyProfile.initiate({ companyId: 'company-1', body: {} }))
       expect(result.error).toBeDefined()
     })
   })
@@ -158,7 +155,7 @@ describe('companyApi endpoints', () => {
       const store = createTestStore()
       const file = new File(['data'], 'insurance.pdf', { type: 'application/pdf' })
       const result = await store.dispatch(
-        api.endpoints.uploadCompanyDocuments.initiate({ companyId: 'company-1', docType: 'companyDocuments', files: [file] })
+        companyApi.endpoints.uploadCompanyDocuments.initiate({ companyId: 'company-1', docType: 'companyDocuments', files: [file] })
       )
       expect(result.data).toEqual([{ name: 'insurance.pdf', url: 'http://s3/file-1', key: 'key-1' }])
     })
@@ -173,7 +170,7 @@ describe('companyApi endpoints', () => {
       const store = createTestStore()
       const file = new File(['data'], 'insurance.pdf', { type: 'application/pdf' })
       await store.dispatch(
-        api.endpoints.uploadCompanyDocuments.initiate({ companyId: 'company-1', docType: 'companyDocuments', files: [file] })
+        companyApi.endpoints.uploadCompanyDocuments.initiate({ companyId: 'company-1', docType: 'companyDocuments', files: [file] })
       )
       const presign = getFetchCalls().find((c) => c.url.includes('/api/uploads/presign'))
       expect(presign?.method).toBe('POST')

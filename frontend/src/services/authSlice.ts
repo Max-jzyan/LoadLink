@@ -24,7 +24,7 @@ export interface AuthUser {
 
 export type SessionState = null | 'expiring' | 'expired' | 'banned'
 
-interface AuthState {
+export interface AuthState {
   user: AuthUser | null
   loading: boolean
   sessionState: SessionState

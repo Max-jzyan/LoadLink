@@ -7,11 +7,8 @@ import {
   getFetchCalls,
   resetFetchCalls,
 } from './helpers'
-import { api } from '../api'
 import { reviewApi } from '../reviewApi/reviewSlice'
 import { __setCachedTokenForTests } from '../api'
-
-void reviewApi
 
 function lastCall() {
   const calls = getFetchCalls()
@@ -49,7 +46,7 @@ describe('reviewApi endpoints', () => {
         body: { data: [review()], pagination: { page: 1, limit: 20, total: 1, totalPages: 1 } },
       })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getReviewsForTarget.initiate({ targetId: 'driver-1', page: 1, limit: 20 }))
+      await store.dispatch(reviewApi.endpoints.getReviewsForTarget.initiate({ targetId: 'driver-1', page: 1, limit: 20 }))
       expect(lastCall().url).toContain('/api/reviews/target/driver-1')
       expect(lastCall().url).toContain('page=1')
       expect(lastCall().url).toContain('limit=20')
@@ -62,7 +59,7 @@ describe('reviewApi endpoints', () => {
         body: { data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } },
       })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getReviewsForTarget.initiate({ targetId: 'driver-1' }))
+      await store.dispatch(reviewApi.endpoints.getReviewsForTarget.initiate({ targetId: 'driver-1' }))
       expect(lastCall().url).toContain('/api/reviews/target/driver-1')
       expect(lastCall().url).not.toContain('page=')
     })
@@ -74,7 +71,7 @@ describe('reviewApi endpoints', () => {
         body: { data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } },
       })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getReviewsForTarget.initiate({ targetId: 'driver-1' }))
+      await store.dispatch(reviewApi.endpoints.getReviewsForTarget.initiate({ targetId: 'driver-1' }))
       expect(lastCall().headers['authorization']).toBe('Bearer review-token')
     })
 
@@ -85,8 +82,8 @@ describe('reviewApi endpoints', () => {
       })
       const store = createTestStore()
       const args = { targetId: 'driver-1', page: 1, limit: 20 }
-      await store.dispatch(api.endpoints.getReviewsForTarget.initiate(args))
-      const state = api.endpoints.getReviewsForTarget.select(args)(store.getState())
+      await store.dispatch(reviewApi.endpoints.getReviewsForTarget.initiate(args))
+      const state = reviewApi.endpoints.getReviewsForTarget.select(args)(store.getState())
       expect(state.data?.data).toHaveLength(1)
       expect(state.data?.pagination.total).toBe(1)
     })
@@ -95,8 +92,8 @@ describe('reviewApi endpoints', () => {
       mockFetchResponse({ status: 500, body: {} })
       const store = createTestStore()
       const args = { targetId: 'driver-1' }
-      await store.dispatch(api.endpoints.getReviewsForTarget.initiate(args))
-      const state = api.endpoints.getReviewsForTarget.select(args)(store.getState())
+      await store.dispatch(reviewApi.endpoints.getReviewsForTarget.initiate(args))
+      const state = reviewApi.endpoints.getReviewsForTarget.select(args)(store.getState())
       expect(state.isError).toBe(true)
     })
   })
@@ -109,11 +106,17 @@ describe('reviewApi endpoints', () => {
         reviewerId: 'company-1',
         targetId: 'driver-1',
         loadId: 'load-1',
-        ratingCategories: { communication: 5, reliability: 5, professionalism: 5 },
+        ratingCategories: {
+          timeliness: 5,
+          communication: 5,
+          reliability: 5,
+          professionalism: 5,
+          documentationAccuracy: 5,
+        },
         comment: 'Great driver',
         targetType: 'driver' as const,
       }
-      await store.dispatch(api.endpoints.createReview.initiate(payload))
+      await store.dispatch(reviewApi.endpoints.createReview.initiate(payload))
       expect(lastCall().url).toContain('/api/reviews')
       expect(lastCall().method).toBe('POST')
       expect(lastCall().body).toEqual(payload)
@@ -123,25 +126,37 @@ describe('reviewApi endpoints', () => {
       mockFetchResponse({ status: 201, body: review() })
       const store = createTestStore()
       const result = await store.dispatch(
-        api.endpoints.createReview.initiate({
+        reviewApi.endpoints.createReview.initiate({
           reviewerId: 'company-1',
           targetId: 'driver-1',
           loadId: 'load-1',
-          ratingCategories: { communication: 5, reliability: 5, professionalism: 5 },
+          ratingCategories: {
+          timeliness: 5,
+          communication: 5,
+          reliability: 5,
+          professionalism: 5,
+          documentationAccuracy: 5,
+        },
         })
       )
-      expect(result.data?._id).toBe('review-1')
+      expect((result.data as { _id: string } | undefined)?._id).toBe('review-1')
     })
 
     it('[Error] 400 sets error', async () => {
       mockFetchResponse({ status: 400, body: { message: 'Invalid review' } })
       const store = createTestStore()
       const result = await store.dispatch(
-        api.endpoints.createReview.initiate({
+        reviewApi.endpoints.createReview.initiate({
           reviewerId: 'company-1',
           targetId: 'driver-1',
           loadId: 'load-1',
-          ratingCategories: { communication: 5, reliability: 5, professionalism: 5 },
+          ratingCategories: {
+          timeliness: 5,
+          communication: 5,
+          reliability: 5,
+          professionalism: 5,
+          documentationAccuracy: 5,
+        },
         })
       )
       expect(result.error).toBeDefined()

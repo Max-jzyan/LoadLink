@@ -7,11 +7,8 @@ import {
   getFetchCalls,
   resetFetchCalls,
 } from './helpers'
-import { api } from '../api'
 import { reportApi } from '../reportApi/reportSlice'
 import { __setCachedTokenForTests } from '../api'
-
-void reportApi
 
 function lastCall() {
   const calls = getFetchCalls()
@@ -69,7 +66,7 @@ describe('reportApi endpoints', () => {
     it('[URL] GET reports/user/:userId', async () => {
       mockFetchResponse({ status: 200, body: [report()] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getMyReports.initiate('driver-1'))
+      await store.dispatch(reportApi.endpoints.getMyReports.initiate('driver-1'))
       expect(lastCall().url).toContain('/api/reports/user/driver-1')
       expect(lastCall().method).toBe('GET')
     })
@@ -78,15 +75,15 @@ describe('reportApi endpoints', () => {
       await seedToken('report-token')
       mockFetchResponse({ status: 200, body: [] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getMyReports.initiate('driver-1'))
+      await store.dispatch(reportApi.endpoints.getMyReports.initiate('driver-1'))
       expect(lastCall().headers['authorization']).toBe('Bearer report-token')
     })
 
     it('[Success] data lands in cache', async () => {
       mockFetchResponse({ status: 200, body: [report()] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getMyReports.initiate('driver-1'))
-      const state = api.endpoints.getMyReports.select('driver-1')(store.getState())
+      await store.dispatch(reportApi.endpoints.getMyReports.initiate('driver-1'))
+      const state = reportApi.endpoints.getMyReports.select('driver-1')(store.getState())
       expect(state.data).toHaveLength(1)
       expect(state.data?.[0]?._id).toBe('report-1')
     })
@@ -94,8 +91,8 @@ describe('reportApi endpoints', () => {
     it('[Error] 500 sets error state', async () => {
       mockFetchResponse({ status: 500, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getMyReports.initiate('driver-1'))
-      const state = api.endpoints.getMyReports.select('driver-1')(store.getState())
+      await store.dispatch(reportApi.endpoints.getMyReports.initiate('driver-1'))
+      const state = reportApi.endpoints.getMyReports.select('driver-1')(store.getState())
       expect(state.isError).toBe(true)
     })
   })
@@ -104,7 +101,7 @@ describe('reportApi endpoints', () => {
     it('[URL] GET reports/collaborators', async () => {
       mockFetchResponse({ status: 200, body: [collaborator()] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getReportCollaborators.initiate())
+      await store.dispatch(reportApi.endpoints.getReportCollaborators.initiate())
       expect(lastCall().url).toContain('/api/reports/collaborators')
       expect(lastCall().method).toBe('GET')
     })
@@ -112,8 +109,8 @@ describe('reportApi endpoints', () => {
     it('[Success] data lands in cache', async () => {
       mockFetchResponse({ status: 200, body: [collaborator()] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getReportCollaborators.initiate())
-      const state = api.endpoints.getReportCollaborators.select()(store.getState())
+      await store.dispatch(reportApi.endpoints.getReportCollaborators.initiate())
+      const state = reportApi.endpoints.getReportCollaborators.select()(store.getState())
       expect(state.data).toHaveLength(1)
       expect(state.data?.[0]?.name).toBe('Test Company')
     })
@@ -121,8 +118,8 @@ describe('reportApi endpoints', () => {
     it('[Error] 401 sets error state', async () => {
       mockFetchResponse({ status: 401, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getReportCollaborators.initiate())
-      const state = api.endpoints.getReportCollaborators.select()(store.getState())
+      await store.dispatch(reportApi.endpoints.getReportCollaborators.initiate())
+      const state = reportApi.endpoints.getReportCollaborators.select()(store.getState())
       expect(state.isError).toBe(true)
     })
   })
@@ -131,7 +128,7 @@ describe('reportApi endpoints', () => {
     it('[URL] GET reports/loads', async () => {
       mockFetchResponse({ status: 200, body: [reportableLoad()] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getReportableLoads.initiate())
+      await store.dispatch(reportApi.endpoints.getReportableLoads.initiate())
       expect(lastCall().url).toContain('/api/reports/loads')
       expect(lastCall().method).toBe('GET')
     })
@@ -139,8 +136,8 @@ describe('reportApi endpoints', () => {
     it('[Success] data lands in cache', async () => {
       mockFetchResponse({ status: 200, body: [reportableLoad()] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getReportableLoads.initiate())
-      const state = api.endpoints.getReportableLoads.select()(store.getState())
+      await store.dispatch(reportApi.endpoints.getReportableLoads.initiate())
+      const state = reportApi.endpoints.getReportableLoads.select()(store.getState())
       expect(state.data).toHaveLength(1)
       expect(state.data?.[0]?._id).toBe('load-1')
     })
@@ -148,8 +145,8 @@ describe('reportApi endpoints', () => {
     it('[Error] 500 sets error state', async () => {
       mockFetchResponse({ status: 500, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getReportableLoads.initiate())
-      const state = api.endpoints.getReportableLoads.select()(store.getState())
+      await store.dispatch(reportApi.endpoints.getReportableLoads.initiate())
+      const state = reportApi.endpoints.getReportableLoads.select()(store.getState())
       expect(state.isError).toBe(true)
     })
   })
@@ -166,7 +163,7 @@ describe('reportApi endpoints', () => {
         category: 'fraud',
         description: 'Scam attempt',
       }
-      await store.dispatch(api.endpoints.createReport.initiate(payload))
+      await store.dispatch(reportApi.endpoints.createReport.initiate(payload))
       expect(lastCall().url).toContain('/api/reports')
       expect(lastCall().method).toBe('POST')
       expect(lastCall().body).toEqual(payload)
@@ -176,7 +173,7 @@ describe('reportApi endpoints', () => {
       mockFetchResponse({ status: 201, body: report() })
       const store = createTestStore()
       const result = await store.dispatch(
-        api.endpoints.createReport.initiate({
+        reportApi.endpoints.createReport.initiate({
           reporterId: 'driver-1',
           type: 'fraud' as const,
           targetType: 'company' as const,
@@ -191,7 +188,7 @@ describe('reportApi endpoints', () => {
       mockFetchResponse({ status: 400, body: { message: 'Invalid report' } })
       const store = createTestStore()
       const result = await store.dispatch(
-        api.endpoints.createReport.initiate({
+        reportApi.endpoints.createReport.initiate({
           reporterId: 'driver-1',
           type: 'fraud' as const,
           targetType: 'company' as const,
@@ -207,7 +204,7 @@ describe('reportApi endpoints', () => {
     it('[URL] GET reports without status', async () => {
       mockFetchResponse({ status: 200, body: [] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getAllReports.initiate())
+      await store.dispatch(reportApi.endpoints.getAllReports.initiate())
       expect(lastCall().url).toContain('/api/reports')
       expect(lastCall().method).toBe('GET')
     })
@@ -215,23 +212,23 @@ describe('reportApi endpoints', () => {
     it('[URL] GET reports?status=resolved', async () => {
       mockFetchResponse({ status: 200, body: [] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getAllReports.initiate({ status: 'resolved' }))
+      await store.dispatch(reportApi.endpoints.getAllReports.initiate({ status: 'resolved' }))
       expect(lastCall().url).toContain('/api/reports?status=resolved')
     })
 
     it('[Success] data lands in cache', async () => {
       mockFetchResponse({ status: 200, body: [report()] })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getAllReports.initiate())
-      const state = api.endpoints.getAllReports.select()(store.getState())
+      await store.dispatch(reportApi.endpoints.getAllReports.initiate())
+      const state = reportApi.endpoints.getAllReports.select()(store.getState())
       expect(state.data).toHaveLength(1)
     })
 
     it('[Error] 500 sets error state', async () => {
       mockFetchResponse({ status: 500, body: {} })
       const store = createTestStore()
-      await store.dispatch(api.endpoints.getAllReports.initiate())
-      const state = api.endpoints.getAllReports.select()(store.getState())
+      await store.dispatch(reportApi.endpoints.getAllReports.initiate())
+      const state = reportApi.endpoints.getAllReports.select()(store.getState())
       expect(state.isError).toBe(true)
     })
   })
@@ -241,7 +238,7 @@ describe('reportApi endpoints', () => {
       mockFetchResponse({ status: 200, body: report({ status: 'resolved' }) })
       const store = createTestStore()
       const payload = { reportId: 'report-1', status: 'resolved' as const, adminId: 'admin-1' }
-      await store.dispatch(api.endpoints.updateReportStatus.initiate(payload))
+      await store.dispatch(reportApi.endpoints.updateReportStatus.initiate(payload))
       expect(lastCall().url).toContain('/api/reports/report-1/status')
       expect(lastCall().method).toBe('PATCH')
       expect(lastCall().body).toEqual({ status: 'resolved', adminId: 'admin-1' })
@@ -251,7 +248,7 @@ describe('reportApi endpoints', () => {
       mockFetchResponse({ status: 200, body: report({ status: 'resolved' }) })
       const store = createTestStore()
       const result = await store.dispatch(
-        api.endpoints.updateReportStatus.initiate({ reportId: 'report-1', status: 'resolved' as const })
+        reportApi.endpoints.updateReportStatus.initiate({ reportId: 'report-1', status: 'resolved' as const })
       )
       expect(result.data?.status).toBe('resolved')
     })
@@ -260,7 +257,7 @@ describe('reportApi endpoints', () => {
       mockFetchResponse({ status: 404, body: {} })
       const store = createTestStore()
       const result = await store.dispatch(
-        api.endpoints.updateReportStatus.initiate({ reportId: 'report-1', status: 'resolved' as const })
+        reportApi.endpoints.updateReportStatus.initiate({ reportId: 'report-1', status: 'resolved' as const })
       )
       expect(result.error).toBeDefined()
     })
