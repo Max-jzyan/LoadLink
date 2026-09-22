@@ -109,7 +109,6 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
           <Link to={RoutePath.Privacy} className="hover:text-primary hover:underline">
             Privacy
           </Link>
-          <span>A Fantastic Five project.</span>
         </div>
       </footer>
     </div>

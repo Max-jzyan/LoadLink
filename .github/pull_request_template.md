@@ -7,7 +7,7 @@
 
 ## Checklist
 
-- [ ] Code runs in TA docker without errors
+- [ ] App builds and runs under `docker compose up --build`
 - [ ] `npm run format` (Prettier) has been run
 - [ ] `npm run format:check` and linting pass
 - [ ] Cleaned up unnecessary AI comments

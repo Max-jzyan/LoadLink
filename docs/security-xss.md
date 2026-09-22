@@ -1,4 +1,4 @@
-# M4 — Cross-Site Scripting (XSS) Security Assessment
+# Cross-Site Scripting (XSS) Assessment
 
 **Accounts used (password `12345678` for all):** 
 

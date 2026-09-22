@@ -1,12 +1,12 @@
 # LoadLink End-to-End Test Plan
 
-> **Scope:** A single, consolidated manual test pass across the full product as it stands today, superseding the need to run the milestone-by-milestone docs (`TestPlan M2.md` … `TestPlan M5.md`) end to end. Those remain useful as a change log per milestone; this doc is the one to run for a full regression.
+> **Scope:** A single, consolidated manual test pass across the full product. Run this for a full regression.
 >
 > **Explicitly out of scope (excluded by request):** the AI Insights panel on Driver Auctions (sparkles button / `AiInsightsPanel`), and the Shepherd.js onboarding walkthrough (guided tour). Do not test these — they are being reworked separately.
 
 ## Prerequisites
 
-- Clone the repo (latest `FinalRelease`)
+- Clone the repo
 - Place the provided `.env` file in the project root,`./frontend/.env`,  **and** `./backend/.env` (must include AWS S3 keys, Firebase Admin credentials, and a Geoapify key for maps)
 - Run `docker compose up --build`
 - Wait until all three services are healthy in Docker Desktop (mongo -> backend -> frontend)
@@ -441,5 +441,4 @@ curl http://localhost:5001/api/company/000000000000000000000002/dashboard \
 
 ## Notes
 
-- Historical, milestone-scoped detail (exact commit ranges, root-cause writeups for specific bug fixes, and change-log framing) lives in `docs/TestPlan M2.md` through `docs/TestPlan M5.md` — this doc intentionally trades that granularity for a single, current, runnable pass.
-- `docs/M4-XSS.md` covers the separate XSS security assessment and is not duplicated here.
+- `docs/security-xss.md` covers the separate XSS security assessment and is not duplicated here.

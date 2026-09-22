@@ -404,7 +404,7 @@ export default function SignupPage() {
           <p className="text-lg leading-relaxed text-slate-300">
             Streamline the logistics of cargo transport
           </p>
-          <footer className="text-sm text-slate-500">CPSC 455 Team 5</footer>
+          <footer className="text-sm text-slate-500">LoadLink</footer>
         </blockquote>
       </div>
     </div>

@@ -241,7 +241,7 @@ export default function LoginPage() {
                 className="transition-all duration-700 ease-in-out"
                 style={{ flexGrow: role === 'company' ? 0 : 1 }}
               />
-              <footer className="text-sm text-slate-500">CPSC 455 Team 5</footer>
+              <footer className="text-sm text-slate-500">LoadLink</footer>
             </div>
           </div>
         </div>
